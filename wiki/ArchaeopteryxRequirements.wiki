@@ -31,17 +31,27 @@ Enable *fast* simulation of future architectures on modern hardware.
 
 = Component Design =
 
+This section covers the aforementioned components in more detail.
+
 == IR and Byte-Code ==
 
 == Processor Simulator ==
 
 === Memory Modules ===
 
+Memory modules represent relocatable pages of memory that are available to the currently executing application.  They will be associated with the current process only.  
+
 === Core Simulator ===
+
+The core simulator is responsible for executing complete CTAs.  It will be given a starting instruction and a set of memory regions that it has access to.  There will also be a set of memory regions that are shared across all CTAs, but are assumed to support more efficient access from this CTA.
+
+Instructions will be loaded lazily.  They should be grouped into pages and only allocated and read from the byte-code file when the first thread executes them.  The Core simulator should cache valid regions of instructions and atomically update a shared data structure containing the loaded instruction pages.
 
 ==== Instruction Execution Engine ====
 
+This component is responsible for executing single instructions at a time.  It should maintain per-thread local state as well as interfaces to the per-CTA and per-processor shared state (mainly memory). 
 
+It will be used by the Core Simulator to execute individual instructions.  The idea is that the Core Simulator will get the next instruction to execute and call the Execution Engine to execute it.  This will be equivalent to a switch statement over the opcode followed by instruction specific operations (although performance considerations may mandate a different implementation).  
 
 = Infrastructure Requirements =
 
