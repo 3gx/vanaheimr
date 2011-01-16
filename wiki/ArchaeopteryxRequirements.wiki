@@ -2,9 +2,20 @@
 
 = Goals =
 
+* Functionally simulate a many-core processor using GPUs.
+* Constant slowdown factor when simulating a new processor on current generation hardware.
+* Make all components modular, with well defined interfaces, especially with regards to the ISA.
+* ISA and runtime extensions for data distributions and locality.
+* Lightweight and modular instrumentation or trace generation interface for interactions with timing models.
+
 = Requirements =
 
+* Simulate complete CUDA applications.  As a starting point, simulate the PTX virtual machine (this made need revision).
+* A fast virtual machine IR and bytecode format.  Ideally, this should be loaded, and simulated in parallel.
+
 = Component List =
+
+
 
 = Component Design =
 
