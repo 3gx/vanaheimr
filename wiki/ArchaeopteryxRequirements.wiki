@@ -1,4 +1,9 @@
 #summary The evolving requirements document of the functional simulator
+#labels Phase-Requirements
+
+= Vision =
+
+Enable *fast* simulation of future architectures on modern hardware.  
 
 = Goals =
 
@@ -10,7 +15,7 @@
 
 = Requirements =
 
- * Simulate complete CUDA applications.  As a starting point, simulate the PTX virtual machine (this made need revision).
+ * Simulate complete CUDA applications.  As a starting point, simulate the PTX virtual machine (this may need revision).
  * A fast virtual machine IR and bytecode format.  Ideally, this should be loaded, and simulated in parallel.
 
 = Component List =
