@@ -3,6 +3,8 @@
 
 = Vision =
 
+[http://www.gdiamos.net/images/archaeopteryx.jpg]
+
 Enable *fast* simulation of future architectures on modern hardware.  
 
 = Goals =
@@ -17,6 +19,7 @@ Enable *fast* simulation of future architectures on modern hardware.
 
  * Simulate complete CUDA applications.  As a starting point, simulate the PTX virtual machine (this may need revision).
  * A fast virtual machine IR and bytecode format.  Ideally, this should be loaded, and simulated in parallel.
+ * Written completely in CUDA device code.  No host code at all for the simulator engine.
 
 = Component List =
 
