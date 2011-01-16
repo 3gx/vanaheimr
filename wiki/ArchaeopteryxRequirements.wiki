@@ -18,13 +18,34 @@ Enable *fast* simulation of future architectures on modern hardware.
 = Requirements =
 
  * Simulate complete CUDA applications.  As a starting point, simulate the PTX virtual machine (this may need revision).
- * A fast virtual machine IR and bytecode format.  Ideally, this should be loaded, and simulated in parallel.
+ * A fast virtual machine IR and byte-code format.  Ideally, this should be loaded, and simulated in parallel.
  * Written completely in CUDA device code.  No host code at all for the simulator engine.
 
 = Component List =
-
-
+ * An IR and a byte-code format 
+ * Processor simulator
+  * Memory module
+  * Core simulator
+   * Instruction execution engine
+ * Runtime
 
 = Component Design =
+
+== IR and Byte-Code ==
+
+== Processor Simulator ==
+
+=== Memory Modules ===
+
+=== Core Simulator ===
+
+==== Instruction Execution Engine ====
+
+
+
+= Infrastructure Requirements =
+
+ * Access to GPU workstations or laptops
+ * CUDA compiler
 
 = Schedule =
