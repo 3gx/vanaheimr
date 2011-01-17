@@ -1,5 +1,5 @@
 #summary The evolving requirements document of the functional simulator
-#labels Phase-Requirements
+#labels Phase-Requirements,Archaeopteryx,Simulation
 
 = Vision =
 
@@ -24,10 +24,18 @@ Enable *fast* simulation of future architectures on modern hardware.
 = Component List =
  * An IR and a byte-code format 
  * Processor simulator
+  * Kernel Instructions
   * Memory module
   * Core simulator
    * Instruction execution engine
  * Runtime
+ * Test framework
+  * Unit tests
+   * Feature coverage
+   * Input parameters
+   * Output parameters
+  * Test space exploration
+  * Random program generation
 
 = Component Design =
 
@@ -35,11 +43,19 @@ This section covers the aforementioned components in more detail.
 
 == IR and Byte-Code ==
 
+The IR will be a set of CUDA classes that represent ISA abstractions, such as instructions or memory allocations.  The byte-code format will provide an efficient mechanism for storing and loading this IR to disk.
+
 == Processor Simulator ==
+
+The processor simulator is the top level component.  It contains a collection of memory modules, core models, and kernel binaries that are fed to CTAs during the execution of the program.  
+
+=== Kernel Instructions ===
+
+Kernel instructions will be stored in a pre-decoded IR form in the last level shared memory space.  The instructions for an entire program will be mapped into the memory space, but they should be loaded lazily, one page at a time.  This will require some tricks to get working correctly with CUDA, but it should ensure that significantly less than the full binary needs to be loaded at a time into the memory of the machine performing the simulation.  Additional work will be needed to design an IR storage format that enables this behavior.
 
 === Memory Modules ===
 
-Memory modules represent relocatable pages of memory that are available to the currently executing application.  They will be associated with the current process only.  
+Memory modules represent relocatable pages of memory that are available to the currently executing application.  They will be associated with the current process only.  Modules will be associated with an allocation function, which controls their distribution on a system with multiple memory controllers and a multi-level tiled cache.
 
 === Core Simulator ===
 
@@ -52,6 +68,16 @@ Instructions will be loaded lazily.  They should be grouped into pages and only 
 This component is responsible for executing single instructions at a time.  It should maintain per-thread local state as well as interfaces to the per-CTA and per-processor shared state (mainly memory). 
 
 It will be used by the Core Simulator to execute individual instructions.  The idea is that the Core Simulator will get the next instruction to execute and call the Execution Engine to execute it.  This will be equivalent to a switch statement over the opcode followed by instruction specific operations (although performance considerations may mandate a different implementation).  
+
+== Runtime ==
+== Test framework ==
+=== Unit tests ===
+==== Feature coverage ====
+==== Input parameters ====
+==== Output parameters ====
+=== Test space exploration ===
+=== Random program generation ===
+
 
 = Infrastructure Requirements =
 
