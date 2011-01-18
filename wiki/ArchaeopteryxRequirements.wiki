@@ -10,10 +10,10 @@ Enable *fast* simulation of future architectures on modern hardware.
 = Goals =
 
  * Functionally simulate a many-core processor using GPUs.
- * Constant slowdown factor when simulating a new processor on current generation hardware.
+ * Maintain a constant slowdown factor when simulating a new processor on current generation hardware.
  * Make all components modular, with well defined interfaces, especially with regards to the ISA.
- * ISA and runtime extensions for data distributions and locality.
- * Lightweight and modular instrumentation or trace generation interface for interactions with timing models.
+ * Include ISA and runtime extensions for data distributions and locality.
+ * Support lightweight and modular instrumentation or trace generation interface for interactions with timing models.
 
 = Requirements =
 
