@@ -1,0 +1,46 @@
+Vanaheimr - Virtual Instruction Set
+	- Strongly typed
+
+Types
+
+b1	
+b8	u8	s8	
+b16	u16	s16	
+b32	u32	s32	f32
+b64	u64	s64	f64
+
+Arithmetic
+
+add - two operand add operation
+sub - two operand subtract operation
+mul - two operand multiply operation
+div - two operand divide
+
+xor - two operand bitwise xor
+or - two operand bitwise or
+and - two operand bitwise and
+not - one operand not
+
+lsl - logical shift left
+asr - sign extension shift right
+lsr - logical shift right
+
+Control Flow
+
+bra - branch to a label based on a condition
+cmp - Two operand compare, sets a third dependening on the result of the condition
+
+Data Manipulation
+
+mov - Move one register into another of the same type
+cvt - Explicit type conversion instruction
+
+Memory Interaction
+
+ld - load instruction
+st - store instruction
+
+Special functions
+
+Implementation specific -
+
