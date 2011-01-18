@@ -31,12 +31,6 @@ Enable *fast* simulation of future architectures on modern hardware.
  * Runtime
  * Event Handlers
  * Test framework
-  * Unit tests
-   * Feature coverage
-   * Input parameters
-   * Output parameters
-  * Test space exploration
-  * Random program generation
 
 = Component Design =
 
