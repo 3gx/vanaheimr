@@ -43,15 +43,15 @@ This section covers the aforementioned components in more detail.
 
 == IR and Byte-Code ==
 
-The IR will be a set of CUDA classes that represent ISA abstractions, such as instructions or memory allocations.  The byte-code format will provide an efficient mechanism for storing and loading this IR to disk.
+The IR will be a set of CUDA classes that represent ISA abstractions, such as instructions or memory allocations.  The byte-code format will provide an efficient mechanism for storing and loading this IR to disk.  This format should allow files to be loaded in a data-parallel fashion that can achieve close to peak performance on the system performing the simulation.
 
 == Processor Simulator ==
 
-The processor simulator is the top level component.  It contains a collection of memory modules, core models, and kernel binaries that are fed to CTAs during the execution of the program.  
+The processor simulator is the top level component.  It contains a collection of memory modules, core models, and kernel instructions that are fed to CTAs during the execution of the program. This dispatches work to the various core simulator instances. The physical interconnections between various components is not modeled here, instead all cores are assumed to be connected to each memory module. For now we adopt the convention in current architectures where cores are not directly connected to each other.
 
 === Kernel Instructions ===
 
-Kernel instructions will be stored in a pre-decoded IR form in the last level shared memory space.  The instructions for an entire program will be mapped into the memory space, but they should be loaded lazily, one page at a time.  This will require some tricks to get working correctly with CUDA, but it should ensure that significantly less than the full binary needs to be loaded at a time into the memory of the machine performing the simulation.  Additional work will be needed to design an IR storage format that enables this behavior.
+Kernel instructions will be stored in a pre-decoded IR form in the last level shared memory space of the machine performing the simulation.  The instructions for an entire program will be mapped into this memory space, but they should be loaded lazily from a byte-code file, one page at a time.  This will require some tricks to get working correctly with CUDA, but it should ensure that significantly less than the full binary needs to be loaded at a time into the memory of the machine performing the simulation.  Additional work will be needed to design an IR storage format that enables this behavior.
 
 === Memory Modules ===
 
@@ -65,11 +65,21 @@ Instructions will be loaded lazily.  They should be grouped into pages and only 
 
 ==== Instruction Execution Engine ====
 
-This component is responsible for executing single instructions at a time.  It should maintain per-thread local state as well as interfaces to the per-CTA and per-processor shared state (mainly memory). 
+This component is responsible for executing single instructions at a time.  It should maintain per-thread local state (register files, local stack pointers etc.) as well as interfaces to the per-CTA and per-processor shared state (mainly memory). 
 
 It will be used by the Core Simulator to execute individual instructions.  The idea is that the Core Simulator will get the next instruction to execute and call the Execution Engine to execute it.  This will be equivalent to a switch statement over the opcode followed by instruction specific operations (although performance considerations may mandate a different implementation).  
 
 == Runtime ==
+
+The runtime component will be a low level interface that allows the configuration and execution of kernels on the simulator, allowing the simulator to be run as a back-end to a variety of front-ends languages, such as CUDA or OpenCL via [http://code.google.com/p/gpuocelot/ Ocelot].  
+
+Functionality will be provided for the following basic operations:
+ * Lazily loading a byte-code file for execution.
+ * Allocating and configuring memory.
+ * Setup the parameters of the next kernel and perform the launch.
+
+No other advanced functions such as concurrent simulation of programs or asynchronous operations will be supported at this level.
+
 == Test framework ==
 === Unit tests ===
 ==== Feature coverage ====
@@ -77,7 +87,9 @@ It will be used by the Core Simulator to execute individual instructions.  The i
 ==== Output parameters ====
 === Test space exploration ===
 === Random program generation ===
-
+=== Test Dependencies ===
+=== The Test Database ===
+=== Distributed Testing ===
 
 = Infrastructure Requirements =
 
