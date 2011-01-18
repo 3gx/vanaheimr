@@ -87,15 +87,54 @@ No other advanced functions such as concurrent simulation of programs or asynchr
 Event handlers are user-defined functions that implement an interface that receives callbacks when pre-defined events occur during simulation.  In the most basic case, event handlers are attached to instruction execution engines, and a callback is triggered after each instruction is executed.  The interface should be designed such that many event handlers can be registered at a time, and many instances of each event handler can be running in parallel, attached to different core simulators, memory modules, or instruction execution engines.
 
 == Test framework ==
+
+The archaeopteryx testing framework is designed to go beyond simple unit and module level directed testing to automated test-space exploration, distributed testing, and algorithm assisted bug diagnosis.  Tests are specified over ranges of valid inputs. Feature spaces are explicitly defined along with associated coverages.  Test dependencies are included so that changes to the code base do not necessitate re-execution of tests over unrelated features.
+
 === Unit tests ===
+
+Unit tests exercise the behavior of individual software components in isolation.  
+
 ==== Feature coverage ====
+
+Features describe some aspect of the system being tested.  Features may include the correct operation of floating point, or memory instructions.  They may also be composed to created aggregates, such as the correct operations of loops.  Tests should list the complete set of features that they are allowed to exercise.
+
 ==== Input parameters ====
+
+Input parameters may be given explicitly in terms of exact values, as a bounded range of possible values, or as a random function that generates a set of valid inputs given an initial seed.
+
 ==== Output parameters ====
+
+Output parameters are the expected results of a test.  They can be specified explicitly in the case of exact input values, or as a reference implementation that can be fed arbitrary inputs to produce golden outputs.
+
 === Test space exploration ===
+
+The test space is a multi-dimensional space with one dimension for each feature.  The combination of a single test and a single set of inputs define a point, line, plane, or higher dimension hyperplane depending on the features covered by the test.  Tests that are defined over a range of inputs will define a bounded region in the dimensions of each feature that it covers, and a projection into the independent spaces.  
+
+Note that this allows tests to have overlapping coverage.  Exploring the test space may be accomplished by running the tests with the greatest coverage until the maximum area is covered.  For tests whose feature space completely contains other tests, the contained tests may be run to isolate bugs by excluding features which do not cause the bug.
+
 === Random program generation ===
+
+One definition for the correctness of this simulator is that it should be able to
+execute all possible applications that can be expressed in the ISA.  The test space
+for this is obviously too large to explore manually.  It would be useful to be able
+generate programs automatically with certain statistical properties and deterministic results.
+
 === Test Dependencies ===
+
+In order to avoid invaliding an entire set of tests when a simulator component changes, tests should explicitly list dependencies on simulator components.
+
 === The Test Database ===
+
+Tests should be specified as a byte-code file, a set of memory inputs or an input generating function, a set of memory outputs or a reference generating function, a list of dependencies, and a list of features.  The database should maintain a list of all tests, all features, a versioned copy of the simulator.  New versions of the simulator should be added to the simulator along with a list of changes that can be used to determined dependent tests.  The database should keep a versioned history of feature set coverage and failure rates over each feature.
+
 === Distributed Testing ===
+
+Ideally, a set of nodes in a distributed system will be available for executing tests.  These nodes will access a shared database of tests that will describe the
+entire space of features, the coverage of each space, and the set of available tests.  Each node will randomly walk the feature space using available test with the goal of maximizing coverage in a bounded amount of time.  A core assumption of this model is that covering the entire feature space is computationally infeasible, and that it is instead desirable to report the failure probability of each feature along with a confidence value. The nodes in the system should choose tests that are
+expected to have the greatest impact on the detection of failures and the confidence
+in failure rates.
+
+When the system changes, the list of changes should be recorded, and only test results associated with changed components should be discarded.
 
 = Infrastructure Requirements =
 
