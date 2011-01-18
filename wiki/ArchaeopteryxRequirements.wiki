@@ -29,6 +29,7 @@ Enable *fast* simulation of future architectures on modern hardware.
   * Core simulator
    * Instruction execution engine
  * Runtime
+ * Event Handlers
  * Test framework
   * Unit tests
    * Feature coverage
@@ -77,8 +78,13 @@ Functionality will be provided for the following basic operations:
  * Lazily loading a byte-code file for execution.
  * Allocating and configuring memory.
  * Setup the parameters of the next kernel and perform the launch.
+ * Registering simulation event handlers.
 
 No other advanced functions such as concurrent simulation of programs or asynchronous operations will be supported at this level.
+
+== Event Handlers ==
+
+Event handlers are user-defined functions that implement an interface that receives callbacks when pre-defined events occur during simulation.  In the most basic case, event handlers are attached to instruction execution engines, and a callback is triggered after each instruction is executed.  The interface should be designed such that many event handlers can be registered at a time, and many instances of each event handler can be running in parallel, attached to different core simulators, memory modules, or instruction execution engines.
 
 == Test framework ==
 === Unit tests ===
