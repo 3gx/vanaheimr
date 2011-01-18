@@ -3,7 +3,7 @@
 
 = Vision =
 
-[http://www.gdiamos.net/images/archaeopteryx.jpg]
+[http://www.gdiamos.net/images/archaeopteryx-overview.png]
 
 Enable *fast* simulation of future architectures on modern hardware.  
 
