@@ -38,7 +38,7 @@ This section covers the aforementioned components in more detail.
 
 == IR and Byte-Code ==
 
-The IR will be a set of CUDA classes that represent ISA abstractions, such as instructions or memory allocations.  The byte-code format will provide an efficient mechanism for storing and loading this IR to disk.  This format should allow files to be loaded in a data-parallel fashion that can achieve close to peak performance on the system performing the simulation.
+The IR will be a set of CUDA classes that represent ISA abstractions, such as instructions or memory allocations.  The byte-code format will provide an efficient mechanism for storing and loading this IR to disk.  This format should allow files to be loaded in a data-parallel fashion that can achieve close to peak performance on the system performing the simulation.  It should also be possible to load the IR from the byte-code lazily.  It should not be necessary to load an entire file to discover the externally visible variables and functions.  It should also not be necessary to completely load a function to begin executing it.  
 
 == Processor Simulator ==
 
