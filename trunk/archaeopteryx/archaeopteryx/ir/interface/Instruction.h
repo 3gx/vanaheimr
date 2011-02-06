@@ -22,27 +22,26 @@ public:
 	{
 		Add,
 		And,
+		Ashr,
 		Atom,
 		Bar,
 		Bitcast,
 		Bra,
-		Fma,
 		Fpext,
 		Fptosi,
 		Fptoui,
 		Fptrunc,
 		Ld,
+		Lshr,
 		Membar,
 		Mov,
 		Mul,
 		Or,
 		Ret,
-		SelP,
 		SetP,
 		Sext,
 		Sdiv,
 		Shl,
-		Shr,
 		Sitofp,
 		Srem,
 		St,
@@ -88,6 +87,35 @@ public:
 	Operand b;
 };
 
+/*! \brief An instruction involving a comparison */
+class ComparisonInstruction : public BinaryInstruction
+{
+public:
+	/*! \brief All possible comparisons */
+	enum Comparison
+	{
+		OrderedEqual,
+		OrderedNotEqual,
+		OrderedLessThan,
+		OrderedLessOrEqual,
+		OrderedGreater,
+		OrderedGreaterOrEqual,
+		UnorderedEqual,
+		UnorderedNotEqual,
+		UnorderedLessThan,
+		UnorderedLessOrEqual,
+		UnorderedGreaterThan,
+		UnorderedGreaterOrEqual,
+		IsANumber,
+		NotANumber,
+		InvalidComparison
+	};
+	
+public:
+	/*! \brief The comparison operation */
+	Comparison comparison;
+};
+
 /*! \brief An add instruction */
 class Add : public BinaryInstruction
 {
@@ -96,6 +124,12 @@ class Add : public BinaryInstruction
 /*! \brief An and instruction */
 class And : public BinaryInstruction
 {
+};
+
+/*! \brief Perform arithmetic shift right */
+class Ashr : public BinaryInstruction
+{
+
 };
 
 /*! \brief An atomic operation instruction */
@@ -152,13 +186,6 @@ public:
 	BranchModifier modifier;
 };
 
-/*! \brief A fused multiple add */
-class Fma : public BinaryInstruction
-{
-public:
-	Operand c;
-};
-
 /*! \brief A floating point precision extension instruction */
 class Fpext : public UnaryInstruction
 {
@@ -189,6 +216,12 @@ class Ld : public UnaryInstruction
 
 };
 
+/*! \brief Logical shift right */
+class Lshr : public BinaryInstruction
+{
+
+};
+
 /*! \brief Wait until memory operations at the specified level have completed */
 class Membar : public Instruction
 {
@@ -212,26 +245,144 @@ class Mov : public UnaryInstruction
 };
 
 
-/*! \brief Multiply operands together */ 
-		Mul,
-		Or,
-		Ret,
-		SelP,
-		SetP,
-		Sext,
-		Sdiv,
-		Shl,
-		Shr,
-		Sitofp,
-		Srem,
-		St,
-		Sub,
-		Trunc,
-		Udiv,
-		Uitofp,
-		Urem,
-		Xor,
-		Zext,
+/*! \brief Multiply two operands together */
+class Mul : public BinaryInstruction
+{
+
+};
+
+/*! \brief Perform a logical OR operation */
+class Or : public BinaryInstruction
+{
+
+};
+
+/*! \brief Return from the most recent call */
+class Ret : public Instruction
+{
+
+};
+
+/*! \brief Compare two operands and set a third predicate */
+class SetP : public ComparisonInstruction
+{
+
+};
+
+/*! \brief Sign extend an integer */
+class Sext : public UnaryInstruction
+{
+
+};
+
+/*! \brief Perform signed division */
+class Sdiv : public UnaryInstruction
+{
+
+};
+
+/*! \brief Perform shift left */
+class Shl : public BinaryInstruction
+{
+
+};
+
+/*! \brief Convert a signed int to a floating point */
+class Sitofp : public UnaryInstruction
+{
+
+};
+
+/*! \brief Perform a signed remainder operation */
+class Srem : public BinaryInstruction
+{
+
+};
+
+/*! \brief Perform a store operation */
+class St : public UnaryInstruction
+{
+
+};
+
+/*! \brief Perform a subtract operation */
+class Sub : public BinaryInstruction
+{
+
+};
+
+/*! \brief Truncate an integer */
+class Trunc : public UnaryInstruction
+{
+	
+};
+
+/*! \brief Perform an unsigned division operation */
+class Udiv : public BinaryInstruction
+{
+
+};
+
+/*! \brief Convert an unsigned int to a floating point */
+class Uitofp : public UnaryInstruction
+{
+
+};
+
+/*! \brief Perform an unsigned remainder operation */
+class Urem : public BinaryInstruction
+{
+
+};
+
+/*! \brief Perform a logical OR operation */
+class Xor : public BinaryInstruction
+{
+
+};
+
+/*! \brief Zero extend an integer */
+class Zext : public UnaryInstruction
+{
+	
+};
+
+/*! \brief A container of any possible instruction */
+union InstructionContainer
+{
+	Add     asAdd;
+	And     asAnd;
+	Ashr    asAshr;
+	Atom    asAtom;
+	Bar     asBar;
+	Bitcast asBitcast;
+	Bra     asBra;
+	Fpext   asFpext;
+	Fptosi  asFptosi;
+	Fptoui  asFptoui;
+	Fptrunc asFptrunc;
+	Ld      asLd;
+	Lshr    asLshr;
+	Membar  asMembar;
+	Mov     asMov;
+	Mul     asMul;
+	Or      asOr;
+	Ret     asRet;
+	SetP    asSetP;
+	Sext    asSext;
+	Sdiv    asSdiv;
+	Shl     asShl;
+	Sitofp  asSitofp;
+	Srem    asSrem;
+	St      asSt;
+	Sub     asSub;
+	Trunc   asTrunc;
+	Udiv    asUdiv;
+	Uitofp  asUitofp;
+	Urem    asUrem;
+	Xor     asXor;
+	Zext    asZext;
+};
 
 }
 
