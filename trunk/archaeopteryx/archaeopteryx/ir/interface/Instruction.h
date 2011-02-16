@@ -36,7 +36,6 @@ public:
 		Membar,
 		Mul,
 		Or,
-		Ret,
 		SetP,
 		Sext,
 		Sdiv,
@@ -250,12 +249,6 @@ class Or : public BinaryInstruction
 
 };
 
-/*! \brief Return from the most recent call or exit the thread */
-class Ret : public Instruction
-{
-
-};
-
 /*! \brief Compare two operands and set a third predicate */
 class SetP : public ComparisonInstruction
 {
@@ -359,7 +352,6 @@ union InstructionContainer
 	Membar  asMembar;
 	Mul     asMul;
 	Or      asOr;
-	Ret     asRet;
 	SetP    asSetP;
 	Sext    asSext;
 	Sdiv    asSdiv;
