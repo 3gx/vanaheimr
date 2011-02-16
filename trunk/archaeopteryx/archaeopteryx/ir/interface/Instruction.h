@@ -34,7 +34,6 @@ public:
 		Ld,
 		Lshr,
 		Membar,
-		Mov,
 		Mul,
 		Or,
 		Ret,
@@ -238,12 +237,6 @@ public:
 	Level level;	
 };
 
-/*! \brief Move a value into a register */
-class Mov : public UnaryInstruction
-{
-
-};
-
 
 /*! \brief Multiply two operands together */
 class Mul : public BinaryInstruction
@@ -257,7 +250,7 @@ class Or : public BinaryInstruction
 
 };
 
-/*! \brief Return from the most recent call */
+/*! \brief Return from the most recent call or exit the thread */
 class Ret : public Instruction
 {
 
@@ -364,7 +357,6 @@ union InstructionContainer
 	Ld      asLd;
 	Lshr    asLshr;
 	Membar  asMembar;
-	Mov     asMov;
 	Mul     asMul;
 	Or      asOr;
 	Ret     asRet;
