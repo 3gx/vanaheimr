@@ -1,46 +1,63 @@
-Vanaheimr - Virtual Instruction Set
-	- Strongly typed
+Vanaheimr Internal Representation (VIR) - Virtual Instruction Set
+	- Strongly typed (all registers are typed)
+	- Lightweight IR
 
 Types
 
-b1	
-b8	u8	s8	
-b16	u16	s16	
-b32	u32	s32	f32
-b64	u64	s64	f64
+i1  - one bit predicate
+i8  - eight bit int
+i16 - sixteen bit int
+i32 - thirty-two bit int
+i64 - sixty-four bit int
+f32 - IEEE754 float
+f64 - IEEE754 double
 
 Arithmetic
 
-add - two operand add operation
-sub - two operand subtract operation
-mul - two operand multiply operation
-div - two operand divide
+add  - two operand add operation
+sub  - two operand subtract operation
+mul  - two operand multiply operation
+udiv - two operand unsigned divide
+sdiv - two operand signed divide
+urem - two operand unsigned remainder
+srem - two operand signed remainder
 
 xor - two operand bitwise xor
-or - two operand bitwise or
+or  - two operand bitwise or
 and - two operand bitwise and
-not - one operand not
 
 lsl - logical shift left
 asr - sign extension shift right
 lsr - logical shift right
 
+setp - Compare two operands, set a predicate
+
 Control Flow
 
-bra - branch to a label based on a condition
-cmp - Two operand compare, sets a third dependening on the result of the condition
+bra - branch to a label based on a condition, indirect branching is also supported
 
 Data Manipulation
 
-mov - Move one register into another of the same type
-cvt - Explicit type conversion instruction
+bitcast - Move one register into another of the same size, type is ignored
+fpext   - floating point conversion from f32 to f64
+fptosi  - floating point conversion to signed integer
+fptoui  - floating point conversion to unsigned integer
+fptrunc - floating point conversion from f64 to f32
+sext    - convert to a larger integer size using sign extension
+sitofp  - signed integer conversion to floating point
+trunc   - integer conversion to a smaller size
+uitofp  - unsigned integer conversion to floating point
+zext    - zero extend and integer to a larger size
 
 Memory Interaction
 
-ld - load instruction
-st - store instruction
+ld   - load instruction
+st   - store instruction
 
-Special functions
+atom   - atomic read-modify-write to memory
+bar    - barrier at various levels of granularity (each corresponding to a level in the thread hierarchy)
+membar - wait until all previous memory requests are visible at the specified level in the thread hierarchy
 
-Implementation specific -
+Comments
 
+Is the divergence mechanism exposed in the ISA?
