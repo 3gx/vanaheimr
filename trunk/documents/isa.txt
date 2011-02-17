@@ -2,7 +2,7 @@ Vanaheimr Internal Representation (VIR) - Virtual Instruction Set
 	- Strongly typed (all registers are typed)
 	- Lightweight IR
 
-Types
+Types:
 
 i1  - one bit predicate
 i8  - eight bit int
@@ -12,7 +12,7 @@ i64 - sixty-four bit int
 f32 - IEEE754 float
 f64 - IEEE754 double
 
-Arithmetic
+Arithmetic:
 
 add  - two operand add operation
 sub  - two operand subtract operation
@@ -30,14 +30,14 @@ lsl - logical shift left
 asr - sign extension shift right
 lsr - logical shift right
 
-setp - Compare two operands, set a predicate
+setp{.comparison} - Compare two operands, set a predicate
 
-Control Flow
+Control Flow:
 
 bra  - branch to a label based on a condition, indirect branching is also supported
 call - same as bra, but saves the return address in a specified register
 
-Data Manipulation
+Data Manipulation:
 
 mov     - Move an immediate value into a register
 bitcast - Move one register into another of the same size, type is ignored
@@ -51,15 +51,21 @@ trunc   - integer conversion to a smaller size
 uitofp  - unsigned integer conversion to floating point
 zext    - zero extend and integer to a larger size
 
-Memory Interaction
+Memory Interaction:
 
 ld   - load instruction
 st   - store instruction
 
+Synchronization:
+
 bar    - barrier at various levels of granularity (each corresponding to a level in the thread hierarchy)
 fence  - wait until all previous memory requests are visible at the specified level in the thread hierarchy
 
-intrinsic - intrinsic operations are opaque, they have inputs/outputs, variable latency, and do not affect control flow
+Intrinsics:
+
+intrinsic operations are opaque, they have inputs/outputs, variable latency, and do not affect control flow
+
+atom{.operation} - perform a series of operations on memory atomically
 
 Comparison Operations:
 
@@ -101,7 +107,7 @@ Dec  - atomic { d = [a]; [a] = ((d == 0) || (d > b)) ? b : d - 1; }
 Min  - atomic { d = [a]; [a] = min(b, c); }
 Max  - atomic { d = [a]; [a] = max(b, c); }
 
-Comments
+Comments:
 
 Is the divergence mechanism exposed in the ISA?
  a - No, the only mechanism is a scoped barrier.
@@ -114,6 +120,9 @@ How does predication work?
 Can we include something like a jump-and-link or whatever our favorite call
 mechanism is (needs to capture return address)? It may be useful to distinguish
 call and return branches from vanilla jump instructions.
+ a - Call instruction is added that saves the return PC in the specified register.
+ 	A return is not necessary as the ABI is abstracted at this layer.
+
 Is the idea that all operations can be predicated, or are predicates just used
 for control-flow?
 How would we support active messages (send might require list of registers, and
