@@ -36,6 +36,7 @@ public:
 		Membar,
 		Mul,
 		Or,
+		Ret,
 		SetP,
 		Sext,
 		Sdiv,
@@ -249,6 +250,12 @@ class Or : public BinaryInstruction
 
 };
 
+/*! \brief Return from the current function call, or exit */
+class Ret : public: UnaryInstruction
+{
+
+};
+
 /*! \brief Compare two operands and set a third predicate */
 class SetP : public ComparisonInstruction
 {
@@ -336,36 +343,38 @@ class Zext : public UnaryInstruction
 /*! \brief A container of any possible instruction */
 union InstructionContainer
 {
-	Add     asAdd;
-	And     asAnd;
-	Ashr    asAshr;
-	Atom    asAtom;
-	Bar     asBar;
-	Bitcast asBitcast;
-	Bra     asBra;
-	Fpext   asFpext;
-	Fptosi  asFptosi;
-	Fptoui  asFptoui;
-	Fptrunc asFptrunc;
-	Ld      asLd;
-	Lshr    asLshr;
-	Membar  asMembar;
-	Mul     asMul;
-	Or      asOr;
-	SetP    asSetP;
-	Sext    asSext;
-	Sdiv    asSdiv;
-	Shl     asShl;
-	Sitofp  asSitofp;
-	Srem    asSrem;
-	St      asSt;
-	Sub     asSub;
-	Trunc   asTrunc;
-	Udiv    asUdiv;
-	Uitofp  asUitofp;
-	Urem    asUrem;
-	Xor     asXor;
-	Zext    asZext;
+	Add         asAdd;
+	And         asAnd;
+	Ashr        asAshr;
+	Atom        asAtom;
+	Bar         asBar;
+	Bitcast     asBitcast;
+	Bra         asBra;
+	Fpext       asFpext;
+	Fptosi      asFptosi;
+	Fptoui      asFptoui;
+	Fptrunc     asFptrunc;
+	Instruction asInstruction;
+	Ld          asLd;
+	Lshr        asLshr;
+	Membar      asMembar;
+	Mul         asMul;
+	Or          asOr;
+	Ret         asRet;
+	SetP        asSetP;
+	Sext        asSext;
+	Sdiv        asSdiv;
+	Shl         asShl;
+	Sitofp      asSitofp;
+	Srem        asSrem;
+	St          asSt;
+	Sub         asSub;
+	Trunc       asTrunc;
+	Udiv        asUdiv;
+	Uitofp      asUitofp;
+	Urem        asUrem;
+	Xor         asXor;
+	Zext        asZext;
 };
 
 }

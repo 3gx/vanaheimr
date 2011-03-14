@@ -44,6 +44,8 @@ public:
 	OperandMode mode;	
 };
 
+typedef Operand::RegisterType RegisterType;
+
 /*! \brief A register operand */
 class RegisterOperand : public OperandBase
 {
