@@ -23,7 +23,7 @@ enum DataType
 };
 
 /*! \brief Represents a single instruction operand */
-class OperandBase
+class Operand
 {
 public:
 	/*! \brief An operand type */
@@ -47,7 +47,7 @@ public:
 typedef Operand::RegisterType RegisterType;
 
 /*! \brief A register operand */
-class RegisterOperand : public OperandBase
+class RegisterOperand : public Operand
 {
 public:
 	/*! \brief The register being accessed */
@@ -57,7 +57,7 @@ public:
 };
 
 /*! \brief An immediate operand */
-class ImmediateOperand : public OperandBase
+class ImmediateOperand : public Operand
 {
 public:
 	/*! \brief The immediate value */
@@ -72,7 +72,7 @@ public:
 };
 
 /*! \brief A predicate operand */
-class PredicateOperand : public OperandBase
+class PredicateOperand : public Operand
 {
 public:
 	/*! \brief The modifier on the predicate */
@@ -93,7 +93,7 @@ public:
 };
 
 /*! \brief An indirect operand */
-class IndirectOperand : public OperandBase
+class IndirectOperand : public Operand
 {
 public:
 	/*! \brief The register being accessed */
@@ -105,7 +105,7 @@ public:
 };
 
 /*! \brief A union over the different operand types */
-union Operand
+union OperandContainer
 {
 	RegisterOperand  asRegister;
 	ImmediateOperand asImmediate;
