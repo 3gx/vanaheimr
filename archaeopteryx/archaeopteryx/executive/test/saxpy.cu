@@ -5,16 +5,9 @@
     \brief  A test for VIR and the simulator core.
 */
 
-#pragma once
-
 // Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Instruction.h>
-
-template<typename T>
-__device__ T getParameter(void* parameter, unsigned int byte = 0)
-{
-    return *(T*)((char*)parameter + byte);
-}
+#include <archaeopteryx/util/interface/CudaUtilities.h>
 
 /*
 saxpy(int* y, int* x, int a)
@@ -45,200 +38,200 @@ saxpy(int* y, int* x, int a)
 __device__ void createSaxpy(void* parameters)
 {
     ir::InstructionContainer* vir = 
-        getParameter<ir::InstructionContainer*>(parameter);
+        util::getParameter<ir::InstructionContainer*>(parameters);
 
     {
         ir::Bitcast& bitcast = vir[0].asBitcast; 
         
-        bitcast.d.mode = ir::Operand::Register;
-        bitcast.d.type = ir::Operand::i64;
-        bitcast.d.reg  = 11;
+        bitcast.d.asRegister.mode = ir::Operand::Register;
+        bitcast.d.asRegister.type = ir::i64;
+        bitcast.d.asRegister.reg  = 11;
         
-        bitcast.a.mode = ir::Operand::Register;
-        bitcast.a.type = ir::Operand::i64;
-        bitcast.a.reg  = 32;
+        bitcast.a.asRegister.mode = ir::Operand::Register;
+        bitcast.a.asRegister.type = ir::i64;
+        bitcast.a.asRegister.reg  = 32;
     }
     
     {
-        ir::Ld& load = vir[1].asLoad; 
+        ir::Ld& load = vir[1].asLd; 
     
-        load.d.mode = ir::Operand::Register;
-        load.d.type = ir::Operand::i64;
-        load.d.reg  = 0;
+        load.d.asRegister.mode = ir::Operand::Register;
+        load.d.asRegister.type = ir::i64;
+        load.d.asRegister.reg  = 0;
         
-        load.a.mode   = ir::Operand::Indirect;
-        load.a.type   = ir::Operand::i64;
-        load.a.reg    = 11;
-        load.a.offset = 0;
+        load.a.asIndirect.mode   = ir::Operand::Indirect;
+        load.a.asIndirect.type   = ir::i64;
+        load.a.asIndirect.reg    = 11;
+        load.a.asIndirect.offset = 0;
     }
     
     {
-        ir::Ld& load = vir[2].asLoad; 
+        ir::Ld& load = vir[2].asLd; 
     
-        load.d.mode   = ir::Operand::Register;
-        load.d.type   = ir::Operand::i64;
-        load.d.reg    = 1;
+        load.d.asRegister.mode   = ir::Operand::Register;
+        load.d.asRegister.type   = ir::i64;
+        load.d.asRegister.reg    = 1;
         
-        load.a.mode   = ir::Operand::Indirect;
-        load.a.type   = ir::Operand::i64;
-        load.a.reg    = 11;
-        load.a.offset = 8;
+        load.a.asIndirect.mode   = ir::Operand::Indirect;
+        load.a.asIndirect.type   = ir::i64;
+        load.a.asIndirect.reg    = 11;
+        load.a.asIndirect.offset = 8;
     }
     
     {
-        ir::Ld& load = vir[3].asLoad; 
+        ir::Ld& load = vir[3].asLd; 
     
-        load.d.mode   = ir::Operand::Register;
-        load.d.type   = ir::Operand::i32;
-        load.d.reg    = 2;
+        load.d.asRegister.mode   = ir::Operand::Register;
+        load.d.asRegister.type   = ir::i32;
+        load.d.asRegister.reg    = 2;
         
-        load.a.mode   = ir::Operand::Indirect;
-        load.a.type   = ir::Operand::i64;
-        load.a.reg    = 11;
-        load.a.offset = 16;
+        load.a.asIndirect.mode   = ir::Operand::Indirect;
+        load.a.asIndirect.type   = ir::i64;
+        load.a.asIndirect.reg    = 11;
+        load.a.asIndirect.offset = 16;
     }
     
     {
         ir::Bitcast& bitcast = vir[4].asBitcast; 
         
-        bitcast.d.mode = ir::Operand::Register;
-        bitcast.d.type = ir::Operand::i32;
-        bitcast.d.reg  = 3;
+        bitcast.d.asRegister.mode = ir::Operand::Register;
+        bitcast.d.asRegister.type = ir::i32;
+        bitcast.d.asRegister.reg  = 3;
         
-        bitcast.a.mode = ir::Operand::Register;
-        bitcast.a.type = ir::Operand::i32;
-        bitcast.a.reg  = 33;
+        bitcast.a.asRegister.mode = ir::Operand::Register;
+        bitcast.a.asRegister.type = ir::i32;
+        bitcast.a.asRegister.reg  = 33;
     }
     
     {
         ir::Zext& zext = vir[5].asZext; 
         
-        zext.d.mode = ir::Operand::Register;
-        zext.d.type = ir::Operand::i64;
-        zext.d.reg  = 12;
+        zext.d.asRegister.mode = ir::Operand::Register;
+        zext.d.asRegister.type = ir::i64;
+        zext.d.asRegister.reg  = 12;
         
-        zext.a.mode = ir::Operand::Register;
-        zext.a.type = ir::Operand::i32;
-        zext.a.reg  = 3;
+        zext.a.asRegister.mode = ir::Operand::Register;
+        zext.a.asRegister.type = ir::i32;
+        zext.a.asRegister.reg  = 3;
     }
 
     {
         ir::Mul& multiply = vir[6].asMul; 
         
-        multiply.d.mode = ir::Operand::Register;
-        multiply.d.type = ir::Operand::i64;
-        multiply.d.reg  = 4;
+        multiply.d.asRegister.mode = ir::Operand::Register;
+        multiply.d.asRegister.type = ir::i64;
+        multiply.d.asRegister.reg  = 4;
         
-        multiply.a.mode = ir::Operand::Register;
-        multiply.a.type = ir::Operand::i64;
-        multiply.a.reg  = 12;
+        multiply.a.asRegister.mode = ir::Operand::Register;
+        multiply.a.asRegister.type = ir::i64;
+        multiply.a.asRegister.reg  = 12;
 
-        multiply.b.mode = ir::Operand::Immediate;
-        multiply.b.type = ir::Operand::i64;
-        multiply.b.uint = 4;
+        multiply.b.asImmediate.mode = ir::Operand::Immediate;
+        multiply.b.asImmediate.type = ir::i64;
+        multiply.b.asImmediate.uint = 4;
     }
 
     {
         ir::Add& add = vir[7].asAdd; 
         
-        add.d.mode = ir::Operand::Register;
-        add.d.type = ir::Operand::i64;
-        add.d.reg  = 5;
+        add.d.asRegister.mode = ir::Operand::Register;
+        add.d.asRegister.type = ir::i64;
+        add.d.asRegister.reg  = 5;
         
-        add.a.mode = ir::Operand::Register;
-        add.a.type = ir::Operand::i64;
-        add.a.reg  = 4;
+        add.a.asRegister.mode = ir::Operand::Register;
+        add.a.asRegister.type = ir::i64;
+        add.a.asRegister.reg  = 4;
 
-        add.b.mode = ir::Operand::Register;
-        add.b.type = ir::Operand::i64;
-        add.b.reg  = 0;
+        add.b.asRegister.mode = ir::Operand::Register;
+        add.b.asRegister.type = ir::i64;
+        add.b.asRegister.reg  = 0;
     }
 
     {
         ir::Add& add = vir[8].asAdd; 
         
-        add.d.mode = ir::Operand::Register;
-        add.d.type = ir::Operand::i64;
-        add.d.reg  = 6;
+        add.d.asRegister.mode = ir::Operand::Register;
+        add.d.asRegister.type = ir::i64;
+        add.d.asRegister.reg  = 6;
         
-        add.a.mode = ir::Operand::Register;
-        add.a.type = ir::Operand::i64;
-        add.a.reg  = 4;
+        add.a.asRegister.mode = ir::Operand::Register;
+        add.a.asRegister.type = ir::i64;
+        add.a.asRegister.reg  = 4;
 
-        add.b.mode = ir::Operand::Register;
-        add.b.type = ir::Operand::i64;
-        add.b.reg  = 1;
+        add.b.asRegister.mode = ir::Operand::Register;
+        add.b.asRegister.type = ir::i64;
+        add.b.asRegister.reg  = 1;
     }
     
     {
-        ir::Ld& load = vir[9].asLoad; 
+        ir::Ld& load = vir[9].asLd; 
     
-        load.d.mode   = ir::Operand::Register;
-        load.d.type   = ir::Operand::i32;
-        load.d.reg    = 7;
+        load.d.asRegister.mode   = ir::Operand::Register;
+        load.d.asRegister.type   = ir::i32;
+        load.d.asRegister.reg    = 7;
         
-        load.a.mode   = ir::Operand::Indirect;
-        load.a.type   = ir::Operand::i64;
-        load.a.reg    = 5;
-        load.a.offset = 0;
+        load.a.asIndirect.mode   = ir::Operand::Indirect;
+        load.a.asIndirect.type   = ir::i64;
+        load.a.asIndirect.reg    = 5;
+        load.a.asIndirect.offset = 0;
     }
     
     {
-        ir::Ld& load = vir[10].asLoad; 
+        ir::Ld& load = vir[10].asLd; 
     
-        load.d.mode   = ir::Operand::Register;
-        load.d.type   = ir::Operand::i32;
-        load.d.reg    = 8;
+        load.d.asRegister.mode   = ir::Operand::Register;
+        load.d.asRegister.type   = ir::i32;
+        load.d.asRegister.reg    = 8;
         
-        load.a.mode   = ir::Operand::Indirect;
-        load.a.type   = ir::Operand::i64;
-        load.a.reg    = 6;
-        load.a.offset = 0;
+        load.a.asIndirect.mode   = ir::Operand::Indirect;
+        load.a.asIndirect.type   = ir::i64;
+        load.a.asIndirect.reg    = 6;
+        load.a.asIndirect.offset = 0;
     }
     
     {
         ir::Mul& multiply = vir[11].asMul; 
         
-        multiply.d.mode = ir::Operand::Register;
-        multiply.d.type = ir::Operand::i32;
-        multiply.d.reg  = 9;
+        multiply.d.asRegister.mode = ir::Operand::Register;
+        multiply.d.asRegister.type = ir::i32;
+        multiply.d.asRegister.reg  = 9;
         
-        multiply.a.mode = ir::Operand::Register;
-        multiply.a.type = ir::Operand::i32;
-        multiply.a.reg  = 8;
+        multiply.a.asRegister.mode = ir::Operand::Register;
+        multiply.a.asRegister.type = ir::i32;
+        multiply.a.asRegister.reg  = 8;
 
-        multiply.b.mode = ir::Operand::Register;
-        multiply.b.type = ir::Operand::i32;
-        multiply.b.reg  = 2;
+        multiply.b.asRegister.mode = ir::Operand::Register;
+        multiply.b.asRegister.type = ir::i32;
+        multiply.b.asRegister.reg  = 2;
     }
 
     {
         ir::Add& add = vir[12].asAdd; 
         
-        add.d.mode = ir::Operand::Register;
-        add.d.type = ir::Operand::i32;
-        add.d.reg  = 10;
+        add.d.asRegister.mode = ir::Operand::Register;
+        add.d.asRegister.type = ir::i32;
+        add.d.asRegister.reg  = 10;
         
-        add.a.mode = ir::Operand::Register;
-        add.a.type = ir::Operand::i32;
-        add.a.reg  = 7;
+        add.a.asRegister.mode = ir::Operand::Register;
+        add.a.asRegister.type = ir::i32;
+        add.a.asRegister.reg  = 7;
 
-        add.b.mode = ir::Operand::Register;
-        add.b.type = ir::Operand::i32;
-        add.b.reg  = 9;
+        add.b.asRegister.mode = ir::Operand::Register;
+        add.b.asRegister.type = ir::i32;
+        add.b.asRegister.reg  = 9;
     }
 
     {
-        ir::St& store = vir[13].asStore; 
+        ir::St& store = vir[13].asSt; 
     
-        store.d.mode   = ir::Operand::Indirect;
-        store.d.type   = ir::Operand::i64;
-        store.d.reg    = 5;
-        store.d.offset = 0;
+        store.d.asIndirect.mode   = ir::Operand::Indirect;
+        store.d.asIndirect.type   = ir::i64;
+        store.d.asIndirect.reg    = 5;
+        store.d.asIndirect.offset = 0;
         
-        store.a.mode   = ir::Operand::Register;
-        store.a.type   = ir::Operand::i32;
-        store.a.reg    = 10;
+        store.a.asRegister.mode   = ir::Operand::Register;
+        store.a.asRegister.type   = ir::i32;
+        store.a.asRegister.reg    = 10;
     }
 }
 
@@ -256,25 +249,70 @@ class SimulatorState
         RegisterFile registerFile;
         ir::InstructionContainer* instructionMemory;
     public:
-        __device__ SimulatorState(uint64 globalMemoryWindowHi, 
-            uint64 globalMemoryWindowLow, void* globalMemoryWindow,
-            uint64 baseProgramCounter, RegisterFile registerFile,
-            ir::InstructionContainer* instructionMemory);
+        __device__ SimulatorState(uint64 gh, 
+            uint64 gl, void* g,
+            uint64 b, RegisterFile r,
+            ir::InstructionContainer* i)
+            : globalMemoryWindowHi(gh),
+              globalMemoryWindowLow(gl),
+              globalMemoryWindow(g),
+              baseProgramCounter(b),
+              registerFile(r),
+              instructionMemory(i)
+            {};
+		__device__ SimulatorState() {};
 };
 ////////////////////////////////////////////////////////////////////////////////
 // setupSimulatorState
 ////////////////////////////////////////////////////////////////////////////////
 __device__ void setupSimulatorState(void* parameters)
 {
-    SimulatorState* state = getParameter<SimulatorState*>(parameters, 0);
-    ir::InstructionContainter* instructionMemory = 
-        getParameter<ir::InstructionContainer*>(parameters, sizeof(SimulatorState*));
+    SimulatorState* state = util::getParameter<SimulatorState*>(parameters, 0);
+    ir::InstructionContainer* instructionMemory = 
+        util::getParameter<ir::InstructionContainer*>(
+        parameters, sizeof(SimulatorState*));
 
     RegisterFile registerFile = (RegisterFile)std::malloc(sizeof(Register)*64);
     void* globalMemoryWindow = std::malloc(0x84);
 
-    new(state) SimulatorState(0x84, 0x0, globalMemoryWindow,
+    *state = SimulatorState(0x84, 0x0, globalMemoryWindow,
         0, registerFile, instructionMemory);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// float_cast
+////////////////////////////////////////////////////////////////////////////////
+union FloatUintUnionCast
+{
+	float f;
+	long long unsigned int i;
+};
+
+__device__ float float_cast(long long unsigned int reg)
+{
+	FloatUintUnionCast cast;
+	
+	cast.i = reg;
+	
+	return cast.f;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// double_cast
+////////////////////////////////////////////////////////////////////////////////
+union DoubleUintUnionCast
+{
+	double f;
+	long long unsigned int i;
+};
+
+__device__ double double_cast(long long unsigned int reg)
+{
+	DoubleUintUnionCast cast;
+	
+	cast.i = reg;
+	
+	return cast.f;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -282,8 +320,8 @@ __device__ void setupSimulatorState(void* parameters)
 ////////////////////////////////////////////////////////////////////////////////
 __device__ void runSimulation(void* parameters)
 {
-    SimulatorState* state = getParameter<SimulatorState*>(parameters, 0);
-    RegisterFile* registerFile = state->registerFile;
+    SimulatorState* state = util::getParameter<SimulatorState*>(parameters, 0);
+    RegisterFile registerFile = state->registerFile;
     uint64 pc = state->baseProgramCounter;
     bool running = true;
     while(running)
@@ -341,6 +379,9 @@ __device__ void runSimulation(void* parameters)
                             }
                         default: break;
                     }
+                    
+                    registerFile[dId] = d;
+                    
                     ++pc;
                     break;
                 }
@@ -357,14 +398,14 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Ld:
                 {
-                    ir:::Ld& load = instruction.asLd;
+                    ir::Ld& load = instruction.asLd;
                     
                     ir::RegisterType dId = load.d.asRegister.reg;
                     ir::RegisterType aId = load.a.asIndirect.reg;
                     int offset = load.a.asIndirect.offset;
                     uint64 vaddress = registerFile[aId];
                     vaddress += offset;
-                    uint64 base = (uint64)state->globalMemoryWindow;
+                    uint64 base = (uint64)(size_t)state->globalMemoryWindow;
                     uint64 address = vaddress - state->globalMemoryWindowLow
                         + base;
                     
@@ -375,24 +416,24 @@ __device__ void runSimulation(void* parameters)
                         case ir::i1: /* fall through */
                         case ir::i8:
                             {
-                                value = *((char*)address);
+                                value = *((char*)(size_t)address);
                                 break;
                             }
                         case ir::i16:
                             {
-                                value = *((short*)address);
+                                value = *((short*)(size_t)address);
                                 break;
                             }
                         case ir::i32: /* fall through */
                         case ir::f32:
                             {
-                                value = *((int*)address);
+                                value = *((int*)(size_t)address);
                                 break;
                             }
                         case ir::i64:
                         case ir::f64:
                             {
-                                value = *((long long int*)address);
+                                value = *((long long int*)(size_t)address);
                                 break;
                             }
                         default: break;
@@ -412,7 +453,7 @@ __device__ void runSimulation(void* parameters)
                     Register b = 0;
                     Register d = 0;
 
-                    if(bitcast.a.mode == ir::OperandBase::Register)
+                    if(mul.a.asRegister.mode == ir::Operand::Register)
                     {
                         ir::RegisterType aId = mul.a.asRegister.reg;
                         
@@ -446,7 +487,7 @@ __device__ void runSimulation(void* parameters)
                         }
                     }
 
-                    if(bitcast.a.mode == ir::OperandBase::Register)
+                    if(mul.a.asRegister.mode == ir::Operand::Register)
                     {
                         ir::RegisterType bId = mul.b.asRegister.reg;
                         
@@ -515,6 +556,9 @@ __device__ void runSimulation(void* parameters)
                             }
                         default: break;
                     }
+
+                    registerFile[dId] = d;
+
                     ++pc;
                     break;
                 }
@@ -525,42 +569,42 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::St:
                 {
-                    ir:::St& store = instruction.asSt;
+                    ir::St& store = instruction.asSt;
                     
                     ir::RegisterType aId = store.a.asRegister.reg;
                     ir::RegisterType dId = store.d.asIndirect.reg;
                     int offset = store.d.asIndirect.offset;
                     uint64 vaddress = registerFile[dId];
                     vaddress += offset;
-                    uint64 base = (uint64)state->globalMemoryWindow;
+                    uint64 base = (uint64)(size_t)state->globalMemoryWindow;
                     uint64 address = vaddress - state->globalMemoryWindowLow
                         + base;
                     
                     Register value = registerFile[aId];
 
-                    switch(load.d.asIndirect.type)
+                    switch(store.d.asIndirect.type)
                     {
                         case ir::i1: /* fall through */
                         case ir::i8:
                             {
-                                *((char*)address) = value;
+                                *((char*)(size_t)address) = value;
                                 break;
                             }
                         case ir::i16:
                             {
-                                *((short*)address) = value;
+                                *((short*)(size_t)address) = value;
                                 break;
                             }
                         case ir::i32: /* fall through */
                         case ir::f32:
                             {
-                                *((int*)address) = value;
+                                *((int*)(size_t)address) = value;
                                 break;
                             }
                         case ir::i64:
                         case ir::f64:
                             {
-                                *((long long int*)address) = value;
+                                *((long long int*)(size_t)address) = value;
                                 break;
                             }
                         default: break;
@@ -570,15 +614,15 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Zext:
                 {
-                    ir:::Zext& zext = instruction.asZext;
+                    ir::Zext& zext = instruction.asZext;
                     
-                    ir::RegisterType dId = load.d.asRegister.reg;
-                    ir::RegisterType aId = load.a.asRegister.reg;
+                    ir::RegisterType dId = zext.d.asRegister.reg;
+                    ir::RegisterType aId = zext.a.asRegister.reg;
                     
                     Register a = registerFile[aId];
                     Register d = 0;
                     
-                    switch(load.a.asRegister.type)
+                    switch(zext.a.asRegister.type)
                     {
                         case ir::i1: /* fall through */
                         case ir::i8:
@@ -619,22 +663,75 @@ __device__ void runSimulation(void* parameters)
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// deleteInstructionMemory
+////////////////////////////////////////////////////////////////////////////////
+__device__ void deleteInstructionMemory(void* parameters)
+{
+    ir::InstructionContainer* instructionMemory = 
+        util::getParameter<ir::InstructionContainer*>(parameters, 0);
+
+    delete[] instructionMemory;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// deleteSimulatorState
+////////////////////////////////////////////////////////////////////////////////
+__device__ void deleteSimulatorState(void* parameters)
+{
+    SimulatorState* state = util::getParameter<SimulatorState*>(parameters, 0);
+	
+    delete state;
+}
+
 #include <cstdlib>
 
 __global__ void system()
 {
-    void* instructionMemory = std::malloc(14*sizeof(ir::InstructionContainer));
+    ir::InstructionContainer* instructionMemory =
+   		new ir::InstructionContainer[14];
+    SimulatorState* state = new SimulatorState;
+
     // 1) call createSaxypy()
-    system_call("createSaxpy", instructionMemory);
+    util::async_system_call("createSaxpy", instructionMemory);
     //    __bar()
     // 2) call setupSimulatorState()
-    SimulatorState* state = (SimulatorState*)std::malloc(sizeof(SimulatorState));
-    system_call("setupSimulatorState", state, instructionMemory);
+    util::async_system_call("setupSimulatorState", state, instructionMemory);
     //    __bar()
     // 3) call runSimulation()
-    system_call("runSimulation", state);
+    util::async_system_call("runSimulation", state);
     //    __bar()
-    std::free(instructionMemory);
-    std::free(state);
+    util::async_system_call("deleteInstructionMemory", instructionMemory);
+    util::async_system_call("deleteSimulatorState", state);
+}
+
+__global__ void setupFunctionTable()
+{
+	util::functionTable[0].name     = "createSaxpy";
+	util::functionTable[0].function =  createSaxpy;
+
+	util::functionTable[1].name     = "setupSimulatorState";
+	util::functionTable[1].function =  setupSimulatorState;
+
+	util::functionTable[2].name     = "runSimulation";
+	util::functionTable[2].function =  runSimulation;
+
+	util::functionTable[3].name     = "deleteInstructionMemory";
+	util::functionTable[3].function =  deleteInstructionMemory;
+
+	util::functionTable[4].name     = "deleteSimulatorState";
+	util::functionTable[4].function =  deleteSimulatorState;
+}
+
+int main(int argc, char** argv)
+{
+	util::setupHostReflection();
+
+	setupFunctionTable<<<1, 1, 1>>>();
+	system<<<1, 1, 1>>>();
+	
+	util::teardownHostReflection();
+
+	return 0;
 }
 

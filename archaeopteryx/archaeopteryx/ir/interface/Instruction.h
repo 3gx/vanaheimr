@@ -68,9 +68,9 @@ class UnaryInstruction : public Instruction
 {
 public:
 	/*! \brief The destination operand. */
-	Operand d;
+	OperandContainer d;
 	/*! \brief The source operand. */
-	Operand a;
+	OperandContainer a;
 
 };
 
@@ -79,11 +79,11 @@ class BinaryInstruction : public Instruction
 {
 public:
 	/*! \brief The destination operand. */
-	Operand d;
+	OperandContainer d;
 	/*! \brief The first source operand. */
-	Operand a;
+	OperandContainer a;
 	/*! \brief The second source operand. */
-	Operand b;
+	OperandContainer b;
 };
 
 /*! \brief An instruction involving a comparison */
@@ -251,7 +251,7 @@ class Or : public BinaryInstruction
 };
 
 /*! \brief Return from the current function call, or exit */
-class Ret : public: UnaryInstruction
+class Ret : public UnaryInstruction
 {
 
 };
