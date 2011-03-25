@@ -136,3 +136,21 @@ When the system changes, the list of changes should be recorded, and only test r
  * CUDA compiler
 
 = Schedule =
+
+== Milestone 1: April 15th 2011 ==
+ * First SAXPY example running on 580 GTX
+ * Completely using CUDA code (no CPU code)
+
+== Milestone 2: June 15th ==
+ * Most of the code in place
+ * Ocelot sanity level regression test suit 100% passing
+
+== Milestone 3: August 15th ==
+ * Most CUDA applications running
+ * Ocelot basic level regression test suit 100% passing
+
+== Target: ISPASS 2012 (October 2011) ==
+ * Self-Simulating
+ * Simulate Parboil/Rodinia
+ * Final paper draft
+ 
