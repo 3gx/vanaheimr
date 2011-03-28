@@ -10,6 +10,8 @@
 
 // Standard Library Includes
 #include <cstring>
+#include <iostream>
+#include <cstdlib>
 
 /*! \brief Common utility functions */
 namespace util
@@ -19,6 +21,15 @@ template<typename T>
 __device__ T getParameter(void* parameter, unsigned int byte = 0)
 {
 	return *(T*)((char*)parameter + byte);
+}
+
+inline void check(cudaError_t status)
+{
+    if(status != cudaSuccess)
+    {
+        std::cerr << cudaGetErrorString(status) << std::endl;
+        std::abort();
+    }
 }
 
 const unsigned int hostBufferSize = 4096;
@@ -39,19 +50,22 @@ __device__ AsyncFunctionRecord functionTable[] = {
 		{ 0, 0 },
 		{ 0, 0 },
 		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },
+		{ 0, 0 },
 		{ 0, 0 }
 		};
 
 __device__ unsigned int strlen(const char* s)
 {
 	const char* i = s;
-	while(++i);
+	while(*i) ++i;
 	
 	return i - s;
 }
 
 __device__ inline void async_system_call(const char* name,
-	void* p1 = 0, void* p2 = 0)
+	void* p1 = 0, void* p2 = 0, void* p3 = 0)
 {
 	unsigned int* offset = (unsigned int*)hostBuffer;
 	
@@ -75,6 +89,12 @@ __device__ inline void async_system_call(const char* name,
 		std::memcpy(dataBase + currentOffset, &p2, sizeof(void*));
 		currentOffset += sizeof(void*);
 	}
+
+	if(p3 != 0)
+	{
+		std::memcpy(dataBase + currentOffset, &p3, sizeof(void*));
+		currentOffset += sizeof(void*);
+	}
 	
 	*offset = currentOffset;
 	
@@ -85,11 +105,11 @@ __device__ inline void async_system_call(const char* name,
 inline void setupHostReflection()
 {
 	unsigned int* buffer = 0;
-	cudaHostAlloc(&buffer, hostBufferSize, cudaHostAllocDefault);
+	check(cudaHostAlloc(&buffer, hostBufferSize, cudaHostAllocDefault));
 	
 	*buffer = 0;
 	
-	cudaMemcpyToSymbol("hostBuffer", &buffer, sizeof(void*));
+	check(cudaMemcpyToSymbol(hostBuffer, &buffer, sizeof(void*)));
 }
 
 __device__ int strcmp(const char* str1, const char* str2)
@@ -121,10 +141,10 @@ __global__ void dispatch(const char* name, void* payload)
 
 inline void teardownHostReflection()
 {
-	void* hostBuffer = 0;
-	cudaMemcpyFromSymbol(&hostBuffer, "hostBuffer", sizeof(void*));
+	void* localhostBuffer = 0;
+	check(cudaMemcpyFromSymbol(&localhostBuffer, hostBuffer, sizeof(void*)));
 
-	unsigned int* hostBufferBase = (unsigned int*)hostBuffer;
+	unsigned int* hostBufferBase = (unsigned int*)localhostBuffer;
 	unsigned int totalSize  = *hostBufferBase;
 	unsigned int packetSize = 0;
 	
@@ -138,9 +158,10 @@ inline void teardownHostReflection()
 		const char* payload = name + std::strlen(name) + 1;
 		
 		dispatch<<<1, 1, 1>>>(name, (void*)payload);
+		check(cudaThreadSynchronize());
 	}
 	
-	cudaFreeHost(hostBuffer);
+	check(cudaFreeHost(localhostBuffer));
 }
 
 }
