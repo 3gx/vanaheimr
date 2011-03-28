@@ -6,8 +6,14 @@
 */
 
 // Archaeopteryx Includes
+#include <archaeopteryx/ir/interface/Parameters.h>
 #include <archaeopteryx/ir/interface/Instruction.h>
 #include <archaeopteryx/util/interface/CudaUtilities.h>
+
+// Standard Library Includes
+#include <cstdlib>
+#include <cstdio>
+
 
 /*
 saxpy(int* y, int* x, int a)
@@ -35,6 +41,7 @@ saxpy(int* y, int* x, int a)
         st      [r5], r10;
         
 */
+
 __device__ void createSaxpy(void* parameters)
 {
     ir::InstructionContainer* vir = 
@@ -262,6 +269,26 @@ class SimulatorState
             {};
 		__device__ SimulatorState() {};
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// createParameters
+////////////////////////////////////////////////////////////////////////////////
+__device__ void createParameters(void* parameterList)
+{
+    ir::Parameters* parameters = 
+        util::getParameter<ir::Parameters*>(parameterList);
+    {
+        parameters->ctaSize = 1;
+        parameters->numberOfThreads = 1;
+        parameters->localMemoryWindowBase = 0x00;
+        parameters->localMemoryWindowSize = 0;
+        parameters->sharedMemoryWindowBase = 0x00;
+        parameters->sharedMemoryWindowSize = 0;
+        parameters->parameterMemoryWindowBase = 0x1000;
+        parameters->parameterMemoryWindowSize = 8+8+4;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // setupSimulatorState
 ////////////////////////////////////////////////////////////////////////////////
@@ -271,12 +298,39 @@ __device__ void setupSimulatorState(void* parameters)
     ir::InstructionContainer* instructionMemory = 
         util::getParameter<ir::InstructionContainer*>(
         parameters, sizeof(SimulatorState*));
+    ir::Parameters* parameterDescription = 
+        util::getParameter<ir::Parameters*>(parameters,
+        sizeof(SimulatorState*) + sizeof(ir::InstructionContainer*));
 
     RegisterFile registerFile = (RegisterFile)std::malloc(sizeof(Register)*64);
-    void* globalMemoryWindow = std::malloc(0x84);
+    void* globalMemoryWindow = std::malloc(0x2000);
 
-    *state = SimulatorState(0x84, 0x0, globalMemoryWindow,
+    *state = SimulatorState(0x2000, 0x0, globalMemoryWindow,
         0, registerFile, instructionMemory);
+    registerFile[32] = parameterDescription->parameterMemoryWindowBase;
+
+	long long unsigned xAddress = 0x80;
+	long long unsigned yAddress = 0;
+	int a = 2;
+	
+	std::memcpy((char*)globalMemoryWindow
+		+ parameterDescription->parameterMemoryWindowBase,
+		&yAddress, sizeof(long long unsigned));
+	std::memcpy((char*)globalMemoryWindow
+		+ parameterDescription->parameterMemoryWindowBase + 8,
+		&xAddress, sizeof(long long unsigned));
+	std::memcpy((char*)globalMemoryWindow
+		+ parameterDescription->parameterMemoryWindowBase + 12,
+		&a, sizeof(int));
+
+	int* yData = (int*)((char*)globalMemoryWindow + yAddress);
+	int* xData = (int*)((char*)globalMemoryWindow + xAddress);
+
+	for(int i = 0; i < 32; ++i)
+	{
+		yData[i] = i;
+		xData[i] = i;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -664,6 +718,40 @@ __device__ void runSimulation(void* parameters)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// memoryCompare
+////////////////////////////////////////////////////////////////////////////////
+__device__ void memoryCompare(void* parameters)
+{
+    SimulatorState* state  = util::getParameter<SimulatorState*>(parameters, 0);
+    ir::Parameters* params = util::getParameter<ir::Parameters*>(parameters,
+    	sizeof(SimulatorState*));
+	
+	int* y = (int*)((char*)state->globalMemoryWindow
+		+ params->parameterMemoryWindowBase);
+	
+	bool passed = true;
+	
+	for(int i = 0; i < 32; ++i)
+	{
+		if(y[i] != i * 2 + i)
+		{
+			printf("At y[%d], computed %d != reference %d\n",
+				i, y[i], i * 2 + i);
+			passed = false;
+		}
+	}
+	
+	if(passed)
+	{
+		printf("Memory image check succeeded!\n");
+	}
+	else
+	{
+		printf("Memory image check failed!\n");
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // deleteInstructionMemory
 ////////////////////////////////////////////////////////////////////////////////
 __device__ void deleteInstructionMemory(void* parameters)
@@ -684,25 +772,42 @@ __device__ void deleteSimulatorState(void* parameters)
     delete state;
 }
 
-#include <cstdlib>
+////////////////////////////////////////////////////////////////////////////////
+// deleteParameters
+////////////////////////////////////////////////////////////////////////////////
+__device__ void deleteParameters(void* parameters)
+{
+    ir::Parameters* params = util::getParameter<ir::Parameters*>(parameters, 0);
+	
+    delete params;
+}
 
 __global__ void system()
 {
     ir::InstructionContainer* instructionMemory =
    		new ir::InstructionContainer[14];
     SimulatorState* state = new SimulatorState;
+	ir::Parameters* parameters = new ir::Parameters;
 
     // 1) call createSaxypy()
     util::async_system_call("createSaxpy", instructionMemory);
     //    __bar()
-    // 2) call setupSimulatorState()
-    util::async_system_call("setupSimulatorState", state, instructionMemory);
+	// 2) call setupParameters
+	util::async_system_call("createParameters", parameters);
+	//    __bar()
+    // 3) call setupSimulatorState()
+    util::async_system_call("setupSimulatorState", state,
+    	instructionMemory, parameters);
     //    __bar()
-    // 3) call runSimulation()
+    // 4) call runSimulation()
     util::async_system_call("runSimulation", state);
+    //    __bar()
+    // 5) call memoryCompare()
+    util::async_system_call("memoryCompare", state, parameters);
     //    __bar()
     util::async_system_call("deleteInstructionMemory", instructionMemory);
     util::async_system_call("deleteSimulatorState", state);
+    util::async_system_call("deleteParameterMemory", parameters);
 }
 
 __global__ void setupFunctionTable()
@@ -713,14 +818,23 @@ __global__ void setupFunctionTable()
 	util::functionTable[1].name     = "setupSimulatorState";
 	util::functionTable[1].function =  setupSimulatorState;
 
-	util::functionTable[2].name     = "runSimulation";
-	util::functionTable[2].function =  runSimulation;
+	util::functionTable[2].name     = "createParameters";
+	util::functionTable[2].function =  createParameters;
 
-	util::functionTable[3].name     = "deleteInstructionMemory";
-	util::functionTable[3].function =  deleteInstructionMemory;
+	util::functionTable[3].name     = "runSimulation";
+	util::functionTable[3].function =  runSimulation;
 
-	util::functionTable[4].name     = "deleteSimulatorState";
-	util::functionTable[4].function =  deleteSimulatorState;
+	util::functionTable[4].name     = "memoryCompare";
+	util::functionTable[4].function =  memoryCompare;
+
+	util::functionTable[5].name     = "deleteInstructionMemory";
+	util::functionTable[5].function =  deleteInstructionMemory;
+
+	util::functionTable[6].name     = "deleteSimulatorState";
+	util::functionTable[6].function =  deleteSimulatorState;
+
+	util::functionTable[7].name     = "deleteParameters";
+	util::functionTable[7].function =  deleteParameters;
 }
 
 int main(int argc, char** argv)
