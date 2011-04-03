@@ -12,10 +12,18 @@
 #include <cstring>
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 
 /*! \brief Common utility functions */
 namespace util
 {
+
+inline __host__ __device__ unsigned int align(unsigned int address,
+    unsigned int alignment)
+{
+    unsigned int remainder = address % alignment;
+    return remainder == 0 ? address : (address + alignment - remainder);
+}
 
 template<typename T>
 __device__ T getParameter(void* parameter, unsigned int byte = 0)
@@ -67,17 +75,27 @@ __device__ unsigned int strlen(const char* s)
 __device__ inline void async_system_call(const char* name,
 	void* p1 = 0, void* p2 = 0, void* p3 = 0)
 {
+    printf("async_system_call(%s)\n", name);
+
 	unsigned int* offset = (unsigned int*)hostBuffer;
+	char* dataBase       = (char*)        hostBuffer;
 	
 	unsigned int packetSizeOffset = *offset;
-	unsigned int startingOffset   = packetSizeOffset + sizeof(unsigned int);
-	char* dataBase = (char*)(offset + 1);
+	
+	if(packetSizeOffset == 0)
+	{
+	    packetSizeOffset = sizeof(unsigned int);
+	}
+	
+	unsigned int startingOffset = packetSizeOffset + sizeof(unsigned int);
 
 	unsigned int size = strlen(name) + 1;
 
 	std::memcpy(dataBase + startingOffset, name, size);
 	unsigned int currentOffset = startingOffset + size;
-	
+
+    currentOffset = align(currentOffset, sizeof(void*));
+
 	if(p1 != 0)
 	{
 		std::memcpy(dataBase + currentOffset, &p1, sizeof(void*));
@@ -98,7 +116,11 @@ __device__ inline void async_system_call(const char* name,
 	
 	*offset = currentOffset;
 	
-	size = currentOffset - startingOffset;
+	size = currentOffset - startingOffset + sizeof(unsigned int);
+
+    printf(" packet offset: %d\n", packetSizeOffset);
+	printf(" packet size:   %d\n", size);
+	
 	std::memcpy(dataBase + packetSizeOffset, &size, sizeof(unsigned int));
 }
 
@@ -122,18 +144,20 @@ __device__ int strcmp(const char* str1, const char* str2)
 		++str2;
 	}
 	
-	if(!*str1 && *str2) return 0;
+	if(!*str1 && !*str2) return 0;
 	
 	return 1;
 }
 
 __global__ void dispatch(const char* name, void* payload)
 {
+    printf("dispatch(%s)\n", name);
 	for(AsyncFunctionRecord* record = functionTable;
 		record->name != 0; ++record)
 	{
 		if(strcmp(record->name, name) == 0)
 		{
+            printf(" dispatch-launch(%s)\n", name);
 			record->function(payload);
 		}
 	}
@@ -148,14 +172,22 @@ inline void teardownHostReflection()
 	unsigned int totalSize  = *hostBufferBase;
 	unsigned int packetSize = 0;
 	
-	char* dataBase = (char*)(hostBufferBase + 1);
+	char* dataBase = (char*)(hostBufferBase);
 	
-	for(unsigned int i = 0; i < totalSize; i += packetSize)
+	for(unsigned int i = sizeof(unsigned int); i < totalSize; i += packetSize)
 	{
 		packetSize = *(unsigned int*)(dataBase + i);
-		const char* name = dataBase + i + sizeof(unsigned int);
 		
-		const char* payload = name + std::strlen(name) + 1;
+		unsigned int nameOffset = i + sizeof(unsigned int);
+		const char* name = dataBase + nameOffset;
+        printf("Found packet of size %d at %d\n", packetSize, i);
+		printf("Launching async function %s\n", name);
+		
+		unsigned int payloadOffset = align(nameOffset + std::strlen(name) + 1,
+		    sizeof(void*));
+		printf(" payload offset %d\n", payloadOffset);
+		
+		const char* payload = dataBase + payloadOffset;
 		
 		dispatch<<<1, 1, 1>>>(name, (void*)payload);
 		check(cudaThreadSynchronize());
