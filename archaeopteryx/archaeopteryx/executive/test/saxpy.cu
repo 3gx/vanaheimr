@@ -50,6 +50,8 @@ __device__ void createSaxpy(void* parameters)
     {
         ir::Bitcast& bitcast = vir[0].asBitcast; 
         
+        bitcast.opcode = ir::Instruction::Bitcast;
+        
         bitcast.d.asRegister.mode = ir::Operand::Register;
         bitcast.d.asRegister.type = ir::i64;
         bitcast.d.asRegister.reg  = 11;
@@ -61,6 +63,8 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Ld& load = vir[1].asLd; 
+
+        load.opcode = ir::Instruction::Ld;
     
         load.d.asRegister.mode = ir::Operand::Register;
         load.d.asRegister.type = ir::i64;
@@ -74,6 +78,8 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Ld& load = vir[2].asLd; 
+
+        load.opcode = ir::Instruction::Ld;
     
         load.d.asRegister.mode   = ir::Operand::Register;
         load.d.asRegister.type   = ir::i64;
@@ -87,6 +93,8 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Ld& load = vir[3].asLd; 
+
+        load.opcode = ir::Instruction::Ld;
     
         load.d.asRegister.mode   = ir::Operand::Register;
         load.d.asRegister.type   = ir::i32;
@@ -100,6 +108,8 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Bitcast& bitcast = vir[4].asBitcast; 
+
+        bitcast.opcode = ir::Instruction::Bitcast;
         
         bitcast.d.asRegister.mode = ir::Operand::Register;
         bitcast.d.asRegister.type = ir::i32;
@@ -112,6 +122,8 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Zext& zext = vir[5].asZext; 
+
+        zext.opcode = ir::Instruction::Zext;
         
         zext.d.asRegister.mode = ir::Operand::Register;
         zext.d.asRegister.type = ir::i64;
@@ -124,6 +136,8 @@ __device__ void createSaxpy(void* parameters)
 
     {
         ir::Mul& multiply = vir[6].asMul; 
+
+        multiply.opcode = ir::Instruction::Mul;
         
         multiply.d.asRegister.mode = ir::Operand::Register;
         multiply.d.asRegister.type = ir::i64;
@@ -140,6 +154,8 @@ __device__ void createSaxpy(void* parameters)
 
     {
         ir::Add& add = vir[7].asAdd; 
+
+        add.opcode = ir::Instruction::Add;
         
         add.d.asRegister.mode = ir::Operand::Register;
         add.d.asRegister.type = ir::i64;
@@ -157,6 +173,8 @@ __device__ void createSaxpy(void* parameters)
     {
         ir::Add& add = vir[8].asAdd; 
         
+        add.opcode = ir::Instruction::Add;
+        
         add.d.asRegister.mode = ir::Operand::Register;
         add.d.asRegister.type = ir::i64;
         add.d.asRegister.reg  = 6;
@@ -173,6 +191,8 @@ __device__ void createSaxpy(void* parameters)
     {
         ir::Ld& load = vir[9].asLd; 
     
+        load.opcode = ir::Instruction::Ld;
+        
         load.d.asRegister.mode   = ir::Operand::Register;
         load.d.asRegister.type   = ir::i32;
         load.d.asRegister.reg    = 7;
@@ -185,6 +205,8 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Ld& load = vir[10].asLd; 
+
+        load.opcode = ir::Instruction::Ld;        
     
         load.d.asRegister.mode   = ir::Operand::Register;
         load.d.asRegister.type   = ir::i32;
@@ -198,7 +220,9 @@ __device__ void createSaxpy(void* parameters)
     
     {
         ir::Mul& multiply = vir[11].asMul; 
-        
+
+        multiply.opcode = ir::Instruction::Mul;
+                
         multiply.d.asRegister.mode = ir::Operand::Register;
         multiply.d.asRegister.type = ir::i32;
         multiply.d.asRegister.reg  = 9;
@@ -215,6 +239,8 @@ __device__ void createSaxpy(void* parameters)
     {
         ir::Add& add = vir[12].asAdd; 
         
+        add.opcode = ir::Instruction::Add;
+
         add.d.asRegister.mode = ir::Operand::Register;
         add.d.asRegister.type = ir::i32;
         add.d.asRegister.reg  = 10;
@@ -231,6 +257,8 @@ __device__ void createSaxpy(void* parameters)
     {
         ir::St& store = vir[13].asSt; 
     
+        store.opcode = ir::Instruction::St;
+
         store.d.asIndirect.mode   = ir::Operand::Indirect;
         store.d.asIndirect.type   = ir::i64;
         store.d.asIndirect.reg    = 5;
@@ -240,6 +268,13 @@ __device__ void createSaxpy(void* parameters)
         store.a.asRegister.type   = ir::i32;
         store.a.asRegister.reg    = 10;
     }
+    
+    {
+        ir::Ret& ret = vir[14].asRet; 
+    
+        ret.opcode = ir::Instruction::Ret;
+    }
+    
 }
 
 typedef long long unsigned int uint64;
@@ -378,6 +413,13 @@ __device__ void runSimulation(void* parameters)
     RegisterFile registerFile = state->registerFile;
     uint64 pc = state->baseProgramCounter;
     bool running = true;
+    
+    printf("Running simulation...\n");
+    printf(" global-hi:%x\n", state->globalMemoryWindowHi);
+    printf(" global-lo:%x\n", state->globalMemoryWindowLow);
+    printf(" physical: %x\n", state->globalMemoryWindow);
+    printf(" pc-base:  %x\n", state->baseProgramCounter);
+
     while(running)
     {
         ir::InstructionContainer instruction = state->instructionMemory[pc];
@@ -388,6 +430,7 @@ __device__ void runSimulation(void* parameters)
         {
             case ir::Instruction::Add:
                 {
+                    printf("Running add instruction at PC %d\n", pc);
                     ir::Add& add = instruction.asAdd;
                     
                     ir::RegisterType aId = add.a.asRegister.reg;
@@ -441,6 +484,7 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Bitcast:
                 {
+                    printf("Running bitcast instruction at PC %d\n", pc);
                     ir::Bitcast& bitcast = instruction.asBitcast;
                     
                     ir::RegisterType aId = bitcast.a.asRegister.reg;
@@ -452,6 +496,7 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Ld:
                 {
+                    printf("Running ld instruction at PC %d\n", pc);
                     ir::Ld& load = instruction.asLd;
                     
                     ir::RegisterType dId = load.d.asRegister.reg;
@@ -499,6 +544,7 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Mul:
                 {
+                    printf("Running mul instruction at PC %d\n", pc);
                     ir::Mul& mul = instruction.asMul;
                     
                     ir::RegisterType dId = mul.d.asRegister.reg;
@@ -507,14 +553,20 @@ __device__ void runSimulation(void* parameters)
                     Register b = 0;
                     Register d = 0;
 
+                    ir::DataType type = ir::InvalidDataType;
+
                     if(mul.a.asRegister.mode == ir::Operand::Register)
                     {
                         ir::RegisterType aId = mul.a.asRegister.reg;
+
+                        type = mul.a.asRegister.type;
                         
                         a = registerFile[aId];
                     }
                     else
                     {
+                        type = mul.a.asImmediate.type;
+
                         switch(mul.a.asImmediate.type)
                         {
                             case ir::i1:  /* fall through */
@@ -541,7 +593,7 @@ __device__ void runSimulation(void* parameters)
                         }
                     }
 
-                    if(mul.a.asRegister.mode == ir::Operand::Register)
+                    if(mul.b.asRegister.mode == ir::Operand::Register)
                     {
                         ir::RegisterType bId = mul.b.asRegister.reg;
                         
@@ -575,7 +627,7 @@ __device__ void runSimulation(void* parameters)
                         }
                     }
                     
-                    switch(mul.a.asIndirect.type)
+                    switch(type)
                     {
                         case ir::i1: /* fall through */
                         case ir::i8:
@@ -618,11 +670,13 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Ret:
                 {
+                    printf("Running ret instruction at PC %d\n", pc);
                     running = false;
                     break;
                 }
             case ir::Instruction::St:
                 {
+                    printf("Running st instruction at PC %d\n", pc);
                     ir::St& store = instruction.asSt;
                     
                     ir::RegisterType aId = store.a.asRegister.reg;
@@ -668,6 +722,7 @@ __device__ void runSimulation(void* parameters)
                 }
             case ir::Instruction::Zext:
                 {
+                    printf("Running zext instruction at PC %d\n", pc);
                     ir::Zext& zext = instruction.asZext;
                     
                     ir::RegisterType dId = zext.d.asRegister.reg;
@@ -710,11 +765,13 @@ __device__ void runSimulation(void* parameters)
                 }
             default:
                 {
+                    printf("Running unknown instruction at PC %d\n", pc);
                     ++pc;
                     break;
                 }
         }
     }
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
