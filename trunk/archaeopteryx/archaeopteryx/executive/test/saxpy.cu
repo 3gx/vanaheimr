@@ -17,6 +17,9 @@
 #define ARRAY_LENGTH 2
 #define GLOBAL_MEMORY_WINDOW_SIZE 0x2000
 #define REGISTERS_PER_THREAD 64
+#define SIMULATED_THREADS ARRAY_LENGTH
+#define TARGET_BLOCK_SIZE 128
+
 /*
 saxpy(int* y, int* x, int a)
 
@@ -298,7 +301,7 @@ class SimulatorState
     public:
         __device__ SimulatorState(uint64 gh, 
             uint64 gl, void* g,
-            uint64 b, RegisterFile* r,
+            uint64 b, RegisterFile r,
             ir::InstructionContainer* i)
             : globalMemoryWindowHi(gh),
               globalMemoryWindowLow(gl),
@@ -854,17 +857,19 @@ __global__ void system()
 	ir::Parameters* parameters = new ir::Parameters;
 
     // 1) call createSaxypy()
-    util::async_system_call("createSaxpy", instructionMemory);
+    util::async_system_call(1, 1, "createSaxpy", instructionMemory);
     //    __bar()
 	// 2) call setupParameters
-	util::async_system_call("createParameters", parameters);
+	util::async_system_call(1, 1, "createParameters", parameters);
 	//    __bar()
     // 3) call setupSimulatorState()
-    util::async_system_call("setupSimulatorState", state,
+    util::async_system_call(1, 1, "setupSimulatorState", state,
     	instructionMemory, parameters);
     //    __bar()
     // 4) call runSimulation()
-    util::async_system_call("runSimulation", state);
+    util::async_system_call(
+    	(SIMULATED_THREADS + TARGET_BLOCK_SIZE - 1) / TARGET_BLOCK_SIZE,
+    	TARGET_BLOCK_SIZE, "runSimulation", state);
     //    __bar()
     // 5) call memoryCompare()
     util::async_system_call("memoryCompare", state, parameters);

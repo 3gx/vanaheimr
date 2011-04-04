@@ -18,6 +18,11 @@
 namespace util
 {
 
+inline __device__ unsigned int getGlobalThreadId()
+{
+	return threadIdx.x + blockIdx.x + blockDim.x;
+}
+
 inline __host__ __device__ unsigned int align(unsigned int address,
     unsigned int alignment)
 {
@@ -72,7 +77,8 @@ __device__ unsigned int strlen(const char* s)
 	return i - s;
 }
 
-__device__ inline void async_system_call(const char* name,
+__device__ inline void async_system_call(unsigned int ctas,
+	unsigned int threads, const char* name,
 	void* p1 = 0, void* p2 = 0, void* p3 = 0)
 {
     printf("async_system_call(%s)\n", name);
@@ -95,6 +101,12 @@ __device__ inline void async_system_call(const char* name,
 	unsigned int currentOffset = startingOffset + size;
 
     currentOffset = align(currentOffset, sizeof(void*));
+
+	std::memcpy(dataBase + currentOffset, &ctas, sizeof(unsigned int));
+	currentOffset += sizeof(unsigned int);
+
+	std::memcpy(dataBase + currentOffset, &threads, sizeof(unsigned int));
+	currentOffset += sizeof(unsigned int);
 
 	if(p1 != 0)
 	{
@@ -178,7 +190,13 @@ inline void teardownHostReflection()
 	{
 		packetSize = *(unsigned int*)(dataBase + i);
 		
-		unsigned int nameOffset = i + sizeof(unsigned int);
+		unsigned int ctaOffset    = i            + sizeof(unsigned int);
+		unsigned int threadOffset = ctaOffset    + sizeof(unsigned int);
+		unsigned int nameOffset   = threadOffset + sizeof(unsigned int);
+
+		unsigned int threads = *(unsigned int*)(dataBase + threadOffset);
+		unsigned int ctas    = *(unsigned int*)(dataBase + ctaOffset);
+
 		const char* name = dataBase + nameOffset;
         printf("Found packet of size %d at %d\n", packetSize, i);
 		printf("Launching async function %s\n", name);
@@ -189,7 +207,7 @@ inline void teardownHostReflection()
 		
 		const char* payload = dataBase + payloadOffset;
 		
-		dispatch<<<1, 1, 1>>>(name, (void*)payload);
+		dispatch<<<ctas, threads, 0>>>(name, (void*)payload);
 		check(cudaThreadSynchronize());
 	}
 	
