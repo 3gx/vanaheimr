@@ -20,7 +20,7 @@ namespace util
 
 inline __device__ unsigned int getGlobalThreadId()
 {
-	return threadIdx.x + blockIdx.x + blockDim.x;
+	return threadIdx.x + blockIdx.x * blockDim.x;
 }
 
 inline __host__ __device__ unsigned int align(unsigned int address,
@@ -189,20 +189,23 @@ inline void teardownHostReflection()
 	for(unsigned int i = sizeof(unsigned int); i < totalSize; i += packetSize)
 	{
 		packetSize = *(unsigned int*)(dataBase + i);
-		
-		unsigned int ctaOffset    = i            + sizeof(unsigned int);
-		unsigned int threadOffset = ctaOffset    + sizeof(unsigned int);
-		unsigned int nameOffset   = threadOffset + sizeof(unsigned int);
 
+		unsigned int nameOffset = i + sizeof(unsigned int);
+		const char* name        = dataBase + nameOffset;
+
+		unsigned int ctaOffset = align(nameOffset + std::strlen(name) + 1,
+		    sizeof(void*));
+
+		unsigned int threadOffset  = ctaOffset    + sizeof(unsigned int);
+		unsigned int payloadOffset = threadOffset + sizeof(unsigned int);
+		
 		unsigned int threads = *(unsigned int*)(dataBase + threadOffset);
 		unsigned int ctas    = *(unsigned int*)(dataBase + ctaOffset);
 
-		const char* name = dataBase + nameOffset;
         printf("Found packet of size %d at %d\n", packetSize, i);
-		printf("Launching async function %s\n", name);
+		printf("Launching async function %s\n (%d ctas, %d threads)",
+		    name, ctas, threads);
 		
-		unsigned int payloadOffset = align(nameOffset + std::strlen(name) + 1,
-		    sizeof(void*));
 		printf(" payload offset %d\n", payloadOffset);
 		
 		const char* payload = dataBase + payloadOffset;
