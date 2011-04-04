@@ -14,11 +14,11 @@
 #include <cstdlib>
 #include <cstdio>
 
-#define ARRAY_LENGTH 2
+#define ARRAY_LENGTH 1
 #define GLOBAL_MEMORY_WINDOW_SIZE 0x2000
 #define REGISTERS_PER_THREAD 64
 #define SIMULATED_THREADS ARRAY_LENGTH
-#define TARGET_BLOCK_SIZE 128
+#define TARGET_BLOCK_SIZE 2
 
 /*
 saxpy(int* y, int* x, int a)
@@ -295,6 +295,7 @@ class SimulatorState
         void*  globalMemoryWindow;
         uint64 baseProgramCounter;
         ir::InstructionContainer* instructionMemory;
+        ir::Parameters* parameters;
         /* Parameters seen by entire block */
         /* Parameters seen by each thread */
         RegisterFile registerFile;
@@ -302,12 +303,13 @@ class SimulatorState
         __device__ SimulatorState(uint64 gh, 
             uint64 gl, void* g,
             uint64 b, RegisterFile r,
-            ir::InstructionContainer* i)
+            ir::InstructionContainer* i, ir::Parameters* p)
             : globalMemoryWindowHi(gh),
               globalMemoryWindowLow(gl),
               globalMemoryWindow(g),
               baseProgramCounter(b),
               instructionMemory(i),
+              parameters(p),
               registerFile(r)
             {};
 		__device__ SimulatorState() {};
@@ -345,12 +347,12 @@ __device__ void setupSimulatorState(void* parameters)
         util::getParameter<ir::Parameters*>(parameters,
         sizeof(SimulatorState*) + sizeof(ir::InstructionContainer*));
 
-    RegisterFile registerFile = (RegisterFile)std::malloc(sizeof(Register)*REGISTERS_PER_THREAD*ARRAY_LENGTH);
+    RegisterFile registerFile = (RegisterFile)std::malloc(
+        sizeof(Register)*REGISTERS_PER_THREAD*SIMULATED_THREADS);
     void* globalMemoryWindow = std::malloc(GLOBAL_MEMORY_WINDOW_SIZE);
 
     *state = SimulatorState(GLOBAL_MEMORY_WINDOW_SIZE, 0x0, globalMemoryWindow,
-        0, registerFile, instructionMemory);
-    registerFile[32] = parameterDescription->parameterMemoryWindowBase;
+        0, registerFile, instructionMemory, parameterDescription);
 
 	long long unsigned xAddress = ARRAY_LENGTH*sizeof(int);
 	long long unsigned yAddress = 0;
@@ -420,15 +422,22 @@ __device__ void runSimulation(void* parameters)
     SimulatorState* state = util::getParameter<SimulatorState*>(parameters, 0);
     unsigned int threadId = util::getGlobalThreadId();
 
+    if(threadId >= SIMULATED_THREADS) return;
+
     RegisterFile registerFile = &state->registerFile[threadId];
     uint64 pc = state->baseProgramCounter;
     bool running = true;
-    
-    printf("Running simulation...\n");
-    printf(" global-hi:%x\n", state->globalMemoryWindowHi);
-    printf(" global-lo:%x\n", state->globalMemoryWindowLow);
-    printf(" physical: %x\n", state->globalMemoryWindow);
-    printf(" pc-base:  %x\n", state->baseProgramCounter);
+
+    registerFile[33 * SIMULATED_THREADS] = threadId;
+    registerFile[32 * SIMULATED_THREADS]
+        = state->parameters->parameterMemoryWindowBase;
+
+    printf("Running simulation for thread %d...\n", threadId);
+    printf(" global-hi:  %x\n", state->globalMemoryWindowHi);
+    printf(" global-lo:  %x\n", state->globalMemoryWindowLow);
+    printf(" physical:   %x\n", state->globalMemoryWindow);
+    printf(" pc-base:    %x\n", state->baseProgramCounter);
+    printf(" param-base: %x\n", state->parameters->parameterMemoryWindowBase);
 
     while(running)
     {
@@ -872,11 +881,11 @@ __global__ void system()
     	TARGET_BLOCK_SIZE, "runSimulation", state);
     //    __bar()
     // 5) call memoryCompare()
-    util::async_system_call("memoryCompare", state, parameters);
+    util::async_system_call(1,1,"memoryCompare", state, parameters);
     //    __bar()
-    util::async_system_call("deleteInstructionMemory", instructionMemory);
-    util::async_system_call("deleteSimulatorState", state);
-    util::async_system_call("deleteParameterMemory", parameters);
+    util::async_system_call(1,1,"deleteInstructionMemory", instructionMemory);
+    util::async_system_call(1,1,"deleteSimulatorState", state);
+    util::async_system_call(1,1,"deleteParameterMemory", parameters);
 }
 
 __global__ void setupFunctionTable()
