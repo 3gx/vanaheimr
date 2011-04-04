@@ -14,7 +14,9 @@
 #include <cstdlib>
 #include <cstdio>
 
-
+#define ARRAY_LENGTH 2
+#define GLOBAL_MEMORY_WINDOW_SIZE 0x2000
+#define REGISTERS_PER_THREAD 64
 /*
 saxpy(int* y, int* x, int a)
 
@@ -284,23 +286,26 @@ typedef Register* RegisterFile;
 class SimulatorState 
 {
     public:
+        /* Parameters seen by entire kernel */
         uint64 globalMemoryWindowHi;
         uint64 globalMemoryWindowLow;
         void*  globalMemoryWindow;
         uint64 baseProgramCounter;
-        RegisterFile registerFile;
         ir::InstructionContainer* instructionMemory;
+        /* Parameters seen by entire block */
+        /* Parameters seen by each thread */
+        RegisterFile registerFile;
     public:
         __device__ SimulatorState(uint64 gh, 
             uint64 gl, void* g,
-            uint64 b, RegisterFile r,
+            uint64 b, RegisterFile* r,
             ir::InstructionContainer* i)
             : globalMemoryWindowHi(gh),
               globalMemoryWindowLow(gl),
               globalMemoryWindow(g),
               baseProgramCounter(b),
-              registerFile(r),
-              instructionMemory(i)
+              instructionMemory(i),
+              registerFile(r)
             {};
 		__device__ SimulatorState() {};
 };
@@ -337,14 +342,14 @@ __device__ void setupSimulatorState(void* parameters)
         util::getParameter<ir::Parameters*>(parameters,
         sizeof(SimulatorState*) + sizeof(ir::InstructionContainer*));
 
-    RegisterFile registerFile = (RegisterFile)std::malloc(sizeof(Register)*64);
-    void* globalMemoryWindow = std::malloc(0x2000);
+    RegisterFile registerFile = (RegisterFile)std::malloc(sizeof(Register)*REGISTERS_PER_THREAD*ARRAY_LENGTH);
+    void* globalMemoryWindow = std::malloc(GLOBAL_MEMORY_WINDOW_SIZE);
 
-    *state = SimulatorState(0x2000, 0x0, globalMemoryWindow,
+    *state = SimulatorState(GLOBAL_MEMORY_WINDOW_SIZE, 0x0, globalMemoryWindow,
         0, registerFile, instructionMemory);
     registerFile[32] = parameterDescription->parameterMemoryWindowBase;
 
-	long long unsigned xAddress = 0x80;
+	long long unsigned xAddress = ARRAY_LENGTH*sizeof(int);
 	long long unsigned yAddress = 0;
 	int a = 2;
 	
@@ -361,7 +366,7 @@ __device__ void setupSimulatorState(void* parameters)
 	int* yData = (int*)((char*)globalMemoryWindow + yAddress);
 	int* xData = (int*)((char*)globalMemoryWindow + xAddress);
 
-	for(int i = 0; i < 32; ++i)
+	for(int i = 0; i < ARRAY_LENGTH; ++i)
 	{
 		yData[i] = i;
 		xData[i] = i;
@@ -410,7 +415,9 @@ __device__ double double_cast(long long unsigned int reg)
 __device__ void runSimulation(void* parameters)
 {
     SimulatorState* state = util::getParameter<SimulatorState*>(parameters, 0);
-    RegisterFile registerFile = state->registerFile;
+    unsigned int threadId = util::getGlobalThreadId();
+
+    RegisterFile registerFile = &state->registerFile[threadId];
     uint64 pc = state->baseProgramCounter;
     bool running = true;
     
@@ -437,8 +444,8 @@ __device__ void runSimulation(void* parameters)
                     ir::RegisterType bId = add.b.asRegister.reg;
                     ir::RegisterType dId = add.d.asRegister.reg;
 
-                    Register a = registerFile[aId];
-                    Register b = registerFile[bId];
+                    Register a = registerFile[aId*threadId];
+                    Register b = registerFile[bId*threadId];
                     Register d = 0;
                     
                     switch(add.a.asIndirect.type)
@@ -477,7 +484,7 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     
-                    registerFile[dId] = d;
+                    registerFile[dId*threadId] = d;
                     
                     ++pc;
                     break;
@@ -490,7 +497,7 @@ __device__ void runSimulation(void* parameters)
                     ir::RegisterType aId = bitcast.a.asRegister.reg;
                     ir::RegisterType dId = bitcast.d.asRegister.reg;
                     
-                    registerFile[dId] = registerFile[aId];
+                    registerFile[dId*threadId] = registerFile[aId*threadId];
                     ++pc;
                     break;
                 }
@@ -502,7 +509,7 @@ __device__ void runSimulation(void* parameters)
                     ir::RegisterType dId = load.d.asRegister.reg;
                     ir::RegisterType aId = load.a.asIndirect.reg;
                     int offset = load.a.asIndirect.offset;
-                    uint64 vaddress = registerFile[aId];
+                    uint64 vaddress = registerFile[aId*threadId];
                     vaddress += offset;
                     uint64 base = (uint64)(size_t)state->globalMemoryWindow;
                     uint64 address = vaddress - state->globalMemoryWindowLow
@@ -538,7 +545,7 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     
-                    registerFile[dId] = value;
+                    registerFile[dId*threadId] = value;
                     ++pc;
                     break;
                 }
@@ -561,7 +568,7 @@ __device__ void runSimulation(void* parameters)
 
                         type = mul.a.asRegister.type;
                         
-                        a = registerFile[aId];
+                        a = registerFile[aId*threadId];
                     }
                     else
                     {
@@ -597,7 +604,7 @@ __device__ void runSimulation(void* parameters)
                     {
                         ir::RegisterType bId = mul.b.asRegister.reg;
                         
-                        b = registerFile[bId];
+                        b = registerFile[bId*threadId];
                     }
                     else
                     {
@@ -663,7 +670,7 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
 
-                    registerFile[dId] = d;
+                    registerFile[dId*threadId] = d;
 
                     ++pc;
                     break;
@@ -682,13 +689,13 @@ __device__ void runSimulation(void* parameters)
                     ir::RegisterType aId = store.a.asRegister.reg;
                     ir::RegisterType dId = store.d.asIndirect.reg;
                     int offset = store.d.asIndirect.offset;
-                    uint64 vaddress = registerFile[dId];
+                    uint64 vaddress = registerFile[dId*threadId];
                     vaddress += offset;
                     uint64 base = (uint64)(size_t)state->globalMemoryWindow;
                     uint64 address = vaddress - state->globalMemoryWindowLow
                         + base;
                     
-                    Register value = registerFile[aId];
+                    Register value = registerFile[aId*threadId];
 
                     switch(store.d.asIndirect.type)
                     {
@@ -728,7 +735,7 @@ __device__ void runSimulation(void* parameters)
                     ir::RegisterType dId = zext.d.asRegister.reg;
                     ir::RegisterType aId = zext.a.asRegister.reg;
                     
-                    Register a = registerFile[aId];
+                    Register a = registerFile[aId*threadId];
                     Register d = 0;
                     
                     switch(zext.a.asRegister.type)
@@ -759,7 +766,7 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     
-                    registerFile[dId] = d;
+                    registerFile[dId*threadId] = d;
                     ++pc;
                     break;
                 }
@@ -788,7 +795,7 @@ __device__ void memoryCompare(void* parameters)
 	
 	bool passed = true;
 	
-	for(int i = 0; i < 32; ++i)
+	for(int i = 0; i < ARRAY_LENGTH; ++i)
 	{
 		if(y[i] != i * 2 + i)
 		{
