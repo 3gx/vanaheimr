@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-#define ARRAY_LENGTH 1
+#define ARRAY_LENGTH 256
 #define GLOBAL_MEMORY_WINDOW_SIZE 0x2000
 #define REGISTERS_PER_THREAD 64
 #define SIMULATED_THREADS ARRAY_LENGTH
@@ -349,6 +349,7 @@ __device__ void setupSimulatorState(void* parameters)
 
     RegisterFile registerFile = (RegisterFile)std::malloc(
         sizeof(Register)*REGISTERS_PER_THREAD*SIMULATED_THREADS);
+    memset(registerFile, 0, sizeof(Register)*REGISTERS_PER_THREAD*SIMULATED_THREADS);
     void* globalMemoryWindow = std::malloc(GLOBAL_MEMORY_WINDOW_SIZE);
 
     *state = SimulatorState(GLOBAL_MEMORY_WINDOW_SIZE, 0x0, globalMemoryWindow,
@@ -365,7 +366,7 @@ __device__ void setupSimulatorState(void* parameters)
 		+ parameterDescription->parameterMemoryWindowBase + 8,
 		&xAddress, sizeof(long long unsigned));
 	std::memcpy((char*)globalMemoryWindow
-		+ parameterDescription->parameterMemoryWindowBase + 12,
+		+ parameterDescription->parameterMemoryWindowBase + 16,
 		&a, sizeof(int));
 
 	int* yData = (int*)((char*)globalMemoryWindow + yAddress);
@@ -449,18 +450,17 @@ __device__ void runSimulation(void* parameters)
         {
             case ir::Instruction::Add:
                 {
-                    printf("Running add instruction at PC %d\n", pc);
                     ir::Add& add = instruction.asAdd;
                     
                     ir::RegisterType aId = add.a.asRegister.reg;
                     ir::RegisterType bId = add.b.asRegister.reg;
                     ir::RegisterType dId = add.d.asRegister.reg;
 
-                    Register a = registerFile[aId*threadId];
-                    Register b = registerFile[bId*threadId];
+                    Register a = registerFile[aId*SIMULATED_THREADS];
+                    Register b = registerFile[bId*SIMULATED_THREADS];
                     Register d = 0;
                     
-                    switch(add.a.asIndirect.type)
+                    switch(add.a.asRegister.type)
                     {
                         case ir::i1: /* fall through */
                         case ir::i8:
@@ -496,32 +496,31 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     
-                    registerFile[dId*threadId] = d;
-                    
+                    registerFile[dId*SIMULATED_THREADS] = d;
+                    printf("[Thread:%d] %llu Add %llu to give %llu \n",threadId, a, b, d);
                     ++pc;
                     break;
                 }
             case ir::Instruction::Bitcast:
                 {
-                    printf("Running bitcast instruction at PC %d\n", pc);
                     ir::Bitcast& bitcast = instruction.asBitcast;
                     
                     ir::RegisterType aId = bitcast.a.asRegister.reg;
                     ir::RegisterType dId = bitcast.d.asRegister.reg;
                     
-                    registerFile[dId*threadId] = registerFile[aId*threadId];
+                    registerFile[dId*SIMULATED_THREADS] = registerFile[aId*SIMULATED_THREADS];
                     ++pc;
+                    printf("[Thread:%d] %llu Bitcast %llu \n", threadId, registerFile[aId*SIMULATED_THREADS], registerFile[dId*SIMULATED_THREADS]);
                     break;
                 }
             case ir::Instruction::Ld:
                 {
-                    printf("Running ld instruction at PC %d\n", pc);
                     ir::Ld& load = instruction.asLd;
                     
                     ir::RegisterType dId = load.d.asRegister.reg;
                     ir::RegisterType aId = load.a.asIndirect.reg;
                     int offset = load.a.asIndirect.offset;
-                    uint64 vaddress = registerFile[aId*threadId];
+                    uint64 vaddress = registerFile[aId*SIMULATED_THREADS];
                     vaddress += offset;
                     uint64 base = (uint64)(size_t)state->globalMemoryWindow;
                     uint64 address = vaddress - state->globalMemoryWindowLow
@@ -529,7 +528,7 @@ __device__ void runSimulation(void* parameters)
                     
                     Register value = 0;
                     
-                    switch(load.a.asIndirect.type)
+                    switch(load.d.asRegister.type)
                     {
                         case ir::i1: /* fall through */
                         case ir::i8:
@@ -557,13 +556,13 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     
-                    registerFile[dId*threadId] = value;
+                    registerFile[dId*SIMULATED_THREADS] = value;
                     ++pc;
+                    printf("[Thread:%d] LD r[%d], r[%d] [value %lld, address %llx] \n", threadId, aId, dId, value, vaddress );
                     break;
                 }
             case ir::Instruction::Mul:
                 {
-                    printf("Running mul instruction at PC %d\n", pc);
                     ir::Mul& mul = instruction.asMul;
                     
                     ir::RegisterType dId = mul.d.asRegister.reg;
@@ -580,7 +579,8 @@ __device__ void runSimulation(void* parameters)
 
                         type = mul.a.asRegister.type;
                         
-                        a = registerFile[aId*threadId];
+                        a = registerFile[aId*SIMULATED_THREADS];
+                        printf("[Thread:%d] mul is as register mode, r[%d] = %llu\n", threadId, aId, a);
                     }
                     else
                     {
@@ -616,7 +616,8 @@ __device__ void runSimulation(void* parameters)
                     {
                         ir::RegisterType bId = mul.b.asRegister.reg;
                         
-                        b = registerFile[bId*threadId];
+                        b = registerFile[bId*SIMULATED_THREADS];
+                        printf("[Thread:%d] mul is as register mode, r[%d] = %llu\n",threadId, bId, b);
                     }
                     else
                     {
@@ -682,34 +683,33 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
 
-                    registerFile[dId*threadId] = d;
+                    registerFile[dId*SIMULATED_THREADS] = d;
+                    printf("[Thread:%d] %llu = %llu  Mul  %llu \n", threadId, d, a, b);
 
                     ++pc;
                     break;
                 }
             case ir::Instruction::Ret:
                 {
-                    printf("Running ret instruction at PC %d\n", pc);
                     running = false;
                     break;
                 }
             case ir::Instruction::St:
                 {
-                    printf("Running st instruction at PC %d\n", pc);
                     ir::St& store = instruction.asSt;
                     
                     ir::RegisterType aId = store.a.asRegister.reg;
                     ir::RegisterType dId = store.d.asIndirect.reg;
                     int offset = store.d.asIndirect.offset;
-                    uint64 vaddress = registerFile[dId*threadId];
+                    uint64 vaddress = registerFile[dId*SIMULATED_THREADS];
                     vaddress += offset;
                     uint64 base = (uint64)(size_t)state->globalMemoryWindow;
                     uint64 address = vaddress - state->globalMemoryWindowLow
                         + base;
                     
-                    Register value = registerFile[aId*threadId];
+                    Register value = registerFile[aId*SIMULATED_THREADS];
 
-                    switch(store.d.asIndirect.type)
+                    switch(store.a.asRegister.type)
                     {
                         case ir::i1: /* fall through */
                         case ir::i8:
@@ -737,17 +737,17 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     ++pc;
+                    printf("[Thread:%d] ST %llu address %llx \n", threadId, value, vaddress);
                     break;
                 }
             case ir::Instruction::Zext:
                 {
-                    printf("Running zext instruction at PC %d\n", pc);
                     ir::Zext& zext = instruction.asZext;
                     
                     ir::RegisterType dId = zext.d.asRegister.reg;
                     ir::RegisterType aId = zext.a.asRegister.reg;
                     
-                    Register a = registerFile[aId*threadId];
+                    Register a = registerFile[aId*SIMULATED_THREADS];
                     Register d = 0;
                     
                     switch(zext.a.asRegister.type)
@@ -778,13 +778,14 @@ __device__ void runSimulation(void* parameters)
                         default: break;
                     }
                     
-                    registerFile[dId*threadId] = d;
+                    registerFile[dId*SIMULATED_THREADS] = d;
+                    printf("[Thread:%d] %llu Zext %llu \n", threadId, a, d);
                     ++pc;
                     break;
                 }
             default:
                 {
-                    printf("Running unknown instruction at PC %d\n", pc);
+                    printf("[Thread:%d] Running unknown instruction at PC %d\n", threadId, pc);
                     ++pc;
                     break;
                 }
@@ -802,8 +803,7 @@ __device__ void memoryCompare(void* parameters)
     ir::Parameters* params = util::getParameter<ir::Parameters*>(parameters,
     	sizeof(SimulatorState*));
 	
-	int* y = (int*)((char*)state->globalMemoryWindow
-		+ params->parameterMemoryWindowBase);
+	int* y = (int*)((char*)state->globalMemoryWindow);
 	
 	bool passed = true;
 	

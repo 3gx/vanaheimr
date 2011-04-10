@@ -210,8 +210,22 @@ inline void teardownHostReflection()
 		
 		const char* payload = dataBase + payloadOffset;
 		
+		cudaEvent_t start;
+		cudaEvent_t finish;
+		
+		check(cudaEventCreate(&start));
+		check(cudaEventCreate(&finish));
+		
+		check(cudaEventRecord(start));
 		dispatch<<<ctas, threads, 0>>>(name, (void*)payload);
-		check(cudaThreadSynchronize());
+		check(cudaEventRecord(finish));
+		check(cudaEventSynchronize(finish));
+		
+		float ms = 0.0f;
+		check(cudaEventElapsedTime(&ms, start, finish));
+		float seconds = ms / 1000.0f;
+		
+		printf("Ran kernel %s in %f seconds.\n", name, seconds);
 	}
 	
 	check(cudaFreeHost(localhostBuffer));
