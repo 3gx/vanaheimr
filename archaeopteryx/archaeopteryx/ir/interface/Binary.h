@@ -15,6 +15,8 @@ class Binary
 public:
 	/*! \brief 32-bit unsigned int */
 	typedef unsigned int uint32;
+	/*! \brief 64-bit unsigned int */
+	typedef long long unsigned int uint64;
 	/*! \brief A 32-KB page */
 	typedef uint32[1 << 13] PageDataType;
 	
@@ -24,6 +26,12 @@ public:
 		VariableSymbolType = 0x1,
 		FunctionSymbolType = 0x2,
 		InvalidSymbolType  = 0x0
+	};
+
+	/*! \brief A symbol attribute */
+	enum SymbolAttribute
+	{
+		InvalidAttribute = 0x0	
 	};
 
 	/*! \brief A table mapping symbols to pages and offsets */
@@ -38,27 +46,34 @@ public:
 		uint32 pageId;
 		/*! \brief The offset within the page */
 		uint32 pageOffset;
+		/*! \brief The set of attributes */
+		uint64 attributes;
 	};
 
 public:
 	/*! \brief The number of pages in the data section */
 	unsigned int dataPages;
-	 	
+	
 	/*! \brief The list of data pages, lazily allocated */
 	PageDataType** dataSection;
-
+	
 	/*! \brief The number of pages in the code section */
 	unsigned int codePages;
 	
 	/*! \brief The list of instruction pages, lazily allocated */
 	PageDataType** codeSection;
-
+	
 	/*! \brief The number of symbol table entries */
 	unsigned int symbolTableEntries;
-
+	
 	/*! \brief The actual symbol table */
 	SymbolTableEntry* symbolTable;
-
+	
+	/*! \brief The string table */
+	const char** stringTable;
+	
+	/*! \brief The number of string table entries */
+	unsigned int stringTableEntries;
 };
 
 }
