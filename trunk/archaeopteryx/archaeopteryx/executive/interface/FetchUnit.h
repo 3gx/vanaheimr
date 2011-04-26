@@ -16,10 +16,7 @@ class FetchUnit
 public:
 	/*! \brief Create a new fetch unit */
 	__device__ FetchUnit(Binary* binary);
-
-public:
-	/*! \brief Set the cache size of the unit */
-	__device__ void 
+	__device__ InstructionContainer* getNextInstruction(PC);
 
 };
 
