@@ -10,6 +10,7 @@
 /*! \brief A namespace for program execution */
 namespace executive
 {
+
 class CoreSimKernel
 {
     private:

@@ -9,7 +9,7 @@
 namespace ir
 {
 
-/*! \brief A class representing a VIR binary */
+/*! \brief A class representing a VIR binary, lazy loading is handled here */
 class Binary
 {
 public:
@@ -17,6 +17,9 @@ public:
 	typedef unsigned int uint32;
 	/*! \brief 64-bit unsigned int */
 	typedef long long unsigned int uint64;
+	/*! \brief a 64-bit program counter */
+	typedef uint64 PC;
+
 	/*! \brief A 32-KB page */
 	typedef uint32[1 << 13] PageDataType;
 	
@@ -50,28 +53,61 @@ public:
 		uint64 attributes;
 	};
 
+	/*! \brief A string table iterator */
+	typedef const char** string_table_iterator;
+
+	/*! \brief A page iterator */
+	typedef PageDataType** page_iterator;
+
+public:
+	/*! \brief Construct a binary from an open file */
+	__device__ Binary(File* file);
+	/*! \brief Destroy the binary, free all memory */
+	__device__ ~Binary();
+
+	/*! \brief Get a particular code page */
+	__device__ PageDataType* getCodePage(page_iterator page);
+	/*! \brief Get a pointer to a particular data page */
+	__device__ PageDataType* getDataPage(page_iterator page);
+
+	/*! \brief Find a function by name */
+	__device__ void findFunction(page_iterator& page, unsigned int& offset,
+		const char* name);
+	/*! \brief Find a variable by name */
+	__device__ void findVariable(page_iterator& page, unsigned int& offset,
+		const char* name);
+
+public:
+	/*! \brief Get an iterator to the first code page */
+	__device__ page_iterator code_begin();
+	/*! \brief Get an iterator to one past the last code page */
+	__device__ page_iterator code_end();
+
+	/*! \brief Get an iterator to the first data page */
+	__device__ page_iterator data_begin();
+	/*! \brief Get an iterator to one past the last data page */
+	__device__ page_iterator data_end();
+
+public:
+	/*! \brief Copy code from a PC */
+	__device__ void copyCode(ir::InstructionContainer* code, PC pc,
+		unsigned int instructions);
+
 public:
 	/*! \brief The number of pages in the data section */
 	unsigned int dataPages;
-	
 	/*! \brief The list of data pages, lazily allocated */
 	PageDataType** dataSection;
-	
 	/*! \brief The number of pages in the code section */
 	unsigned int codePages;
-	
 	/*! \brief The list of instruction pages, lazily allocated */
 	PageDataType** codeSection;
-	
 	/*! \brief The number of symbol table entries */
 	unsigned int symbolTableEntries;
-	
 	/*! \brief The actual symbol table */
 	SymbolTableEntry* symbolTable;
-	
 	/*! \brief The string table */
 	const char** stringTable;
-	
 	/*! \brief The number of string table entries */
 	unsigned int stringTableEntries;
 };
