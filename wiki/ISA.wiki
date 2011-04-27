@@ -117,6 +117,10 @@ Ops:
  * Min  - atomic { d = [a]; [a] = min(b, c); }
  * Max  - atomic { d = [a]; [a] = max(b, c); }
 
+= Memory Model =
+
+The memory model of VIR is tightly coupled with the ISA to create an association between computation and data that can be reasoned about by a compiler or runtime system.  
+
 = Supported Extensions =
 
 == Intrinsics ==
