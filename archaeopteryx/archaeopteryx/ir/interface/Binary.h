@@ -114,3 +114,6 @@ public:
 
 }
 
+#include <archaeopteryx/ir/implementation/Binary.cpp>
+
+
