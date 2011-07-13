@@ -39,7 +39,6 @@ call - same as bra, but saves the return address in a specified register
 
 Data Manipulation:
 
-mov     - Move an immediate value into a register
 bitcast - Move one register into another of the same size, type is ignored
 fpext   - floating point conversion from f32 to f64
 fptosi  - floating point conversion to signed integer
