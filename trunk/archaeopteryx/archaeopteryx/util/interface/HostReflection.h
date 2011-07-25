@@ -45,7 +45,7 @@ public:
 	class Queue
 	{
 	public:
-		__device__ Queue(size_t size);
+		__device__ Queue(char* data, size_t size);
 		__device__ ~Queue();
 	
 	public:
@@ -99,15 +99,28 @@ private:
 	class BootUp
 	{
 	public:
+		typedef void (*MessageHandler)(const Message*);
+		typedef std::unordered_map<int, MessageHandler> HandlerMap;
+	
+	public:
 		__host__ BootUp();
 		__host__ ~BootUp();
+
+	public:
+		__host__ void addHandler(int handlerId, MessageHandler handler);
 
 	private:
 		boost::thread* _thread;
 		bool           _kill;
-		
+	
 	private:
-		static void _run(bool* kill);
+		HandlerMap _handlers;
+
+	private:
+		void _run();
+	
+	private:
+		static void _run(BootUp* kill);
 	};
 
 private:
