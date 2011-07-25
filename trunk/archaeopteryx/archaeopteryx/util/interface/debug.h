@@ -7,14 +7,15 @@
 #pragma once
 
 // Preprocessor macros
-#ifndef assert
-#define assert(x) _assert(x, "x", __FILE__, __LINE__)
+#ifdef assert
+#undef assert
 #endif
+#define assert(x) _assert(x, "x", __FILE__, __LINE__)
 
 namespace util
 {
 
-__host__ __device__ void _assert(bool condition, const char* expression,
+__device__ void _assert(bool condition, const char* expression,
 	const char* filename, int line);
 
 }

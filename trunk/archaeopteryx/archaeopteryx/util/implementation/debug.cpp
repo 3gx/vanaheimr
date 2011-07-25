@@ -13,7 +13,7 @@
 namespace util
 {
 
-__host__ __device__ void _assert(bool condition, const char* expression,
+__device__ void _assert(bool condition, const char* expression,
 	const char* filename, int line)
 {
 	if(!condition)

@@ -29,6 +29,12 @@ public:
 	/*! \brief Read data from the file at the current offset into a buffer */
 	__device__ void read(void* data, size_t size);
 
+	/*! \brief Try to write data into the file, return the bytes written */
+	__device__ size_t writeSome(const void* data, size_t size);
+
+	/*! \brief Try to read from the file, return the bytes read */
+	__device__ size_t readSome(void* data, size_t size);
+
 	/*! \brief Delete the file */
 	__device__ void remove();
 

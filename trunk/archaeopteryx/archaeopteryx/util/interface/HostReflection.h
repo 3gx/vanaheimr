@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Boost Includes
+#include <boost/thread.hpp>
+
 namespace util
 {
 
@@ -36,6 +39,9 @@ public:
 	__device__ static void receive(Message& m);
 
 public:
+	__host__ __device__ static size_t maxMessageSize();
+
+public:
 	class Queue
 	{
 	public:
@@ -43,12 +49,12 @@ public:
 		__device__ ~Queue();
 	
 	public:
-		__device__ bool push(const void* data, size_t size);
-		__device__ bool pull(void* data, size_t size);
+		__host__ __device__ bool push(const void* data, size_t size);
+		__host__ __device__ bool pull(void* data, size_t size);
 
 	public:
-		__device__ bool peek();
-		__device__ size_t size() const;
+		__host__ __device__ bool peek();
+		__host__ __device__ size_t size() const;
 	
 	private:
 		char*  _begin;
@@ -58,13 +64,13 @@ public:
 		size_t _mutex;
 		
 	private:
-		__device__ size_t _capacity() const;
-		__device__ size_t _used() const;
+		__host__ __device__ size_t _capacity() const;
+		__host__ __device__ size_t _used() const;
 		
 	private:
-		__device__ bool _lock();
-		__device__ void _unlock();
-		__device__ char* _read(void* data, size_t size);
+		__host__ __device__ bool _lock();
+		__host__ __device__ void _unlock();
+		__host__ __device__ char* _read(void* data, size_t size);
 
 	};
 
@@ -95,6 +101,13 @@ private:
 	public:
 		__host__ BootUp();
 		__host__ ~BootUp();
+
+	private:
+		boost::thread* _thread;
+		bool           _kill;
+		
+	private:
+		static void _run(bool* kill);
 	};
 
 private:
