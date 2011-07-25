@@ -19,7 +19,7 @@ __device__ void strlcpy(char* destination, const char* source, size_t max)
 		*destination = *source;
 		if( *source == '\0' ) return;
 	}
-	*dest = '\0';
+	*destination = '\0';
 }
 
 }

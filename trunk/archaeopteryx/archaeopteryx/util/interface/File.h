@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Archaeopteryx Includes
+#include <archaeopteryx/util/interface/HostReflection.h>
+
 namespace util
 {
 
@@ -24,7 +27,7 @@ public:
 	__device__ void write(const void* data, size_t size);
 
 	/*! \brief Read data from the file at the current offset into a buffer */
-	__device__ void read(void* data, size_t size) const;
+	__device__ void read(void* data, size_t size);
 
 	/*! \brief Delete the file */
 	__device__ void remove();
@@ -54,7 +57,7 @@ private:
 		__device__ ~OpenMessage();
 	
 	public:
-		__device__ virtual void* payload();
+		__device__ virtual void* payload() const;
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
@@ -73,7 +76,7 @@ private:
 		__device__ size_t size()   const;
 		
 	public:
-		__device__ virtual void* payload();
+		__device__ virtual void* payload() const;
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
@@ -89,14 +92,14 @@ private:
 		Payload _data;
 	};
 
-	class DeleteMessage
+	class DeleteMessage : public HostReflection::Message
 	{
 	public:
 		__device__ DeleteMessage(Handle handle);
 		__device__ ~DeleteMessage();
 
 	public:
-		__device__ virtual void* payload();
+		__device__ virtual void* payload() const;
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
@@ -104,14 +107,14 @@ private:
 		Handle _handle;
 	};
 	
-	class TeardownMessage
+	class TeardownMessage : public HostReflection::Message
 	{
 	public:
 		__device__ TeardownMessage(Handle handle);
 		__device__ ~TeardownMessage();
 
 	public:
-		__device__ virtual void* payload();
+		__device__ virtual void* payload() const;
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
@@ -119,7 +122,7 @@ private:
 		Handle _handle;
 	};
 	
-	class WriteMessage
+	class WriteMessage : public HostReflection::Message
 	{
 	public:
 		__device__ WriteMessage(const void* data, size_t size,
@@ -127,7 +130,7 @@ private:
 		__device__ ~WriteMessage();
 
 	public:
-		__device__ virtual void* payload();
+		__device__ virtual void* payload() const;
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
@@ -140,9 +143,12 @@ private:
 			size_t      pointer;
 			Handle      handle;
 		};
+		
+	private:
+		Payload _payload;
 	};
 	
-	class ReadMessage
+	class ReadMessage : public HostReflection::Message
 	{
 	public:
 		__device__ ReadMessage(void* data, size_t size,
@@ -150,7 +156,7 @@ private:
 		__device__ ~ReadMessage();
 
 	public:
-		__device__ virtual void* payload();
+		__device__ virtual void* payload() const;
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
@@ -169,7 +175,7 @@ private:
 	};
 	
 private:
-	Handle _file;
+	Handle _handle;
 	size_t _size;
 	size_t _put;
 	size_t _get;
