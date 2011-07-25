@@ -78,7 +78,7 @@ public:
 	/*! \brief The modifier on the predicate */
 	enum PredicateModifier
 	{
-		StraightPredicate,
+        StraightPredicate,
 		InversePredicate,
 		PredicateTrue,
 		PredicateFalse,

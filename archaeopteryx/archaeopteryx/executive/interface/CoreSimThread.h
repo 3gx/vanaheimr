@@ -12,11 +12,14 @@ namespace executive
 {
 class CoreSimThread
 {
-    private:
-        
     public:
-        __device__ CoreSimThread(binary*, threadid, regsused);
-        __device__ PC executeInstruction(instr*, PC);
+        typedef ir::Binary::PC PC;
+    public:
+        __device__ CoreSimThread(CoreSimBlock* parentBlock, unsigned threadId);
+        __device__ PC executeInstruction(ir::Instruction*, PC);
+    private:
+        CoreSimBlock* m_parentBlock;
+        unsigned m_tId;
 };
 
 }
