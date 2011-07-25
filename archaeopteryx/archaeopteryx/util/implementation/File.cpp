@@ -41,16 +41,34 @@ __device__ File::~File()
 
 __device__ void File::write(const void* data, size_t bytes)
 {
-	if(_put + bytes > size())
+	const char* pointer = reinterpret_cast<const char*>(data);
+
+	while(bytes > 0)
 	{
-		bytes = size() - _put;
+		size_t written = writeSome(pointer, bytes);
+		
+		pointer += written;
+		bytes   -= written;
 	}
+}
+
+__device__ size_t File::writeSome(const void* data, size_t bytes)
+{	
+	size_t attemptedSize =
+		min(bytes, max(1, HostReflection::maxMessageSize() / 10));
 	
-	WriteMessage message(data, bytes, _put, _handle);
+	WriteMessage message(data, attemptedSize, _put, _handle);
 	
 	HostReflection::sendSynchronous(message);
 	
-	_put += bytes;
+	_put += attemptedSize;
+	
+	if(_put > _size)
+	{
+		_size = _put;
+	}
+	
+	return attemptedSize;
 }
 
 __device__ void File::read(void* data, size_t bytes)
@@ -59,12 +77,35 @@ __device__ void File::read(void* data, size_t bytes)
 	{
 		bytes = size() - _get;
 	}
+
+	char* pointer = reinterpret_cast<char*>(data);
+
+	while(bytes > 0)
+	{
+		size_t bytesRead = readSome(data, bytes);
 	
-	ReadMessage message(data, bytes, _get, _handle);
+		pointer += bytesRead;
+		bytes   -= bytesRead;
+	}
+}
+
+__device__ size_t File::readSome(void* data, size_t bytes)
+{
+	if(_get + bytes > size())
+	{
+		bytes = size() - _get;
+	}
+
+	size_t attemptedSize =
+		min(bytes, max(1, HostReflection::maxMessageSize() / 10));
+	
+	ReadMessage message(data, attemptedSize, _get, _handle);
 	
 	HostReflection::sendSynchronous(message);
 	
-	_get += bytes;
+	_get += attemptedSize;
+	
+	return attemptedSize;
 }
 
 __device__ size_t File::size() const

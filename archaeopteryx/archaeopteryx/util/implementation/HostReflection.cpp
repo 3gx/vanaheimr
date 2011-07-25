@@ -69,6 +69,11 @@ __device__ void HostReflection::receive(Message& m)
 	delete[] buffer;
 }
 
+__host__ __device__ size_t HostReflection::maxMessageSize()
+{
+	return 64;
+}
+
 __device__ HostReflection::Queue::Queue(size_t size)
 : _begin(new char[size]), _mutex((size_t)-1)
 {
@@ -82,7 +87,7 @@ __device__ HostReflection::Queue::~Queue()
 	delete[] _begin;
 }
 
-__device__ bool HostReflection::Queue::push(
+__host__ __device__ bool HostReflection::Queue::push(
 	const void* data, size_t size)
 {
 	if(size > _capacity()) return false;
@@ -106,7 +111,7 @@ __device__ bool HostReflection::Queue::push(
 	return true;
 }
 
-__device__ bool HostReflection::Queue::pull(
+__host__ __device__ bool HostReflection::Queue::pull(
 	void* data, size_t size)
 {
 	assert(size <= _used());
@@ -120,7 +125,7 @@ __device__ bool HostReflection::Queue::pull(
 	return true;
 }
 
-__device__ bool HostReflection::Queue::peek()
+__host__ __device__ bool HostReflection::Queue::peek()
 {
 	if(!_lock()) return false;
 	
@@ -133,12 +138,12 @@ __device__ bool HostReflection::Queue::peek()
 	return header.threadId == threadId();
 }
 
-__device__ size_t HostReflection::Queue::size() const
+__host__ __device__ size_t HostReflection::Queue::size() const
 {
 	return _end - _begin;
 }
 
-__device__  size_t HostReflection::Queue::_capacity() const
+__host__ __device__  size_t HostReflection::Queue::_capacity() const
 {
 	size_t greaterOrEqual = _head - _tail;
 	size_t less           = (_tail - _begin) + (_end - _head);
@@ -148,12 +153,12 @@ __device__  size_t HostReflection::Queue::_capacity() const
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__device__  size_t HostReflection::Queue::_used() const
+__host__ __device__  size_t HostReflection::Queue::_used() const
 {
 	return size() - _capacity();
 }
 
-__device__ bool HostReflection::Queue::_lock()
+__host__ __device__ bool HostReflection::Queue::_lock()
 {
 	assert(_mutex != threadId());
 
@@ -162,14 +167,14 @@ __device__ bool HostReflection::Queue::_lock()
 	return result == threadId();
 }
 
-__device__ void HostReflection::Queue::_unlock()
+__host__ __device__ void HostReflection::Queue::_unlock()
 {
 	assert(_mutex == threadId());
 	
 	_mutex = (size_t)-1;
 }
 
-__device__ char* HostReflection::Queue::_read(
+__host__ __device__ char* HostReflection::Queue::_read(
 	void* data, size_t size)
 {
 	size_t remainder = _end - _tail;
@@ -188,13 +193,17 @@ __device__ char* HostReflection::Queue::_read(
 
 __global__ void _bootupHostReflection()
 {
-	_hostToDevice = new HostReflection::Queue(128);
-	_deviceToHost = new HostReflection::Queue(128);
+	_hostToDevice = new HostReflection::Queue(
+		HostReflection::maxMessageSize() * 2);
+	_deviceToHost = new HostReflection::Queue(
+		HostReflection::maxMessageSize() * 2);
 }
 
 __host__ HostReflection::BootUp::BootUp()
 {
-	_bootupHostReflection<<<1,1>>>();
+	_bootupHostReflection<<<1, 1>>>();
+	_kill   = false;
+	_thread = new boost::thread(_run, &_kill);
 }
 
 __global__ void _teardownHostReflection()
@@ -205,7 +214,21 @@ __global__ void _teardownHostReflection()
 
 __host__ HostReflection::BootUp::~BootUp()
 {
-	_teardownHostReflection<<<1,1>>>();
+	_kill = true;
+	_thread->join();
+	delete _thread;
+	_teardownHostReflection<<<1, 1>>>();
+}
+
+__host__ void HostReflection::BootUp::_run(bool* kill)
+{
+	while(!*kill)
+	{
+		if(!handleMessage())
+		{
+			boost::thread::yield();
+		}
+	}
 }
 
 HostReflection::BootUp HostReflection::_booter;
