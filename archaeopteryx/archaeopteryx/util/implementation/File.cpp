@@ -7,7 +7,7 @@
 #pragma once
 
 // Archaeoperyx Includes
-#include <archaeopteryx/util/interface/HostReflection.h>
+#include <archaeopteryx/util/interface/File.h>
 #include <archaeopteryx/util/interface/string.h>
 
 namespace util
@@ -31,7 +31,7 @@ __device__ File::File(const char* fileName)
 
 __device__ File::~File()
 {
-	if(_handle != -1)
+	if(_handle != (Handle)-1)
 	{
 		TeardownMessage teardown(_handle);
 	
@@ -39,32 +39,32 @@ __device__ File::~File()
 	}
 }
 
-__device__ void File::write(const void* data, size_t size)
+__device__ void File::write(const void* data, size_t bytes)
 {
-	if(_put + size > size())
+	if(_put + bytes > size())
 	{
-		size = size() - _put;
+		bytes = size() - _put;
 	}
 	
-	WriteMessage message(data, size, _put, _handle);
+	WriteMessage message(data, bytes, _put, _handle);
 	
 	HostReflection::sendSynchronous(message);
 	
-	_put += size;
+	_put += bytes;
 }
 
-__device__ void File::read(void* data, size_t size)
+__device__ void File::read(void* data, size_t bytes)
 {
-	if(_get + size > size())
+	if(_get + bytes > size())
 	{
-		size = size() - _get;
+		bytes = size() - _get;
 	}
 	
-	ReadMessage message(data, size, _get, _handle);
+	ReadMessage message(data, bytes, _get, _handle);
 	
 	HostReflection::sendSynchronous(message);
 	
-	_get += size;
+	_get += bytes;
 }
 
 __device__ size_t File::size() const
@@ -112,9 +112,9 @@ __device__ File::OpenMessage::~OpenMessage()
 
 }
 
-__device__ void* File::OpenMessage::payload()
+__device__ void* File::OpenMessage::payload() const
 {
-	return _filename;
+	return (void*)_filename;
 }
 
 __device__ size_t File::OpenMessage::payloadSize() const
@@ -142,14 +142,14 @@ __device__ File::Handle File::OpenReply::handle() const
 	return _data.handle;
 }
 
-__device__ size_t File::OpenReply::size()   const
+__device__ size_t File::OpenReply::size() const
 {
 	return _data.size;
 }
 
-__device__ void* File::OpenReply::payload()
+__device__ void* File::OpenReply::payload() const
 {
-	return &_data;
+	return (void*)&_data;
 }
 
 __device__ size_t File::OpenReply::payloadSize() const
@@ -159,7 +159,7 @@ __device__ size_t File::OpenReply::payloadSize() const
 
 __device__ HostReflection::HandlerId File::OpenReply::handler() const
 {
-	return HostReflection::InvalidHandler;
+	return (size_t)HostReflection::InvalidMessageHandler;
 }
 
 __device__ File::TeardownMessage::TeardownMessage(Handle h)
@@ -173,9 +173,9 @@ __device__ File::TeardownMessage::~TeardownMessage()
 	
 }
 
-__device__ void* File::TeardownMessage::payload()
+__device__ void* File::TeardownMessage::payload() const
 {
-	return &_handle;
+	return (void*)&_handle;
 }
 
 __device__ size_t File::TeardownMessage::payloadSize() const
@@ -202,9 +202,9 @@ __device__ File::WriteMessage::~WriteMessage()
 
 }
 
-__device__ void* File::WriteMessage::payload()
+__device__ void* File::WriteMessage::payload() const
 {
-	return &_payload;
+	return (void*)&_payload;
 }
 
 __device__ size_t File::WriteMessage::payloadSize() const
@@ -231,9 +231,9 @@ __device__ File::ReadMessage::~ReadMessage()
 
 }
 
-__device__ void* File::ReadMessage::payload()
+__device__ void* File::ReadMessage::payload() const
 {
-	return &_payload;
+	return (void*)&_payload;
 }
 
 __device__ size_t File::ReadMessage::payloadSize() const

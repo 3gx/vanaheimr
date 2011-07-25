@@ -9,6 +9,10 @@
 #include <archaeopteryx/util/interface/File.h>
 #include <archaeopteryx/util/interface/HostReflection.h>
 
+// Standard Library Includes
+#include <string>
+#include <iostream>
+
 namespace test
 {
 
@@ -53,7 +57,7 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 int main(int argc, char** argv)
 {
-	if(testReadWriteFile("Archaeopteryx_Test_File", 1 << 20))
+	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1 << 20))
 	{
 		std::cout << "Pass/Fail: Pass\n";
 	}
