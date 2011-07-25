@@ -220,15 +220,39 @@ __host__ HostReflection::BootUp::~BootUp()
 	_teardownHostReflection<<<1, 1>>>();
 }
 
-__host__ void HostReflection::BootUp::_run(bool* kill)
+__host__ bool HostReflection::BootUp::_handleMessage()
 {
-	while(!*kill)
+	if(!_deviceToHost->hostAny())
 	{
-		if(!handleMessage())
+		return false;
+	}
+	
+	HostReflection::Header* header = _deviceToHost->hostMessage();
+	
+	HandlerMap::iterator handler = _handlers.find(header->handlerId());
+	assert(handler != _handlers.end());
+	
+	handler->second(header);
+	
+	_deviceToHost->pop();
+	
+	return true;
+}
+
+__host__ void HostReflection::BootUp::_run()
+{
+	while(!*_kill)
+	{
+		if(!_handleMessage())
 		{
 			boost::thread::yield();
 		}
 	}
+}
+
+__host__ void HostReflection::BootUp::_run(BootUp* booter)
+{
+	booter->_run();
 }
 
 HostReflection::BootUp HostReflection::_booter;
