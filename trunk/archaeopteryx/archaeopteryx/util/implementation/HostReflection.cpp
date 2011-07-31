@@ -14,6 +14,7 @@
 
 // Standard Library Includes
 #include <cstring>
+#include <cassert>
 
 namespace util
 {
@@ -21,6 +22,9 @@ namespace util
 // TODO Remove these when __device__ can be embedded in a clas
 __device__ HostReflection::Queue* _hostToDevice;
 __device__ HostReflection::Queue* _deviceToHost;
+
+char* _hostToDeviceMemory;
+char* _deviceToHostMemory;
 
 __device__ void HostReflection::sendSynchronous(const Message& m)
 {
@@ -69,13 +73,13 @@ __device__ void HostReflection::receive(Message& m)
 	delete[] buffer;
 }
 
-__host__ __device__ size_t HostReflection::maxMessageSize()
+__device__ size_t HostReflection::maxMessageSize()
 {
 	return 64;
 }
 
-__device__ HostReflection::Queue::Queue(size_t size)
-: _begin(new char[size]), _mutex((size_t)-1)
+__device__ HostReflection::Queue::Queue(char* data, size_t size)
+: _begin(data), _mutex((size_t)-1)
 {
 	_end  = _begin + size;
 	_head = _begin;
@@ -87,7 +91,7 @@ __device__ HostReflection::Queue::~Queue()
 	delete[] _begin;
 }
 
-__host__ __device__ bool HostReflection::Queue::push(
+__device__ bool HostReflection::Queue::push(
 	const void* data, size_t size)
 {
 	if(size > _capacity()) return false;
@@ -111,10 +115,10 @@ __host__ __device__ bool HostReflection::Queue::push(
 	return true;
 }
 
-__host__ __device__ bool HostReflection::Queue::pull(
+__device__ bool HostReflection::Queue::pull(
 	void* data, size_t size)
 {
-	assert(size <= _used());
+	device_assert(size <= _used());
 
 	if(!_lock()) return false;
 	
@@ -125,7 +129,7 @@ __host__ __device__ bool HostReflection::Queue::pull(
 	return true;
 }
 
-__host__ __device__ bool HostReflection::Queue::peek()
+__device__ bool HostReflection::Queue::peek()
 {
 	if(!_lock()) return false;
 	
@@ -138,12 +142,12 @@ __host__ __device__ bool HostReflection::Queue::peek()
 	return header.threadId == threadId();
 }
 
-__host__ __device__ size_t HostReflection::Queue::size() const
+__device__ size_t HostReflection::Queue::size() const
 {
 	return _end - _begin;
 }
 
-__host__ __device__  size_t HostReflection::Queue::_capacity() const
+__device__  size_t HostReflection::Queue::_capacity() const
 {
 	size_t greaterOrEqual = _head - _tail;
 	size_t less           = (_tail - _begin) + (_end - _head);
@@ -153,28 +157,28 @@ __host__ __device__  size_t HostReflection::Queue::_capacity() const
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__host__ __device__  size_t HostReflection::Queue::_used() const
+__device__  size_t HostReflection::Queue::_used() const
 {
 	return size() - _capacity();
 }
 
-__host__ __device__ bool HostReflection::Queue::_lock()
+__device__ bool HostReflection::Queue::_lock()
 {
-	assert(_mutex != threadId());
+	device_assert(_mutex != threadId());
 
 	size_t result = atomicCAS(&_mutex, (size_t)-1, threadId());
 	
 	return result == threadId();
 }
 
-__host__ __device__ void HostReflection::Queue::_unlock()
+__device__ void HostReflection::Queue::_unlock()
 {
-	assert(_mutex == threadId());
+	device_assert(_mutex == threadId());
 	
 	_mutex = (size_t)-1;
 }
 
-__host__ __device__ char* HostReflection::Queue::_read(
+__device__ char* HostReflection::Queue::_read(
 	void* data, size_t size)
 {
 	size_t remainder = _end - _tail;
@@ -191,19 +195,37 @@ __host__ __device__ char* HostReflection::Queue::_read(
 	return secondCopyNecessary ? _begin + secondCopy : _tail + firstCopy;
 }
 
-__global__ void _bootupHostReflection()
+__global__ void _bootupHostReflection(char* hostToDeviceMemory,
+	char* deviceToHostMemory)
 {
-	_hostToDevice = new HostReflection::Queue(
-		HostReflection::maxMessageSize() * 2);
-	_deviceToHost = new HostReflection::Queue(
-		HostReflection::maxMessageSize() * 2);
+	size_t size = HostReflection::maxMessageSize() * 2;
+
+	_hostToDevice = new HostReflection::Queue(hostToDeviceMemory, size);
+	_deviceToHost = new HostReflection::Queue(deviceToHostMemory, size);
 }
 
 __host__ HostReflection::BootUp::BootUp()
 {
-	_bootupHostReflection<<<1, 1>>>();
+	size_t size = HostReflection::maxMessageSize() * 2;
+
+	_hostToDeviceMemory = new char[size];
+	_deviceToHostMemory = new char[size];
+
+	cudaHostRegister(_hostToDeviceMemory, size, 0);
+	cudaHostRegister(_deviceToHostMemory, size, 0);
+
+	char* hostToDeviceMemoryPointer = 0;
+	char* deviceToHostMemoryPointer = 0;
+	
+	cudaHostGetDevicePointer(&hostToDeviceMemoryPointer,
+		_hostToDeviceMemory, 0);
+	cudaHostGetDevicePointer(&deviceToHostMemoryPointer,
+		_deviceToHostMemory, 0);
+
+	_bootupHostReflection<<<1, 1>>>(hostToDeviceMemoryPointer,
+		deviceToHostMemoryPointer);
 	_kill   = false;
-	_thread = new boost::thread(_run, &_kill);
+	_thread = new boost::thread(_runThread, this);
 }
 
 __global__ void _teardownHostReflection()
@@ -227,21 +249,23 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 		return false;
 	}
 	
-	HostReflection::Header* header = _deviceToHost->hostMessage();
+	HostReflection::Header* header = _deviceToHost->hostHeader();
 	
-	HandlerMap::iterator handler = _handlers.find(header->handlerId());
+	HandlerMap::iterator handler = _handlers.find(header->handler);
 	assert(handler != _handlers.end());
 	
-	handler->second(header);
+	HostReflection::Message* message = _deviceToHost->hostMessage();
 	
-	_deviceToHost->pop();
+	handler->second(message);
+	
+	_deviceToHost->hostPop();
 	
 	return true;
 }
 
 __host__ void HostReflection::BootUp::_run()
 {
-	while(!*_kill)
+	while(!_kill)
 	{
 		if(!_handleMessage())
 		{
@@ -250,7 +274,7 @@ __host__ void HostReflection::BootUp::_run()
 	}
 }
 
-__host__ void HostReflection::BootUp::_run(BootUp* booter)
+__host__ void HostReflection::BootUp::_runThread(BootUp* booter)
 {
 	booter->_run();
 }

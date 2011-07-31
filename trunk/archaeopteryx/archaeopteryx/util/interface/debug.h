@@ -7,10 +7,10 @@
 #pragma once
 
 // Preprocessor macros
-#ifdef assert
-#undef assert
+#ifdef device_assert
+#undef device_assert
 #endif
-#define assert(x) _assert(x, "x", __FILE__, __LINE__)
+#define device_assert(x) _assert(x, "x", __FILE__, __LINE__)
 
 namespace util
 {
