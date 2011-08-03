@@ -20,11 +20,11 @@ namespace util
 {
 
 // TODO Remove these when __device__ can be embedded in a clas
-__device__ HostReflection::Queue* _hostToDevice;
-__device__ HostReflection::Queue* _deviceToHost;
+__device__ HostReflection::DeviceQueue* _hostToDevice;
+__device__ HostReflection::DeviceQueue* _deviceToHost;
 
-char* _hostToDeviceMemory;
-char* _deviceToHostMemory;
+// device/host shared memory region
+static char* _deviceHostSharedMemory = 0;
 
 __device__ void HostReflection::sendSynchronous(const Message& m)
 {
@@ -38,6 +38,7 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 	
 	header->type     = Synchronous;
 	header->threadId = threadId();
+	header->size     = bytes;
 	header->handler  = m.handler();
 	
 	bool* flag = new bool;
@@ -78,58 +79,147 @@ __device__ size_t HostReflection::maxMessageSize()
 	return 64;
 }
 
-__device__ HostReflection::Queue::Queue(char* data, size_t size)
-: _begin(data), _mutex((size_t)-1)
+__host__ HostReflection::HostQueue::HostQueue(QueueMetaData* m)
+: _metadata(m)
 {
-	_end  = _begin + size;
-	_head = _begin;
-	_tail = _begin;
+	
 }
 
-__device__ HostReflection::Queue::~Queue()
+__host__ HostReflection::HostQueue::~HostQueue()
 {
-	delete[] _begin;
+
 }
 
-__device__ bool HostReflection::Queue::push(
-	const void* data, size_t size)
+__host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
 {
 	if(size > _capacity()) return false;
 
-	if(!_lock()) return false;	
+	size_t end  = _metadata->size;
+	size_t head = _metadata->head;
 
-	size_t remainder = _end - _head;
+	size_t remainder = end - head;
 	size_t firstCopy = min(remainder, size);
 
-	std::memcpy(_head, data, firstCopy);
+	std::memcpy(_metadata->hostBegin + head, data, firstCopy);
 
 	bool secondCopyNecessary = firstCopy != size;
 
 	size_t secondCopy = secondCopyNecessary ? size - firstCopy : 0;
 	
-	std::memcpy(_begin, (char*)data + firstCopy, secondCopy);
-	_head = secondCopyNecessary ? _begin + secondCopy : _head + firstCopy;
+	std::memcpy(_metadata->hostBegin, (char*)data + firstCopy, secondCopy);
+	_metadata->head = secondCopyNecessary ? secondCopy : head + firstCopy;
+	
+	return true;
+}
+
+__host__ bool HostReflection::HostQueue::pull(void* data, size_t size)
+{
+	if(size < _used()) return false;
+
+	_metadata->tail = _read(data, size);
+
+	return true;
+}
+
+__host__ bool HostReflection::HostQueue::peek()
+{
+	return _used() >= sizeof(Header);
+}
+
+__host__ size_t HostReflection::HostQueue::size() const
+{
+	return _metadata->size;
+}
+
+__host__ size_t HostReflection::HostQueue::_capacity() const
+{
+	size_t end  = _metadata->size;
+	size_t head = _metadata->head;
+	size_t tail = _metadata->tail;
+	
+	size_t greaterOrEqual = head - tail;
+	size_t less           = (tail) + (end - head);
+	
+	bool isGreaterOrEqual = head >= tail;
+	
+	return (isGreaterOrEqual) ? greaterOrEqual : less;
+}
+
+__host__ size_t HostReflection::HostQueue::_used() const
+{
+	return size() - _capacity();
+}
+
+__host__ size_t HostReflection::HostQueue::_read(void* data, size_t size)
+{
+	size_t end  = _metadata->size;
+	size_t tail = _metadata->tail;
+
+	size_t remainder = end - tail;
+	size_t firstCopy = min(remainder, size);
+
+	std::memcpy(data, _metadata->hostBegin + tail, firstCopy);
+
+	bool secondCopyNecessary = firstCopy != size;
+
+	size_t secondCopy = secondCopyNecessary ? size - firstCopy : 0;
+	
+	std::memcpy((char*)data + firstCopy, _metadata->hostBegin, secondCopy);
+	
+	return secondCopyNecessary ? secondCopy : tail + firstCopy;
+}
+
+__device__ HostReflection::DeviceQueue::DeviceQueue(QueueMetaData* m)
+: _metadata(m)
+{
+
+}
+
+__device__ HostReflection::DeviceQueue::~DeviceQueue()
+{
+
+}
+
+__device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
+{
+	if(size > _capacity()) return false;
+
+	if(!_lock()) return false;	
+
+	size_t end  = _metadata->size;
+	size_t head = _metadata->head;
+
+	size_t remainder = end - head;
+	size_t firstCopy = min(remainder, size);
+
+	std::memcpy(_metadata->deviceBegin + head, data, firstCopy);
+
+	bool secondCopyNecessary = firstCopy != size;
+
+	size_t secondCopy = secondCopyNecessary ? size - firstCopy : 0;
+	
+	std::memcpy(_metadata->deviceBegin, (char*)data + firstCopy, secondCopy);
+	_metadata->head = secondCopyNecessary ? secondCopy : head + firstCopy;
 
 	_unlock();
 	
 	return true;
 }
 
-__device__ bool HostReflection::Queue::pull(
-	void* data, size_t size)
+__device__ bool HostReflection::DeviceQueue::pull(void* data, size_t size)
 {
 	device_assert(size <= _used());
 
 	if(!_lock()) return false;
 	
-	_tail = _read(data, size);
+	_metadata->tail = _read(data, size);
 
 	_unlock();
 	
 	return true;
 }
 
-__device__ bool HostReflection::Queue::peek()
+__device__ bool HostReflection::DeviceQueue::peek()
 {
 	if(!_lock()) return false;
 	
@@ -142,88 +232,132 @@ __device__ bool HostReflection::Queue::peek()
 	return header.threadId == threadId();
 }
 
-__device__ size_t HostReflection::Queue::size() const
+__device__ size_t HostReflection::DeviceQueue::size() const
 {
-	return _end - _begin;
+	return _metadata->size;
 }
 
-__device__  size_t HostReflection::Queue::_capacity() const
+__device__  size_t HostReflection::DeviceQueue::_capacity() const
 {
-	size_t greaterOrEqual = _head - _tail;
-	size_t less           = (_tail - _begin) + (_end - _head);
+	size_t end  = _metadata->size;
+	size_t head = _metadata->head;
+	size_t tail = _metadata->tail;
 	
-	bool isGreaterOrEqual = _head >= _tail;
+	size_t greaterOrEqual = head - tail;
+	size_t less           = (tail) + (end - head);
+	
+	bool isGreaterOrEqual = head >= tail;
 	
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__device__  size_t HostReflection::Queue::_used() const
+__device__  size_t HostReflection::DeviceQueue::_used() const
 {
 	return size() - _capacity();
 }
 
-__device__ bool HostReflection::Queue::_lock()
+__device__ bool HostReflection::DeviceQueue::_lock()
 {
-	device_assert(_mutex != threadId());
+	device_assert(_metadata->mutex != threadId());
 
-	size_t result = atomicCAS(&_mutex, (size_t)-1, threadId());
+	size_t result = atomicCAS(&_metadata->mutex, (size_t)-1, threadId());
 	
 	return result == threadId();
 }
 
-__device__ void HostReflection::Queue::_unlock()
+__device__ void HostReflection::DeviceQueue::_unlock()
 {
-	device_assert(_mutex == threadId());
+	device_assert(_metadata->mutex == threadId());
 	
-	_mutex = (size_t)-1;
+	_metadata->mutex = (size_t)-1;
 }
 
-__device__ char* HostReflection::Queue::_read(
+__device__ size_t HostReflection::DeviceQueue::_read(
 	void* data, size_t size)
 {
-	size_t remainder = _end - _tail;
+	size_t end  = _metadata->size;
+	size_t tail = _metadata->tail;
+
+	size_t remainder = end - tail;
 	size_t firstCopy = min(remainder, size);
 
-	std::memcpy(data, _tail, firstCopy);
+	std::memcpy(data, _metadata->deviceBegin + tail, firstCopy);
 
 	bool secondCopyNecessary = firstCopy != size;
 
 	size_t secondCopy = secondCopyNecessary ? size - firstCopy : 0;
 	
-	std::memcpy((char*)data + firstCopy, _begin, secondCopy);
+	std::memcpy((char*)data + firstCopy, _metadata->deviceBegin, secondCopy);
 	
-	return secondCopyNecessary ? _begin + secondCopy : _tail + firstCopy;
+	return secondCopyNecessary ? secondCopy : tail + firstCopy;
 }
 
-__global__ void _bootupHostReflection(char* hostToDeviceMemory,
-	char* deviceToHostMemory)
+__global__ void _bootupHostReflection(
+	HostReflection::QueueMetaData* hostToDeviceMetadata,
+	HostReflection::QueueMetaData* deviceToHostMetadata)
 {
-	size_t size = HostReflection::maxMessageSize() * 2;
-
-	_hostToDevice = new HostReflection::Queue(hostToDeviceMemory, size);
-	_deviceToHost = new HostReflection::Queue(deviceToHostMemory, size);
+	_hostToDevice = new HostReflection::DeviceQueue(hostToDeviceMetadata);
+	_deviceToHost = new HostReflection::DeviceQueue(deviceToHostMetadata);
 }
 
 __host__ HostReflection::BootUp::BootUp()
 {
-	size_t size = HostReflection::maxMessageSize() * 2;
+	// allocate memory for the queue
+	size_t queueDataSize = HostReflection::maxMessageSize() * 2;
+	size_t size = 2 * (queueDataSize + sizeof(QueueMetaData));
 
-	_hostToDeviceMemory = new char[size];
-	_deviceToHostMemory = new char[size];
+	_deviceHostSharedMemory = new char[size];
 
-	cudaHostRegister(_hostToDeviceMemory, size, 0);
-	cudaHostRegister(_deviceToHostMemory, size, 0);
+	// setup the queue meta data
+	QueueMetaData* hostToDeviceMetaData =
+		(QueueMetaData*)_deviceHostSharedMemory;
+	QueueMetaData* deviceToHostMetaData =
+		(QueueMetaData*)_deviceHostSharedMemory + 1;
 
-	char* hostToDeviceMemoryPointer = 0;
-	char* deviceToHostMemoryPointer = 0;
+	char* hostToDeviceData = _deviceHostSharedMemory +
+		2 * sizeof(QueueMetaData);
+	char* deviceToHostData = _deviceHostSharedMemory +
+		2 * sizeof(QueueMetaData) + queueDataSize;
+
+	hostToDeviceMetaData->hostBegin = hostToDeviceData;
+	hostToDeviceMetaData->size      = queueDataSize;
+	hostToDeviceMetaData->head      = 0;
+	hostToDeviceMetaData->tail      = 0;
+	hostToDeviceMetaData->mutex     = (size_t)-1;
+
+	deviceToHostMetaData->hostBegin = deviceToHostData;
+	deviceToHostMetaData->size      = queueDataSize;
+	deviceToHostMetaData->head      = 0;
+	deviceToHostMetaData->tail      = 0;
+	deviceToHostMetaData->mutex     = (size_t)-1;
+
+	// Allocate the queues
+	_hostToDeviceQueue = new HostQueue(hostToDeviceMetaData);
+	_deviceToHostQueue = new HostQueue(deviceToHostMetaData);
+
+	// Map the memory onto the device
+	cudaHostRegister(_deviceHostSharedMemory, size, 0);
+
+	char* devicePointer = 0;
 	
-	cudaHostGetDevicePointer(&hostToDeviceMemoryPointer,
-		_hostToDeviceMemory, 0);
-	cudaHostGetDevicePointer(&deviceToHostMemoryPointer,
-		_deviceToHostMemory, 0);
+	cudaHostGetDevicePointer(&devicePointer,
+		_deviceHostSharedMemory, 0);
 
-	_bootupHostReflection<<<1, 1>>>(hostToDeviceMemoryPointer,
-		deviceToHostMemoryPointer);
+	// Send the metadata to the device
+	QueueMetaData* hostToDeviceMetaDataPointer =
+		(QueueMetaData*)devicePointer;
+	QueueMetaData* deviceToHostMetaDataPointer =
+		(QueueMetaData*)devicePointer + 1;
+
+	hostToDeviceMetaData->deviceBegin = devicePointer +
+		2 * sizeof(QueueMetaData);
+	deviceToHostMetaData->deviceBegin = devicePointer +
+		2 * sizeof(QueueMetaData) + queueDataSize;
+
+	_bootupHostReflection<<<1, 1>>>(hostToDeviceMetaDataPointer,
+		deviceToHostMetaDataPointer);
+
+	// start up the host worker thread
 	_kill   = false;
 	_thread = new boost::thread(_runThread, this);
 }
@@ -236,29 +370,43 @@ __global__ void _teardownHostReflection()
 
 __host__ HostReflection::BootUp::~BootUp()
 {
+	// kill the thread
 	_kill = true;
 	_thread->join();
 	delete _thread;
+	
+	// destroy the device queues
 	_teardownHostReflection<<<1, 1>>>();
+	
+	// destroy the host queues
+	delete _hostToDeviceQueue;
+	delete _deviceToHostQueue;
+	
+	// delete the queue memory
+	delete[] _deviceHostSharedMemory;
 }
 
 __host__ bool HostReflection::BootUp::_handleMessage()
 {
-	if(!_deviceToHost->hostAny())
+	if(!_deviceToHostQueue->peek())
 	{
 		return false;
 	}
 	
-	HostReflection::Header* header = _deviceToHost->hostHeader();
+	Header header;
 	
-	HandlerMap::iterator handler = _handlers.find(header->handler);
+	_deviceToHostQueue->pull(&header, sizeof(Header));
+	
+	HandlerMap::iterator handler = _handlers.find(header.handler);
 	assert(handler != _handlers.end());
 	
-	HostReflection::Message* message = _deviceToHost->hostMessage();
+	Message* message = reinterpret_cast<Message*>(new char[header.size]);
+	
+	_deviceToHostQueue->pull(message, header.size);
 	
 	handler->second(message);
 	
-	_deviceToHost->hostPop();
+	delete[] reinterpret_cast<char*>(message);
 	
 	return true;
 }

@@ -57,6 +57,7 @@ public:
 	public:
 		MessageType  type;
 		unsigned int threadId;
+		unsigned int size;
 		HandlerId    handler;
 	};
 	
@@ -66,17 +67,52 @@ public:
 		void* address;
 	};
 
-	class Queue
+	class QueueMetaData
 	{
 	public:
-		__device__ Queue(char* data, size_t size);
-		__device__ ~Queue();
-	
+		char*  hostBegin;
+		char*  deviceBegin;
+
+		size_t size;
+		size_t head;
+		size_t tail;
+		size_t mutex;
+	};
+
+	class HostQueue
+	{
 	public:
-		__host__ bool hostAny() const;
-		__host__ Header*  hostHeader();
-		__host__ Message* hostMessage();
-		__host__ void hostPop();
+		__host__ HostQueue(QueueMetaData* metadata);
+		__host__ ~HostQueue();
+
+	public:	
+		__host__ Message* message();
+		__host__ Header*  header();
+
+	public:
+		__host__ bool push(const void* data, size_t size);
+		__host__ bool pull(void* data, size_t size);
+
+	public:
+		__host__ bool peek();
+		__host__ size_t size() const;
+
+	private:
+		QueueMetaData* _metadata;
+
+	private:
+		__host__ size_t _capacity() const;
+		__host__ size_t _used() const;
+
+	private:
+		__host__ size_t _read(void* data, size_t size);
+	};
+
+	class DeviceQueue
+	{
+	public:
+		__device__ DeviceQueue(QueueMetaData* metadata);
+		__device__ ~DeviceQueue();
 
 	public:
 		__device__ bool push(const void* data, size_t size);
@@ -87,11 +123,7 @@ public:
 		__device__ size_t size() const;
 	
 	private:
-		char*  _begin;
-		char*  _end;
-		char*  _head;
-		char*  _tail;
-		size_t _mutex;
+		QueueMetaData* _metadata;
 		
 	private:
 		__device__ size_t _capacity() const;
@@ -100,8 +132,7 @@ public:
 	private:
 		__device__ bool _lock();
 		__device__ void _unlock();
-		__device__ char* _read(void* data, size_t size);
-
+		__device__ size_t _read(void* data, size_t size);
 	};
 
 private:
@@ -120,6 +151,8 @@ private:
 		
 	private:
 		boost::thread* _thread;
+		HostQueue*     _hostToDeviceQueue;
+		HostQueue*     _deviceToHostQueue;
 		bool           _kill;
 	
 	private:
