@@ -6,6 +6,11 @@
 
 #pragma once
 
+// Forward Declarations
+namespace util { class File; }
+namespace ir   { union InstructionContainer; }
+
+
 namespace ir
 {
 
@@ -19,9 +24,11 @@ public:
 	typedef long long unsigned int uint64;
 	/*! \brief a 64-bit program counter */
 	typedef uint64 PC;
+	/*! \brief a file handle */
+	typedef util::File File;
 
 	/*! \brief A 32-KB page */
-	typedef uint32[1 << 13] PageDataType;
+	typedef uint32 PageDataType[1 << 13];
 	
 	/*! \brief A symbol type */
 	enum SymbolType

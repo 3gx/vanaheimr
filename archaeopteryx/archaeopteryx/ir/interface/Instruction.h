@@ -269,7 +269,7 @@ class Sext : public UnaryInstruction
 };
 
 /*! \brief Perform signed division */
-class Sdiv : public UnaryInstruction
+class Sdiv : public BinaryInstruction
 {
 
 };

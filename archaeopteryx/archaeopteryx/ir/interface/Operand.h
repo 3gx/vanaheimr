@@ -111,6 +111,7 @@ union OperandContainer
 	ImmediateOperand asImmediate;
 	PredicateOperand asPredicate;
 	IndirectOperand  asIndirect;
+	Operand          asOperand;
 };
 
 }
