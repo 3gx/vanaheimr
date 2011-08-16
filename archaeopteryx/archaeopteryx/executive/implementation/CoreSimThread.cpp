@@ -541,9 +541,9 @@ static __device__ JumpTablePointer decodeTable[] =
 
 __device__ ir::Binary::PC CoreSimThread::executeInstruction(ir::Instruction* instruction, ir::Binary::PC pc)
 {
-    JumpTablePointer decodedInstruction = decodeTable[instruction->opcode];
+    JumpTablePointer decoderFunction = decodeTable[instruction->opcode];
 
-    return decodedInstruction(instruction, pc, m_parentBlock, m_tId);
+    return decoderFunction(instruction, pc, m_parentBlock, m_tId);
 }
 
 }
