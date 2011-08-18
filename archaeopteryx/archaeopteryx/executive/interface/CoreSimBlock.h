@@ -6,6 +6,8 @@
 */
 
 #pragma once
+#define WARP_SIZE     32
+#define LOG_WARP_SIZE 5
 
 //Forward declarations
 namespace executive { class BlockState; }
@@ -23,6 +25,10 @@ class CoreSimBlock
         BlockState* m_blockState;
         SharedMemory* m_sharedMemory;
         LocalMemory* m_localMemory;
+        typedef CoreSimThread* Warp;
+	Warp m_warp;
+        bool m_predicateMask[WARP_SIZE]; 
+	unsigned int m_threadIdInWarp;
 
     public:
         //public members
