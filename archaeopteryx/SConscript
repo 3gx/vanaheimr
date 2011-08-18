@@ -35,22 +35,13 @@ for dir in directories:
 		regexp = os.path.join(dir, ext)
 		sources.extend(env.Glob(regexp))
 
-# Create programs
-
-OcelotConfig = env.Program('OcelotConfig', \
-	['ocelot/tools/OcelotConfig.cpp'], LIBS=ocelot_libs, \
-	CXXFLAGS = env['OCELOT_CONFIG_FLAGS'])
-env.Depends(OcelotConfig, libocelot)
-
-Default(OcelotConfig)
-
 # Create the ocelot unit tests
 tests = []
 tests.append(('TestFileAccesses',
 	'archaeopteryx/util/test/TestFileAccess.cu', 'basic'))
 
 for test in tests:
-	env.CudaProgram(test[0], [test[1]])
+	env.Program(test[0], [test[1]])
 
 if env['test_level'] != 'none':
 	print 'Adding unit tests to the build...'

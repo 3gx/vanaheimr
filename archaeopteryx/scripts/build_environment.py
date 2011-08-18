@@ -38,118 +38,6 @@ def getCudaPaths():
 		inc_path = os.path.abspath(os.environ['CUDA_INC_PATH'])
 
 	return (bin_path,lib_path,inc_path)
-
-def getBoostPaths():
-	"""Determines BOOST {bin,lib,include} paths
-	
-	returns (bin_path,lib_path,inc_path)
-	"""
-
-	# determine defaults
-	if os.name == 'posix':
-		bin_path = '/usr/bin'
-		lib_path = '/usr/lib'
-		inc_path = '/usr/include'
-	else:
-		raise ValueError, 'Error: unknown OS.  Where is boost installed?'
-
-	# override with environement variables
-	if 'BOOST_BIN_PATH' in os.environ:
-		bin_path = os.path.abspath(os.environ['BOOST_BIN_PATH'])
-	if 'BOOST_LIB_PATH' in os.environ:
-		lib_path = os.path.abspath(os.environ['BOOST_LIB_PATH'])
-	if 'BOOST_INC_PATH' in os.environ:
-		inc_path = os.path.abspath(os.environ['BOOST_INC_PATH'])
-
-	return (bin_path,lib_path,inc_path)
-
-def getFlexPaths(env):
-	"""Determines Flex {include} paths
-
-	returns (inc_path)
-	"""
-
-	# determine defaults
-	if os.name == 'posix':
-		inc_path = '/usr/include'
-	elif os.name == 'nt':
-		inc_path = 'C:\MinGW\1.0'
-	else:
-		raise ValueError, 'Error: unknown OS.  Where is GLEW installed?'
-
-	# override with environement variables
-	if 'FLEX_INC_PATH' in os.environ:
-		inc_path = os.path.abspath(os.environ['GLEW_INC_PATH'])
-
-	return (inc_path)
-
-def getGLEWPaths(env):
-	"""Determines GLEW {bin,lib,include} paths and is it installed?
-
-	returns (have_glew,bin_path,lib_path,inc_path)
-	"""
-
-	configure = Configure(env)
-	glew = configure.CheckLib('GLEW')		
-	
-	if not glew:
-		return (glew, '', '', '')
-
-	# determine defaults
-	if os.name == 'posix':
-		bin_path = '/usr/bin'
-		lib_path = '/usr/lib'
-		inc_path = '/usr/include'
-	else:
-		raise ValueError, 'Error: unknown OS.  Where is GLEW installed?'
-
-	# override with environement variables
-	if 'GLEW_BIN_PATH' in os.environ:
-		bin_path = os.path.abspath(os.environ['GLEW_BIN_PATH'])
-	if 'GLEW_LIB_PATH' in os.environ:
-		lib_path = os.path.abspath(os.environ['GLEW_LIB_PATH'])
-	if 'GLEW_INC_PATH' in os.environ:
-		inc_path = os.path.abspath(os.environ['GLEW_INC_PATH'])
-
-	return (glew,bin_path,lib_path,inc_path)
-
-def getLLVMPaths(enabled):
-	"""Determines LLVM {have,bin,lib,include,cflags,lflags,libs} paths
-	
-	returns (have,bin_path,lib_path,inc_path,cflags,lflags,libs)
-	"""
-	
-	if not enabled:
-		return (False, [], [], [], [], [], [])
-	
-	try:
-		llvm_config_path = which('llvm-config')
-	except:
-		print 'Failed to find llvm-config'
-		return (False, [], [], [], [], [], [])
-	
-	# determine defaults
-	if os.name == 'posix':
-		bin_path = os.popen('llvm-config --bindir').read().split()
-		lib_path = os.popen('llvm-config --libdir').read().split()
-		inc_path = os.popen('llvm-config --includedir').read().split()
-		cflags   = os.popen('llvm-config --cppflags').read().split()
-		lflags   = os.popen('llvm-config --ldflags').read().split()
-		libs     = os.popen('llvm-config --libs core jit native \
-			asmparser instcombine').read().split()
-	else:
-		raise ValueError, 'Error: unknown OS.  Where is LLVM installed?'
-	
-	# remove -DNDEBUG
-	if '-DNDEBUG' in cflags:
-		cflags.remove('-DNDEBUG')
-
-	# remove lib_path from libs
-	for lib in libs:
-		if lib[0:2] == "-L":
-			libs.remove(lib)
-
-	return (True,bin_path,lib_path,inc_path,cflags,lflags,libs)
 	
 def getTools():
 	result = []
@@ -226,11 +114,22 @@ def getCXXFLAGS(mode, warn, warnings_as_errors, CXX):
 
 	return result
 
+def getNVCCFLAGS(mode, arch):
+  result = ['-arch=' + arch]
+  if mode == 'debug':
+    # turn on debug mode
+    # XXX make this work when we've debugged nvcc -G
+    #result.append('-G')
+    pass
+  return result
+
 def getLINKFLAGS(mode, LINK):
 	result = []
 	if mode == 'debug':
 		# turn on debug mode
 		result.append(gLinkerOptions[LINK]['debug'])
+
+	result.append(os.popen('OcelotConfig -l').read().split())
 
 	return result
 
@@ -263,6 +162,11 @@ def Environment():
 
 	# add a variable to treat warnings as errors
 	vars.Add(BoolVariable('Werror', 'Treat warnings as errors', 1))
+
+	# add a variable to handle compute capability
+	vars.Add(EnumVariable('arch', 'Compute capability code generation', 'sm_23',
+		allowed_values = ('sm_10', 'sm_11', 'sm_12', 'sm_13', 'sm_20', 'sm_21',
+		'sm_22', 'sm_23')))
 	
 	# add a variable to compile the unit tests
 	vars.Add(EnumVariable('test_level',
@@ -282,13 +186,17 @@ def Environment():
 	thisFile = inspect.getabsfile(Environment)
 	thisDir = os.path.dirname(thisFile)
 
+	env.Prepend(CPPPATH = os.path.dirname(thisDir))
+
+	# enable nvcc
+	env.Tool('nvcc', toolpath = [os.path.join(thisDir)])
+
 	# get C compiler switches
 	env.AppendUnique(CFLAGS = getCFLAGS(env['mode'], env['Wall'],
 		env['Werror'], env.subst('$CC')))
 
 	# get NVCC compiler switches
-	env.Append(NVCCFLAGS = getNVCCFLAGS(env['mode'],
-		env['backend'], env['arch']))
+	env.Append(NVCCFLAGS = getNVCCFLAGS(env['mode'], env['arch']))
 
 	# get CXX compiler switches
 	env.AppendUnique(CXXFLAGS = getCXXFLAGS(env['mode'], env['Wall'],

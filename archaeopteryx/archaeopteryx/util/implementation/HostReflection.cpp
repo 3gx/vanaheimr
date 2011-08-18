@@ -79,6 +79,17 @@ __device__ size_t HostReflection::maxMessageSize()
 	return 64;
 }
 
+__host__ void HostReflection::create()
+{
+	assert(_booter == 0);
+	_booter = new BootUp;
+}
+
+__host__ void HostReflection::destroy()
+{
+	delete _booter;
+}
+
 __host__ HostReflection::HostQueue::HostQueue(QueueMetaData* m)
 : _metadata(m)
 {
@@ -427,7 +438,7 @@ __host__ void HostReflection::BootUp::_runThread(BootUp* booter)
 	booter->_run();
 }
 
-HostReflection::BootUp HostReflection::_booter;
+HostReflection::BootUp* HostReflection::_booter = 0;
 
 }
 
