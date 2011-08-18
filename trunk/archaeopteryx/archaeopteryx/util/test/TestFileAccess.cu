@@ -57,6 +57,8 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 int main(int argc, char** argv)
 {
+	util::HostReflection::create();
+
 	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1 << 20))
 	{
 		std::cout << "Pass/Fail: Pass\n";
@@ -65,6 +67,8 @@ int main(int argc, char** argv)
 	{
 		std::cout << "Pass/Fail: Fail\n";
 	}
+
+	util::HostReflection::destroy();
 }
 
 

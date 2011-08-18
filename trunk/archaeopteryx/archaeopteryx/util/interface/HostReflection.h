@@ -45,6 +45,10 @@ public:
 	__host__ __device__ static size_t maxMessageSize();
 
 public:
+	__host__ static void create();
+	__host__ static void destroy();
+
+public:
 	enum MessageType
 	{
 		Synchronous,
@@ -167,7 +171,7 @@ private:
 	};
 
 private:
-	static BootUp _booter;
+	static BootUp* _booter;
 
 };
 
