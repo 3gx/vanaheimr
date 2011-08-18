@@ -25,6 +25,11 @@ class CoreSimThread
     public:
         __device__ CoreSimThread(CoreSimBlock* parentBlock, unsigned threadId);
         __device__ PC executeInstruction(ir::Instruction*, PC);
+    
+    public:
+        PC   pc;
+	bool finished;
+
     private:
         CoreSimBlock* m_parentBlock;
         unsigned m_tId;
