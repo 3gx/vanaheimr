@@ -25,6 +25,7 @@ class CoreSimBlock
         BlockState* m_blockState;
         SharedMemory* m_sharedMemory;
         LocalMemory* m_localMemory;
+        CoreSimThread* m_threads;
         typedef CoreSimThread* Warp;
 	Warp m_warp;
         bool m_predicateMask[WARP_SIZE]; 

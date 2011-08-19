@@ -34,7 +34,7 @@ __device__ bool areAllThreadsFinished()
     {
         if(m_threadIdInWarp % i == 0)
         {
-            finished &= tempFinished[m_threadIdInWarp + i/2];
+            finished = finished & tempFinished[m_threadIdInWarp + i/2];
         }
         // barrier
         
@@ -69,7 +69,24 @@ __device__ void roundRobinScheduler()
 
 __device__ findNextPC()
 {
-    //TO DO - decide how to handle branches?
+    __shared__ unsigned int priority[WARP_SIZE];
+    unsigned int localThreadPriority = m_warp[m_threadIdInWarp].instructionPriority;
+    for (unsigned int i = 2; i < WARP_SIZE; i*=2)
+    {
+        if (m_threadIdInWarp % i == 0)
+        {
+            localThreadPriority = max(localThreadPriority, priority[m_threadInWarp + i/2]);
+        }
+        //barrier
+        if (m_threadIdInWarp % i == 0)
+        {
+            priority[m_threadInWarp] = localThreadPriority;
+        }
+        //barrier
+    }
+
+    unsigned int maxPriority = priority[0];
+    return maxPriority;
 }
 
 __device__ bool setPredicateMaskForWarp(PC pc)
@@ -78,9 +95,16 @@ __device__ bool setPredicateMaskForWarp(PC pc)
     return pc == m_warp[m_threadIdInWarp].pc;
 }
 
-__device__ fetchInstruction()
+__device__ InstructionContainer fetchInstruction(PC pc)
 {
-
+    __shared__ InstructionContainer instruction;
+    
+    if (m_threadIdInWarp == 0)
+    {
+        copyCode(&instruction, pc, 1);
+    }
+    // barrier
+    return instruction;
 }
 
 __device__ executeWarp(InstructionContainer* instruction, PC pc)
@@ -90,7 +114,7 @@ __device__ executeWarp(InstructionContainer* instruction, PC pc)
     //some function for all threads if predicateMask is true
     if(predicateMask)
     {
-        m_warp[m_threadIdInWarp]->executeInstruction(instruction, pc);
+        m_warp.pc = m_warp[m_threadIdInWarp]->executeInstruction(instruction, pc);
     }
 }
 
@@ -108,7 +132,7 @@ __device__ executeWarp(InstructionContainer* instruction, PC pc)
     {
         roundRobinScheduler();
         PC nextPC = findNextPC();
-        InstructionContainer* instruction = fetchInstruction(nextPC);
+        InstructionContainer instruction = fetchInstruction(nextPC);
         executeWarp(instruction, nextPC);
     }
 }

@@ -29,6 +29,7 @@ class CoreSimThread
     public:
         PC   pc;
 	bool finished;
+        unsigned int instructionPriority;
 
     private:
         CoreSimBlock* m_parentBlock;
