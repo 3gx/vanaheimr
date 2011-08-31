@@ -6,11 +6,29 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <iostream>
+
 // Preprocessor macros
 #ifdef device_assert
 #undef device_assert
 #endif
 #define device_assert(x) _assert(x, "x", __FILE__, __LINE__)
+
+#ifndef NDEBUG
+	#define report(y) \
+		if(REPORT_BASE > 0)\
+		{ \
+			{\
+			std::cout << __FILE__ << ":"  << __LINE__  \
+					<< ": " << y << "\n";\
+			}\
+		 \
+		}
+#else
+	#define report(y)
+#endif
+
 
 namespace util
 {

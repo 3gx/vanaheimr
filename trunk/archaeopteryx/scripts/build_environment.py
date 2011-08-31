@@ -38,6 +38,30 @@ def getCudaPaths():
 		inc_path = os.path.abspath(os.environ['CUDA_INC_PATH'])
 
 	return (bin_path,lib_path,inc_path)
+
+def getBoostPaths():
+	"""Determines BOOST {bin,lib,include} paths
+	
+	returns (bin_path,lib_path,inc_path)
+	"""
+
+	# determine defaults
+	if os.name == 'posix':
+		bin_path = '/usr/bin'
+		lib_path = '/usr/lib'
+		inc_path = '/usr/include'
+	else:
+		raise ValueError, 'Error: unknown OS.  Where is boost installed?'
+
+	# override with environement variables
+	if 'BOOST_BIN_PATH' in os.environ:
+		bin_path = os.path.abspath(os.environ['BOOST_BIN_PATH'])
+	if 'BOOST_LIB_PATH' in os.environ:
+		lib_path = os.path.abspath(os.environ['BOOST_LIB_PATH'])
+	if 'BOOST_INC_PATH' in os.environ:
+		inc_path = os.path.abspath(os.environ['BOOST_INC_PATH'])
+
+	return (bin_path,lib_path,inc_path)
 	
 def getTools():
 	result = []
@@ -129,8 +153,12 @@ def getLINKFLAGS(mode, LINK):
 		# turn on debug mode
 		result.append(gLinkerOptions[LINK]['debug'])
 
-	result.append(os.popen('OcelotConfig -l').read().split())
+	result.append('-L' + getBoostPaths()[1])
 
+	return result
+
+def getLIBS():
+	result = ['-lboost_thread-mt', '-locelot']
 	return result
 
 def importEnvironment():
@@ -204,6 +232,9 @@ def Environment():
 
 	# get linker switches
 	env.AppendUnique(LINKFLAGS = getLINKFLAGS(env['mode'], env.subst('$LINK')))
+
+	# set extra libraries
+	env.AppendUnique(EXTRA_LIBS=getLIBS())
 
 	# generate help text
 	Help(vars.GenerateHelpText(env))

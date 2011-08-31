@@ -30,13 +30,15 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 	char* deviceFilename = 0;
 	cudaMallocHost(&deviceFilename, filename.size() + 1);
 
+	strcpy(deviceFilename, filename.c_str());
+
 	unsigned int* deviceData = 0;
 	cudaMallocHost(&deviceData, size);
 
 	unsigned int* deviceResult = 0;
 	cudaMallocHost(&deviceResult, size);
 
-	for(unsigned int i = 0; i < size; ++i)
+	for(unsigned int i = 0; i < size/sizeof(unsigned int); ++i)
 	{
 		deviceData[i] = std::rand();
 	}
@@ -59,7 +61,7 @@ int main(int argc, char** argv)
 {
 	util::HostReflection::create();
 
-	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1 << 20))
+	if(test::testReadWriteFile("Archaeopteryx_Test_File", 10))
 	{
 		std::cout << "Pass/Fail: Pass\n";
 	}

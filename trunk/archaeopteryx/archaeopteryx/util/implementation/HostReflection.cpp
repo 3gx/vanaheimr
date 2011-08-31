@@ -16,6 +16,13 @@
 #include <cstring>
 #include <cassert>
 
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace util
 {
 
@@ -125,6 +132,10 @@ __host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
 
 __host__ bool HostReflection::HostQueue::pull(void* data, size_t size)
 {
+	report("   pulling " << size << " bytes from host queue (" << _used()
+		<< " used, " << _capacity() << " remaining, " << this->size()
+		<< " size)");
+
 	if(size < _used()) return false;
 
 	_metadata->tail = _read(data, size);
@@ -142,7 +153,7 @@ __host__ size_t HostReflection::HostQueue::size() const
 	return _metadata->size;
 }
 
-__host__ size_t HostReflection::HostQueue::_capacity() const
+__host__ size_t HostReflection::HostQueue::_used() const
 {
 	size_t end  = _metadata->size;
 	size_t head = _metadata->head;
@@ -156,9 +167,9 @@ __host__ size_t HostReflection::HostQueue::_capacity() const
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__host__ size_t HostReflection::HostQueue::_used() const
+__host__ size_t HostReflection::HostQueue::_capacity() const
 {
-	return size() - _capacity();
+	return size() - _used();
 }
 
 __host__ size_t HostReflection::HostQueue::_read(void* data, size_t size)
@@ -248,7 +259,7 @@ __device__ size_t HostReflection::DeviceQueue::size() const
 	return _metadata->size;
 }
 
-__device__  size_t HostReflection::DeviceQueue::_capacity() const
+__device__  size_t HostReflection::DeviceQueue::_used() const
 {
 	size_t end  = _metadata->size;
 	size_t head = _metadata->head;
@@ -262,9 +273,9 @@ __device__  size_t HostReflection::DeviceQueue::_capacity() const
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__device__  size_t HostReflection::DeviceQueue::_used() const
+__device__  size_t HostReflection::DeviceQueue::_capacity() const
 {
-	return size() - _capacity();
+	return size() - _used();
 }
 
 __device__ bool HostReflection::DeviceQueue::_lock()
@@ -313,6 +324,8 @@ __global__ void _bootupHostReflection(
 
 __host__ HostReflection::BootUp::BootUp()
 {
+	report("Booting up host reflection...");
+
 	// allocate memory for the queue
 	size_t queueDataSize = HostReflection::maxMessageSize() * 2;
 	size_t size = 2 * (queueDataSize + sizeof(QueueMetaData));
@@ -381,6 +394,7 @@ __global__ void _teardownHostReflection()
 
 __host__ HostReflection::BootUp::~BootUp()
 {
+	report("Destroying host reflection");
 	// kill the thread
 	_kill = true;
 	_thread->join();
@@ -404,6 +418,8 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 		return false;
 	}
 	
+	report("  found message in gpu->cpu queue, pulling it...");
+	
 	Header header;
 	
 	_deviceToHostQueue->pull(&header, sizeof(Header));
@@ -424,6 +440,8 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 
 __host__ void HostReflection::BootUp::_run()
 {
+	report(" Host reflection worker thread started.");
+
 	while(!_kill)
 	{
 		if(!_handleMessage())
