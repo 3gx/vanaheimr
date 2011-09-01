@@ -101,22 +101,22 @@ __host__ void HostReflection::destroy()
 	delete _booter;
 }
 
-__host__ void HostReflection::handleOpenFile(const Message*)
+__host__ void HostReflection::handleOpenFile(const Header*)
 {
 
 }
 
-__host__ void HostReflection::handleTeardownFile(const Message*)
+__host__ void HostReflection::handleTeardownFile(const Header*)
 {
 
 }
 
-__host__ void HostReflection::handleFileWrite(const Message*)
+__host__ void HostReflection::handleFileWrite(const Header*)
 {
 
 }
 
-__host__ void HostReflection::handleFileRead(const Message*)
+__host__ void HostReflection::handleFileRead(const Header*)
 {
 
 }
@@ -481,9 +481,22 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 	HandlerMap::iterator handler = _handlers.find(header.handler);
 	assert(handler != _handlers.end());
 	
-	Message* message = reinterpret_cast<Message*>(new char[header.size]);
+	if(header.type == Synchronous)
+	{
+		void* address = 0;
+		_deviceToHostQueue->pull(&address, sizeof(void*));
 	
-	_deviceToHostQueue->pull(message, header.size);
+		report("   synchronous ack to address: " << address);
+		cudaMemset(address, true, sizeof(bool));
+	}
+	
+	unsigned int size = header.size + sizeof(Header);
+	
+	Header* message = reinterpret_cast<Header*>(new char[size]);
+	
+	std::memcpy(message, &header, sizeof(Header));
+
+	_deviceToHostQueue->pull(message + sizeof(Header), header.size);
 	
 	handler->second(message);
 	

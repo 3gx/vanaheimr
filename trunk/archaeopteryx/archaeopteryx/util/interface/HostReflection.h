@@ -36,32 +36,7 @@ public:
 		FileReadMessageHandler,
 		InvalidMessageHandler = -1
 	};
-		
-public:
-	__device__ static void sendSynchronous(const Message& m);
-	__device__ static void receive(Message& m);
 
-public:
-	__host__ __device__ static size_t maxMessageSize();
-
-public:
-	__host__ static void create();
-	__host__ static void destroy();
-
-public:
-	/*! \brief Handle an open message on the host */
-	__host__ static void handleOpenFile(const Message*);
-	
-	/*! \brief Handle a teardown message on the host */
-	__host__ static void handleTeardownFile(const Message*);
-	
-	/*! \brief Handle a file write message on the host */
-	__host__ static void handleFileWrite(const Message*);
-	
-	/*! \brief Handle a file read message on the host */
-	__host__ static void handleFileRead(const Message*);
-
-public:
 	enum MessageType
 	{
 		Synchronous,
@@ -83,7 +58,32 @@ public:
 	public:
 		void* address;
 	};
+		
+public:
+	__device__ static void sendSynchronous(const Message& m);
+	__device__ static void receive(Message& m);
 
+public:
+	__host__ __device__ static size_t maxMessageSize();
+
+public:
+	__host__ static void create();
+	__host__ static void destroy();
+
+public:
+	/*! \brief Handle an open message on the host */
+	__host__ static void handleOpenFile(const Header*);
+	
+	/*! \brief Handle a teardown message on the host */
+	__host__ static void handleTeardownFile(const Header*);
+	
+	/*! \brief Handle a file write message on the host */
+	__host__ static void handleFileWrite(const Header*);
+	
+	/*! \brief Handle a file read message on the host */
+	__host__ static void handleFileRead(const Header*);
+
+public:
 	class QueueMetaData
 	{
 	public:
@@ -156,7 +156,7 @@ private:
 	class BootUp
 	{
 	public:
-		typedef void (*MessageHandler)(const Message*);
+		typedef void (*MessageHandler)(const Header*);
 		typedef std::map<int, MessageHandler> HandlerMap;
 	
 	public:
