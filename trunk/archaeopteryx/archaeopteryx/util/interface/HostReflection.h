@@ -49,6 +49,19 @@ public:
 	__host__ static void destroy();
 
 public:
+	/*! \brief Handle an open message on the host */
+	__host__ static void handleOpenFile(const Message*);
+	
+	/*! \brief Handle a teardown message on the host */
+	__host__ static void handleTeardownFile(const Message*);
+	
+	/*! \brief Handle a file write message on the host */
+	__host__ static void handleFileWrite(const Message*);
+	
+	/*! \brief Handle a file read message on the host */
+	__host__ static void handleFileRead(const Message*);
+
+public:
 	enum MessageType
 	{
 		Synchronous,
@@ -165,6 +178,7 @@ private:
 	private:
 		__host__ void _run();
 		__host__ bool _handleMessage();
+		__host__ void _addMessageHandlers();
 	
 	private:
 		static void _runThread(BootUp* kill);

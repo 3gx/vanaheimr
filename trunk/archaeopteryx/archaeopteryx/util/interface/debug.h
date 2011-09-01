@@ -13,7 +13,7 @@
 #ifdef device_assert
 #undef device_assert
 #endif
-#define device_assert(x) _assert(x, "x", __FILE__, __LINE__)
+#define device_assert(x) _assert(x, #x, __FILE__, __LINE__)
 
 #ifndef NDEBUG
 	#define report(y) \
