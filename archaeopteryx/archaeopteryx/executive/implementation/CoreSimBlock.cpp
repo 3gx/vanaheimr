@@ -67,7 +67,7 @@ __device__ void roundRobinScheduler()
     //barrier
 }
 
-__device__ findNextPC()
+__device__ unsigned int findNextPC()
 {
     __shared__ unsigned int priority[WARP_SIZE];
     unsigned int localThreadPriority = m_warp[m_threadIdInWarp].instructionPriority;
@@ -107,7 +107,7 @@ __device__ InstructionContainer fetchInstruction(PC pc)
     return instruction;
 }
 
-__device__ executeWarp(InstructionContainer* instruction, PC pc)
+__device__ void executeWarp(InstructionContainer* instruction, PC pc)
 {
     bool predicateMask = setPredicateMaskForWarp(pc);    
     
@@ -136,5 +136,40 @@ __device__ executeWarp(InstructionContainer* instruction, PC pc)
         executeWarp(instruction, nextPC);
     }
 }
+
+//All the callback interfaces to CoreSimBlock
+__device__ CoreSimThread* getCoreSimThread(unsigned int Id)
+{
+    
+}
+
+__device__ unsigned int getSimulatedThreadCount()
+{
+    return m_blockState->threadsPerBlock;
+}
+
+CoreSimThread::Value getRegister(unsigned int threadId, unsigned int reg)
+{
+    return m_registerFiles[(m_blockState->registersPerThread * threadId)+reg];
+}
+
+void setRegister(unsigned int reg, unsigned int threadId, const CoreSimThread::Value& result)
+{
+    m_registerFiles[(m_blockState->registersPerThread*thread)+reg] = result;
+}
+
+CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value)
+{
+}
+
+
+void barrier(unsigned int)
+{
+}
+
+unsigned int returned(unsigned int, unsigned int)
+{
+}
+
 
 }
