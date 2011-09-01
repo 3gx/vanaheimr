@@ -179,7 +179,7 @@ private:
 	private:
 		Payload _payload;
 	};
-	
+
 private:
 	Handle _handle;
 	size_t _size;
