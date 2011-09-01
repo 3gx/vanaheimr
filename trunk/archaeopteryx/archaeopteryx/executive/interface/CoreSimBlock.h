@@ -31,6 +31,14 @@ class CoreSimBlock
         bool m_predicateMask[WARP_SIZE]; 
 	unsigned int m_threadIdInWarp;
 
+    private:
+        __device__ bool areAllThreadsFinished();
+        __device__ void roundRobinScheduler();
+        __device__ unsigned int findNextPC();
+        __device__ bool setPredicateMaskForWarp(PC pc);
+        __device__ InstructionContainer fetchInstruction(PC pc);
+        __device__ void executeWarp(InstructionContainer* instruction, PC pc);
+
     public:
         //public members
         class BlockState
@@ -63,8 +71,8 @@ class CoreSimBlock
     
     public:
     	// Interfaces to CoreSimThread
-        __device__ CoreSimThread* getCoreSimThread(unsigned int id);
-        __device__ unsigned int getSimulatedThreadCount();
+       // __device__ CoreSimThread* getCoreSimThread(unsigned int id);
+       // __device__ unsigned int getSimulatedThreadCount();
         __device__ CoreSimThread::Value getRegister(unsigned int, unsigned int);
         __device__ void setRegister(unsigned int, unsigned int, const CoreSimThread::Value&);
         __device__ CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value);
