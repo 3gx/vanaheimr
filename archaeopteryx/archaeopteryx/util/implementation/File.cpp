@@ -10,11 +10,16 @@
 #include <archaeopteryx/util/interface/File.h>
 #include <archaeopteryx/util/interface/string.h>
 
+// Standard Library Includes
+#include <cstdio>
+
 namespace util
 {
 
 __device__ File::File(const char* fileName)
 {
+	std::printf("Opening file '%s' on the gpu", fileName);
+
 	OpenMessage open(fileName);
 	
 	HostReflection::sendSynchronous(open);
@@ -27,6 +32,8 @@ __device__ File::File(const char* fileName)
 	_size   = reply.size();
 	_put    = 0;
 	_get    = 0;
+
+	std::printf(" file opened");
 }
 
 __device__ File::~File()

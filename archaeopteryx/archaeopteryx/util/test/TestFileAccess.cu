@@ -27,30 +27,36 @@ __global__ void kernelTestReadWriteFile(const char* filename,
 
 bool testReadWriteFile(const std::string& filename, unsigned int size)
 {
+	char* hostFilename = 0;
 	char* deviceFilename = 0;
-	cudaMallocHost(&deviceFilename, filename.size() + 1);
+	cudaHostAlloc(&hostFilename, filename.size() + 1, cudaHostAllocMapped);
+	cudaHostGetDevicePointer(&deviceFilename, hostFilename, 0);
 
-	strcpy(deviceFilename, filename.c_str());
+	strcpy(hostFilename, filename.c_str());
 
+	unsigned int* hostData = 0;
 	unsigned int* deviceData = 0;
-	cudaMallocHost(&deviceData, size);
+	cudaHostAlloc(&hostData, size, cudaHostAllocMapped);
+	cudaHostGetDevicePointer(&deviceData, hostData, 0);
 
+	unsigned int* hostResult = 0;
 	unsigned int* deviceResult = 0;
-	cudaMallocHost(&deviceResult, size);
+	cudaHostAlloc(&hostResult, size, cudaHostAllocMapped);
+	cudaHostGetDevicePointer(&deviceData, hostData, 0);
 
 	for(unsigned int i = 0; i < size/sizeof(unsigned int); ++i)
 	{
-		deviceData[i] = std::rand();
+		hostData[i] = std::rand();
 	}
-
+	
 	kernelTestReadWriteFile<<<1, 1>>>(deviceFilename, deviceResult,
 		deviceData, size);
 	
-	bool pass = std::memcmp(deviceData, deviceResult, size) == 0;
+	bool pass = std::memcmp(hostData, hostResult, size) == 0;
 	
-	cudaFreeHost(deviceFilename);
-	cudaFreeHost(deviceData);
-	cudaFreeHost(deviceResult);
+	cudaFreeHost(hostFilename);
+	cudaFreeHost(hostData);
+	cudaFreeHost(hostResult);
 	
 	return pass;
 }
