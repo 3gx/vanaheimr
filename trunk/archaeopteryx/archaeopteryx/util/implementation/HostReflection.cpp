@@ -35,9 +35,9 @@ static char* _deviceHostSharedMemory = 0;
 
 __device__ void HostReflection::sendSynchronous(const Message& m)
 {
-	unsigned int bytes = m.payloadSize();
+	unsigned int bytes = m.payloadSize() + sizeof(SynchronousHeader);
 
-	char* buffer = new char[bytes + sizeof(SynchronousHeader)];
+	char* buffer = new char[bytes];
 	
 	SynchronousHeader* header = reinterpret_cast<SynchronousHeader*>(buffer);
 	
@@ -55,8 +55,8 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 		m.payloadSize());
 	 
 	printf(" sending synchronous gpu->host message "
-		"(%d type, %d id, %d size, %d handler)\n", Synchronous, threadId(),
-		bytes, m.handler());
+		"(%d type, %d id, %d size, %d handler, %x flag)\n", Synchronous,	
+		threadId(), bytes, m.handler(), header->address);
 	
 	while(!_deviceToHost->push(buffer, bytes));
 
@@ -73,6 +73,8 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 __device__ void HostReflection::receive(Message& m)
 {
 	while(!_hostToDevice->peek());
+
+	std::printf(" receiving cpu->gpu message.");
 
 	size_t bytes = m.payloadSize() + sizeof(Header);
 
@@ -103,21 +105,24 @@ __host__ void HostReflection::destroy()
 
 __host__ void HostReflection::handleOpenFile(const Header*)
 {
-
+	report("    handling open file message");
 }
 
 __host__ void HostReflection::handleTeardownFile(const Header*)
 {
+	report("    handling teardown file message");
 
 }
 
 __host__ void HostReflection::handleFileWrite(const Header*)
 {
+	report("    handling file write message");
 
 }
 
 __host__ void HostReflection::handleFileRead(const Header*)
 {
+	report("    handling file read message");
 
 }
 
@@ -156,11 +161,11 @@ __host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
 
 __host__ bool HostReflection::HostQueue::pull(void* data, size_t size)
 {
+	if(size > _used()) return false;
+
 	report("   pulling " << size << " bytes from host queue (" << _used()
 		<< " used, " << _capacity() << " remaining, " << this->size()
 		<< " size)");
-
-	if(size > _used()) return false;
 
 	_metadata->tail = _read(data, size);
 
@@ -274,6 +279,8 @@ __device__ bool HostReflection::DeviceQueue::pull(void* data, size_t size)
 
 __device__ bool HostReflection::DeviceQueue::peek()
 {
+	if(_used() >= sizeof(Header)) return false;
+
 	if(!_lock()) return false;
 	
 	Header header;
@@ -488,16 +495,18 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 	
 		report("   synchronous ack to address: " << address);
 		cudaMemset(address, true, sizeof(bool));
+		header.size -= sizeof(void*);
 	}
-	
+
 	unsigned int size = header.size + sizeof(Header);
 	
 	Header* message = reinterpret_cast<Header*>(new char[size]);
 	
 	std::memcpy(message, &header, sizeof(Header));
 
-	_deviceToHostQueue->pull(message + sizeof(Header), header.size);
+	_deviceToHostQueue->pull(message + 1, header.size - sizeof(Header));
 	
+	report("   invoking message handler...");
 	handler->second(message);
 	
 	delete[] reinterpret_cast<char*>(message);
