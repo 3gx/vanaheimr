@@ -43,7 +43,6 @@ Most of the LLVM type system is adopted here with the explicit limit to common w
 === Control Flow ===
 
  * bra  - branch to a label based on a condition, indirect branching is also supported
- * call - same as bra, but saves the return address in a specified register
 
 === Data Manipulation ===
 
@@ -120,6 +119,12 @@ Ops:
 = Memory Model =
 
 The memory model of VIR is tightly coupled with the ISA to create an association between computation and data that can be reasoned about by a compiler or runtime system.  
+
+Automatic variables are defined with a scoping level. A scoping level indicates which level of the thread hierarchy the memory is associated with. Level 0 is per threads, level 1 is per thread group, and so on.
+
+= ABI =
+*TBD* although the low level details regarding calling conventions and memory layout should
+not be exposed here.
 
 = Supported Extensions =
 
