@@ -25,11 +25,12 @@ class CoreSimThread
     public:
         __device__ CoreSimThread(CoreSimBlock* parentBlock, unsigned threadId);
         __device__ PC executeInstruction(ir::Instruction*, PC);
-    
+
     public:
         PC   pc;
 	bool finished;
         unsigned int instructionPriority;
+        bool barrierBit; //we may later want to support multiple barriers
 
     private:
         CoreSimBlock* m_parentBlock;
