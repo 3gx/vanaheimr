@@ -30,15 +30,15 @@ __device__ bool areAllThreadsFinished()
     tempFinished[m_threadIdInWarp] = finished;
     // barrier
 
-    for(unsigned int i = 2; i < WARP_SIZE; i*=2)
+    for (unsigned int i = 2; i < WARP_SIZE; i*=2)
     {
-        if(m_threadIdInWarp % i == 0)
+        if (m_threadIdInWarp % i == 0)
         {
             finished = finished & tempFinished[m_threadIdInWarp + i/2];
         }
         // barrier
         
-        if(m_threadIdInWarp % i == 0)
+        if (m_threadIdInWarp % i == 0)
         {
             tempFinished[m_threadIdInWarp] = finished;
         }
@@ -70,7 +70,14 @@ __device__ void roundRobinScheduler()
 __device__ unsigned int findNextPC()
 {
     __shared__ unsigned int priority[WARP_SIZE];
-    unsigned int localThreadPriority = m_warp[m_threadIdInWarp].instructionPriority;
+    unsigned int localThreadPriority = 0;
+
+    // only give threads a non-zero priority if they are NOT waiting at a barrier
+    if (m_warp[m_threadIdInWarp].barrierBit == false)
+    {
+         localThreadPriority = m_warp[m_threadIdInWarp].instructionPriority;
+    }
+
     for (unsigned int i = 2; i < WARP_SIZE; i*=2)
     {
         if (m_threadIdInWarp % i == 0)
@@ -86,6 +93,7 @@ __device__ unsigned int findNextPC()
     }
 
     unsigned int maxPriority = priority[0];
+//CORRECT THIS! Dont return priority, return next PC - perhaps a mask of {pc,priority}
     return maxPriority;
 }
 
@@ -112,7 +120,7 @@ __device__ void executeWarp(InstructionContainer* instruction, PC pc)
     bool predicateMask = setPredicateMaskForWarp(pc);    
     
     //some function for all threads if predicateMask is true
-    if(predicateMask)
+    if (predicateMask)
     {
         m_warp.pc = m_warp[m_threadIdInWarp]->executeInstruction(instruction, pc);
     }
@@ -128,12 +136,32 @@ __device__ void executeWarp(InstructionContainer* instruction, PC pc)
 //   6) Save the new PC, goto 1 if all threads are not done
  __device__ void runBlock()
 {
+    unsigned int executedCount = 0;
+    unsigned int scheduledCount = 0;
+
     while (!areAllThreadsFinished())
     {
         roundRobinScheduler();
-        PC nextPC = findNextPC();
-        InstructionContainer instruction = fetchInstruction(nextPC);
-        executeWarp(instruction, nextPC);
+        unsigned int priority = 0;
+        ++scheduledCount;
+        PC nextPC = findNextPC(priority);
+        // only execute if all threads in this warp are NOT waiting on a barrier
+        if (priority != 0)
+        {
+             InstructionContainer instruction = fetchInstruction(nextPC);
+             executeWarp(instruction, nextPC);
+             ++executedCount;
+        }
+
+        if (scheduledCount == m_blockState.threadsPerBlock / WARP_SIZE)
+        {
+            if (executedCount == 0)
+            {
+                clearAllBarrierBits();
+            }
+            scheduledCount = 0;
+            executedCount  = 0;
+        }
     }
 }
 
@@ -148,28 +176,41 @@ __device__ unsigned int getSimulatedThreadCount()
     return m_blockState->threadsPerBlock;
 }
 
-CoreSimThread::Value getRegister(unsigned int threadId, unsigned int reg)
+__device__ CoreSimThread::Value getRegister(unsigned int threadId, unsigned int reg)
 {
     return m_registerFiles[(m_blockState->registersPerThread * threadId)+reg];
 }
 
-void setRegister(unsigned int reg, unsigned int threadId, const CoreSimThread::Value& result)
+__device__ void setRegister(unsigned int reg, unsigned int threadId, const CoreSimThread::Value& result)
 {
     m_registerFiles[(m_blockState->registersPerThread*thread)+reg] = result;
 }
 
-CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value)
+__device__ CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value v)
 {
+    return v; // we will modify this to something much sophisticated later
 }
 
 
-void barrier(unsigned int)
+__device__ void barrier(unsigned int threadId)
 {
+    m_threads[threadId]->barrierBit = true;
 }
 
-unsigned int returned(unsigned int, unsigned int)
+__device__ unsigned int returned(unsigned int threadId, unsigned int pc)
 {
+    m_threads[threadId].finished = true;
 }
 
+__device__ void clearAllBarrierBits()
+{
+    for (unsigned int i = 0 ; i < (m_blockState->threadsPerBlock)/WARP_SIZE ; ++i)
+    {
+        unsigned int logicalThread = i * WARP_SIZE + m_threadIdInWarp;
+	m_threads[logicalThread].barrierBit = false;
+        //barrier should be here but it is slow (every warp)
+    } 
+    //barrier -> we gurantee that we wont clobber values (blocks are not overlapping)
+}
 
 }

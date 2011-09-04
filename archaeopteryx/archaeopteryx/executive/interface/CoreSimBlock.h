@@ -9,22 +9,27 @@
 #define WARP_SIZE     32
 #define LOG_WARP_SIZE 5
 
+#include<archaeopteryx/ir/interface/Binary.h>
 //Forward declarations
 namespace executive { class BlockState; }
 namespace ir        { class Binary; }
+
 /*! \brief A namespace for program execution */
 namespace executive
 {
 class CoreSimBlock
 {
 
+    typedef ir::Binary::PC PC;
+    typedef ir::InstructionContainer InstructionContainer;
+
     private:
         //FetchUnit m_fetchUnit;
         typedef unsigned long long Register;
         Register* m_registerFiles;
         BlockState* m_blockState;
-        SharedMemory* m_sharedMemory;
-        LocalMemory* m_localMemory;
+        //SharedMemory* m_sharedMemory;
+        //LocalMemory* m_localMemory;
         CoreSimThread* m_threads;
         typedef CoreSimThread* Warp;
 	Warp m_warp;
@@ -81,4 +86,8 @@ class CoreSimBlock
 };
 
 }
+
+// TODO remove when cuda has a linker
+#include <archaeopteryx/executive/implementation/CoreSimBlock.cpp>
+
 

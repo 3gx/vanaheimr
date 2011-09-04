@@ -38,7 +38,7 @@ __device__ void executeThreadGroup(void* parameters)
         thread->localMemory  = 0;
         thread->threadGroup  = threadGroup;
         thread->registerFile =
-            util::SharedMemoryWrapper::at<Thread::Register>(i);
+        util::SharedMemoryWrapper::at<Thread::Register>(i);
     }
 
     
