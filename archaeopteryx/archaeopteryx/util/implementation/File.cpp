@@ -18,7 +18,7 @@ namespace util
 
 __device__ File::File(const char* fileName)
 {
-	std::printf("Opening file '%s' on the gpu", fileName);
+	std::printf("Opening file '%s' on the gpu\n", fileName);
 
 	OpenMessage open(fileName);
 	
@@ -33,7 +33,7 @@ __device__ File::File(const char* fileName)
 	_put    = 0;
 	_get    = 0;
 
-	std::printf(" file opened");
+	std::printf(" file opened\n");
 }
 
 __device__ File::~File()
@@ -65,6 +65,9 @@ __device__ size_t File::writeSome(const void* data, size_t bytes)
 		min(bytes, max(1, HostReflection::maxMessageSize() / 10));
 	
 	WriteMessage message(data, attemptedSize, _put, _handle);
+	
+	std::printf("sending file write message (%d size, %d pointer, %d handle)\n",
+		attemptedSize, _put, _handle);
 	
 	HostReflection::sendSynchronous(message);
 	
@@ -152,7 +155,7 @@ __device__ void File::seekp(size_t p)
 
 __device__ File::OpenMessage::OpenMessage(const char* f)
 {
-	strlcpy(_filename, f, 256);
+	strlcpy(_filename, f, payloadSize());
 }
 
 __device__ File::OpenMessage::~OpenMessage()
@@ -239,25 +242,35 @@ __device__ HostReflection::HandlerId File::TeardownMessage::handler() const
 __device__ File::WriteMessage::WriteMessage(const void* data, size_t size,
 	size_t pointer, Handle handle)
 {
-	_payload.data    = data;
-	_payload.size    = size;
-	_payload.pointer = pointer;
-	_payload.handle  = handle;
+	size_t bytes = size + sizeof(Header);
+
+	_payload = new char[bytes];
+	
+	Header header;
+	
+	header.size    = bytes;
+	header.pointer = pointer;
+	header.handle  = handle;
+
+	std::memcpy(_payload, &header, sizeof(Header));
+	std::memcpy((char*)_payload + sizeof(Header), data, size);
 }
 
 __device__ File::WriteMessage::~WriteMessage()
 {
-
+	delete[] _payload;
 }
 
 __device__ void* File::WriteMessage::payload() const
 {
-	return (void*)&_payload;
+	return _payload;
 }
 
 __device__ size_t File::WriteMessage::payloadSize() const
 {
-	return sizeof(Payload);
+	Header* header = (Header*)_payload;
+
+	return header->size;
 }
 
 __device__ HostReflection::HandlerId File::WriteMessage::handler() const

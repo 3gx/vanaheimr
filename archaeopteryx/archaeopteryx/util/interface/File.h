@@ -54,7 +54,7 @@ public:
 	__device__ void seekp(size_t p);
 
 private:
-	typedef unsigned int Handle;
+	typedef size_t Handle;
 	
 	class OpenMessage : public HostReflection::Message
 	{
@@ -68,7 +68,7 @@ private:
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
 	private:
-		char _filename[256];
+		char _filename[32];
 	};
 	
 	class OpenReply : public HostReflection::Message
@@ -86,7 +86,7 @@ private:
 		__device__ virtual size_t payloadSize() const;
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
-	private:
+	public:
 		class Payload
 		{
 		public:
@@ -141,17 +141,16 @@ private:
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
 	private:
-		class Payload
+		class Header
 		{
 		public:
-			const void* data;
 			size_t      size;
 			size_t      pointer;
 			Handle      handle;
 		};
 		
 	private:
-		Payload _payload;
+		void* _payload;
 	};
 	
 	class ReadMessage : public HostReflection::Message
