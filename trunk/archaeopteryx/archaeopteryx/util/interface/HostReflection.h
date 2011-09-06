@@ -30,11 +30,12 @@ public:
 	
 	enum MessageHandler
 	{
-		OpenFileMessageHandler,
-		TeardownFileMessageHandler,
-		FileWriteMessageHandler,
-		FileReadMessageHandler,
-		InvalidMessageHandler = -1
+		OpenFileMessageHandler     = 0,
+		OpenFileReplyHandler       = 0,
+		TeardownFileMessageHandler = 1,
+		FileWriteMessageHandler    = 2,
+		FileReadMessageHandler     = 3,
+		InvalidMessageHandler      = -1
 	};
 
 	enum MessageType
@@ -71,19 +72,6 @@ public:
 	__host__ static void destroy();
 
 public:
-	/*! \brief Handle an open message on the host */
-	__host__ static void handleOpenFile(const Header*);
-	
-	/*! \brief Handle a teardown message on the host */
-	__host__ static void handleTeardownFile(const Header*);
-	
-	/*! \brief Handle a file write message on the host */
-	__host__ static void handleFileWrite(const Header*);
-	
-	/*! \brief Handle a file read message on the host */
-	__host__ static void handleFileRead(const Header*);
-
-public:
 	class QueueMetaData
 	{
 	public:
@@ -115,7 +103,7 @@ public:
 		__host__ size_t size() const;
 
 	private:
-		QueueMetaData* _metadata;
+		volatile QueueMetaData* _metadata;
 
 	private:
 		__host__ size_t _capacity() const;
@@ -140,7 +128,7 @@ public:
 		__device__ size_t size() const;
 	
 	private:
-		QueueMetaData* _metadata;
+		volatile QueueMetaData* _metadata;
 		
 	private:
 		__device__ size_t _capacity() const;
@@ -152,11 +140,28 @@ public:
 		__device__ size_t _read(void* data, size_t size);
 	};
 
+public:
+	/*! \brief Handle an open message on the host */
+	__host__ static void handleOpenFile(HostQueue& q, const Header*);
+	
+	/*! \brief Handle a teardown message on the host */
+	__host__ static void handleTeardownFile(HostQueue& q, const Header*);
+	
+	/*! \brief Handle a file write message on the host */
+	__host__ static void handleFileWrite(HostQueue& q, const Header*);
+	
+	/*! \brief Handle a file read message on the host */
+	__host__ static void handleFileRead(HostQueue& q, const Header*);
+
+public:
+	__host__ static void hostSendAsynchronous(HostQueue& q, 
+		const Header& h, const void* p);
+
 private:
 	class BootUp
 	{
 	public:
-		typedef void (*MessageHandler)(const Header*);
+		typedef void (*MessageHandler)(HostQueue& queue, const Header*);
 		typedef std::map<int, MessageHandler> HandlerMap;
 	
 	public:

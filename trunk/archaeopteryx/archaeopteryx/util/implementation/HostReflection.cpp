@@ -15,6 +15,7 @@
 // Standard Library Includes
 #include <cstring>
 #include <cassert>
+#include <fstream>
 
 // Preprocessor Macros
 #ifdef REPORT_BASE
@@ -42,7 +43,7 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 	SynchronousHeader* header = reinterpret_cast<SynchronousHeader*>(buffer);
 	
 	header->type     = Synchronous;
-	header->threadId = threadId();
+	header->threadId = threadIdx.x;
 	header->size     = bytes;
 	header->handler  = m.handler();
 	
@@ -56,7 +57,7 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 	 
 	printf(" sending synchronous gpu->host message "
 		"(%d type, %d id, %d size, %d handler, %x flag)\n", Synchronous,	
-		threadId(), bytes, m.handler(), header->address);
+		header->threadId, bytes, m.handler(), header->address);
 	
 	while(!_deviceToHost->push(buffer, bytes));
 
@@ -82,9 +83,22 @@ __device__ void HostReflection::receive(Message& m)
 	
 	_hostToDevice->pull(buffer, bytes);
 
-	std::memcpy(m.payload(), buffer, m.payloadSize());
+	std::printf("  bytes: %d\n", (bytes - sizeof(Header)));
+
+	std::memcpy(m.payload(), (buffer + sizeof(Header)), m.payloadSize());
 
 	delete[] buffer;
+}
+
+__host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
+	const Header& header, const void* payload)
+{
+	assert(header.size  >= sizeof(Header));
+	assert(queue.size() >= header.size   );
+
+	while(!queue.push(&header, sizeof(Header)));
+
+	while(!queue.push(payload, header.size - sizeof(Header)));
 }
 
 __device__ size_t HostReflection::maxMessageSize()
@@ -103,24 +117,79 @@ __host__ void HostReflection::destroy()
 	delete _booter;
 }
 
-__host__ void HostReflection::handleOpenFile(const Header*)
+__host__ void HostReflection::handleOpenFile(HostQueue& queue,
+	const Header* header)
 {
+	struct Payload
+	{
+		size_t handle;
+		size_t size;
+	};
+
 	report("    handling open file message");
+
+	std::string filename((const char*)(header + 1));
+
+	report("     filename: " << filename);
+
+	std::fstream* file = new std::fstream(filename.c_str(),
+		std::fstream::in | std::fstream::out | std::fstream::trunc);
+
+	report("     handle: " << file);
+	report("     good:   " << (file->good() ? "yes" : "no"));
+	
+	Header reply(*header);
+	
+	reply.handler = OpenFileReplyHandler;
+	reply.size    = sizeof(Header) + sizeof(Payload);
+	
+	Payload payload;
+	
+	payload.size   = 0;
+	payload.handle = (size_t)file;
+	
+	report("     sending reply to thread " << header->threadId);
+	hostSendAsynchronous(queue, reply, &payload);
 }
 
-__host__ void HostReflection::handleTeardownFile(const Header*)
+__host__ void HostReflection::handleTeardownFile(HostQueue& queue,
+	const Header* header)
 {
 	report("    handling teardown file message");
 
+	std::fstream* file(*(std::fstream**)(header + 1));
+
+	report("     handle: " << file);
+	
+	delete file;
+
+	report("     file closed...");
 }
 
-__host__ void HostReflection::handleFileWrite(const Header*)
+__host__ void HostReflection::handleFileWrite(HostQueue& queue,
+	const Header* header)
 {
-	report("    handling file write message");
+	struct WriteHeader
+	{
+		size_t size;
+		size_t pointer;
+		size_t handle;
+	};
 
+	report("    handling file write message");
+	WriteHeader* writeHeader = (WriteHeader*)(header + 1);
+	
+	std::fstream* file = (std::fstream*)writeHeader->handle;
+
+	size_t bytes = writeHeader->size - sizeof(WriteHeader);
+
+	report("     writing " << bytes << " to file " << file);
+	
+	file->seekp(writeHeader->pointer);
+	file->write((char*)(writeHeader + 1), bytes);
 }
 
-__host__ void HostReflection::handleFileRead(const Header*)
+__host__ void HostReflection::handleFileRead(HostQueue& queue, const Header*)
 {
 	report("    handling file read message");
 
@@ -139,6 +208,8 @@ __host__ HostReflection::HostQueue::~HostQueue()
 
 __host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
 {
+	assert(size < this->size());
+
 	if(size > _capacity()) return false;
 
 	size_t end  = _metadata->size;
@@ -238,6 +309,8 @@ __device__ HostReflection::DeviceQueue::~DeviceQueue()
 
 __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 {
+	device_assert(size <= this->size());
+
 	if(size > _capacity()) return false;
 
 	if(!_lock()) return false;	
@@ -279,7 +352,7 @@ __device__ bool HostReflection::DeviceQueue::pull(void* data, size_t size)
 
 __device__ bool HostReflection::DeviceQueue::peek()
 {
-	if(_used() >= sizeof(Header)) return false;
+	if(_used() < sizeof(Header)) return false;
 
 	if(!_lock()) return false;
 	
@@ -320,7 +393,8 @@ __device__ bool HostReflection::DeviceQueue::_lock()
 {
 	device_assert(_metadata->mutex != threadId());
 	
-	size_t result = atomicCAS(&_metadata->mutex, (size_t)-1, threadId());
+	size_t result = atomicCAS((size_t*)&_metadata->mutex,
+		(size_t)-1, threadId());
 	
 	return result == (size_t)-1;
 }
@@ -507,7 +581,7 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 	_deviceToHostQueue->pull(message + 1, header.size - sizeof(Header));
 	
 	report("   invoking message handler...");
-	handler->second(message);
+	handler->second(*_hostToDeviceQueue, message);
 	
 	delete[] reinterpret_cast<char*>(message);
 	
