@@ -35,6 +35,7 @@ public:
 		TeardownFileMessageHandler = 1,
 		FileWriteMessageHandler    = 2,
 		FileReadMessageHandler     = 3,
+		FileReadReplyHandler       = 3,
 		InvalidMessageHandler      = -1
 	};
 

@@ -92,7 +92,7 @@ __device__ void File::read(void* data, size_t bytes)
 
 	while(bytes > 0)
 	{
-		size_t bytesRead = readSome(data, bytes);
+		size_t bytesRead = readSome(pointer, bytes);
 	
 		pointer += bytesRead;
 		bytes   -= bytesRead;
@@ -109,9 +109,15 @@ __device__ size_t File::readSome(void* data, size_t bytes)
 	size_t attemptedSize =
 		min(bytes, max(1, HostReflection::maxMessageSize() / 10));
 	
-	ReadMessage message(data, attemptedSize, _get, _handle);
+	ReadMessage message(attemptedSize, _get, _handle);
 	
 	HostReflection::sendSynchronous(message);
+	
+	ReadReply reply(attemptedSize);
+	
+	HostReflection::receive(reply);
+	
+	std::memcpy(data, reply.payload(), attemptedSize);
 	
 	_get += attemptedSize;
 	
@@ -278,10 +284,9 @@ __device__ HostReflection::HandlerId File::WriteMessage::handler() const
 	return HostReflection::FileWriteMessageHandler;
 }
 
-__device__ File::ReadMessage::ReadMessage(void* data,
+__device__ File::ReadMessage::ReadMessage(
 	size_t size, size_t pointer, Handle handle)
 {
-	_payload.data    = data;
 	_payload.size    = size;
 	_payload.pointer = pointer;
 	_payload.handle  = handle;
@@ -305,6 +310,32 @@ __device__ size_t File::ReadMessage::payloadSize() const
 __device__ HostReflection::HandlerId File::ReadMessage::handler() const
 {
 	return HostReflection::FileReadMessageHandler;
+}
+
+__device__ File::ReadReply::ReadReply(size_t size)
+: _size(size), _data(new char[size])
+{
+
+}
+
+__device__ File::ReadReply::~ReadReply()
+{
+	delete[] _data;
+}
+
+__device__ void* File::ReadReply::payload() const
+{
+	return _data;
+}
+
+__device__ size_t File::ReadReply::payloadSize() const
+{
+	return _size;
+}
+
+__device__ HostReflection::HandlerId File::ReadReply::handler() const
+{
+	return HostReflection::FileReadReplyHandler;
 }
 
 }
