@@ -189,10 +189,39 @@ __host__ void HostReflection::handleFileWrite(HostQueue& queue,
 	file->write((char*)(writeHeader + 1), bytes);
 }
 
-__host__ void HostReflection::handleFileRead(HostQueue& queue, const Header*)
+__host__ void HostReflection::handleFileRead(HostQueue& queue,
+	const Header* header)
 {
+	struct ReadHeader
+	{
+		size_t size;
+		size_t pointer;
+		size_t handle;
+	};
+
 	report("    handling file read message");
 
+	ReadHeader* readHeader = (ReadHeader*)(header + 1);
+	
+	std::fstream* file = (std::fstream*)readHeader->handle;
+
+	size_t bytes = readHeader->size;
+
+	report("     reading " << bytes << " from file " << file);
+	
+	file->seekg(readHeader->pointer);
+
+	char* buffer = new char[bytes];
+
+	file->read(buffer, bytes);
+
+	Header reply(*header);
+	
+	reply.size = sizeof(Header) + bytes;
+
+	hostSendAsynchronous(queue, reply, buffer);
+
+	delete[] buffer;
 }
 
 __host__ HostReflection::HostQueue::HostQueue(QueueMetaData* m)

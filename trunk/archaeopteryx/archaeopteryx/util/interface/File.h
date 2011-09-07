@@ -156,8 +156,7 @@ private:
 	class ReadMessage : public HostReflection::Message
 	{
 	public:
-		__device__ ReadMessage(void* data, size_t size,
-			size_t pointer, Handle handle);
+		__device__ ReadMessage(size_t size, size_t pointer, Handle handle);
 		__device__ ~ReadMessage();
 
 	public:
@@ -169,7 +168,6 @@ private:
 		class Payload
 		{
 		public:
-			void*  data;
 			size_t size;
 			size_t pointer;
 			Handle handle;
@@ -177,6 +175,22 @@ private:
 	
 	private:
 		Payload _payload;
+	};
+
+	class ReadReply : public HostReflection::Message
+	{
+	public:
+		__device__ ReadReply(size_t size);
+		__device__ ~ReadReply();
+
+	public:
+		__device__ virtual void* payload() const;
+		__device__ virtual size_t payloadSize() const;
+		__device__ virtual HostReflection::HandlerId handler() const;
+	
+	private:
+		size_t _size;
+		char* _data;
 	};
 
 private:
