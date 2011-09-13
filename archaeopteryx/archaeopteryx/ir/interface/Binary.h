@@ -7,7 +7,7 @@
 #pragma once
 
 // Forward Declarations
-namespace util { class File; }
+namespace util { class File;                 }
 namespace ir   { union InstructionContainer; }
 
 
@@ -26,6 +26,16 @@ public:
 	typedef uint64 PC;
 	/*! \brief a file handle */
 	typedef util::File File;
+
+	/*! \brief A binary header */
+	class Header
+	{
+	public:
+		uint32 dataPages;
+		uint32 codePages;
+		uint32 symbols;
+		uint32 strings;
+	};
 
 	/*! \brief A 32-KB page */
 	typedef uint32 PageDataType[1 << 13];
@@ -77,6 +87,8 @@ public:
 	/*! \brief Get a pointer to a particular data page */
 	__device__ PageDataType* getDataPage(page_iterator page);
 
+	/*! \brief Find a symbol by name */
+	__device__ SymbolTableEntry* findSymbol(const char* name);
 	/*! \brief Find a function by name */
 	__device__ void findFunction(page_iterator& page, unsigned int& offset,
 		const char* name);
