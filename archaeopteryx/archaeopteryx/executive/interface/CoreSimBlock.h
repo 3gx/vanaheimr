@@ -10,8 +10,8 @@
 #define LOG_WARP_SIZE 5
 
 #include<archaeopteryx/ir/interface/Binary.h>
+
 //Forward declarations
-namespace executive { class BlockState; }
 namespace ir        { class Binary; }
 
 /*! \brief A namespace for program execution */
@@ -19,30 +19,10 @@ namespace executive
 {
 class CoreSimBlock
 {
-
     typedef ir::Binary::PC PC;
     typedef ir::InstructionContainer InstructionContainer;
-
-    private:
-        //FetchUnit m_fetchUnit;
-        typedef unsigned long long Register;
-        Register* m_registerFiles;
-        BlockState* m_blockState;
-        //SharedMemory* m_sharedMemory;
-        //LocalMemory* m_localMemory;
-        CoreSimThread* m_threads;
-        typedef CoreSimThread* Warp;
-	Warp m_warp;
-        bool m_predicateMask[WARP_SIZE]; 
-	unsigned int m_threadIdInWarp;
-
-    private:
-        __device__ bool areAllThreadsFinished();
-        __device__ void roundRobinScheduler();
-        __device__ unsigned int findNextPC();
-        __device__ bool setPredicateMaskForWarp(PC pc);
-        __device__ InstructionContainer fetchInstruction(PC pc);
-        __device__ void executeWarp(InstructionContainer* instruction, PC pc);
+    typedef char SharedMemory;
+    typedef char LocalMemory;
 
     public:
         //public members
@@ -55,6 +35,29 @@ class CoreSimBlock
                 unsigned int threadsPerBlock;
                 unsigned int sharedMemoryPerBlock;
         };
+    private:
+        //FetchUnit m_fetchUnit;
+        typedef unsigned long long Register;
+        Register* m_registerFiles;
+        BlockState* m_blockState;
+        SharedMemory* m_sharedMemory;
+        LocalMemory* m_localMemory;
+        CoreSimThread* m_threads;
+        typedef CoreSimThread* Warp;
+	Warp m_warp;
+        bool m_predicateMask[WARP_SIZE]; 
+	unsigned int m_threadIdInWarp;
+        ir::Binary* m_binary;
+
+    private:
+	__device__ void clearAllBarrierBits();
+        __device__ bool areAllThreadsFinished();
+        __device__ void roundRobinScheduler();
+        __device__ unsigned int findNextPC(unsigned int&);
+        __device__ bool setPredicateMaskForWarp(PC pc);
+        __device__ InstructionContainer fetchInstruction(PC pc);
+        __device__ void executeWarp(InstructionContainer* instruction, PC pc);
+
     public:
     	// Initializes the state of the block
     	//  1) Register file

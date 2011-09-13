@@ -1,27 +1,28 @@
 /*! \file   CoreSimBlock.cpp
 	\date   Sunday August, 7th 2011
-	\author Sudnya Diamos
+	\author Sudnya Padalikar
 		<mailsudnya@gmail.com>
 	\brief  The implementation file for the Core simulator of the thread block class.
 */
 
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
+#include <archaeopteryx/ir/interface/Instruction.h>
 
 namespace executive
 {
 
-__device__ CoreSimBlock(BlockState* blockState, ir::Binary* binary)
+__device__ CoreSimBlock::CoreSimBlock(BlockState* blockState, ir::Binary* binary)
 : m_blockState(blockState), m_binary(binary)
 {
-    m_registerFiles = new Register[m_blockState->registersPerThread * m_blockState->threadsPerBlock];
-    m_sharedMemory = new SharedMemory[m_blockState->sharedMemoryPerBlock];
-    m_localMemory = new LocalMemory[m_blockState->localMemoryPerThread];
+    m_registerFiles  = new Register[m_blockState->registersPerThread * m_blockState->threadsPerBlock];
+    m_sharedMemory   = new SharedMemory[m_blockState->sharedMemoryPerBlock];
+    m_localMemory    = new LocalMemory[m_blockState->localMemoryPerThread];
 
     m_threadIdInWarp = threadIdx.x % WARP_SIZE;
-    m_threads = new CoreSimThreads[m_blockState->threadsPerBlock];
+    m_threads        = new CoreSimThread[m_blockState->threadsPerBlock];
 }
 
-__device__ bool areAllThreadsFinished()
+__device__ bool CoreSimBlock::areAllThreadsFinished()
 {
     //TODO evaluate some bool 'returned' for all threads
     bool finished = m_warp[m_threadIdInWarp].finished;
@@ -51,7 +52,7 @@ __device__ bool areAllThreadsFinished()
     return finished;
 }
 
-__device__ void roundRobinScheduler()
+__device__ void CoreSimBlock::roundRobinScheduler()
 {
     if (m_threadIdInWarp == 0)
     {
@@ -67,62 +68,79 @@ __device__ void roundRobinScheduler()
     //barrier
 }
 
-__device__ unsigned int findNextPC()
+__device__ unsigned int CoreSimBlock::findNextPC(unsigned int& returnPriority)
 {
-    __shared__ unsigned int priority[WARP_SIZE];
+    __shared__ uint2 priority[WARP_SIZE];
     unsigned int localThreadPriority = 0;
+    unsigned int localThreadPC       = 0;
 
     // only give threads a non-zero priority if they are NOT waiting at a barrier
     if (m_warp[m_threadIdInWarp].barrierBit == false)
     {
-         localThreadPriority = m_warp[m_threadIdInWarp].instructionPriority;
+        localThreadPriority = m_warp[m_threadIdInWarp].instructionPriority;
+        localThreadPC       = m_warp[m_threadIdInWarp].pc;
+
+        priority[m_threadIdInWarp].x = localThreadPriority;
+        priority[m_threadIdInWarp].y = localThreadPC;
     }
+    
+    // warp_barrier
 
     for (unsigned int i = 2; i < WARP_SIZE; i*=2)
     {
         if (m_threadIdInWarp % i == 0)
         {
-            localThreadPriority = max(localThreadPriority, priority[m_threadInWarp + i/2]);
+            unsigned int neighborsPriority = priority[m_threadIdInWarp + i/2].x;
+            unsigned int neighborsPC       = priority[m_threadIdInWarp + i/2].y;
+
+            bool local = localThreadPriority > neighborsPriority;
+
+            localThreadPriority = local ? localThreadPriority : neighborsPriority;
+            localThreadPC       = local ? localThreadPC       : neighborsPC;
         }
-        //barrier
+        // warp_barrier
         if (m_threadIdInWarp % i == 0)
         {
-            priority[m_threadInWarp] = localThreadPriority;
+            priority[m_threadIdInWarp].x = localThreadPriority;
+            priority[m_threadIdInWarp].y = localThreadPC;
         }
-        //barrier
+        // warp_barrier
     }
 
-    unsigned int maxPriority = priority[0];
-//CORRECT THIS! Dont return priority, return next PC - perhaps a mask of {pc,priority}
-    return maxPriority;
+    unsigned int maxPriority = priority[0].x;
+    unsigned int maxPC       = priority[0].y;
+ 
+    returnPriority = maxPriority;
+
+    return maxPC;
 }
 
-__device__ bool setPredicateMaskForWarp(PC pc)
+__device__ bool CoreSimBlock::setPredicateMaskForWarp(PC pc)
 {
     //TO DO - evaluate a predicate over the entire warp
     return pc == m_warp[m_threadIdInWarp].pc;
 }
 
-__device__ InstructionContainer fetchInstruction(PC pc)
+__device__ CoreSimBlock::InstructionContainer CoreSimBlock::fetchInstruction(PC pc)
 {
     __shared__ InstructionContainer instruction;
     
     if (m_threadIdInWarp == 0)
     {
-        copyCode(&instruction, pc, 1);
+        m_binary->copyCode(&instruction, pc, 1);
     }
     // barrier
     return instruction;
 }
 
-__device__ void executeWarp(InstructionContainer* instruction, PC pc)
+__device__ void CoreSimBlock::executeWarp(InstructionContainer* instruction, PC pc)
 {
     bool predicateMask = setPredicateMaskForWarp(pc);    
     
     //some function for all threads if predicateMask is true
     if (predicateMask)
     {
-        m_warp.pc = m_warp[m_threadIdInWarp]->executeInstruction(instruction, pc);
+        m_warp[m_threadIdInWarp].pc = m_warp[m_threadIdInWarp].executeInstruction(&instruction->asInstruction, pc);
     }
 }
 
@@ -134,7 +152,7 @@ __device__ void executeWarp(InstructionContainer* instruction, PC pc)
 //   4) Fetch the instruction at the selected PC
 //   5) Execute all threads with true predicate masks
 //   6) Save the new PC, goto 1 if all threads are not done
- __device__ void runBlock()
+ __device__ void CoreSimBlock::runBlock()
 {
     unsigned int executedCount = 0;
     unsigned int scheduledCount = 0;
@@ -149,11 +167,11 @@ __device__ void executeWarp(InstructionContainer* instruction, PC pc)
         if (priority != 0)
         {
              InstructionContainer instruction = fetchInstruction(nextPC);
-             executeWarp(instruction, nextPC);
+             executeWarp(&instruction, nextPC);
              ++executedCount;
         }
 
-        if (scheduledCount == m_blockState.threadsPerBlock / WARP_SIZE)
+        if (scheduledCount == m_blockState->threadsPerBlock / WARP_SIZE)
         {
             if (executedCount == 0)
             {
@@ -165,44 +183,36 @@ __device__ void executeWarp(InstructionContainer* instruction, PC pc)
     }
 }
 
-//All the callback interfaces to CoreSimBlock
-__device__ CoreSimThread* getCoreSimThread(unsigned int Id)
-{
-    
-}
-
-__device__ unsigned int getSimulatedThreadCount()
-{
-    return m_blockState->threadsPerBlock;
-}
-
-__device__ CoreSimThread::Value getRegister(unsigned int threadId, unsigned int reg)
+__device__ CoreSimThread::Value CoreSimBlock::getRegister(unsigned int threadId, unsigned int reg)
 {
     return m_registerFiles[(m_blockState->registersPerThread * threadId)+reg];
 }
 
-__device__ void setRegister(unsigned int reg, unsigned int threadId, const CoreSimThread::Value& result)
+__device__ void CoreSimBlock::setRegister(unsigned int reg, unsigned int threadId, const CoreSimThread::Value& result)
 {
-    m_registerFiles[(m_blockState->registersPerThread*thread)+reg] = result;
+    m_registerFiles[(m_blockState->registersPerThread*threadId)+reg] = result;
 }
 
-__device__ CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value v)
+__device__ CoreSimThread::Value CoreSimBlock::translateVirtualToPhysical(const CoreSimThread::Value v)
 {
     return v; // we will modify this to something much sophisticated later
 }
 
 
-__device__ void barrier(unsigned int threadId)
+__device__ void CoreSimBlock::barrier(unsigned int threadId)
 {
-    m_threads[threadId]->barrierBit = true;
+    m_threads[threadId].barrierBit = true;
 }
 
-__device__ unsigned int returned(unsigned int threadId, unsigned int pc)
+__device__ unsigned int CoreSimBlock::returned(unsigned int threadId, unsigned int pc)
 {
     m_threads[threadId].finished = true;
+
+    // TODO return the PC from the stack
+    return 0;
 }
 
-__device__ void clearAllBarrierBits()
+__device__ void CoreSimBlock::clearAllBarrierBits()
 {
     for (unsigned int i = 0 ; i < (m_blockState->threadsPerBlock)/WARP_SIZE ; ++i)
     {
