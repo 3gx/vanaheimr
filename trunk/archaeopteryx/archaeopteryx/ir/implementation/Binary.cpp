@@ -5,7 +5,7 @@
 */
 
 // Archaeopteryx Includes
-#include <archaeopteryx/interface/Binary.h>
+#include <archaeopteryx/ir/interface/Binary.h>
 
 namespace ir
 {
@@ -189,5 +189,4 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 
 }
 
-#include <archaeopteryx/ir/implementation/Binary.cpp>
 

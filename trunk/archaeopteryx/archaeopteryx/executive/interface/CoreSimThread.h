@@ -23,7 +23,7 @@ class CoreSimThread
         typedef long long signed int SValue;
         typedef long long unsigned int Address;
     public:
-        __device__ CoreSimThread(CoreSimBlock* parentBlock, unsigned threadId);
+        __device__ CoreSimThread(CoreSimBlock* parentBlock = 0, unsigned threadId = 0);
         __device__ PC executeInstruction(ir::Instruction*, PC);
 
     public:
