@@ -82,6 +82,7 @@ public:
 	/*! \brief Destroy the binary, free all memory */
 	__device__ ~Binary();
 
+public:
 	/*! \brief Get a particular code page */
 	__device__ PageDataType* getCodePage(page_iterator page);
 	/*! \brief Get a pointer to a particular data page */
@@ -126,9 +127,20 @@ public:
 	/*! \brief The actual symbol table */
 	SymbolTableEntry* symbolTable;
 	/*! \brief The string table */
-	const char** stringTable;
+	char** stringTable;
 	/*! \brief The number of string table entries */
 	unsigned int stringTableEntries;
+
+private:
+	/*! \brief Get an offset in the file for a specific code page */
+	__device__ size_t _getCodePageOffset(page_iterator page);
+	/*! \brief Get an offset in the file for a specific data page */
+	__device__ size_t _getDataPageOffset(page_iterator page);
+
+private:
+	/*! \brief A handle to the file */
+	File* _file;
+
 };
 
 }

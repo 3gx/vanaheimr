@@ -6,6 +6,10 @@
 
 // Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Binary.h>
+#include <archaeopteryx/ir/interface/Instruction.h>
+
+#include <archaeopteryx/util/interface/File.h>
+#include <archaeopteryx/util/interface/StlFunctions.h>
 
 namespace ir
 {
@@ -16,10 +20,10 @@ __device__ Binary::Binary(File* file)
 
 	file->read(&header, sizeof(Header));
 
-	dataPages          = header->dataPages;
-	codePages          = header->codePages;
-	symbolTableEntries = header->symbols;
-	stringTableEntries = header->strings;
+	dataPages          = header.dataPages;
+	codePages          = header.codePages;
+	symbolTableEntries = header.symbols;
+	stringTableEntries = header.strings;
 	
 	dataSection = new PageDataType*[dataPages];
 	codeSection = new PageDataType*[codePages];
@@ -39,19 +43,14 @@ __device__ Binary::~Binary()
 		delete stringTable[s];
 	}
 	
-	for(unsigned int s = 0; s != symbolTableEntries; ++s)
-	{
-		delete symbolTable[s];
-	}
-	
 	for(unsigned int c = 0; c != codePages; ++c)
 	{
-		delete codeSection[c];
+		delete[] codeSection[c];
 	}
 	
 	for(unsigned int d = 0; d != dataPages; ++d)
 	{
-		delete dataSection[d];
+		delete[] dataSection[d];
 	}
 	
 	delete[] stringTable;
@@ -60,25 +59,25 @@ __device__ Binary::~Binary()
 	delete[] dataSection;
 }
 
-__device__ PageDataType* Binary::getCodePage(page_iterator page)
+__device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
 {
 	if(*page == 0)
 	{
-		file->setg(getCodePageOffset(page));
-		*page = new PageDataType;
-		file->read(*page, sizeof(PageDataType));
+		_file->seekg(_getCodePageOffset(page));
+		*page = (PageDataType*)new PageDataType;
+		_file->read(*page, sizeof(PageDataType));
 	}
 	
 	return *page;
 }
 
-__device__ PageDataType* Binary::getDataPage(page_iterator page)
+__device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
 {
 	if(*page == 0)
 	{
-		file->setg(getDataPageOffset(page));
-		*page = new PageDataType;
-		file->read(*page, sizeof(PageDataType));
+		_file->seekg(_getDataPageOffset(page));
+		*page = (PageDataType*)new PageDataType;
+		_file->read(*page, sizeof(PageDataType));
 	}
 	
 	return *page;
@@ -89,9 +88,9 @@ __device__ Binary::SymbolTableEntry* Binary::findSymbol(const char* name)
 	for(unsigned int i = 0; i < symbolTableEntries; ++i)
 	{
 		SymbolTableEntry* symbol = symbolTable + i;
-		const char* symbolName   = symbol->stringTableOffset + stringTable;
+		const char* symbolName   = *(symbol->stringTableOffset + stringTable);
 	
-		if(std::strcmp(symbolName, name) != 0)
+		if(util::strcmp(symbolName, name) != 0)
 		{
 			return symbol;
 		}
@@ -113,9 +112,9 @@ __device__ void Binary::findFunction(page_iterator& page, unsigned int& offset,
 		return;
 	}
 	
-	device_assert(symbol->type == FunctionSymbolType);
+	util::device_assert(symbol->type == FunctionSymbolType);
 	
-	page   = codePages + symbol->pageId;
+	page   = codeSection + symbol->pageId;
 	offset = symbol->pageOffset;
 }
 
@@ -132,28 +131,28 @@ __device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
 		return;
 	}
 	
-	device_assert(symbol->type == VariableSymbolType);
+	util::device_assert(symbol->type == VariableSymbolType);
 	
-	page   = dataPages + symbol->pageId;
+	page   = dataSection + symbol->pageId;
 	offset = symbol->pageOffset;
 }
 
-__device__ page_iterator Binary::code_begin()
+__device__ Binary::page_iterator Binary::code_begin()
 {
 	return codeSection;
 }
 
-__device__ page_iterator Binary::code_end()
+__device__ Binary::page_iterator Binary::code_end()
 {
 	return codeSection + codePages;
 }
 
-__device__ page_iterator Binary::data_begin()
+__device__ Binary::page_iterator Binary::data_begin()
 {
 	return dataSection;
 }
 
-__device__ page_iterator Binary::data_end()
+__device__ Binary::page_iterator Binary::data_end()
 {
 	return dataSection + dataPages;
 }
@@ -170,7 +169,7 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 	while(instructions > 0)
 	{
 		size_t instructionsInThisPage =
-			std::min(instructionsPerPage - pageOffset, instructions);
+			util::min(instructionsPerPage - pageOffset, instructions);
 	
 		PageDataType* pageData = getCodePage(code_begin() + page);
 		util::device_assert(pageData != 0);
@@ -186,6 +185,18 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 		page         += 1;
 	}
 }
+
+size_t Binary::_getCodePageOffset(page_iterator page)
+{
+	return _getDataPageOffset(data_begin() + dataPages) +
+		(page - code_begin()) * sizeof(PageDataType);
+}
+
+size_t Binary::_getDataPageOffset(page_iterator page)
+{
+	return sizeof(Header) + (page - data_begin()) * sizeof(PageDataType);
+}
+
 
 }
 

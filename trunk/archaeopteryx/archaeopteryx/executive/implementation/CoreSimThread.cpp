@@ -163,7 +163,7 @@ static __device__ ir::Binary::PC executeAtom(ir::Instruction* instruction, ir::B
     Value physical = parentBlock->translateVirtualToPhysical(a);
 
     //TO DO
-    Value d = atomicAdd((long long unsigned int*)physical, b);
+    Value d = atomicAdd(bitcast<Value*>(physical), b);
 
     setRegister(atom->d, parentBlock, threadId, d);
     return pc+1;
@@ -255,7 +255,7 @@ static __device__ ir::Binary::PC executeLd(ir::Instruction* instruction, ir::Bin
 
     Value physical = parentBlock->translateVirtualToPhysical(a);
     // handle data types other than 64-bit
-    Value d = *(Value*)physical;
+    Value d = *bitcast<Value*>(physical);
 
     setRegister(ld->d, parentBlock, threadId, d);
     return pc+1;
@@ -396,7 +396,7 @@ static __device__ ir::Binary::PC executeSt(ir::Instruction* instruction, ir::Bin
     Value a = getOperand(st->a, parentBlock, threadId);
     Value physical = parentBlock->translateVirtualToPhysical(a);
     // handle data types other than 64-bit
-    Value d = *(Value*)physical;
+    Value d = *bitcast<Value*>(physical);
 
     setRegister(st->d, parentBlock, threadId, d);
     return pc+1;
