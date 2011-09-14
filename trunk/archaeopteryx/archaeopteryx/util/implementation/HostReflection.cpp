@@ -422,8 +422,8 @@ __device__ bool HostReflection::DeviceQueue::_lock()
 {
 	device_assert(_metadata->mutex != threadId());
 	
-	size_t result = atomicCAS((size_t*)&_metadata->mutex,
-		(size_t)-1, threadId());
+	size_t result = atomicCAS((long long unsigned int*)&_metadata->mutex,
+		(long long unsigned int)-1, (long long unsigned int)threadId());
 	
 	return result == (size_t)-1;
 }

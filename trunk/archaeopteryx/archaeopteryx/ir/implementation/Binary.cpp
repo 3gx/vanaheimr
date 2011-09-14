@@ -169,7 +169,7 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 	while(instructions > 0)
 	{
 		size_t instructionsInThisPage =
-			util::min(instructionsPerPage - pageOffset, instructions);
+			util::min(instructionsPerPage - pageOffset, (size_t)instructions);
 	
 		PageDataType* pageData = getCodePage(code_begin() + page);
 		util::device_assert(pageData != 0);

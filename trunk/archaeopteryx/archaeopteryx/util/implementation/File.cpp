@@ -62,7 +62,7 @@ __device__ void File::write(const void* data, size_t bytes)
 __device__ size_t File::writeSome(const void* data, size_t bytes)
 {	
 	size_t attemptedSize =
-		min(bytes, max(1, HostReflection::maxMessageSize() / 10));
+		util::min(bytes, util::max((size_t)1, (size_t)(HostReflection::maxMessageSize() / 10)));
 	
 	WriteMessage message(data, attemptedSize, _put, _handle);
 	
@@ -107,7 +107,7 @@ __device__ size_t File::readSome(void* data, size_t bytes)
 	}
 
 	size_t attemptedSize =
-		min(bytes, max(1, HostReflection::maxMessageSize() / 10));
+		util::min(bytes, util::max((size_t)1, (size_t)(HostReflection::maxMessageSize() / 10)));
 	
 	ReadMessage message(attemptedSize, _get, _handle);
 	
@@ -216,7 +216,7 @@ __device__ size_t File::OpenReply::payloadSize() const
 
 __device__ HostReflection::HandlerId File::OpenReply::handler() const
 {
-	return (size_t)HostReflection::InvalidMessageHandler;
+	return (HostReflection::HandlerId)HostReflection::InvalidMessageHandler;
 }
 
 __device__ File::TeardownMessage::TeardownMessage(Handle h)

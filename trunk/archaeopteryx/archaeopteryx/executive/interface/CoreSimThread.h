@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include<archaeopteryx/ir/interface/Binary.h>
+#include <archaeopteryx/ir/interface/Binary.h>
+
 // Forward Declarations
 namespace executive { class CoreSimBlock; }
 namespace ir        { class Instruction;}
@@ -38,4 +39,5 @@ class CoreSimThread
 };
 
 }
+
 
