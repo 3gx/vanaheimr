@@ -9,7 +9,8 @@
 #define WARP_SIZE     32
 #define LOG_WARP_SIZE 5
 
-#include<archaeopteryx/ir/interface/Binary.h>
+#include <archaeopteryx/ir/interface/Binary.h>
+#include <archaeopteryx/executive/interface/CoreSimThread.h>
 
 //Forward declarations
 namespace ir        { class Binary; }
@@ -91,6 +92,7 @@ class CoreSimBlock
 }
 
 // TODO remove when cuda has a linker
+#include <archaeopteryx/executive/implementation/CoreSimThread.cpp>
 #include <archaeopteryx/executive/implementation/CoreSimBlock.cpp>
 
 

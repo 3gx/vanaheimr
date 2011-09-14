@@ -12,6 +12,9 @@ namespace util
 template<typename Type>
 __host__ __device__ Type min(Type a, Type b);
 
+template<typename Type>
+__host__ __device__ Type max(Type a, Type b);
+
 }
 
 // TODO remove this when we get a linker

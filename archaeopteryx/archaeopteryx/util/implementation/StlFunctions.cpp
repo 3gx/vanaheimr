@@ -16,6 +16,12 @@ __host__ __device__ Type min(Type a, Type b)
 	return a < b ? a : b;
 }
 
+template<typename Type>
+__host__ __device__ Type max(Type a, Type b)
+{
+	return a > b ? a : b;
+}
+
 }
 
 
