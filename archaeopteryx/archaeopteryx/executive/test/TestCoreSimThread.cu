@@ -1,1 +1,1 @@
-#include <archaeopteryx/executive/implementation/CoreSimThread.cpp>
+#include <archaeopteryx/executive/interface/CoreSimBlock.h>
