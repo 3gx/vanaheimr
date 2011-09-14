@@ -22,5 +22,19 @@ __device__ void strlcpy(char* destination, const char* source, size_t max)
 	*destination = '\0';
 }
 
+__device__ int strcmp(const char* left, const char* right)
+{
+	while(*left != '\0' && *right != '\0')
+	{
+		if(*left != *right) return -1;
+		
+		++left; ++right;
+	}
+
+	if(*left != *right) return -1;
+
+	return 0;
+}
+
 }
 

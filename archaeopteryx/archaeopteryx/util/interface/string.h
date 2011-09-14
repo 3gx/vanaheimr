@@ -17,6 +17,15 @@ namespace util
 */
 __device__ void strlcpy(char* destination, const char* source, size_t max);
 
+/*! \brief string compare
+	
+	\param left The target string
+	\param right The source string
+	
+	\return 0 if all bytes match, some random int otherwise
+*/
+__device__ int strcmp(const char* left, const char* right);
+
 }
 
 // TODO remove when NVCC has a linker
