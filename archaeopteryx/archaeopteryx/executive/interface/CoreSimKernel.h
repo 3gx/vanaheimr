@@ -17,8 +17,8 @@ class CoreSimKernel
         
 
     public:
-        __device__ CoreSimKernel(void *gpuState, char* binaryName);
-        __device__ void launchKernel();
+        //__device__ CoreSimKernel(void *gpuState, char* binaryName);
+        __device__ void launchKernel(unsigned int);
 
 };
 

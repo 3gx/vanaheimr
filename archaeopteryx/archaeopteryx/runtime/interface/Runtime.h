@@ -15,6 +15,9 @@ namespace rt
 class Runtime
 {
     public:
+        __device__ Runtime(executive::CoreSimKernel, executive::CoreSimBlock*);
+        __device__ ~Runtime();
+
         __device__ static void loadBinary(const char* fileName);
         __device__ static void* allocateMemory(size_t bytes, size_t address);
         __device__ static void setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta);
@@ -25,10 +28,14 @@ class Runtime
         __device__ static void unloadBinary(const char* fileName);
 
     private:
-        ir::Binary*              m_loadedBinary;
-        void*                    m_gmem;
+        ir::Binary               m_loadedBinary;
+        void*                    m_physicalMemory;
         executive::CoreSimKernel m_kernel;
-        executive::CoreSimBlock* m_block;//an array of blocks?
+        executive::CoreSimBlock* m_blocks;//an array of blocks?
+        unsigned int             m_simulatedBlocks;
+        ir::PC                   m_launchSimulationAtPC;
+    private:
+        __device__ static void launchSimulationInParallel();
 };
 
 }

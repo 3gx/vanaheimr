@@ -11,8 +11,7 @@
 namespace executive
 {
 
-__device__ CoreSimBlock::CoreSimBlock(BlockState* blockState, ir::Binary* binary)
-: m_blockState(blockState), m_binary(binary)
+__device__ CoreSimBlock::CoreSimBlock()
 {
     m_registerFiles  = new Register[m_blockState->registersPerThread * m_blockState->threadsPerBlock];
     m_sharedMemory   = new SharedMemory[m_blockState->sharedMemoryPerBlock];
@@ -221,6 +220,17 @@ __device__ void CoreSimBlock::clearAllBarrierBits()
         //barrier should be here but it is slow (every warp)
     } 
     //barrier -> we gurantee that we wont clobber values (blocks are not overlapping)
+}
+
+__device__ void CoreSimBlock::setNumberOfThreadsPerBlock(unsigned int threads)
+{
+    m_blockState->threadsPerBlock = threads;
+}
+
+__device__ void CoreSimBlock::setMemoryState(unsigned int localMemory, unsigned int sharedMemory)
+{
+    m_blockState->localMemoryPerThread = localMemory;
+    m_blockState->sharedMemoryPerBlock = sharedMemory;
 }
 
 }
