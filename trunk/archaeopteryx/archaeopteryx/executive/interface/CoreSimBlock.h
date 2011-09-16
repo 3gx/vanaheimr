@@ -65,7 +65,7 @@ class CoreSimBlock
     	//  2) shared memory 
     	//  3) local memory for each thread
     	//  4) thread contexts
-        __device__ CoreSimBlock(BlockState* blockState, ir::Binary* binary);
+        __device__ CoreSimBlock();
     
     public:
     	// Entry point to the block simulation
@@ -87,6 +87,15 @@ class CoreSimBlock
         __device__ CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value);
         __device__ void barrier(unsigned int);
         __device__ unsigned int returned(unsigned int, unsigned int);
+
+    public:
+        //Interface to Runtime
+        __device__ void setNumberOfThreadsPerBlock(unsigned int);
+        __device__ void setMemoryState(unsigned int, unsigned int);
+
+    public:
+        //Interface to CoreSimKernel
+        __device__ void setBlockId(unsigned int);
 };
 
 }
