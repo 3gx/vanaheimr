@@ -19,6 +19,10 @@ public:
 	public:
 		/*! \brief A set of basic blocks */
 		class BasicBlockSet
+		{
+		
+		
+		};
 
 	public:
 		/*! \brief Get an iterator to the first instruction in the block */
