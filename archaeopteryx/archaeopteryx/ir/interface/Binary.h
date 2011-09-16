@@ -98,6 +98,10 @@ public:
 		const char* name);
 
 public:
+	/*! \brief Get PC */
+	__device__ PC findFunctionsPC(const char* name);
+
+public:
 	/*! \brief Get an iterator to the first code page */
 	__device__ page_iterator code_begin();
 	/*! \brief Get an iterator to one past the last code page */
