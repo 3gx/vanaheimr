@@ -66,6 +66,10 @@ public:
 	__device__ static void receive(Message& m);
 
 public:
+	__device__ static void launch(unsigned int ctas, unsigned int threads, const char* functionName,
+		const void* arguments = 0);
+
+public:
 	__host__ __device__ static size_t maxMessageSize();
 
 public:
