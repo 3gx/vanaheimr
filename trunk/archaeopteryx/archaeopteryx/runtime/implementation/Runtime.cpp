@@ -8,7 +8,7 @@
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 #include <archaeopteryx/runtime/interface/Runtime.h>
 
-#define NUMBER_OD_HW_THREADS_PER_BLOCK 128
+#define NUMBER_OF_HW_THREADS_PER_BLOCK 128
 #define NUMBER_OF_HW_BLOCKS 64
 #define PHYSICAL_MEMORY_SIZE (1 << 20)
 
@@ -17,13 +17,15 @@ namespace rt
 
 __device__ Runtime::Runtime()
 {
-    m_blocks         = new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];i
+    m_blocks         = new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
     m_physicalMemory = new char[PHYSICAL_MEMORY_SIZE];
+    m_loadedBinary   = 0;
 }
 
 __device__ Runtime::~Runtime()
 {
-   delete m_blocks[];
+   delete []m_blocks;
+   delete m_loadedBinary;
 }
 
 // We will need a list/map of open binaries
@@ -32,7 +34,7 @@ __device__ Runtime::~Runtime()
 //     will read the data for us
 __device__ void Runtime::loadBinary(const char* fileName)
 {
-    m_loadedBinary = new Binary(fileName);
+    m_loadedBinary = new ir::Binary(new util::File(fileName));
     //TODO: eventually m_loadedBinary.push_back(new Binary(fileName));
 }
 
@@ -63,7 +65,7 @@ __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas, unsigned int 
     
     for (unsigned int i = 0; i < NUMBER_OF_HW_BLOCKS; ++i)
     {
-        m_blocks[i]->setNumberOfThreadsPerBlock(threadsPerCta);
+        m_blocks[i].setNumberOfThreadsPerBlock(threadsPerCta);
     }
 }
 
@@ -72,7 +74,7 @@ __device__ void Runtime::setupMemoryConfig(unsigned int localMemoryPerThread, un
 {
     for (unsigned int i = 0; i < NUMBER_OF_HW_BLOCKS; ++i) 
     {
-        m_blocks[i]->setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
+        m_blocks[i].setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
     }
 }
 
@@ -86,20 +88,20 @@ __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
 __device__ void Runtime::launchSimulation()
 {
-    util::HostReflection::launch(NUMBER_OF_HW_BLOCKS, NUMBER_OF_HW_THREADS_PER_BLOCK, "Runtime::launchSimulationInParallel" );
+    util::HostReflection::launch(NUMBER_OF_HW_BLOCKS, NUMBER_OF_HW_THREADS_PER_BLOCK, "Runtime::launchSimulationInParallel");
 }
 
 __device__ void Runtime::launchSimulationInParallel()
 {
-    m_kernel->launchKernel(m_simulatedBlocks, m_blocks);
+    m_kernel.launchKernel(m_simulatedBlocks, m_blocks);
 }
 
 
-__device__ void munmap(size_t address)
+__device__ void Runtime::munmap(size_t address)
 {
 }
 
-__device__ void unloadBinary(const char* fileName)
+__device__ void Runtime::unloadBinary()
 {
     delete m_loadedBinary;
 }
