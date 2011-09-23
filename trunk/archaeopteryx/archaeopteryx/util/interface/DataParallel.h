@@ -38,7 +38,15 @@ void transpose(Type* begin, Type* end, unsigned int stride, Type* out)
 	
 	__syncthreads();
 	
-	
+	for(unsigned int i = start; i < size; i+=step)
+	{
+		unsigned int row    = i % stride;
+		unsigned int column = i / stride;
+		
+		unsigned int index = (row * stride) + (row % stride) + column;
+		
+		out[i] = buffer[index];
+	}
 }
 
 }

@@ -87,13 +87,9 @@ __device__ void Lexer::findSplitters()
 
 __device__ void Lexer::transposeStreams()
 {
-	Splitter range[transactions];
+	Splitter splitter = _getSplitter();
 	
-	 = _getSplitter();
-	
-	__shared__ char buffer[(transactions+1)*threads];
-	
-	
+	_transposedFileData
 }
 
 __device__ void Lexer::lexCharacterStreams();
