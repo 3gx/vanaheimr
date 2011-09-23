@@ -6,8 +6,9 @@
 
 #pragma once
 
-#define threads 128
-#define ctas    120
+#define threads      128
+#define ctas         120
+#define transactions 6
 
 /*! \brief A namespace for VIR assembler related classes and functions */
 namespace assembler
@@ -86,7 +87,11 @@ __device__ void Lexer::findSplitters()
 
 __device__ void Lexer::transposeStreams()
 {
-	Splitter range = _getSplitter();
+	Splitter range[transactions];
+	
+	 = _getSplitter();
+	
+	__shared__ char buffer[(transactions+1)*threads];
 	
 	
 }
