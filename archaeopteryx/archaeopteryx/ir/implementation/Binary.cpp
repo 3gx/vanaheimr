@@ -137,6 +137,19 @@ __device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
 	offset = symbol->pageOffset;
 }
 
+__device__ Binary::PC Binary::findFunctionsPC(const char* name)
+{
+	page_iterator page  = 0;
+	unsigned int offset = 0;
+
+	findFunction(page, offset, name);
+	
+	const size_t instructionsPerPage = sizeof(PageDataType) /
+		sizeof(ir::InstructionContainer);
+	
+	return instructionsPerPage * (page - code_begin()) + offset;
+}
+
 __device__ Binary::page_iterator Binary::code_begin()
 {
 	return codeSection;
