@@ -12,20 +12,22 @@
 #define NUMBER_OF_HW_BLOCKS 64
 #define PHYSICAL_MEMORY_SIZE (1 << 20)
 
+__device__ rt::Runtime::RuntimeState g_runtimeState;
+
 namespace rt
 {
 
 __device__ Runtime::Runtime()
 {
-    m_blocks         = new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
-    m_physicalMemory = new char[PHYSICAL_MEMORY_SIZE];
-    m_loadedBinary   = 0;
+    g_runtimeState.m_blocks         = new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
+    g_runtimeState.m_physicalMemory = new char[PHYSICAL_MEMORY_SIZE];
+    g_runtimeState.m_loadedBinary   = 0;
 }
 
 __device__ Runtime::~Runtime()
 {
-   delete []m_blocks;
-   delete m_loadedBinary;
+   delete []g_runtimeState.m_blocks;
+   delete g_runtimeState.m_loadedBinary;
 }
 
 // We will need a list/map of open binaries
@@ -34,7 +36,7 @@ __device__ Runtime::~Runtime()
 //     will read the data for us
 __device__ void Runtime::loadBinary(const char* fileName)
 {
-    m_loadedBinary = new ir::Binary(new util::File(fileName));
+    g_runtimeState.m_loadedBinary = new ir::Binary(new util::File(fileName));
     //TODO: eventually m_loadedBinary.push_back(new Binary(fileName));
 }
 
@@ -61,11 +63,11 @@ __device__ bool Runtime::allocateMemory(size_t bytes, size_t address)
 //  b) this call changes the number of CoreSimBlock/Thread
 __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta)
 {
-    m_simulatedBlocks = totalCtas;
+    g_runtimeState.m_simulatedBlocks = totalCtas;
     
     for (unsigned int i = 0; i < NUMBER_OF_HW_BLOCKS; ++i)
     {
-        m_blocks[i].setNumberOfThreadsPerBlock(threadsPerCta);
+        g_runtimeState.m_blocks[i].setNumberOfThreadsPerBlock(threadsPerCta);
     }
 }
 
@@ -74,7 +76,7 @@ __device__ void Runtime::setupMemoryConfig(unsigned int localMemoryPerThread, un
 {
     for (unsigned int i = 0; i < NUMBER_OF_HW_BLOCKS; ++i) 
     {
-        m_blocks[i].setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
+       g_runtimeState.m_blocks[i].setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
     }
 }
 
@@ -82,7 +84,7 @@ __device__ void Runtime::setupMemoryConfig(unsigned int localMemoryPerThread, un
 //   Call into the binary to get the PC
 __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 {
-    m_launchSimulationAtPC = m_loadedBinary->findFunctionsPC(functionName);    
+    g_runtimeState.m_launchSimulationAtPC = g_runtimeState.m_loadedBinary->findFunctionsPC(functionName);    
 }
 
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
@@ -93,7 +95,7 @@ __device__ void Runtime::launchSimulation()
 
 __device__ void Runtime::launchSimulationInParallel()
 {
-    m_kernel.launchKernel(m_simulatedBlocks, m_blocks);
+    g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, g_runtimeState.m_blocks);
 }
 
 
@@ -103,7 +105,7 @@ __device__ void Runtime::munmap(size_t address)
 
 __device__ void Runtime::unloadBinary()
 {
-    delete m_loadedBinary;
+    delete g_runtimeState.m_loadedBinary;
 }
 
 
