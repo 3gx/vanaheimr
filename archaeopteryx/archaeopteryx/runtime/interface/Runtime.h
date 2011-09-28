@@ -29,6 +29,7 @@ class Runtime
         __device__ static void launchSimulation();
         __device__ static void munmap(size_t address);
         __device__ static void unloadBinary();
+        __device__ static void memcpy(void* src, void* dest, size_t dataSize);
 
     public:
         struct RuntimeState 

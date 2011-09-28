@@ -35,6 +35,7 @@ class CoreSimBlock
                 unsigned int localMemoryPerThread;
                 unsigned int threadsPerBlock;
                 unsigned int sharedMemoryPerBlock;
+                ir::Binary*  binary;
         };
     private:
         //FetchUnit m_fetchUnit;
@@ -48,7 +49,6 @@ class CoreSimBlock
 	Warp m_warp;
         bool m_predicateMask[WARP_SIZE]; 
 	unsigned int m_threadIdInWarp;
-        ir::Binary* m_binary;
 
     private:
 	__device__ void clearAllBarrierBits();
@@ -95,7 +95,7 @@ class CoreSimBlock
 
     public:
         //Interface to CoreSimKernel
-        __device__ void setBlockId(unsigned int);
+        __device__ void setBlockState(const BlockState&);
 };
 
 }

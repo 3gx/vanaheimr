@@ -233,4 +233,10 @@ __device__ void CoreSimBlock::setMemoryState(unsigned int localMemory, unsigned 
     m_blockState->sharedMemoryPerBlock = sharedMemory;
 }
 
+__device__ void CoreSimBlock::setBlockState(const BlockState& blockState)
+{
+    m_blockState = new BlockState(blockState);
+}
+
+
 }
