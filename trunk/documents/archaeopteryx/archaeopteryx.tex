@@ -9,7 +9,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %\documentclass[12pt]{report}
-\documentclass[conference, 12pt]{IEEEtran}
+\documentclass[conference, 10pt]{IEEEtran}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Included Packages
@@ -60,7 +60,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Title and Authors
 \title{Archaeopteryx\\
-A Self-Simulating CUDA Simulator}
+A Self-Simulating GPU Simulator}
 
 \author{Sudnya Diamos and Gregory Diamos  \\
 No Affiliation \\
@@ -94,14 +94,38 @@ multi-threading and \textit{single-instruction-multiple-data} (SIMD)
 cores. 
 
 In contrast to many-core processors based on out-of-order CPU cores,
-GPU architectures are designed to execute massively parallel programs.  
-Future architectures are expected to 
+GPU architectures are designed to exploit the massive data-parallelism of
+bulk-synchronous programs. Performance is maximized for regular computations
+where hardware can use SIMD pipelines and bulk data transfers to exploit
+control and data locality among threads.  However, current designs suffer
+from steep performance cliffs when executing programs with irregular control
+flow and data access patterns.  
+%They are also 
+%from branch divergence (when threads take
+%different paths through the program) and memory divergence (when threads perform
+%scatter or gather memory accesses).  
+They are also beginning to introduce new
+programming hazards as they move to \textit{non-uniform memory access}
+organizations to reduce on-chip network overheads.  
+
+These performance hazards complicate GPU programming. In fact, sequential
+algorithms mapped to single core CPUs are still competitive with GPUs for many
+application domains (e.g. database queries, loss-less compression,
+lexing/parsing, or graph analytics) despite a 300x (and exponentially growing)
+difference in peak throughput.  Two of the most important problems in computing
+today involve designing architectures with more gradual performance cliffs
+(without sacrificing parallel efficiency), and
+designing bulk-synchronous algorithms for irregular applications.  
 
 % attention grabber
-The gap between parallel processor and simulator performance is widening with
-each successive generation.  
-
-% Performance modeling
+Unfortunately, the tools that have been traditionally used to explore solutions
+to these problems (architecture simulators and analytical models) fall into the
+category of applications \textit{without} efficient parallel implementations. 
+This has created a gap between parallel processor and simulator performance that
+is widening with each successive generation, limiting the ability of architects
+to explore the design space of possible optimizations and the ability of
+application designers to evaluate the impact of algorithms on future
+architectures.  
 
 % Functional modeling
 This is even more troubling for functional verification.  Although most bugs are
@@ -117,19 +141,30 @@ especially for applications with multiple phases.
 It would be desirable to leverage the tremendous growth in computing potential
 provided by parallel processors for microarchitecture simulation.  However,
 the sequential operation and tight dependency loops in high performance 
-processor pipelines quickly dash those hopes.  
+processor pipelines quickly dash the hopes of straightforward solutions.
+Exploiting fine-grained data parallelism and expressing the operation of a
+processor in terms of hierarchical bulk data transfers requires a ground-up
+approach.
 
 % Our approach
 In this paper, we assert that the parallel and hierarchical organization of
-microarchitecture structures used in modern processors provides a natural
+microarchitecture structures used in modern processors provide a natural
 basis for simulation using data-parallel algorithms.  We test this assertion by
-
-% The result
-To leverage technology scaling and microarchitecture enhancements of the
-previous generation of hardware to simulate the next.
+implementing a composable functional simulator for a new processor architecture,
+and then augment it with performance models for key micro-architecture
+structures.  We exploit fine-grained data parallelism by using hundreds of
+threads to simulate a single core.  We show how basic parallel algorithm
+building blocks like reductions, prefix sums, sorts, and histograms can be used
+to simluate instruction fetch units, register files, thread schedulers,
+functional units, and caches.  Across X applications, we show that the accuracy
+of the simulation is comparable to state-of-the-art sequential simulators, and
+that the performance of the simulator scales across three generations of GPUs.
+This paper describes the first data-parallel processor simulator that can 
+leverage the technology scaling and microarchitecture enhancements of the
+previous generation of GPU hardware to simulate the next.
 
 % Contributions
-This paper makes the following contributions:
+Specifically, this paper makes the following contributions:
 
 \begin{itemize}
 	\item It describes the design of the first processor simulator implemented
@@ -144,7 +179,9 @@ This paper makes the following contributions:
 		hierarchies, and core pipelines can be simulated quickly as long as
 		the hierarchical organization of the machine is maintained.
 	
-	\item It compares 
+	\item It compares the results and performance of our parallel simulator with
+		two existing GPU simulators: GPGPU-Sim, and the Ocelot PTX Emulator.  
+		We demonstrate a Nx speedup.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
