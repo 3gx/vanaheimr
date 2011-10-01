@@ -22,7 +22,9 @@ class Runtime
         __device__ ~Runtime();
 
         __device__ static void loadBinary(const char* fileName);
-        __device__ static bool allocateMemory(size_t bytes, size_t address);
+        __device__ static bool allocateMemoryChunks(size_t bytes, size_t address);
+        __device__ static void* translateSimulatedAddressToCudaAddress(void* simAddress);
+        __device__ static void* translateCudaAddressToSimulatedAddress(void* CudaAddress);
         __device__ static void setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta);
         __device__ static void setupMemoryConfig(unsigned int localMemoryPerThread, unsigned int sharedMemoryPerCta);
         __device__ static void setupKernelEntryPoint(const char* functionName);
