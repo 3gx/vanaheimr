@@ -9,7 +9,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %\documentclass[12pt]{report}
-\documentclass[conference, 12pt]{IEEEtran}
+\documentclass[conference, 10pt]{IEEEtran}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Included Packages
@@ -59,12 +59,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Title and Authors
-\title{Archaeopteryx\\
-A Self-Simulating CUDA Simulator}
+\title{Simulate GPUs not CPUs}
 
 \author{Sudnya Diamos and Gregory Diamos  \\
 No Affiliation \\
-{\small mailsudnya@gmail.edu, gregory.diamos@gatech.edu}}
+{\small mailsudnya@gmail.edu, gregory.diamos@mail.gatech.edu}}
 \date{\today}
 
 \maketitle
@@ -74,11 +73,44 @@ No Affiliation \\
 % Section 1 - 1000 words
 \section{Introduction}
 
+% attention grabber
+The gap between parallel processor and simulator performance is widening with
+each successive generation.  
 
+% Performance modeling
 
+% Functional modeling
+This is even more troubling for functional verification.  Although most bugs are
+still caught with relatively short directed tests~\cite{ref:bug-distributions},
+a critical class of bugs only occurs during complex interactions between
+multiple components.  These bugs are typically discovered through application
+stress testing or random program execution.   As application complexity
+continues to grow with processor capability, there is a rising concern that
+simulator performance will limit application and random test coverage,
+especially for applications with multiple phases.  
+
+% Why are we doing this?
+It would be desirable to leverage the tremendous growth in computing potential
+provided by parallel processors for microarchitecture simulation.  However,
+the sequential operation and tight dependency loops in high performance 
+processor pipelines quickly dash those hopes.  
+
+% Our approach
+In this paper, we assert that the parallel and hierarchical organization of
+microarchitecture structures used in modern processors provides a natural
+basis for simulation using data-parallel algorithms.  We test this assertion by
+
+% The result
+To leverage technology scaling and microarchitecture enhancements of the
+previous generation of hardware to simulate the next.
+
+% Contributions
 This paper makes the following contributions:
 
 \begin{itemize}
+	\item It describes the design of the first processor simulator implemented
+		completely in the CUDA "C" language.
+
 	\item It introduces a design methodology for simulating parallel processors
 		that achieves near peak utilization of modern GPU accelerators and
 		good scaling across three generations of GPUs.
@@ -88,7 +120,7 @@ This paper makes the following contributions:
 		hierarchies, and core pipelines can be simulated quickly as long as
 		the hierarchical organization of the machine is maintained.
 	
-	\item 
+	\item It compares 
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
