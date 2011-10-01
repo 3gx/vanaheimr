@@ -9,7 +9,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %\documentclass[12pt]{report}
-\documentclass[conference, 10pt]{IEEEtran}
+\documentclass[conference, 12pt]{IEEEtran}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Included Packages
@@ -59,11 +59,12 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Title and Authors
-\title{Simulate GPUs not CPUs}
+\title{Archaeopteryx\\
+A Self-Simulating CUDA Simulator}
 
 \author{Sudnya Diamos and Gregory Diamos  \\
 No Affiliation \\
-{\small mailsudnya@gmail.edu, gregory.diamos@mail.gatech.edu}}
+{\small mailsudnya@gmail.edu, gregory.diamos@gatech.edu}}
 \date{\today}
 
 \maketitle
@@ -72,6 +73,29 @@ No Affiliation \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 1 - 1000 words
 \section{Introduction}
+
+% Survey of the space
+The transition to many core computing has coincided with the growth of
+data parallel computation and the evolution of graphics processing
+units (GPUs) from special purpose devices to programmable cores. 
+The emergence of low cost programmable GPU computing substrates from
+NVIDIA, Intel, AMD, and ARM have made data parallel architectures commodity
+from embedded systems through large scale clusters such as the
+Tsubame~\cite{ref:tsubame} and Keeneland systems~\cite{ref:keeneland}
+hosting thousands of GPU chips.
+
+The dominant programming systems involve the use of
+bulk-synchronous-parallel programming models~\cite{ref:bulk-synchronous}
+embodied by languages such as CUDA, OpenCL, and C++-AMP.  These data-parallel
+languages implement \textit{single instruction stream multiple thread} (SIMT)
+models of computation that specify a large number of
+data-parallel threads that can be readily exploited by hardware
+multi-threading and \textit{single-instruction-multiple-data} (SIMD)
+cores. 
+
+In contrast to many-core processors based on out-of-order CPU cores,
+GPU architectures are designed to execute massively parallel programs.  
+Future architectures are expected to 
 
 % attention grabber
 The gap between parallel processor and simulator performance is widening with
