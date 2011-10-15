@@ -75,7 +75,7 @@ __device__ void Lexer::findSplitters()
 	char*  startingPoint = _fileData + (threadId + 1) * blockSize;
 	char*  fileEnd       = _fileData + _fileDataSize;
 	
-	startingPoint = totalThreads - 1 == threadId ? fileEnd : startingPoint;
+	startingPoint = (totalThreads - 1) == threadId ? fileEnd : startingPoint;
 	
 	for(; startingPoint < fileEnd; ++startingPoint)
 	{
@@ -87,14 +87,130 @@ __device__ void Lexer::findSplitters()
 
 __device__ void Lexer::transposeStreams()
 {
-	Splitter splitter = _getSplitter();
+	Splitter splitter = _getDataSplitter();
 	
-	_transposedFileData
+	const util::Config config = {threads, ctas, 2 * threads};
+	
+	util::transpose<char, config>(splitter.begin, splitter.end,
+		_transposedFileData);
 }
 
-__device__ void Lexer::lexCharacterStreams();
-__device__ void Lexer::transposeTokenStreams();
-__device__ void Lexer::gatherTokenStreams();
+__device__ bool isWhitespace(char character)
+{
+	return character == ' '  ||
+		   character == '\t' ||
+}
+
+__device__ static Token nextState(State& state, char character)
+{
+	Token result = InvalidToken;
+
+	// End a token with whitespace (a separator)
+	if(isWhitespace(character))
+	{
+		if(state == Entry)
+		{
+			return InvalidToken;
+		}
+
+		State temp = state;
+		state = Entry;
+		return getTokenForState(state);
+	}
+
+	// produce a token and do not update the state
+	if(state == Entry)
+	{
+		result = tryLexingSingleCharacter(character);
+	}
+
+	// a state update is required
+	if(result == InvalidToken)
+	{
+		result = tryLexingComplex(state, character);	
+	}
+		
+	return result;
+}
+
+__device__ static void lex(Token* tokens, unsigned int& bufferIndex,
+	State& state, const char* position)
+{
+	unsigned int base = util::threadId() * localBufferEntries;
+	
+	Token token = nextState(state, *position);
+	
+	if(token != InvalidToken)
+	{
+		tokens[bufferIndex++ + base] = token;
+	}
+}
+
+__device__ void Lexer::lexCharacterStreams()
+{
+	State state = Entry;
+
+	const char* begin = _transposedFileData + util::threadId();
+	const char* end   = _transposedFileData + _fileDataSize;
+
+	const unsigned int bufferSize = threads * localBufferEntries;
+
+	__shared__ Token buffer[bufferSize];
+	__shared__ Token transposed[bufferSize];
+	__shared__ unsigned int tokensGenerated[threads];
+	__shared__ unsigned int tokenOffsets[threads];
+
+	const util::Config config = {threads, ctas, bufferSize};
+	
+	for(const char* character = begin; character < end; )
+	{
+		unsigned int bufferIndex = 0;
+		
+		// lex locally into the buffer
+		for(; character < end; ++character)
+		{
+			while(bufferIndex < bufferSize)
+			{
+				lex(buffer, bufferIndex, character);
+			}
+		}
+		
+		__syncthreads();
+		
+		// transpose the buffers 
+		util::transposeShared<Token, config>(buffer, buffer + bufferSize,
+			transposed);
+		
+		__syncthreads();
+		
+		// flush the buffers out
+		for(unsigned int i = 0; i < threads; ++i)
+		{
+			unsigned int size   = tokensGenerated[i];
+			unsigned int offset = tokenOffsets[i];
+			
+			if(util::threadId() < size)
+			{
+				tokenStreams[offset + util::threadId()] =
+					transposed[i * threads + util::threadId()];
+			}
+		}
+	}
+}
+
+__device__ void Lexer::gatherTokenStreams()
+{
+	// each CTA gets to gather from a single token stream
+	TokenSplitter input  = _getTokenStreamInput();
+	TokenSplitter output = _getTokenStreamOutput();
+	
+	assert(input.end - input.begin == output.end - output.begin);
+	
+	const util::Config config = {threads, ctas, 0};
+	
+	// cta memcpy
+	util::ctaCopy<Token, config>(input.begin, input.end, output.begin);
+}
 
 __device__ void Lexer::cleanup()
 {
@@ -112,6 +228,9 @@ __device__ void Lexer::cleanup()
 
 	delete[] _transposedTokens;
 	_transposedTokens = 0;
+
+	delete[] _tokenStreams;
+	_tokenStreams = 0;
 }
 
 }
