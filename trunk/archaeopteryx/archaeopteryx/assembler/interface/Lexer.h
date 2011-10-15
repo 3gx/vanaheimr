@@ -59,8 +59,6 @@ public:
 	__device__ void transposeStreams();
 	/*! \brief Produce token streams, lexing each stream independently */
 	__device__ void lexCharacterStreams();
-	/*! \brief Transpose the token streams */
-	__device__ void transposeTokenStreams();
 	/*! \brief Gather the token streams */
 	__device__ void gatherTokenStreams();
 	/*! \brief Cleanup allocated scratchpath memory */
@@ -77,7 +75,7 @@ private:
 	/*! \brief The transposed file data */
 	char* _transposedFileData;
 	/*! \brief The list of transposed tokens */
-	Token* _transposedTokens;
+	Token* _tokenStreams;
 	/*! \brief Finally, the compacted set of tokens */
 	Token* _tokens;
 	size_t _tokenCount;
