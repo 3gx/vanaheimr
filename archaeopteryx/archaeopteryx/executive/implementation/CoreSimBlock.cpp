@@ -126,7 +126,7 @@ __device__ CoreSimBlock::InstructionContainer CoreSimBlock::fetchInstruction(PC 
     
     if (m_threadIdInWarp == 0)
     {
-        m_binary->copyCode(&instruction, pc, 1);
+        m_blockState->binary->copyCode(&instruction, pc, 1);
     }
     // barrier
     return instruction;

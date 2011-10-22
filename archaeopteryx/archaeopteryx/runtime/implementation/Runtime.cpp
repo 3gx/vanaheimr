@@ -55,17 +55,17 @@ __device__ void Runtime::loadBinary(const char* fileName)
 //
 __device__ bool Runtime::allocateMemoryChunk(size_t bytes, size_t address)
 {
-    return !(address+bytes > (m_physicalMemory+PHYSICAL_MEMORY_SIZE));
+    return !(address+bytes > ((size_t)g_runtimeState.m_physicalMemory+PHYSICAL_MEMORY_SIZE));
 }
 
-__device__ bool Runtime::translateSimulatedAddressToCudaAddress(void* simAddress)
+__device__ void* Runtime::translateSimulatedAddressToCudaAddress(void* simAddress)
 {
-    return (m_physicalMemory + simAddress);
+    return (void*)((size_t)g_runtimeState.m_physicalMemory + (size_t)simAddress);
 }
 
-__device__ bool Runtime::translateCudaAddressToSimulatedAddress(void* cudaAddress)
+__device__ void* Runtime::translateCudaAddressToSimulatedAddress(void* cudaAddress)
 {
-    return (cudaAddress - m_physicalMemory);
+    return (void*)((size_t)cudaAddress - (size_t)g_runtimeState.m_physicalMemory);
 }
 
 // The Runtime class owns all of the simulator state, it should have allocated it in the constructor

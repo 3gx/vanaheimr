@@ -16,13 +16,15 @@ namespace executive
 
 class CoreSimKernel
 {
-    private:
-        
-
     public:
         //__device__ CoreSimKernel(void *gpuState, char* binaryName);
-        __device__ void launchKernel(unsigned int simulatedBlocks, executive::CoreSimBlock* blocks);
+        __device__ void launchKernel(unsigned int simulatedBlocks, 
+        	executive::CoreSimBlock* blocks);
 
 };
 
 }
+
+// TODO Remove when we get a real linker
+#include <archaeopteryx/executive/implementation/CoreSimKernel.cpp>
+
