@@ -1,8 +1,8 @@
 /*! \file   CoreSimBlock.h
-	\date   Saturday Feburary 23, 2011
-	\author Gregory and Sudnya Diamos
-		<gregory.diamos@gatech.edu, mailsudnya@gmail.com>
-	\brief  The header file for the Core simulator of the thread block class.
+    \date   Saturday Feburary 23, 2011
+    \author Gregory and Sudnya Diamos
+        <gregory.diamos@gatech.edu, mailsudnya@gmail.com>
+    \brief  The header file for the Core simulator of the thread block class.
 */
 
 #pragma once
@@ -46,12 +46,12 @@ class CoreSimBlock
         LocalMemory* m_localMemory;
         CoreSimThread* m_threads;
         typedef CoreSimThread* Warp;
-	Warp m_warp;
+        Warp m_warp;
         bool m_predicateMask[WARP_SIZE]; 
-	unsigned int m_threadIdInWarp;
+        unsigned int m_threadIdInWarp;
 
     private:
-	__device__ void clearAllBarrierBits();
+        __device__ void clearAllBarrierBits();
         __device__ bool areAllThreadsFinished();
         __device__ void roundRobinScheduler();
         __device__ unsigned int findNextPC(unsigned int&);
@@ -60,26 +60,26 @@ class CoreSimBlock
         __device__ void executeWarp(InstructionContainer* instruction, PC pc);
 
     public:
-    	// Initializes the state of the block
-    	//  1) Register file
-    	//  2) shared memory 
-    	//  3) local memory for each thread
-    	//  4) thread contexts
+        // Initializes the state of the block
+        //  1) Register file
+        //  2) shared memory 
+        //  3) local memory for each thread
+        //  4) thread contexts
         __device__ CoreSimBlock();
     
     public:
-    	// Entry point to the block simulation
-    	//  It performs the following operations
-    	//   1) Schedule group of simulated threads onto CUDA warps (static/round-robin)
-    	//   2) Pick the next PC to execute (the one with the highest priority using a reduction)
-    	//   3) Set the predicate mask (true if threadPC == next PC, else false)
-    	//   4) Fetch the instruction at the selected PC
-    	//   5) Execute all threads with true predicate masks
-    	//   6) Save the new PC, goto 1 if all threads are not done
-    	__device__ void runBlock();
+        // Entry point to the block simulation
+        //  It performs the following operations
+        //   1) Schedule group of simulated threads onto CUDA warps (static/round-robin)
+        //   2) Pick the next PC to execute (the one with the highest priority using a reduction)
+        //   3) Set the predicate mask (true if threadPC == next PC, else false)
+        //   4) Fetch the instruction at the selected PC
+        //   5) Execute all threads with true predicate masks
+        //   6) Save the new PC, goto 1 if all threads are not done
+        __device__ void runBlock();
     
     public:
-    	// Interfaces to CoreSimThread
+        // Interfaces to CoreSimThread
        // __device__ CoreSimThread* getCoreSimThread(unsigned int id);
        // __device__ unsigned int getSimulatedThreadCount();
         __device__ CoreSimThread::Value getRegister(unsigned int, unsigned int);

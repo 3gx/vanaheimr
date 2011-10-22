@@ -34,6 +34,12 @@ __device__ HostReflection::DeviceQueue* _deviceToHost;
 // device/host shared memory region
 static char* _deviceHostSharedMemory = 0;
 
+template <typename T>
+__device__ T HostReflection::Payload::get(unsigned int i)
+{
+	return *((T*)(data + indexes[i]));
+}
+
 __device__ void HostReflection::sendSynchronous(const Message& m)
 {
 	unsigned int bytes = m.payloadSize() + sizeof(SynchronousHeader);
@@ -90,16 +96,20 @@ __device__ void HostReflection::receive(Message& m)
 	delete[] buffer;
 }
 
-__host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
-	const Header& header, const void* payload)
+__device__ void HostReflection::launch(unsigned int ctas, unsigned int threads,
+	const char* functionName, const Payload& payload)
 {
-	assert(header.size  >= sizeof(Header));
-	assert(queue.size() >= header.size   );
-
-	while(!queue.push(&header, sizeof(Header)));
-
-	while(!queue.push(payload, header.size - sizeof(Header)));
+	device_assert(false && "Not implemented.");
 }
+
+template<typename T0, typename T1, typename T2, typename T3, typename T4>
+__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
+	const T1& t1, const T2& t2, const T3& t3, const T4& t4)
+{
+	device_assert(false && "Not implemented.");
+	return Payload();
+}
+
 
 __device__ size_t HostReflection::maxMessageSize()
 {
@@ -222,6 +232,17 @@ __host__ void HostReflection::handleFileRead(HostQueue& queue,
 	hostSendAsynchronous(queue, reply, buffer);
 
 	delete[] buffer;
+}
+
+__host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
+	const Header& header, const void* payload)
+{
+	assert(header.size  >= sizeof(Header));
+	assert(queue.size() >= header.size   );
+
+	while(!queue.push(&header, sizeof(Header)));
+
+	while(!queue.push(payload, header.size - sizeof(Header)));
 }
 
 __host__ HostReflection::HostQueue::HostQueue(QueueMetaData* m)

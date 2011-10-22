@@ -6,16 +6,18 @@
  *   */
 
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
+#include <archaeopteryx/executive/interface/CoreSimBlock.h>
 
 namespace executive
 {
 
 __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, CoreSimBlock* blocks)
 {
-    for (unsigned int simulatedBlock = blockIdx.x; simulatedBlock < m_simulatedBlocks; simulatedBlock += gridDim.x)
+    for (unsigned int simulatedBlock = blockIdx.x;
+    	simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)
     {
-        blocks[blockIdx.x]->setBlockId(simulatedBlock);
-        blocks[blockIdx.x]->runBlock();
+        // TODO set block state
+        blocks[blockIdx.x].runBlock();
     }
     
 }

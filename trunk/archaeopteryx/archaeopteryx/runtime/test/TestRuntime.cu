@@ -6,6 +6,7 @@
  *   */
 
 #include <archaeopteryx/runtime/interface/Runtime.h>
+
 // High level:
 // Create i/p data, load binary, launch threads/run kernel, read outputs and verify outputs 
 // Detailed steps:
@@ -21,35 +22,52 @@
 
 __global__ void runTest()
 {
-    unsigned int* refX;
-    unsigned int* refY;
-    unsigned int a = 5;
-    refX = malloc(ARRAY_SIZE);
-    refY = malloc(ARRAY_SIZE);
-    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",refX);
-    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",refY);
-    util::HostReflection::launch(1, ARRAY_SIZE, "refCudaSaxpy", refX, refY, a);
+    unsigned int* refX = 0;
+    unsigned int* refY = 0;
+    unsigned int a     = 5;
+
+    refX = (unsigned int*)malloc(ARRAY_SIZE);
+    refY = (unsigned int*)malloc(ARRAY_SIZE);
+
+    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",
+    	util::HostReflection::createPayload(refX));
+    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",
+    	util::HostReflection::createPayload(refY));
+    util::HostReflection::launch(1, ARRAY_SIZE, "refCudaSaxpy",
+    	util::HostReflection::createPayload(refX, refY, a));
 
     //allocate memory for arrays used by saxpy
-    unsigned int baseX = 0;
-    unsigned int baseY = baseX + ARRAY_SIZE;
-    bool allocX        = Runtime::allocateMemoryChunk(ARRAY_SIZE, baseX);
-    bool allocY        = Runtime::allocateMemoryChunk(ARRAY_SIZE, baseY);
+    size_t baseX = 0;
+    size_t baseY = baseX + ARRAY_SIZE;
+    bool allocX  = rt::Runtime::allocateMemoryChunk(ARRAY_SIZE, baseX);
+    bool allocY  = rt::Runtime::allocateMemoryChunk(ARRAY_SIZE, baseY);
+
     if (allocX && allocY)
     {
-        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", Runtime::translateCudaAddressToSimulatedAddress(baseX));
-        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", Runtime::translateCudaAddressToSimulatedAddress(baseY));
-        Runtime::loadBinary("saxpy.cu");
-        Runtime::setupKernelEntryPoint("main");
-        Runtime::launchSimulation();
-        void* translatedAddress = Runtime::translateSimulatedAddressToCudaAddress(baseY);
-        util::HostReflection::launch(1, 1, "compareMemory", translatedAddress, refY, ARRAY_SIZE);
+        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", 
+        	util::HostReflection::createPayload(
+        	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseX)));
+        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", 
+        	util::HostReflection::createPayload(
+        	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseY)));
+		rt::Runtime::loadBinary("saxpy.cu");
+        rt::Runtime::setupKernelEntryPoint("main");
+        rt::Runtime::launchSimulation();
+        void* translatedAddress =
+        	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseY);
+        util::HostReflection::launch(1, 1, "compareMemory",
+        	util::HostReflection::createPayload(translatedAddress,
+        	refY, ARRAY_SIZE));
     }
 
 } 
 
-__device__ void compareMemory(void* ref, void* result, unsigned int memBlockSize)
+__device__ void compareMemory(util::HostReflection::Payload& payload)
 {
+	unsigned int* result       = payload.get<unsigned int*>(0);
+    unsigned int* ref          = payload.get<unsigned int*>(1);
+    unsigned int  memBlockSize = payload.get<unsigned int>(2);
+    
     for (unsigned int i = 0; i < memBlockSize; ++i)
     {
         if (ref[i] != result[i])
@@ -60,13 +78,19 @@ __device__ void compareMemory(void* ref, void* result, unsigned int memBlockSize
     }
 }
 
-__device__ void initValues(unsigned int* array)
+__device__ void initValues(util::HostReflection::Payload& payload)
 {
+	unsigned int* array = payload.get<unsigned int*>(0);
+
     array[threadIdx.x] = threadIdx.x;
 }
 
-__device__ void refCudaSaxpy(unsigned int* y, unsigned int* x, unsigned int a)
+__device__ void refCudaSaxpy(util::HostReflection::Payload& payload)
 {
+	unsigned int* y = payload.get<unsigned int*>(0);
+	unsigned int* x = payload.get<unsigned int*>(1);
+	unsigned int  a = payload.get<unsigned int>(2);
+	
     y[threadIdx.x] = a*x[threadIdx.x] + y[threadIdx.x];
 }
 
@@ -76,5 +100,6 @@ int main(int argc, char** argv)
     runTest<<<1, 1, 0>>>();
 
     util::HostReflection::destroy();
-
 }
+
+
