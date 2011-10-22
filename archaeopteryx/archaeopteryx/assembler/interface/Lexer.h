@@ -37,6 +37,21 @@ namespace assembler
 class Lexer
 {
 public:
+	class Token
+	{
+	public:
+		enum Type
+		{
+			
+		};
+	
+	public:
+		Type     type;
+		uint64_t data;
+	};
+
+
+public:
 	/*! \brief The constructor initializes itself from a file */
 	__device__ Lexer(util::File* file);
 	/*! \brief Destroy the lexer and any generated token stream */
