@@ -105,7 +105,7 @@ __device__ void Runtime::launchSimulation()
 
 __device__ void Runtime::launchSimulationInParallel()
 {
-    g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, g_runtimeState.m_blocks);
+    g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, g_runtimeState.m_blocks, g_runtimeState.m_loadedBinary);
 }
 
 
