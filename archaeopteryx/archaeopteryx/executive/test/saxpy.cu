@@ -1,6 +1,6 @@
 /*! \file   saxpy.cu
     \date   Saturday Feburary 26, 2011
-    \author Gregory Diamos and Sudnya Diamos
+    \author Gregory Diamos and Sudnya Padalikar 
         <gregory.diamos@gatech.edu, mailsudnya@gmail.com>
     \brief  A test for VIR and the simulator core.
 */
@@ -279,7 +279,7 @@ __device__ void createSaxpy(void* parameters)
     
         ret.opcode = ir::Instruction::Ret;
     }
-    
+
 }
 
 typedef long long unsigned int uint64;
