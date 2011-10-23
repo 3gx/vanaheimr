@@ -38,7 +38,7 @@ int main()
     typedef unsigned int PageDataType[1 << 13];
 
     PageDataType page;
-
+    std::memset(page, 0, sizeof(PageDataType));
     ir::InstructionContainer* vir = (ir::InstructionContainer*)page;
 
     {
