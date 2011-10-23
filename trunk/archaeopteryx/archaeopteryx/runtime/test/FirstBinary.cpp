@@ -273,6 +273,14 @@ int main()
  
     std::ofstream ofs("BinarySaxpy.exe", std::ofstream::binary);
     
+    SymbolTableEntry symbolInfo;
+    symbolInfo.type              = 2; //FunctionSymbolType from the enum. Hardcoded for now.
+    symbolInfo.stringTableOffset = 0;
+    symbolInfo.pageId            = 0;
+    symbolInfo.pageOffset        = 0;
+    symbolInfo.attributes        = 0;
+    
+    std::string entryPoint("saxpy");
     if (!ofs.is_open())
     {
         std::cout << "Could not open the binary file\n";
@@ -280,5 +288,7 @@ int main()
     }
     ofs.write((char*)&binHeader, sizeof(Header));
     ofs.write((char*)vir, sizeof(PageDataType));
+    ofs.write((char*)&symbolInfo, sizeof(SymbolTableEntry));
+    ofs.write(entryPoint.c_str(), entryPoint.size() + 1);
     ofs.close();
 }
