@@ -182,6 +182,38 @@ __device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
 	return result;
 }
 
+template<typename T0, typename T1, typename T2, typename T3>
+__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
+	const T1& t1, const T2& t2, const T3& t3)
+{
+	return createPayload(t0, t1, t2, t3, (int)0);
+}
+
+template<typename T0, typename T1, typename T2>
+__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
+	const T1& t1, const T2& t2)
+{
+	return createPayload(t0, t1, t2, (int)0);
+}
+
+template<typename T0, typename T1>
+__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
+	const T1& t1)
+{
+	return createPayload(t0, t1, (int)0);
+}
+
+template<typename T0>
+__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0)
+{
+	return createPayload(t0, (int)0);
+}
+
+__device__ HostReflection::Payload HostReflection::createPayload()
+{
+	return createPayload((int)0);
+}
+
 __device__ size_t HostReflection::maxMessageSize()
 {
 	return 64;
