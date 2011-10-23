@@ -101,7 +101,8 @@ __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 __device__ void Runtime::launchSimulation()
 {
     util::HostReflection::launch(NUMBER_OF_HW_BLOCKS,
-    	NUMBER_OF_HW_THREADS_PER_BLOCK, "Runtime::launchSimulationInParallel");
+    	NUMBER_OF_HW_THREADS_PER_BLOCK, __FILE__, 
+    	"Runtime::launchSimulationInParallel");
 }
 
 __device__ void Runtime::launchSimulationInParallel()
