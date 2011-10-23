@@ -7,16 +7,19 @@
 
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
+#include <archaeopteryx/ir/interface/Binary.h>
 
 namespace executive
 {
 
-__device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, CoreSimBlock* blocks)
+__device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, CoreSimBlock* blocks, ir::Binary* binary)
 {
     for (unsigned int simulatedBlock = blockIdx.x;
     	simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)
     {
         // TODO set block state
+        blocks[blockIdx.x].setupBinary(binary);
+        blocks[blockIdx.x].setupCoreSimBlock();
         blocks[blockIdx.x].runBlock();
     }
     

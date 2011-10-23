@@ -11,7 +11,7 @@
 namespace executive
 {
 
-__device__ CoreSimBlock::CoreSimBlock()
+__device__ CoreSimBlock::setupCoreSimBlock()
 {
     m_registerFiles  = new Register[m_blockState->registersPerThread * m_blockState->threadsPerBlock];
     m_sharedMemory   = new SharedMemory[m_blockState->sharedMemoryPerBlock];
@@ -19,6 +19,11 @@ __device__ CoreSimBlock::CoreSimBlock()
 
     m_threadIdInWarp = threadIdx.x % WARP_SIZE;
     m_threads        = new CoreSimThread[m_blockState->threadsPerBlock];
+}
+
+__device__ CoreSimBlock::setupBinary(ir::Binary* binary)
+{
+    m_blockState->binary = binary;
 }
 
 __device__ bool CoreSimBlock::areAllThreadsFinished()

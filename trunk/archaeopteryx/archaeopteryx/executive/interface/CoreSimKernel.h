@@ -10,6 +10,7 @@
 /*! \brief A namespace for program execution */
 //forward declarations
 namespace executive {class CoreSimBlock;}
+namespace ir {class Binary;}
 
 namespace executive
 {
@@ -18,8 +19,7 @@ class CoreSimKernel
 {
     public:
         //__device__ CoreSimKernel(void *gpuState, char* binaryName);
-        __device__ void launchKernel(unsigned int simulatedBlocks, 
-        	executive::CoreSimBlock* blocks);
+        __device__ void launchKernel(unsigned int simulatedBlocks, executive::CoreSimBlock* blocks, ir::Binary* binary);
 
 };
 
