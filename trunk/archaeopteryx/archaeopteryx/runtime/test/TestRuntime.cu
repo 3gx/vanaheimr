@@ -66,7 +66,7 @@ __device__ void compareMemory(util::HostReflection::Payload& payload)
 {
 	unsigned int* result       = payload.get<unsigned int*>(0);
     unsigned int* ref          = payload.get<unsigned int*>(1);
-    unsigned int  memBlockSize = payload.get<unsigned int>(2);
+    unsigned int  memBlockSize = payload.get<unsigned int >(2);
     
     for (unsigned int i = 0; i < memBlockSize; ++i)
     {
@@ -89,16 +89,16 @@ __device__ void refCudaSaxpy(util::HostReflection::Payload& payload)
 {
 	unsigned int* y = payload.get<unsigned int*>(0);
 	unsigned int* x = payload.get<unsigned int*>(1);
-	unsigned int  a = payload.get<unsigned int>(2);
+	unsigned int  a = payload.get<unsigned int >(2);
 	
     y[threadIdx.x] = a*x[threadIdx.x] + y[threadIdx.x];
 }
 
 int main(int argc, char** argv)
 {
+    util::HostReflection::launchFromHost(1, 1, "runTest");
+    
     util::HostReflection::create();
-    runTest<<<1, 1, 0>>>();
-
     util::HostReflection::destroy();
 }
 

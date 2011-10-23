@@ -65,8 +65,8 @@ class CoreSimBlock
         //  2) shared memory 
         //  3) local memory for each thread
         //  4) thread contexts
-        __device__ setupCoreSimBlock();
-        __device__ setupBinary(ir::Binary* binary);
+        __device__ void setupCoreSimBlock();
+        __device__ void setupBinary(ir::Binary* binary);
     
     public:
         // Entry point to the block simulation

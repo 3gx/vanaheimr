@@ -17,6 +17,13 @@
 #include <cassert>
 #include <fstream>
 
+// Forward Declarations
+
+namespace ocelot
+{
+	void launch(const std::string& moduleName, const std::string& kernelName);
+}
+
 // Preprocessor Macros
 #ifdef REPORT_BASE
 #undef REPORT_BASE
@@ -37,7 +44,36 @@ static char* _deviceHostSharedMemory = 0;
 template <typename T>
 __device__ T HostReflection::Payload::get(unsigned int i)
 {
-	return *((T*)(data + indexes[i]));
+	return *((T*)(data.data + data.indexes[i]));
+}
+
+__device__ HostReflection::KernelLaunchMessage::KernelLaunchMessage(
+	unsigned int ctas, unsigned int threads,
+	const char* name, const Payload& payload)
+: _stringLength(util::strlen(name) + 1), _data(new char[payloadSize()])
+{
+	
+}
+
+__device__ HostReflection::KernelLaunchMessage::~KernelLaunchMessage()
+{
+	delete[] _data;
+}
+
+__device__ void* HostReflection::KernelLaunchMessage::payload() const
+{
+	return _data;
+}
+
+__device__ size_t HostReflection::KernelLaunchMessage::payloadSize() const
+{
+	return sizeof(unsigned int) * 3 + sizeof(Payload) + _stringLength;
+}
+
+__device__ HostReflection::HandlerId
+	HostReflection::KernelLaunchMessage::handler() const
+{
+	return KernelLaunchMessageHandler;
 }
 
 __device__ void HostReflection::sendSynchronous(const Message& m)
@@ -99,17 +135,52 @@ __device__ void HostReflection::receive(Message& m)
 __device__ void HostReflection::launch(unsigned int ctas, unsigned int threads,
 	const char* functionName, const Payload& payload)
 {
-	device_assert(false && "Not implemented.");
+	KernelLaunchMessage message(ctas, threads, functionName, payload);
+
+	sendSynchronous(message);
+}
+
+__device__ unsigned int align(unsigned int address, unsigned int alignment)
+{
+	unsigned int remainder = address % alignment;
+	return remainder == 0 ? address : address + (alignment - remainder);
 }
 
 template<typename T0, typename T1, typename T2, typename T3, typename T4>
 __device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
 	const T1& t1, const T2& t2, const T3& t3, const T4& t4)
 {
-	device_assert(false && "Not implemented.");
-	return Payload();
-}
+	Payload result;
 
+	PayloadData& payload = result.data;
+
+	unsigned int index = 0;
+	
+	payload.indexes[0] = index;
+	std::memcpy(payload.data + index, &t0, sizeof(T0));
+	index += sizeof(T0);
+	index =  align(index, sizeof(T1));
+	
+	payload.indexes[1] = index;
+	std::memcpy(payload.data + index, &t1, sizeof(T1));
+	index += sizeof(T1);
+	index =  align(index, sizeof(T2));
+	
+	payload.indexes[2] = index;
+	std::memcpy(payload.data + index, &t2, sizeof(T2));
+	index += sizeof(T2);
+	index =  align(index, sizeof(T3));
+	
+	payload.indexes[3] = index;
+	std::memcpy(payload.data + index, &t3, sizeof(T3));
+	index += sizeof(T3);
+	index =  align(index, sizeof(T4));
+	
+	payload.indexes[4] = index;
+	std::memcpy(payload.data + index, &t4, sizeof(T4));
+
+	return result;
+}
 
 __device__ size_t HostReflection::maxMessageSize()
 {
@@ -234,6 +305,23 @@ __host__ void HostReflection::handleFileRead(HostQueue& queue,
 	delete[] buffer;
 }
 
+__host__ void HostReflection::handleKernelLaunch(HostQueue& queue,
+	const Header* header)
+{
+	report("    handling kernel launch message");
+
+	PayloadData*  payload    = (PayloadData* )(header     + 1);
+	unsigned int* ctas       = (unsigned int*)(payload    + 1);
+	unsigned int* threads    = (unsigned int*)(ctas       + 1);
+	unsigned int* nameLength = (unsigned int*)(threads    + 1);
+	const char*   kernelName = (const char*  )(nameLength + 1);
+	
+	Payload arguments;
+	arguments.data = *payload;
+	
+	launchFromHost(*ctas, *threads, kernelName, arguments);
+}
+
 __host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
 	const Header& header, const void* payload)
 {
@@ -243,6 +331,14 @@ __host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
 	while(!queue.push(&header, sizeof(Header)));
 
 	while(!queue.push(payload, header.size - sizeof(Header)));
+}
+
+__host__ void HostReflection::launchFromHost(unsigned int ctas,
+	unsigned int threads, const std::string& name, Payload payload)
+{
+	KernelLaunch launch = {ctas, threads, name, payload};
+
+	_booter->addLaunch(launch);
 }
 
 __host__ HostReflection::HostQueue::HostQueue(QueueMetaData* m)
@@ -490,6 +586,7 @@ __host__ void HostReflection::BootUp::_addMessageHandlers()
 	addHandler(TeardownFileMessageHandler, handleTeardownFile);
 	addHandler(FileWriteMessageHandler,    handleFileWrite);
 	addHandler(FileReadMessageHandler,     handleFileRead);
+	addHandler(KernelLaunchMessageHandler, handleKernelLaunch);
 }
 
 __host__ HostReflection::BootUp::BootUp()
@@ -568,6 +665,13 @@ __global__ void _teardownHostReflection()
 __host__ HostReflection::BootUp::~BootUp()
 {
 	report("Destroying host reflection");
+
+	// wait for kernel launches to complete
+	while(!_launches.empty())
+	{
+		boost::thread::yield();	
+	}
+
 	// kill the thread
 	_kill = true;
 	_thread->join();
@@ -588,7 +692,21 @@ __host__ void HostReflection::BootUp::addHandler(int handlerId,
 	MessageHandler handler)
 {
 	assert(_handlers.count(handlerId) == 0);
+
 	_handlers.insert(std::make_pair(handlerId, handler));
+}
+
+__host__ void HostReflection::BootUp::addKernel(const std::string& name,
+	KernelFunctionType kernel)
+{
+	assert(_kernels.count(name) == 0);
+	
+	_kernels.insert(std::make_pair(name, kernel));
+}
+
+__host__ void HostReflection::BootUp::addLaunch(const KernelLaunch& launch)
+{
+	_launches.push(launch);
 }
 
 __host__ bool HostReflection::BootUp::_handleMessage()
@@ -646,9 +764,27 @@ __host__ void HostReflection::BootUp::_run()
 	{
 		if(!_handleMessage())
 		{
+			if(!_launches.empty())
+			{
+				_launchNextKernel();
+			}
+			
 			boost::thread::yield();
 		}
 	}
+}
+
+__host__ void HostReflection::BootUp::_launchNextKernel()
+{
+	assert(!_launches.empty());
+	KernelLaunch& launch = _launches.front();
+
+	cudaConfigureCall(launch.ctas, launch.threads, 0, 0);
+	
+	cudaSetupArgument(&launch.arguments, sizeof(Payload), 0);
+	ocelot::launch("", launch.name);
+
+	_launches.pop();
 }
 
 __host__ void HostReflection::BootUp::_runThread(BootUp* booter)
