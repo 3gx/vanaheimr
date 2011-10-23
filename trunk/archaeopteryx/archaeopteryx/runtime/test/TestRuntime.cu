@@ -20,7 +20,7 @@
 
 #define ARRAY_SIZE 1024
 
-__global__ void runTest()
+extern "C" __device__ void runTest()
 {
     unsigned int* refX = 0;
     unsigned int* refY = 0;
@@ -29,11 +29,11 @@ __global__ void runTest()
     refX = (unsigned int*)malloc(ARRAY_SIZE);
     refY = (unsigned int*)malloc(ARRAY_SIZE);
 
-    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",
+    util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues",
     	util::HostReflection::createPayload(refX));
-    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",
+    util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues",
     	util::HostReflection::createPayload(refY));
-    util::HostReflection::launch(1, ARRAY_SIZE, "refCudaSaxpy",
+    util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "refCudaSaxpy",
     	util::HostReflection::createPayload(refX, refY, a));
 
     //allocate memory for arrays used by saxpy
@@ -44,10 +44,10 @@ __global__ void runTest()
 
     if (allocX && allocY)
     {
-        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", 
+        util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues", 
         	util::HostReflection::createPayload(
         	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseX)));
-        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", 
+        util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues", 
         	util::HostReflection::createPayload(
         	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseY)));
 		rt::Runtime::loadBinary("saxpy.cu");
@@ -55,14 +55,14 @@ __global__ void runTest()
         rt::Runtime::launchSimulation();
         void* translatedAddress =
         	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseY);
-        util::HostReflection::launch(1, 1, "compareMemory",
+        util::HostReflection::launch(1, 1, __FILE__, "compareMemory",
         	util::HostReflection::createPayload(translatedAddress,
         	refY, ARRAY_SIZE));
     }
 
 } 
 
-__device__ void compareMemory(util::HostReflection::Payload& payload)
+extern "C" __device__ void compareMemory(util::HostReflection::Payload& payload)
 {
 	unsigned int* result       = payload.get<unsigned int*>(0);
     unsigned int* ref          = payload.get<unsigned int*>(1);
@@ -78,7 +78,7 @@ __device__ void compareMemory(util::HostReflection::Payload& payload)
     }
 }
 
-__device__ void initValues(util::HostReflection::Payload& payload)
+extern "C" __device__ void initValues(util::HostReflection::Payload& payload)
 {
 	unsigned int* array = payload.get<unsigned int*>(0);
 
@@ -94,11 +94,17 @@ __device__ void refCudaSaxpy(util::HostReflection::Payload& payload)
     y[threadIdx.x] = a*x[threadIdx.x] + y[threadIdx.x];
 }
 
+__global__ void launchTest()
+{
+    util::HostReflection::launch(1, 1, __FILE__, "runTest");
+}
+
 int main(int argc, char** argv)
 {
-    util::HostReflection::launchFromHost(1, 1, "runTest");
-    
     util::HostReflection::create();
+
+	launchTest<<<1, 1>>>();
+	
     util::HostReflection::destroy();
 }
 

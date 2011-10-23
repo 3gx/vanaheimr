@@ -14,7 +14,7 @@
 #include <queue>
 
 // Macro defines
-#define KERNEL_PAYLOAD_BYTES       128
+#define KERNEL_PAYLOAD_BYTES        32
 #define KERNEL_PAYLOAD_PARAMETERS    5
 
 namespace util
@@ -89,6 +89,7 @@ public:
 	public:
 		unsigned int ctas;
 		unsigned int threads;
+		std::string  module;
 		std::string  name;
 		Payload      arguments;
 	};
@@ -97,7 +98,7 @@ public:
 	{
 	public:
 		__device__ KernelLaunchMessage(unsigned int ctas, unsigned int threads,
-			const char* name, const Payload& payload);
+			const char* module, const char* name, const Payload& payload);
 		__device__ ~KernelLaunchMessage();
 
 	public:
@@ -107,6 +108,7 @@ public:
 	
 	private:
 		unsigned int _stringLength;
+		unsigned int _moduleNameLength;
 		char*        _data;
 	};
 	
@@ -116,7 +118,8 @@ public:
 
 public:
 	__device__ static void launch(unsigned int ctas, unsigned int threads,
-		const char* functionName, const Payload& payload = Payload());
+		const char* moduleName, const char* functionName,
+		const Payload& payload = Payload());
 
 	template<typename T0, typename T1, typename T2, typename T3, typename T4>
 	__device__ static Payload createPayload(const T0& t0,
@@ -235,7 +238,8 @@ public:
 		const Header& h, const void* p);
 
 	__host__ static void launchFromHost(unsigned int ctas, unsigned int threads,
-		const std::string& name, Payload = Payload());
+		const std::string& moduleName, const std::string& name,
+		Payload = Payload());
 
 private:
 	class BootUp
