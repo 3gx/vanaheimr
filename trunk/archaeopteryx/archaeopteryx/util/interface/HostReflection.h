@@ -118,11 +118,25 @@ public:
 	__device__ static void launch(unsigned int ctas, unsigned int threads,
 		const char* functionName, const Payload& payload = Payload());
 
-	template<typename T0 = int, typename T1 = int, typename T2 = int,
-		typename T3 = int, typename T4 = int>
-	__device__ static Payload createPayload(const T0& t0 = T0(),
-		const T1& t1 = T1(), const T2& t2 = T2(), const T3& t3 = T3(),
-		const T4& t4 = T4());
+	template<typename T0, typename T1, typename T2, typename T3, typename T4>
+	__device__ static Payload createPayload(const T0& t0,
+		const T1& t1, const T2& t2, const T3& t3, const T4& t4);
+
+	template<typename T0, typename T1, typename T2, typename T3>
+	__device__ static Payload createPayload(const T0& t0,
+		const T1& t1, const T2& t2, const T3& t3);
+
+	template<typename T0, typename T1, typename T2>
+	__device__ static Payload createPayload(const T0& t0,
+		const T1& t1, const T2& t2);
+
+	template<typename T0, typename T1>
+	__device__ static Payload createPayload(const T0& t0, const T1& t1);
+
+	template<typename T0>
+	__device__ static Payload createPayload(const T0& t0);
+
+	__device__ static Payload createPayload();
 
 public:
 	__host__ __device__ static size_t maxMessageSize();
