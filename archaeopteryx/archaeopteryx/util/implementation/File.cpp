@@ -107,7 +107,8 @@ __device__ size_t File::readSome(void* data, size_t bytes)
 	}
 
 	size_t attemptedSize =
-		util::min(bytes, util::max((size_t)1, (size_t)(HostReflection::maxMessageSize() / 10)));
+		util::min(bytes, util::max((size_t)1,
+			(size_t)(HostReflection::maxMessageSize() / 10)));
 	
 	ReadMessage message(attemptedSize, _get, _handle);
 	

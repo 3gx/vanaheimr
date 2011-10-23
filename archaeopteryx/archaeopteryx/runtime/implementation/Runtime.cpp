@@ -8,9 +8,9 @@
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 #include <archaeopteryx/runtime/interface/Runtime.h>
 
-#define NUMBER_OF_HW_THREADS_PER_BLOCK 128
-#define NUMBER_OF_HW_BLOCKS 64
-#define PHYSICAL_MEMORY_SIZE (1 << 20)
+#define NUMBER_OF_HW_THREADS_PER_BLOCK       128
+#define NUMBER_OF_HW_BLOCKS                   64
+#define PHYSICAL_MEMORY_SIZE           (1 << 20)
 
 __device__ rt::Runtime::RuntimeState g_runtimeState;
 
@@ -100,17 +100,19 @@ __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
 __device__ void Runtime::launchSimulation()
 {
-    util::HostReflection::launch(NUMBER_OF_HW_BLOCKS, NUMBER_OF_HW_THREADS_PER_BLOCK, "Runtime::launchSimulationInParallel");
+    util::HostReflection::launch(NUMBER_OF_HW_BLOCKS,
+    	NUMBER_OF_HW_THREADS_PER_BLOCK, "Runtime::launchSimulationInParallel");
 }
 
 __device__ void Runtime::launchSimulationInParallel()
 {
-    g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, g_runtimeState.m_blocks, g_runtimeState.m_loadedBinary);
+    g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, 	
+        g_runtimeState.m_blocks, g_runtimeState.m_loadedBinary);
 }
-
 
 __device__ void Runtime::munmap(size_t address)
 {
+
 }
 
 __device__ void Runtime::unloadBinary()

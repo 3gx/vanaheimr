@@ -11,9 +11,10 @@
 namespace executive
 {
 
-__device__ CoreSimBlock::setupCoreSimBlock()
+__device__ void CoreSimBlock::setupCoreSimBlock()
 {
-    m_registerFiles  = new Register[m_blockState->registersPerThread * m_blockState->threadsPerBlock];
+    m_registerFiles  = new Register[m_blockState->registersPerThread *
+    	m_blockState->threadsPerBlock];
     m_sharedMemory   = new SharedMemory[m_blockState->sharedMemoryPerBlock];
     m_localMemory    = new LocalMemory[m_blockState->localMemoryPerThread];
 
@@ -21,7 +22,7 @@ __device__ CoreSimBlock::setupCoreSimBlock()
     m_threads        = new CoreSimThread[m_blockState->threadsPerBlock];
 }
 
-__device__ CoreSimBlock::setupBinary(ir::Binary* binary)
+__device__ void CoreSimBlock::setupBinary(ir::Binary* binary)
 {
     m_blockState->binary = binary;
 }

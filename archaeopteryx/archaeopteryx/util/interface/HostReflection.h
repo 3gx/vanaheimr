@@ -11,6 +11,11 @@
 
 // Standard Library Includes
 #include <map>
+#include <queue>
+
+// Macro defines
+#define KERNEL_PAYLOAD_BYTES       128
+#define KERNEL_PAYLOAD_PARAMETERS    5
 
 namespace util
 {
@@ -36,6 +41,7 @@ public:
 		FileWriteMessageHandler    = 2,
 		FileReadMessageHandler     = 3,
 		FileReadReplyHandler       = 3,
+		KernelLaunchMessageHandler = 4,
 		InvalidMessageHandler      = -1
 	};
 
@@ -61,15 +67,47 @@ public:
 		void* address;
 	};
 	
+	class PayloadData
+	{
+	public:
+		char data[KERNEL_PAYLOAD_BYTES];
+		unsigned int indexes[KERNEL_PAYLOAD_PARAMETERS];
+	};
+	
 	class Payload
 	{
 	public:
-		char data[128];
-		unsigned int indexes[5];
+		PayloadData data;
 		
 	public:
 		template<typename T>
 		__device__ T get(unsigned int index);
+	};
+	
+	class KernelLaunch
+	{
+	public:
+		unsigned int ctas;
+		unsigned int threads;
+		std::string  name;
+		Payload      arguments;
+	};
+
+	class KernelLaunchMessage : public HostReflection::Message
+	{
+	public:
+		__device__ KernelLaunchMessage(unsigned int ctas, unsigned int threads,
+			const char* name, const Payload& payload);
+		__device__ ~KernelLaunchMessage();
+
+	public:
+		__device__ virtual void* payload() const;
+		__device__ virtual size_t payloadSize() const;
+		__device__ virtual HostReflection::HandlerId handler() const;
+	
+	private:
+		unsigned int _stringLength;
+		char*        _data;
 	};
 	
 public:
@@ -175,9 +213,15 @@ public:
 	/*! \brief Handle a file read message on the host */
 	__host__ static void handleFileRead(HostQueue& q, const Header*);
 
+	/*! \brief Handle a kernel launch message on the host */
+	__host__ static void handleKernelLaunch(HostQueue& q, const Header*);
+
 public:
 	__host__ static void hostSendAsynchronous(HostQueue& q, 
 		const Header& h, const void* p);
+
+	__host__ static void launchFromHost(unsigned int ctas, unsigned int threads,
+		const std::string& name, Payload = Payload());
 
 private:
 	class BootUp
@@ -186,12 +230,19 @@ private:
 		typedef void (*MessageHandler)(HostQueue& queue, const Header*);
 		typedef std::map<int, MessageHandler> HandlerMap;
 	
+		typedef void (*KernelFunctionType)(Payload& payload);
+		typedef std::map<std::string, KernelFunctionType> KernelMap;
+		typedef std::queue<KernelLaunch> LaunchQueue;
+	
 	public:
 		__host__ BootUp();
 		__host__ ~BootUp();
 
 	public:
 		__host__ void addHandler(int handlerId, MessageHandler handler);
+		__host__ void addKernel(const std::string& name,
+			KernelFunctionType kernel);
+		__host__ void addLaunch(const KernelLaunch& launch);
 		
 	private:
 		boost::thread* _thread;
@@ -200,10 +251,13 @@ private:
 		bool           _kill;
 	
 	private:
-		HandlerMap _handlers;
+		HandlerMap  _handlers;
+		KernelMap   _kernels;
+		LaunchQueue _launches;
 
 	private:
 		__host__ void _run();
+		__host__ void _launchNextKernel();
 		__host__ bool _handleMessage();
 		__host__ void _addMessageHandlers();
 	
