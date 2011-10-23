@@ -16,4 +16,18 @@ class Header
         unsigned int strings;
 };
 
+class SymbolTableEntry
+{
+    public:
+        /*! \brief The type of symbol */
+        unsigned int type;
+        /*! \brief The offset in the string table of the name */
+        unsigned int stringTableOffset;
+        /*! \brief The page id it is stored in */
+        unsigned int pageId;
+        /*! \brief The offset within the page */
+        unsigned int pageOffset;
+        /*! \brief The set of attributes */
+        long long unsigned int attributes;
+};
 
