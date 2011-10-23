@@ -113,6 +113,7 @@ public:
 	};
 	
 public:
+	__device__ static void sendAsynchronous(const Message& m);
 	__device__ static void sendSynchronous(const Message& m);
 	__device__ static void receive(Message& m);
 

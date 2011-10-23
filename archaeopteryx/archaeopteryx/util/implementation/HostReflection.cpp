@@ -98,6 +98,30 @@ __device__ HostReflection::HandlerId
 	return KernelLaunchMessageHandler;
 }
 
+__device__ void HostReflection::sendAsynchronous(const Message& m)
+{
+	unsigned int bytes = m.payloadSize() + sizeof(Header);
+
+	char* buffer = new char[bytes];
+	
+	Header* header = reinterpret_cast<Header*>(buffer);
+	
+	header->type     = Asynchronous;
+	header->threadId = threadIdx.x;
+	header->size     = bytes;
+	header->handler  = m.handler();
+	
+	std::memcpy(buffer + sizeof(Header), m.payload(), m.payloadSize());
+	 
+	printf(" sending asynchronous gpu->host message "
+		"(%d type, %d id, %d size, %d handler)\n", Asynchronous,	
+		header->threadId, bytes, m.handler());
+	
+	while(!_deviceToHost->push(buffer, bytes));
+
+	delete[] buffer;
+}
+
 __device__ void HostReflection::sendSynchronous(const Message& m)
 {
 	unsigned int bytes = m.payloadSize() + sizeof(SynchronousHeader);
@@ -160,7 +184,7 @@ __device__ void HostReflection::launch(unsigned int ctas, unsigned int threads,
 	KernelLaunchMessage message(ctas, threads,
 		moduleName, functionName, payload);
 
-	sendSynchronous(message);
+	sendAsynchronous(message);
 }
 
 __device__ unsigned int align(unsigned int address, unsigned int alignment)
