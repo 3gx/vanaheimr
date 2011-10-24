@@ -171,7 +171,7 @@ __device__ void HostReflection::receive(Message& m)
 	
 	_hostToDevice->pull(buffer, bytes);
 
-	std::printf("  bytes: %d\n", (bytes - sizeof(Header)));
+	std::printf("  bytes: %d\n", (int)(bytes - sizeof(Header)));
 
 	std::memcpy(m.payload(), (buffer + sizeof(Header)), m.payloadSize());
 
@@ -263,7 +263,7 @@ __device__ HostReflection::Payload HostReflection::createPayload()
 
 __device__ size_t HostReflection::maxMessageSize()
 {
-	return 256;
+	return 512;
 }
 
 __host__ void HostReflection::create()
@@ -288,12 +288,32 @@ __host__ void HostReflection::handleOpenFile(HostQueue& queue,
 
 	report("    handling open file message");
 
-	std::string filename((const char*)(header + 1));
+	const char* nameAndMode = (const char*)(header + 1);
+
+	std::string filename(nameAndMode);
+	std::string mode(nameAndMode + filename.size() + 1);
 
 	report("     filename: " << filename);
+	report("     mode: "     << mode);
 
-	std::fstream* file = new std::fstream(filename.c_str(),
-		std::fstream::in | std::fstream::out | std::fstream::trunc);
+	std::ios_base::openmode openmode = (std::ios_base::openmode)0;
+	
+	if(mode.find("r") != std::string::npos)
+	{
+		openmode |= std::ios_base::in;
+	}
+	
+	if(mode.find("+") != std::string::npos)
+	{
+		openmode |= std::ios_base::app;
+	}
+	
+	if(mode.find("w") != std::string::npos)
+	{
+		openmode |= std::ios_base::out;
+	}
+
+	std::fstream* file = new std::fstream(filename.c_str(), openmode);
 
 	report("     handle: " << file);
 	report("     good:   " << (file->good() ? "yes" : "no"));
@@ -306,7 +326,7 @@ __host__ void HostReflection::handleOpenFile(HostQueue& queue,
 	Payload payload;
 	
 	payload.size   = 0;
-	payload.handle = (size_t)file;
+	payload.handle = (file->good()) ? (size_t)file : 0;
 	
 	report("     sending reply to thread " << header->threadId);
 	hostSendAsynchronous(queue, reply, &payload);
@@ -462,7 +482,7 @@ __host__ bool HostReflection::HostQueue::pull(void* data, size_t size)
 {
 	if(size > _used()) return false;
 
-	report("   pulling " << size << " bytes from host queue (" << _used()
+	report("   pulling " << size << " bytes from gpu->cpu queue (" << _used()
 		<< " used, " << _capacity() << " remaining, " << this->size()
 		<< " size)");
 
@@ -492,7 +512,7 @@ __host__ size_t HostReflection::HostQueue::_used() const
 	size_t tail = _metadata->tail;
 	
 	size_t greaterOrEqual = head - tail;
-	size_t less           = (tail) + (end - head);
+	size_t less           = (head) + (end - tail);
 	
 	bool isGreaterOrEqual = head >= tail;
 	
@@ -527,7 +547,8 @@ __device__ HostReflection::DeviceQueue::DeviceQueue(QueueMetaData* m)
 : _metadata(m)
 {
 	std::printf("binding device queue to metadata (%d size, "
-		"%d head, %d tail, %d mutex)\n", m->size, m->head, m->tail, m->mutex);
+		"%d head, %d tail, %d mutex)\n", (int)m->size, (int)m->head,
+		(int)m->tail, m->mutex);
 }
 
 __device__ HostReflection::DeviceQueue::~DeviceQueue()
@@ -540,10 +561,10 @@ __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 	device_assert(size <= this->size());
 
 	if(size > _capacity()) return false;
-
+	
 	if(!_lock()) return false;	
 
-	std::printf("pushing %d bytes into gpu->cpu queue.\n", size);
+	std::printf("pushing %d bytes into gpu->cpu queue.\n", (int)size);
 
 	size_t end  = _metadata->size;
 	size_t head = _metadata->head;
@@ -559,7 +580,10 @@ __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 	
 	std::memcpy(_metadata->deviceBegin, (char*)data + firstCopy, secondCopy);
 	_metadata->head = secondCopyNecessary ? secondCopy : head + firstCopy;
-
+	
+	std::printf(" after push (%d used, %d remaining, %d size)\n",
+		(int)_used(), (int)_capacity(), (int)this->size());
+	
 	_unlock();
 	
 	return true;
@@ -605,7 +629,7 @@ __device__  size_t HostReflection::DeviceQueue::_used() const
 	size_t tail = _metadata->tail;
 	
 	size_t greaterOrEqual = head - tail;
-	size_t less           = (tail) + (end - head);
+	size_t less           = (head) + (end - tail);
 	
 	bool isGreaterOrEqual = head >= tail;
 	
@@ -746,13 +770,13 @@ __global__ void _teardownHostReflection()
 
 __host__ HostReflection::BootUp::~BootUp()
 {
-	report("Destroying host reflection");
-
 	// wait for kernel launches to complete
 	while(!_launches.empty())
 	{
 		boost::thread::yield();	
 	}
+
+	report("Destroying host reflection");
 
 	// kill the thread
 	_kill = true;
@@ -842,16 +866,19 @@ __host__ void HostReflection::BootUp::_run()
 {
 	report(" Host reflection worker thread started.");
 
-	while(!_kill)
+	while(!_kill || !_launches.empty() || _handleMessage())
 	{
-		if(!_handleMessage())
+		if(!_launches.empty())
 		{
-			if(!_launches.empty())
-			{
-				_launchNextKernel();
-			}
-			
+			_launchNextKernel();
+		}
+		else if(!_handleMessage())
+		{
 			boost::thread::yield();
+		}
+		else
+		{
+			while(_handleMessage());
 		}
 	}
 }
@@ -867,8 +894,10 @@ __host__ void HostReflection::BootUp::_launchNextKernel()
 	
 	cudaConfigureCall(launch.ctas, launch.threads, 0, 0);
 	
-	cudaSetupArgument(&launch.arguments, sizeof(Payload), 0);
+	cudaSetupArgument(&launch.arguments, sizeof(PayloadData), 0);
 	ocelot::launch(launch.module, launch.name);
+
+	report("   launching kernel '" << launch.name << "' finish");
 
 	_launches.pop();
 }

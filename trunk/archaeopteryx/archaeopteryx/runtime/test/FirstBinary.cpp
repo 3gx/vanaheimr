@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 #define ARRAY_LENGTH 256
 #define GLOBAL_MEMORY_WINDOW_SIZE 0x2000

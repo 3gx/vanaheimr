@@ -20,14 +20,20 @@
 
 #define ARRAY_SIZE 1024
 
-extern "C" __device__ void runTest()
+extern "C" __global__ void runTest()
 {
     unsigned int* refX = 0;
     unsigned int* refY = 0;
     unsigned int a     = 5;
 
-    refX = (unsigned int*)malloc(ARRAY_SIZE);
-    refY = (unsigned int*)malloc(ARRAY_SIZE);
+	size_t arrayBytes = ARRAY_SIZE * sizeof(unsigned int);
+
+    refX = (unsigned int*)malloc(arrayBytes);
+    refY = (unsigned int*)malloc(arrayBytes);
+
+	rt::Runtime::create();
+
+	rt::Runtime::loadBinary("BinarySaxpy.exe");
 
     util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues",
     	util::HostReflection::createPayload(refX));
@@ -38,31 +44,31 @@ extern "C" __device__ void runTest()
 
     //allocate memory for arrays used by saxpy
     size_t baseX = 0;
-    size_t baseY = baseX + ARRAY_SIZE;
-    bool allocX  = rt::Runtime::allocateMemoryChunk(ARRAY_SIZE, baseX);
-    bool allocY  = rt::Runtime::allocateMemoryChunk(ARRAY_SIZE, baseY);
+    size_t baseY = baseX + arrayBytes;
+    bool allocX  = rt::Runtime::allocateMemoryChunk(arrayBytes, baseX);
+    bool allocY  = rt::Runtime::allocateMemoryChunk(arrayBytes, baseY);
 
     if (allocX && allocY)
     {
         util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues", 
         	util::HostReflection::createPayload(
-        	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseX)));
+        	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseX)));
         util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues", 
         	util::HostReflection::createPayload(
-        	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseY)));
-		rt::Runtime::loadBinary("saxpy.cu");
+        	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseY)));
+			
         rt::Runtime::setupKernelEntryPoint("main");
         rt::Runtime::launchSimulation();
+
         void* translatedAddress =
-        	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseY);
+        	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseY);
         util::HostReflection::launch(1, 1, __FILE__, "compareMemory",
         	util::HostReflection::createPayload(translatedAddress,
         	refY, ARRAY_SIZE));
     }
-
 } 
 
-extern "C" __device__ void compareMemory(util::HostReflection::Payload& payload)
+extern "C" __global__ void compareMemory(util::HostReflection::Payload payload)
 {
 	unsigned int* result       = payload.get<unsigned int*>(0);
     unsigned int* ref          = payload.get<unsigned int*>(1);
@@ -76,16 +82,18 @@ extern "C" __device__ void compareMemory(util::HostReflection::Payload& payload)
             return;
         }
     }
+
+	rt::Runtime::destroy();
 }
 
-extern "C" __device__ void initValues(util::HostReflection::Payload& payload)
+extern "C" __global__ void initValues(util::HostReflection::Payload payload)
 {
 	unsigned int* array = payload.get<unsigned int*>(0);
 
     array[threadIdx.x] = threadIdx.x;
 }
 
-__device__ void refCudaSaxpy(util::HostReflection::Payload& payload)
+extern "C" __global__ void refCudaSaxpy(util::HostReflection::Payload payload)
 {
 	unsigned int* y = payload.get<unsigned int*>(0);
 	unsigned int* x = payload.get<unsigned int*>(1);
@@ -103,7 +111,7 @@ int main(int argc, char** argv)
 {
     util::HostReflection::create();
 
-	launchTest<<<1, 1>>>();
+	runTest<<<1, 1>>>();
 	
     util::HostReflection::destroy();
 }
