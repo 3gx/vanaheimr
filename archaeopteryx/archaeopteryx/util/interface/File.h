@@ -17,7 +17,7 @@ class File
 {
 public:
 	/*! \brief Create a handle to a file */
-	__device__ File(const char* fileName);
+	__device__ File(const char* fileName, const char* mode = "rw");
 
 	/*! \brief Close the file */
 	__device__ ~File();
@@ -59,7 +59,7 @@ private:
 	class OpenMessage : public HostReflection::Message
 	{
 	public:
-		__device__ OpenMessage(const char* filename);
+		__device__ OpenMessage(const char* filename, const char* mode);
 		__device__ ~OpenMessage();
 	
 	public:
@@ -68,7 +68,7 @@ private:
 		__device__ virtual HostReflection::HandlerId handler() const;
 	
 	private:
-		char _filename[32];
+		char _filename[64];
 	};
 	
 	class OpenReply : public HostReflection::Message

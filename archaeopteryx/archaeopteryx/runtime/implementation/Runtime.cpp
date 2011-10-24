@@ -10,21 +10,21 @@
 
 #define NUMBER_OF_HW_THREADS_PER_BLOCK       128
 #define NUMBER_OF_HW_BLOCKS                   64
-#define PHYSICAL_MEMORY_SIZE           (1 << 20)
+#define PHYSICAL_MEMORY_SIZE           (1 << 14)
 
 __device__ rt::Runtime::RuntimeState g_runtimeState;
 
 namespace rt
 {
 
-__device__ Runtime::Runtime()
+__device__ void Runtime::create()
 {
     g_runtimeState.m_blocks         = new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
-    g_runtimeState.m_physicalMemory = malloc(1 << 10);
+    g_runtimeState.m_physicalMemory = malloc(PHYSICAL_MEMORY_SIZE);
     g_runtimeState.m_loadedBinary   = 0;
 }
 
-__device__ Runtime::~Runtime()
+__device__ void Runtime::destroy()
 {
    delete []g_runtimeState.m_blocks;
    delete g_runtimeState.m_loadedBinary;
@@ -60,7 +60,10 @@ __device__ bool Runtime::allocateMemoryChunk(size_t bytes, size_t address)
 
 __device__ void* Runtime::translateSimulatedAddressToCudaAddress(void* simAddress)
 {
-    return (void*)((size_t)g_runtimeState.m_physicalMemory + (size_t)simAddress);
+    void* cudaAddress = (void*)((size_t)g_runtimeState.m_physicalMemory + (size_t)simAddress);
+	printf("Translated simulated address %p to cuda address %p", simAddress, cudaAddress);
+	
+	return cudaAddress;
 }
 
 __device__ void* Runtime::translateCudaAddressToSimulatedAddress(void* cudaAddress)

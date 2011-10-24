@@ -18,8 +18,8 @@ namespace rt
 class Runtime
 {
     public:
-        __device__ Runtime();
-        __device__ ~Runtime();
+        __device__ static void create();
+        __device__ static void destroy();
 
         __device__ static void loadBinary(const char* fileName);
         __device__ static void loadBinarr(ir::Binary* binary);

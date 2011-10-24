@@ -16,11 +16,12 @@
 namespace util
 {
 
-__device__ File::File(const char* fileName)
+__device__ File::File(const char* fileName, const char* mode)
 {
-	std::printf("Opening file '%s' on the gpu\n", fileName);
+	std::printf("Opening file '%s' with mode '%s' on the gpu\n",
+		fileName, mode);
 
-	OpenMessage open(fileName);
+	OpenMessage open(fileName, mode);
 	
 	HostReflection::sendSynchronous(open);
 	
@@ -32,6 +33,8 @@ __device__ File::File(const char* fileName)
 	_size   = reply.size();
 	_put    = 0;
 	_get    = 0;
+
+	device_assert(_handle != 0);
 
 	std::printf(" file opened\n");
 }
@@ -62,7 +65,8 @@ __device__ void File::write(const void* data, size_t bytes)
 __device__ size_t File::writeSome(const void* data, size_t bytes)
 {	
 	size_t attemptedSize =
-		util::min(bytes, util::max((size_t)1, (size_t)(HostReflection::maxMessageSize() / 10)));
+		util::min(bytes, util::max((size_t)1,
+		(size_t)(HostReflection::maxMessageSize() / 10)));
 	
 	WriteMessage message(data, attemptedSize, _put, _handle);
 	
@@ -160,9 +164,12 @@ __device__ void File::seekp(size_t p)
 	_put = p;
 }
 
-__device__ File::OpenMessage::OpenMessage(const char* f)
+__device__ File::OpenMessage::OpenMessage(const char* f, const char* m)
 {
+	std::memset(_filename, 0, payloadSize());
 	strlcpy(_filename, f, payloadSize());
+	size_t offset = util::strlen(f) + 1;
+	strlcpy(_filename + offset, m, payloadSize() - offset);
 }
 
 __device__ File::OpenMessage::~OpenMessage()
