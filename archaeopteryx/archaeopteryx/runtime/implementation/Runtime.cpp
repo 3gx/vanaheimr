@@ -61,7 +61,7 @@ __device__ bool Runtime::allocateMemoryChunk(size_t bytes, size_t address)
 __device__ void* Runtime::translateSimulatedAddressToCudaAddress(void* simAddress)
 {
     void* cudaAddress = (void*)((size_t)g_runtimeState.m_physicalMemory + (size_t)simAddress);
-	printf("Translated simulated address %p to cuda address %p", simAddress, cudaAddress);
+	printf("Translated simulated address %p to cuda address %p\n", simAddress, cudaAddress);
 	
 	return cudaAddress;
 }
