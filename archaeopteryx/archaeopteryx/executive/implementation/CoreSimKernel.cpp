@@ -17,12 +17,18 @@ __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, CoreSi
     for (unsigned int simulatedBlock = blockIdx.x;
     	simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)
     {
-        // TODO set block state
-        blocks[blockIdx.x].setupBinary(binary);
-        blocks[blockIdx.x].setupCoreSimBlock();
+        if(threadIdx.x == 0)
+        {
+            blocks[blockIdx.x].setupBinary(binary);
+            blocks[blockIdx.x].setupCoreSimBlock();
+        }
+        
+        __syncthreads();
+
         blocks[blockIdx.x].runBlock();
     }
     
 }
 
 }
+

@@ -44,7 +44,8 @@ class Runtime
             unsigned int             m_simulatedBlocks;
             ir::Binary::PC           m_launchSimulationAtPC;
         };
-    private:
+        
+    public:
         __device__ static void launchSimulationInParallel();
 };
 

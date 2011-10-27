@@ -11,9 +11,9 @@
 			ignoreIrrelevantWrites: true
 		},
 		debugger: {
-			enabled: false,
-			kernelFilter: "_Z13scalarProdGPUPfS_S_ii",
-			alwaysAttach: true
+			enabled: true,
+			kernelFilter: "launchSimulation",
+			alwaysAttach: false
 		},
 		cacheSimulator: {
 			enabled: false,

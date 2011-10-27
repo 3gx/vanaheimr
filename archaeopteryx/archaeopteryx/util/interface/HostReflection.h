@@ -89,7 +89,6 @@ public:
 	public:
 		unsigned int ctas;
 		unsigned int threads;
-		std::string  module;
 		std::string  name;
 		Payload      arguments;
 	};
@@ -98,7 +97,7 @@ public:
 	{
 	public:
 		__device__ KernelLaunchMessage(unsigned int ctas, unsigned int threads,
-			const char* module, const char* name, const Payload& payload);
+			const char* name, const Payload& payload);
 		__device__ ~KernelLaunchMessage();
 
 	public:
@@ -108,7 +107,6 @@ public:
 	
 	private:
 		unsigned int _stringLength;
-		unsigned int _moduleNameLength;
 		char*        _data;
 	};
 	
@@ -119,7 +117,7 @@ public:
 
 public:
 	__device__ static void launch(unsigned int ctas, unsigned int threads,
-		const char* moduleName, const char* functionName,
+		const char* functionName,
 		const Payload& payload = Payload());
 
 	template<typename T0, typename T1, typename T2, typename T3, typename T4>
@@ -146,7 +144,7 @@ public:
 	__host__ __device__ static size_t maxMessageSize();
 
 public:
-	__host__ static void create();
+	__host__ static void create(const std::string& modulename);
 	__host__ static void destroy();
 
 public:
@@ -239,8 +237,7 @@ public:
 		const Header& h, const void* p);
 
 	__host__ static void launchFromHost(unsigned int ctas, unsigned int threads,
-		const std::string& moduleName, const std::string& name,
-		Payload = Payload());
+		const std::string& name, Payload = Payload());
 
 private:
 	class BootUp
@@ -254,7 +251,7 @@ private:
 		typedef std::queue<KernelLaunch> LaunchQueue;
 	
 	public:
-		__host__ BootUp();
+		__host__ BootUp(const std::string& n);
 		__host__ ~BootUp();
 
 	public:
@@ -268,6 +265,7 @@ private:
 		HostQueue*     _hostToDeviceQueue;
 		HostQueue*     _deviceToHostQueue;
 		bool           _kill;
+		std::string    _module;
 	
 	private:
 		HandlerMap  _handlers;
