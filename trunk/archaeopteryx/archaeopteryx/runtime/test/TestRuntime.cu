@@ -35,11 +35,11 @@ extern "C" __global__ void runTest()
 
 	rt::Runtime::loadBinary("BinarySaxpy.exe");
 
-    util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues",
+    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",
     	util::HostReflection::createPayload(refX));
-    util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues",
+    util::HostReflection::launch(1, ARRAY_SIZE, "initValues",
     	util::HostReflection::createPayload(refY));
-    util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "refCudaSaxpy",
+    util::HostReflection::launch(1, ARRAY_SIZE, "refCudaSaxpy",
     	util::HostReflection::createPayload(refX, refY, a));
 
     //allocate memory for arrays used by saxpy
@@ -50,20 +50,19 @@ extern "C" __global__ void runTest()
 
     if (allocX && allocY)
     {
-        util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues", 
+        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", 
         	util::HostReflection::createPayload(
         	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseX)));
-        util::HostReflection::launch(1, ARRAY_SIZE, __FILE__, "initValues", 
+        util::HostReflection::launch(1, ARRAY_SIZE, "initValues", 
         	util::HostReflection::createPayload(
         	rt::Runtime::translateSimulatedAddressToCudaAddress((void*)baseY)));
-			
+		
+		rt::Runtime::setupLaunchConfig(ARRAY_SIZE/128, 128);
         rt::Runtime::setupKernelEntryPoint("main");
         rt::Runtime::launchSimulation();
 
-        void* translatedAddress =
-        	rt::Runtime::translateCudaAddressToSimulatedAddress((void*)baseY);
-        util::HostReflection::launch(1, 1, __FILE__, "compareMemory",
-        	util::HostReflection::createPayload(translatedAddress,
+        util::HostReflection::launch(1, 1, "compareMemory",
+        	util::HostReflection::createPayload(baseY,
         	refY, ARRAY_SIZE));
     }
 } 
@@ -73,12 +72,15 @@ extern "C" __global__ void compareMemory(util::HostReflection::Payload payload)
 	unsigned int* result       = payload.get<unsigned int*>(0);
     unsigned int* ref          = payload.get<unsigned int*>(1);
     unsigned int  memBlockSize = payload.get<unsigned int >(2);
+
+    printf("Checking memory block of size %d, %p result, %p ref\n",
+    	memBlockSize, result, ref);
     
     for (unsigned int i = 0; i < memBlockSize; ++i)
     {
         if (ref[i] != result[i])
         {
-            printf("Memory not equal\n");
+            printf(" memory not equal\n");
             return;
         }
     }
@@ -104,12 +106,12 @@ extern "C" __global__ void refCudaSaxpy(util::HostReflection::Payload payload)
 
 __global__ void launchTest()
 {
-    util::HostReflection::launch(1, 1, __FILE__, "runTest");
+    util::HostReflection::launch(1, 1, "runTest");
 }
 
 int main(int argc, char** argv)
 {
-    util::HostReflection::create();
+    util::HostReflection::create(__FILE__);
 
 	runTest<<<1, 1>>>();
 	

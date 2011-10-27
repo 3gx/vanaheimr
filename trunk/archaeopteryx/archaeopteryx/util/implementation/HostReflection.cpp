@@ -44,14 +44,17 @@ static char* _deviceHostSharedMemory = 0;
 template <typename T>
 __device__ T HostReflection::Payload::get(unsigned int i)
 {
-	return *((T*)(data.data + data.indexes[i]));
+	T temp = 0;
+	
+	std::memcpy(&temp, data.data + data.indexes[i], sizeof(T));
+
+	return temp;
 }
 
 __device__ HostReflection::KernelLaunchMessage::KernelLaunchMessage(
 	unsigned int ctas, unsigned int threads,
-	const char* module, const char* name, const Payload& payload)
-: _stringLength(util::strlen(name) + 1),
-  _moduleNameLength(util::strlen(module) + 1), _data(new char[payloadSize()])
+	const char* name, const Payload& payload)
+: _stringLength(util::strlen(name) + 1), _data(new char[payloadSize()])
 {
 	char* data = _data;
 	
@@ -69,11 +72,6 @@ __device__ HostReflection::KernelLaunchMessage::KernelLaunchMessage(
 	
 	std::memcpy(data, name, _stringLength);
 	data += _stringLength;
-	
-	std::memcpy(data, &_moduleNameLength, sizeof(unsigned int));
-	data += sizeof(unsigned int);
-	
-	std::memcpy(data, module, _moduleNameLength);
 }
 
 __device__ HostReflection::KernelLaunchMessage::~KernelLaunchMessage()
@@ -88,8 +86,7 @@ __device__ void* HostReflection::KernelLaunchMessage::payload() const
 
 __device__ size_t HostReflection::KernelLaunchMessage::payloadSize() const
 {
-	return sizeof(unsigned int) * 4 + sizeof(Payload) + _stringLength + 
-		_moduleNameLength;
+	return sizeof(unsigned int) * 3 + sizeof(Payload) + _stringLength;
 }
 
 __device__ HostReflection::HandlerId
@@ -179,10 +176,9 @@ __device__ void HostReflection::receive(Message& m)
 }
 
 __device__ void HostReflection::launch(unsigned int ctas, unsigned int threads,
-	const char* moduleName, const char* functionName, const Payload& payload)
+	const char* functionName, const Payload& payload)
 {
-	KernelLaunchMessage message(ctas, threads,
-		moduleName, functionName, payload);
+	KernelLaunchMessage message(ctas, threads, functionName, payload);
 
 	sendAsynchronous(message);
 }
@@ -266,10 +262,10 @@ __device__ size_t HostReflection::maxMessageSize()
 	return 512;
 }
 
-__host__ void HostReflection::create()
+__host__ void HostReflection::create(const std::string& module)
 {
 	assert(_booter == 0);
-	_booter = new BootUp;
+	_booter = new BootUp(module);
 }
 
 __host__ void HostReflection::destroy()
@@ -414,13 +410,11 @@ __host__ void HostReflection::handleKernelLaunch(HostQueue& queue,
 	unsigned int* threads          = (unsigned int*)(ctas             + 1);
 	unsigned int* nameLength       = (unsigned int*)(threads          + 1);
 	const char*   kernelName       = (const char*  )(nameLength       + 1);
-	unsigned int* moduleNameLength = (unsigned int*)(kernelName + *nameLength);
-	const char*   moduleName       = (const char*  )(moduleNameLength + 1);
 	
 	Payload arguments;
 	arguments.data = *payload;
 	
-	launchFromHost(*ctas, *threads, moduleName, kernelName, arguments);
+	launchFromHost(*ctas, *threads, kernelName, arguments);
 }
 
 __host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
@@ -435,10 +429,9 @@ __host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
 }
 
 __host__ void HostReflection::launchFromHost(unsigned int ctas,
-	unsigned int threads, const std::string& module, const std::string& name,
-	Payload payload)
+	unsigned int threads, const std::string& name, Payload payload)
 {
-	KernelLaunch launch = {ctas, threads, module, name, payload};
+	KernelLaunch launch = {ctas, threads, name, payload};
 
 	_booter->addLaunch(launch);
 }
@@ -695,7 +688,8 @@ __host__ void HostReflection::BootUp::_addMessageHandlers()
 	addHandler(KernelLaunchMessageHandler, handleKernelLaunch);
 }
 
-__host__ HostReflection::BootUp::BootUp()
+__host__ HostReflection::BootUp::BootUp(const std::string& module)
+: _module(module)
 {
 	report("Booting up host reflection...");
 
@@ -890,14 +884,14 @@ __host__ void HostReflection::BootUp::_launchNextKernel()
 	
 	report("  launching kernel " << launch.ctas << " ctas, "
 		<< launch.threads << " threads, kernel: '" << launch.name
-		<< "' in module: '" << launch.module << "'");
+		<< "' in module: '" << _module << "'");
 	
 	cudaConfigureCall(launch.ctas, launch.threads, 0, 0);
 	
 	cudaSetupArgument(&launch.arguments, sizeof(PayloadData), 0);
-	ocelot::launch(launch.module, launch.name);
+	ocelot::launch(_module, launch.name);
 
-	report("   launching kernel '" << launch.name << "' finish");
+	report("   kernel '" << launch.name << "' finished");
 
 	_launches.pop();
 }

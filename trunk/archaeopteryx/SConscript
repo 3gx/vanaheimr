@@ -41,6 +41,8 @@ libs  = env['EXTRA_LIBS']
 
 tests.append(('TestFileAccesses',
 	'archaeopteryx/util/test/TestFileAccess.cu', 'basic'))
+tests.append(('TestRuntime',
+	'archaeopteryx/runtime/test/TestRuntime.cu', 'basic'))
 
 for test in tests:
 	env.Program(test[0], [test[1]], LIBS=libs)

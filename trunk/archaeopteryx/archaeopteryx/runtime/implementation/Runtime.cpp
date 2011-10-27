@@ -19,7 +19,11 @@ namespace rt
 
 __device__ void Runtime::create()
 {
-    g_runtimeState.m_blocks         = new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
+	printf("Creating runtime with %d blocks, %d bytes of memory\n", 
+		NUMBER_OF_HW_BLOCKS, PHYSICAL_MEMORY_SIZE);
+    
+    g_runtimeState.m_blocks         =
+    	new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
     g_runtimeState.m_physicalMemory = malloc(PHYSICAL_MEMORY_SIZE);
     g_runtimeState.m_loadedBinary   = 0;
 }
@@ -104,14 +108,19 @@ __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 __device__ void Runtime::launchSimulation()
 {
     util::HostReflection::launch(NUMBER_OF_HW_BLOCKS,
-    	NUMBER_OF_HW_THREADS_PER_BLOCK, __FILE__, 
-    	"Runtime::launchSimulationInParallel");
+    	NUMBER_OF_HW_THREADS_PER_BLOCK, "launchSimulation");
 }
 
 __device__ void Runtime::launchSimulationInParallel()
 {
     g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, 	
         g_runtimeState.m_blocks, g_runtimeState.m_loadedBinary);
+}
+
+extern "C" __global__ void launchSimulation(
+	util::HostReflection::Payload payload)
+{
+	Runtime::launchSimulationInParallel();
 }
 
 __device__ void Runtime::munmap(size_t address)

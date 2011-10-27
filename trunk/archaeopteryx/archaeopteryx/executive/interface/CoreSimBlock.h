@@ -41,7 +41,7 @@ class CoreSimBlock
         //FetchUnit m_fetchUnit;
         typedef unsigned long long Register;
         Register* m_registerFiles;
-        BlockState* m_blockState;
+        BlockState m_blockState;
         SharedMemory* m_sharedMemory;
         LocalMemory* m_localMemory;
         CoreSimThread* m_threads;
