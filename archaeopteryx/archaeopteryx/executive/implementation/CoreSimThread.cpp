@@ -10,6 +10,14 @@
 #include <archaeopteryx/ir/interface/Operand.h>
 #include <archaeopteryx/ir/interface/Instruction.h>
 
+#include <archaeopteryx/util/interface/debug.h>
+
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 // Typedefs 
 typedef executive::CoreSimThread::Value Value;
 typedef executive::CoreSimThread::SValue SValue;
@@ -18,9 +26,21 @@ typedef executive::CoreSimThread::Address Address;
 namespace executive
 {
 
-__device__ CoreSimThread::CoreSimThread(CoreSimBlock* parentBlock, unsigned threadId)
-: m_parentBlock(parentBlock), m_tId(threadId)
+__device__ CoreSimThread::CoreSimThread(CoreSimBlock* parentBlock,
+	unsigned threadId, unsigned p, bool b)
+: pc(0), finished(false), instructionPriority(p), barrierBit(b),
+	m_parentBlock(parentBlock), m_tId(threadId)
 {
+}
+
+__device__ void CoreSimThread::setParentBlock(CoreSimBlock* p)
+{
+	m_parentBlock = p;
+}
+
+__device__ void CoreSimThread::setThreadId(unsigned id)
+{
+	m_tId = id;
 }
 
 template<typename T, typename F>
@@ -539,10 +559,55 @@ static __device__ JumpTablePointer decodeTable[] =
     executeInvalidOpcode
 };
 
-__device__ ir::Binary::PC CoreSimThread::executeInstruction(ir::Instruction* instruction, ir::Binary::PC pc)
+static __device__ const char* toString(ir::Instruction::Opcode opcode)
+{
+	switch(opcode)
+	{
+	case ir::Instruction::Add: return "Add";
+	case ir::Instruction::And: return "And";
+	case ir::Instruction::Ashr: return "Ashr";
+	case ir::Instruction::Atom: return "Atom";
+	case ir::Instruction::Bar: return "Bar";
+	case ir::Instruction::Bitcast: return "Bitcast";
+	case ir::Instruction::Bra: return "Bra";
+	case ir::Instruction::Fpext: return "Fpext";
+	case ir::Instruction::Fptosi: return "Fptosi";
+	case ir::Instruction::Fptoui: return "Fptoui";
+	case ir::Instruction::Fptrunc: return "Fptrunc";
+	case ir::Instruction::Ld: return "Ld";
+	case ir::Instruction::Lshr: return "Lshr";
+	case ir::Instruction::Membar: return "Membar";
+	case ir::Instruction::Mul: return "Mul";
+	case ir::Instruction::Or: return "Or";
+	case ir::Instruction::Ret: return "Ret";
+	case ir::Instruction::SetP: return "SetP";
+	case ir::Instruction::Sext: return "Sext";
+	case ir::Instruction::Sdiv: return "Sdiv";
+	case ir::Instruction::Shl: return "Shl";
+	case ir::Instruction::Sitofp: return "Sitofp";
+	case ir::Instruction::Srem: return "Srem";
+	case ir::Instruction::St: return "St";
+	case ir::Instruction::Sub: return "Sub";
+	case ir::Instruction::Trunc: return "Trunc";
+	case ir::Instruction::Udiv: return "Udiv";
+	case ir::Instruction::Uitofp: return "Uitofp";
+	case ir::Instruction::Urem: return "Urem";
+	case ir::Instruction::Xor: return "Xor";
+	case ir::Instruction::Zext: return "Zext";
+	default: break;
+	}
+	
+	return "invalid_instruction";
+}
+
+__device__ ir::Binary::PC CoreSimThread::executeInstruction(
+	ir::Instruction* instruction, ir::Binary::PC pc)
 {
     JumpTablePointer decoderFunction = decodeTable[instruction->opcode];
-
+	
+	device_report("Thread %d, executing instruction[%d] '%s'\n", m_tId, pc,
+		toString(instruction->opcode));
+	
     return decoderFunction(instruction, pc, m_parentBlock, m_tId);
 }
 
