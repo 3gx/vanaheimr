@@ -20,7 +20,7 @@ __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, CoreSi
         if(threadIdx.x == 0)
         {
             blocks[blockIdx.x].setupBinary(binary);
-            blocks[blockIdx.x].setupCoreSimBlock();
+            blocks[blockIdx.x].setupCoreSimBlock(simulatedBlock);
         }
         
         __syncthreads();

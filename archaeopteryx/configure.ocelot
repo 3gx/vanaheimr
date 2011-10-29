@@ -13,7 +13,7 @@
 		debugger: {
 			enabled: true,
 			kernelFilter: "launchSimulation",
-			alwaysAttach: false
+			alwaysAttach: true
 		},
 		cacheSimulator: {
 			enabled: false,

@@ -48,7 +48,6 @@ class CoreSimBlock
         typedef CoreSimThread* Warp;
         Warp m_warp;
         bool m_predicateMask[WARP_SIZE]; 
-        unsigned int m_threadIdInWarp;
 
     private:
         __device__ void clearAllBarrierBits();
@@ -58,6 +57,7 @@ class CoreSimBlock
         __device__ bool setPredicateMaskForWarp(PC pc);
         __device__ InstructionContainer fetchInstruction(PC pc);
         __device__ void executeWarp(InstructionContainer* instruction, PC pc);
+        __device__ unsigned int getThreadIdInWarp();
 
     public:
         // Initializes the state of the block
@@ -65,7 +65,7 @@ class CoreSimBlock
         //  2) shared memory 
         //  3) local memory for each thread
         //  4) thread contexts
-        __device__ void setupCoreSimBlock();
+        __device__ void setupCoreSimBlock(unsigned int blockId);
         __device__ void setupBinary(ir::Binary* binary);
     
     public:
