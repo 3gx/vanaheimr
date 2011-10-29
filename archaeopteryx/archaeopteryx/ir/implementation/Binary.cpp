@@ -23,10 +23,11 @@ namespace ir
 {
 
 __device__ Binary::Binary(File* file)
+: _file(file)
 {
 	Header header;
 
-	file->read(&header, sizeof(Header));
+	_file->read(&header, sizeof(Header));
 
 	dataPages          = header.dataPages;
 	codePages          = header.codePages;
@@ -35,25 +36,19 @@ __device__ Binary::Binary(File* file)
 	
 	dataSection = new PageDataType*[dataPages];
 	codeSection = new PageDataType*[codePages];
-	symbolTable = new SymbolTableEntry[symbolTableEntries];
-	stringTable = new char*[stringTableEntries];
+	symbolTable = 0;
+	stringTable = 0;
 
 	std::memset(dataSection, 0, dataPages * sizeof(PageDataType*));
 	std::memset(codeSection, 0, codePages * sizeof(PageDataType*));
-	std::memset(symbolTable, 0, symbolTableEntries * sizeof(SymbolTableEntry));
-	std::memset(stringTable, 0, stringTableEntries * sizeof(char*));
 
-	device_report("Loaded binary (%d data pages, %d code pages, %d symbols, %d strings)\n", 
-		dataPages, codePages, symbolTableEntries, stringTableEntries);
+	device_report("Loaded binary (%d data pages, %d code pages, "
+		"%d symbols, %d strings)\n", dataPages, codePages, symbolTableEntries, 
+		stringTableEntries);
 }
 
 __device__ Binary::~Binary()
 {
-	for(unsigned int s = 0; s != stringTableEntries; ++s)
-	{
-		delete stringTable[s];
-	}
-	
 	for(unsigned int c = 0; c != codePages; ++c)
 	{
 		delete[] codeSection[c];
@@ -96,10 +91,12 @@ __device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
 
 __device__ Binary::SymbolTableEntry* Binary::findSymbol(const char* name)
 {
+	_loadSymbolTable();
+	
 	for(unsigned int i = 0; i < symbolTableEntries; ++i)
 	{
 		SymbolTableEntry* symbol = symbolTable + i;
-		const char* symbolName   = *(symbol->stringTableOffset + stringTable);
+		const char* symbolName   = symbol->stringTableOffset + stringTable;
 	
 		if(util::strcmp(symbolName, name) != 0)
 		{
@@ -123,7 +120,7 @@ __device__ void Binary::findFunction(page_iterator& page, unsigned int& offset,
 		return;
 	}
 	
-	util::device_assert(symbol->type == FunctionSymbolType);
+	device_assert(symbol->type == FunctionSymbolType);
 	
 	page   = codeSection + symbol->pageId;
 	offset = symbol->pageOffset;
@@ -142,7 +139,7 @@ __device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
 		return;
 	}
 	
-	util::device_assert(symbol->type == VariableSymbolType);
+	device_assert(symbol->type == VariableSymbolType);
 	
 	page   = dataSection + symbol->pageId;
 	offset = symbol->pageOffset;
@@ -196,7 +193,7 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 			util::min(instructionsPerPage - pageOffset, (size_t)instructions);
 	
 		PageDataType* pageData = getCodePage(code_begin() + page);
-		util::device_assert(pageData != 0);
+		device_assert(pageData != 0);
 
 		ir::InstructionContainer* instructions =
 			reinterpret_cast<ir::InstructionContainer*>(pageData);
@@ -221,6 +218,40 @@ size_t Binary::_getDataPageOffset(page_iterator page)
 	return sizeof(Header) + (page - data_begin()) * sizeof(PageDataType);
 }
 
+void Binary::_loadSymbolTable()
+{
+	if(symbolTableEntries == 0) return;
+	if(symbolTable != 0)        return;
+
+	device_report(" Loading symbol/string table now.\n");
+
+	stringTable = new char[stringTableEntries];
+	symbolTable = new SymbolTableEntry[symbolTableEntries];
+	
+	size_t symbolTableOffset = _getCodePageOffset(code_begin() + codePages);
+	size_t stringTableOffset = symbolTableOffset +
+		symbolTableEntries * sizeof(SymbolTableEntry);
+
+	device_report("  symbol table offset %d, string table offset %d.\n", 
+		(int)symbolTableOffset, (int)stringTableOffset);
+	device_assert(_file != 0);
+
+	_file->seekg(symbolTableOffset);
+
+	device_report("  loading symbol table now.\n");
+
+	_file->read(symbolTable, symbolTableEntries * sizeof(SymbolTableEntry));
+
+	device_report("   loaded %d symbols...\n", symbolTableEntries);
+	
+	_file->seekg(stringTableOffset);
+
+	device_report("  loading string table now.\n");
+
+	_file->read(stringTable, stringTableEntries);
+
+	device_report("   loaded %d bytes of strings...\n", stringTableEntries);
+}
 
 }
 

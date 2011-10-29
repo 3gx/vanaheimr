@@ -70,8 +70,8 @@ public:
 		uint64 attributes;
 	};
 
-	/*! \brief A string table iterator */
-	typedef const char** string_table_iterator;
+	/*! \brief A symbol table iterator */
+	typedef SymbolTableEntry* symbol_table_iterator;
 
 	/*! \brief A page iterator */
 	typedef PageDataType** page_iterator;
@@ -131,7 +131,7 @@ public:
 	/*! \brief The actual symbol table */
 	SymbolTableEntry* symbolTable;
 	/*! \brief The string table */
-	char** stringTable;
+	char* stringTable;
 	/*! \brief The number of string table entries */
 	unsigned int stringTableEntries;
 
@@ -140,6 +140,8 @@ private:
 	__device__ size_t _getCodePageOffset(page_iterator page);
 	/*! \brief Get an offset in the file for a specific data page */
 	__device__ size_t _getDataPageOffset(page_iterator page);
+	/*! \brief Load the symbol and string tables */
+	__device__ void _loadSymbolTable();
 
 private:
 	/*! \brief A handle to the file */
