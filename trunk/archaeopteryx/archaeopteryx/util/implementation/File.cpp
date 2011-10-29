@@ -153,6 +153,8 @@ __device__ void File::seekg(size_t g)
 	{
 		g = size();
 	}
+
+	std::printf("seeking get pointer from %d to %d\n", (int)_get, (int)g);
 	
 	_get = g;
 }
