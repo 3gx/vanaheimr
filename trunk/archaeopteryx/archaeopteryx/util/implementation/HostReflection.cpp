@@ -321,9 +321,13 @@ __host__ void HostReflection::handleOpenFile(HostQueue& queue,
 	
 	Payload payload;
 	
-	payload.size   = 0;
+	file->seekg(0, std::ios::end);
+
+	payload.size   = file->tellg();
 	payload.handle = (file->good()) ? (size_t)file : 0;
 	
+	file->seekg(0, std::ios::beg);
+
 	report("     sending reply to thread " << header->threadId);
 	hostSendAsynchronous(queue, reply, &payload);
 }

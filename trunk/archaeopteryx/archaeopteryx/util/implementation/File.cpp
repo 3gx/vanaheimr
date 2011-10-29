@@ -36,7 +36,7 @@ __device__ File::File(const char* fileName, const char* mode)
 
 	device_assert(_handle != 0);
 
-	std::printf(" file opened\n");
+	std::printf(" file opened, current size is %d\n", _size);
 }
 
 __device__ File::~File()
@@ -93,6 +93,9 @@ __device__ void File::read(void* data, size_t bytes)
 	}
 
 	char* pointer = reinterpret_cast<char*>(data);
+
+	std::printf("sending file read message (%d size, %d pointer, %d handle)\n",
+		bytes, _get, _handle);
 
 	while(bytes > 0)
 	{

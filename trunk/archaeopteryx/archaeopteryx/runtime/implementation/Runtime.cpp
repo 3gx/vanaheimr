@@ -8,7 +8,7 @@
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 #include <archaeopteryx/runtime/interface/Runtime.h>
 
-#define NUMBER_OF_HW_THREADS_PER_BLOCK       128
+#define NUMBER_OF_HW_THREADS_PER_BLOCK        32 
 #define NUMBER_OF_HW_BLOCKS                   64
 #define PHYSICAL_MEMORY_SIZE           (1 << 14)
 

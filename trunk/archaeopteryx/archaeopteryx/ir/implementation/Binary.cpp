@@ -11,6 +11,14 @@
 #include <archaeopteryx/util/interface/File.h>
 #include <archaeopteryx/util/interface/StlFunctions.h>
 
+#include <archaeopteryx/util/interface/debug.h>
+
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace ir
 {
 
@@ -34,6 +42,9 @@ __device__ Binary::Binary(File* file)
 	std::memset(codeSection, 0, codePages * sizeof(PageDataType*));
 	std::memset(symbolTable, 0, symbolTableEntries * sizeof(SymbolTableEntry));
 	std::memset(stringTable, 0, stringTableEntries * sizeof(char*));
+
+	device_report("Loaded binary (%d data pages, %d code pages, %d symbols, %d strings)\n", 
+		dataPages, codePages, symbolTableEntries, stringTableEntries);
 }
 
 __device__ Binary::~Binary()

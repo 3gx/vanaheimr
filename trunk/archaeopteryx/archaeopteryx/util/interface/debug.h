@@ -44,7 +44,7 @@
 #endif
 
 #define cta_report(...) \
-	if(blockIdx.x == 0)\
+	if(threadIdx.x == 0)\
 	{ \
 		device_report(__VA_ARGS__);\
 	}
