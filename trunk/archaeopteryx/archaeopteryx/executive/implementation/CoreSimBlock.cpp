@@ -22,6 +22,12 @@ __device__ void CoreSimBlock::setupCoreSimBlock()
     m_localMemory    = new LocalMemory[m_blockState.localMemoryPerThread];
 
     m_threads        = new CoreSimThread[m_blockState.threadsPerBlock];
+    
+    for(unsigned i = 0; i < m_blockState.threadsPerBlock; ++i)
+    {
+    	m_threads[i].setParentBlock(this);
+    	m_threads[i].setThreadId(i);
+    }
 }
 
 __device__ void CoreSimBlock::setupBinary(ir::Binary* binary)
@@ -147,7 +153,10 @@ __device__ void CoreSimBlock::executeWarp(InstructionContainer* instruction, PC 
     //some function for all threads if predicateMask is true
     if (predicateMask)
     {
-        m_warp[m_threadIdInWarp].pc = m_warp[m_threadIdInWarp].executeInstruction(&instruction->asInstruction, pc);
+        PC newPC = m_warp[m_threadIdInWarp].executeInstruction(
+        	&instruction->asInstruction, pc);
+        m_warp[m_threadIdInWarp].pc = newPC;
+        m_warp[m_threadIdInWarp].instructionPriority = newPC + 1;
     }
 }
 
@@ -164,17 +173,23 @@ __device__ void CoreSimBlock::executeWarp(InstructionContainer* instruction, PC 
     m_threadIdInWarp = threadIdx.x % WARP_SIZE;
 	m_warp           = m_threads + threadIdx.x - m_threadIdInWarp;
 
+	cta_report("Running core-sim-block loop for simulated cta %d\n", 
+		m_blockState.blockId);
+
     unsigned int executedCount  = 0;
     unsigned int scheduledCount = 0;
+    unsigned int priority       = 1;
 
     while (!areAllThreadsFinished())
     {
         roundRobinScheduler();
-        unsigned int priority = 0;
         ++scheduledCount;
         PC nextPC = findNextPC(priority);
+
+		cta_report(" next PC is %d, priority %d\n", nextPC, priority);
+
         // only execute if all threads in this warp are NOT waiting on a barrier
-//        if (priority != 0)
+        if (priority != 0)
         {
              InstructionContainer instruction = fetchInstruction(nextPC);
              executeWarp(&instruction, nextPC);

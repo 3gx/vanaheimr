@@ -29,6 +29,25 @@
 	#define report(y)
 #endif
 
+#ifdef device_report
+#undef device_report
+#endif
+
+#define device_report(...) \
+	if(REPORT_BASE > 0)\
+	{ \
+		printf(__VA_ARGS__);\
+	}
+
+#ifdef cta_report
+#undef cta_report
+#endif
+
+#define cta_report(...) \
+	if(blockIdx.x == 0)\
+	{ \
+		device_report(__VA_ARGS__);\
+	}
 
 namespace util
 {
