@@ -6,11 +6,13 @@
  **/
 
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
+#include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/runtime/interface/Runtime.h>
 
 #define NUMBER_OF_HW_THREADS_PER_BLOCK        32 
 #define NUMBER_OF_HW_BLOCKS                   64
 #define PHYSICAL_MEMORY_SIZE           (1 << 14)
+#define PARAMETER_MEMORY_SIZE          (1 << 10)
 
 __device__ rt::Runtime::RuntimeState g_runtimeState;
 
@@ -22,6 +24,7 @@ __device__ void Runtime::create()
 	printf("Creating runtime with %d blocks, %d bytes of memory\n", 
 		NUMBER_OF_HW_BLOCKS, PHYSICAL_MEMORY_SIZE);
     
+    g_runtimeState.m_kernel         = new executive::CoreSimKernel;
     g_runtimeState.m_blocks         =
     	new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
     g_runtimeState.m_physicalMemory = malloc(PHYSICAL_MEMORY_SIZE);
@@ -32,6 +35,7 @@ __device__ void Runtime::destroy()
 {
    delete []g_runtimeState.m_blocks;
    delete g_runtimeState.m_loadedBinary;
+   delete g_runtimeState.m_kernel;
 }
 
 // We will need a list/map of open binaries
@@ -97,6 +101,19 @@ __device__ void Runtime::setupMemoryConfig(unsigned int localMemoryPerThread, un
     }
 }
 
+__device__ void Runtime::setupArgument(const void* data, size_t size, size_t offset)
+{
+	char* parameterBase = (char*)translateSimulatedAddressToCudaAddress(0);
+	
+	std::memcpy(parameterBase + offset, data, size);
+}
+
+__device__ size_t Runtime::baseOfUserMemory()
+{
+	// parameter base + parameter size
+	return 0 + PARAMETER_MEMORY_SIZE;
+}
+
 // Set the PC of all threads to the PC of the specified function
 //   Call into the binary to get the PC
 __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
@@ -113,7 +130,7 @@ __device__ void Runtime::launchSimulation()
 
 __device__ void Runtime::launchSimulationInParallel()
 {
-    g_runtimeState.m_kernel.launchKernel(g_runtimeState.m_simulatedBlocks, 	
+    g_runtimeState.m_kernel->launchKernel(g_runtimeState.m_simulatedBlocks, 	
         g_runtimeState.m_blocks, g_runtimeState.m_loadedBinary);
 }
 

@@ -66,11 +66,11 @@ __device__ size_t File::writeSome(const void* data, size_t bytes)
 {	
 	size_t attemptedSize =
 		util::min(bytes, util::max((size_t)1,
-		(size_t)(HostReflection::maxMessageSize() / 10)));
+		(size_t)(HostReflection::maxMessageSize() / 2)));
 	
 	WriteMessage message(data, attemptedSize, _put, _handle);
 	
-	std::printf("sending file write message (%d size, %d pointer, %d handle)\n",
+	std::printf("sending file write message (%d size, %d pointer, %p handle)\n",
 		attemptedSize, _put, _handle);
 	
 	HostReflection::sendSynchronous(message);
@@ -94,8 +94,8 @@ __device__ void File::read(void* data, size_t bytes)
 
 	char* pointer = reinterpret_cast<char*>(data);
 
-	std::printf("sending file read message (%d size, %d pointer, %d handle)\n",
-		bytes, _get, _handle);
+	std::printf("performing file read (%d size, %d pointer)\n",
+		(int)bytes, (int)_get);
 
 	while(bytes > 0)
 	{
@@ -115,7 +115,10 @@ __device__ size_t File::readSome(void* data, size_t bytes)
 
 	size_t attemptedSize =
 		util::min(bytes, util::max((size_t)1,
-			(size_t)(HostReflection::maxMessageSize() / 10)));
+			(size_t)(HostReflection::maxMessageSize() / 2)));
+
+	std::printf(" sending file read message (%d size, %d pointer, %p handle)\n",
+		(int)attemptedSize, (int)_get, _handle);
 	
 	ReadMessage message(attemptedSize, _get, _handle);
 	

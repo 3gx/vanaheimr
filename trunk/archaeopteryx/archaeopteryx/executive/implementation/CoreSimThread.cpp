@@ -1,8 +1,8 @@
 /*! \file   CoreSimThread.cpp
-	\date   Saturday May 8, 2011
-	\author Gregory and Sudnya Diamos
-		<gregory.diamos@gatech.edu, mailsudnya@gmail.com>
-	\brief  The source file for the Core simulator of the thread class.
+    \date   Saturday May 8, 2011
+    \author Gregory and Sudnya Diamos
+        <gregory.diamos@gatech.edu, mailsudnya@gmail.com>
+    \brief  The source file for the Core simulator of the thread class.
 */
 
 #include <archaeopteryx/executive/interface/CoreSimThread.h>
@@ -27,37 +27,37 @@ namespace executive
 {
 
 __device__ CoreSimThread::CoreSimThread(CoreSimBlock* parentBlock,
-	unsigned threadId, unsigned p, bool b)
+    unsigned threadId, unsigned p, bool b)
 : pc(0), finished(false), instructionPriority(p), barrierBit(b),
-	m_parentBlock(parentBlock), m_tId(threadId)
+    m_parentBlock(parentBlock), m_tId(threadId)
 {
 }
 
 __device__ void CoreSimThread::setParentBlock(CoreSimBlock* p)
 {
-	m_parentBlock = p;
+    m_parentBlock = p;
 }
 
 __device__ void CoreSimThread::setThreadId(unsigned id)
 {
-	m_tId = id;
+    m_tId = id;
 }
 
 template<typename T, typename F>
 __device__ T bitcast(const F& from)
 {
-	union UnionCast
-	{
-		T to;
-		F from;
-	};
-	
-	UnionCast cast;
-	
-	cast.to   = 0;
-	cast.from = from;
-	
-	return cast.to;
+    union UnionCast
+    {
+        T to;
+        F from;
+    };
+    
+    UnionCast cast;
+    
+    cast.to   = 0;
+    cast.from = from;
+    
+    return cast.to;
 
 }
 
@@ -65,7 +65,9 @@ static __device__ CoreSimThread::Value getRegisterOperand(const ir::Operand& ope
 {
     const ir::RegisterOperand& reg = static_cast<const ir::RegisterOperand&>(operand); 
 
-    return block->getRegister(threadId, reg.reg);
+    CoreSimThread::Value value = block->getRegister(threadId, reg.reg);
+
+    return value;
 }
 
 static __device__ CoreSimThread::Value getImmediateOperand(const ir::Operand& operand, CoreSimBlock* block, unsigned threadId)
@@ -78,7 +80,7 @@ static __device__ CoreSimThread::Value getImmediateOperand(const ir::Operand& op
 static __device__ CoreSimThread::Value getPredicateOperand(const ir::Operand& operand, CoreSimBlock* block, unsigned threadId)
 {
     const ir::PredicateOperand& reg = static_cast<const ir::PredicateOperand&>(operand); 
-	//FIX ME    
+    //FIX ME    
     
     Value value = block->getRegister(threadId, reg.reg);
 
@@ -124,14 +126,14 @@ static __device__ CoreSimThread::Value getOperand(const ir::Operand& operand, Co
 
 static __device__ CoreSimThread::Value getOperand(const ir::OperandContainer& operandContainer, CoreSimBlock* parentBlock, unsigned threadId)
 {
-	return getOperand(operandContainer.asOperand, parentBlock, threadId);
+    return getOperand(operandContainer.asOperand, parentBlock, threadId);
 }
 
 static void __device__ setRegister(ir::OperandContainer& operandContainer, CoreSimBlock* parentBlock, unsigned threadId, const Value& result)
 {
     const ir::RegisterOperand& reg = operandContainer.asRegister;
 
-	parentBlock->setRegister(reg.reg, threadId, result);
+    parentBlock->setRegister(threadId, reg.reg, result);
 }
 
 static __device__ ir::Binary::PC executeAdd(ir::Instruction* instruction, ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
@@ -202,7 +204,9 @@ static __device__ ir::Binary::PC executeBitcast(ir::Instruction* instruction, ir
 
     Value a = getOperand(bitcast->a, parentBlock, threadId);
 
-    return pc+a;
+    setRegister(bitcast->d, parentBlock, threadId, a);
+
+    return pc+1;
 }
 
 static __device__ ir::Binary::PC executeBra(ir::Instruction* instruction, ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
@@ -274,8 +278,36 @@ static __device__ ir::Binary::PC executeLd(ir::Instruction* instruction, ir::Bin
     Value a = getOperand(ld->a, parentBlock, threadId);
 
     Value physical = parentBlock->translateVirtualToPhysical(a);
-    // handle data types other than 64-bit
-    Value d = *bitcast<Value*>(physical);
+
+    Value d = 0;
+    
+    switch(ld->d.asIndirect.type)
+    {
+        case ir::i1:
+        case ir::i8:
+        {
+            d = *bitcast<uint8_t*>(physical);
+            break;
+        }
+        case ir::i16:
+        {
+            d = *bitcast<uint16_t*>(physical);
+            break;
+        }
+        case ir::f32:
+        case ir::i32:
+        {
+            d = *bitcast<uint32_t*>(physical);
+            break;
+        }
+        case ir::f64:
+        case ir::i64:
+        {
+            d = *bitcast<uint64_t*>(physical);
+            break;
+        }
+        default: break;
+    }
 
     setRegister(ld->d, parentBlock, threadId, d);
     return pc+1;
@@ -413,12 +445,39 @@ static __device__ ir::Binary::PC executeSt(ir::Instruction* instruction, ir::Bin
 {
     ir::St* st = static_cast<ir::St*>(instruction);
 
-    Value a = getOperand(st->a, parentBlock, threadId);
-    Value physical = parentBlock->translateVirtualToPhysical(a);
-    // handle data types other than 64-bit
-    Value d = *bitcast<Value*>(physical);
+    Value d = getOperand(st->d, parentBlock, threadId);
+    Value physical = parentBlock->translateVirtualToPhysical(d);
 
-    setRegister(st->d, parentBlock, threadId, d);
+    Value a = getOperand(st->a, parentBlock, threadId);
+
+    switch(st->a.asIndirect.type)
+    {
+        case ir::i1:
+        case ir::i8:
+        {
+            *bitcast<uint8_t*>(physical) = a;
+            break;
+        }
+        case ir::i16:
+        {
+            *bitcast<uint16_t*>(physical) = a;
+            break;
+        }
+        case ir::f32:
+        case ir::i32:
+        {
+            *bitcast<uint32_t*>(physical) = a;
+            break;
+        }
+        case ir::f64:
+        case ir::i64:
+        {
+            *bitcast<uint64_t*>(physical) = a;
+            break;
+        }
+        default: break;
+    }
+
     return pc+1;
 }
 
@@ -561,53 +620,53 @@ static __device__ JumpTablePointer decodeTable[] =
 
 static __device__ const char* toString(ir::Instruction::Opcode opcode)
 {
-	switch(opcode)
-	{
-	case ir::Instruction::Add: return "Add";
-	case ir::Instruction::And: return "And";
-	case ir::Instruction::Ashr: return "Ashr";
-	case ir::Instruction::Atom: return "Atom";
-	case ir::Instruction::Bar: return "Bar";
-	case ir::Instruction::Bitcast: return "Bitcast";
-	case ir::Instruction::Bra: return "Bra";
-	case ir::Instruction::Fpext: return "Fpext";
-	case ir::Instruction::Fptosi: return "Fptosi";
-	case ir::Instruction::Fptoui: return "Fptoui";
-	case ir::Instruction::Fptrunc: return "Fptrunc";
-	case ir::Instruction::Ld: return "Ld";
-	case ir::Instruction::Lshr: return "Lshr";
-	case ir::Instruction::Membar: return "Membar";
-	case ir::Instruction::Mul: return "Mul";
-	case ir::Instruction::Or: return "Or";
-	case ir::Instruction::Ret: return "Ret";
-	case ir::Instruction::SetP: return "SetP";
-	case ir::Instruction::Sext: return "Sext";
-	case ir::Instruction::Sdiv: return "Sdiv";
-	case ir::Instruction::Shl: return "Shl";
-	case ir::Instruction::Sitofp: return "Sitofp";
-	case ir::Instruction::Srem: return "Srem";
-	case ir::Instruction::St: return "St";
-	case ir::Instruction::Sub: return "Sub";
-	case ir::Instruction::Trunc: return "Trunc";
-	case ir::Instruction::Udiv: return "Udiv";
-	case ir::Instruction::Uitofp: return "Uitofp";
-	case ir::Instruction::Urem: return "Urem";
-	case ir::Instruction::Xor: return "Xor";
-	case ir::Instruction::Zext: return "Zext";
-	default: break;
-	}
-	
-	return "invalid_instruction";
+    switch(opcode)
+    {
+    case ir::Instruction::Add: return "Add";
+    case ir::Instruction::And: return "And";
+    case ir::Instruction::Ashr: return "Ashr";
+    case ir::Instruction::Atom: return "Atom";
+    case ir::Instruction::Bar: return "Bar";
+    case ir::Instruction::Bitcast: return "Bitcast";
+    case ir::Instruction::Bra: return "Bra";
+    case ir::Instruction::Fpext: return "Fpext";
+    case ir::Instruction::Fptosi: return "Fptosi";
+    case ir::Instruction::Fptoui: return "Fptoui";
+    case ir::Instruction::Fptrunc: return "Fptrunc";
+    case ir::Instruction::Ld: return "Ld";
+    case ir::Instruction::Lshr: return "Lshr";
+    case ir::Instruction::Membar: return "Membar";
+    case ir::Instruction::Mul: return "Mul";
+    case ir::Instruction::Or: return "Or";
+    case ir::Instruction::Ret: return "Ret";
+    case ir::Instruction::SetP: return "SetP";
+    case ir::Instruction::Sext: return "Sext";
+    case ir::Instruction::Sdiv: return "Sdiv";
+    case ir::Instruction::Shl: return "Shl";
+    case ir::Instruction::Sitofp: return "Sitofp";
+    case ir::Instruction::Srem: return "Srem";
+    case ir::Instruction::St: return "St";
+    case ir::Instruction::Sub: return "Sub";
+    case ir::Instruction::Trunc: return "Trunc";
+    case ir::Instruction::Udiv: return "Udiv";
+    case ir::Instruction::Uitofp: return "Uitofp";
+    case ir::Instruction::Urem: return "Urem";
+    case ir::Instruction::Xor: return "Xor";
+    case ir::Instruction::Zext: return "Zext";
+    default: break;
+    }
+    
+    return "invalid_instruction";
 }
 
 __device__ ir::Binary::PC CoreSimThread::executeInstruction(
-	ir::Instruction* instruction, ir::Binary::PC pc)
+    ir::Instruction* instruction, ir::Binary::PC pc)
 {
     JumpTablePointer decoderFunction = decodeTable[instruction->opcode];
-	
-	device_report("Thread %d, executing instruction[%d] '%s'\n", m_tId, pc,
-		toString(instruction->opcode));
-	
+    
+    device_report("Thread %d, executing instruction[%d] '%s'\n", m_tId, (int)pc,
+        toString(instruction->opcode));
+    
     return decoderFunction(instruction, pc, m_parentBlock, m_tId);
 }
 

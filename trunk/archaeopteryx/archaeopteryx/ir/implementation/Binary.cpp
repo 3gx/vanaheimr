@@ -69,7 +69,12 @@ __device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
 {
 	if(*page == 0)
 	{
-		_file->seekg(_getCodePageOffset(page));
+		size_t offset = _getCodePageOffset(page);
+
+		device_report("Loading code page (%p) at offset (%p) now...\n",
+			page, offset);
+
+		_file->seekg(offset);
 		*page = (PageDataType*)new PageDataType;
 		_file->read(*page, sizeof(PageDataType));
 	}
@@ -81,7 +86,12 @@ __device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
 {
 	if(*page == 0)
 	{
-		_file->seekg(_getDataPageOffset(page));
+		size_t offset = _getDataPageOffset(page);
+
+		device_report("Loading data page (%p) at offset (%p) now...\n",
+			page, offset);
+
+		_file->seekg(offset);
 		*page = (PageDataType*)new PageDataType;
 		_file->read(*page, sizeof(PageDataType));
 	}
@@ -187,23 +197,29 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 	size_t page       = pc / instructionsPerPage;
 	size_t pageOffset = pc % instructionsPerPage;
 	
+	device_report("Copying %d instructions at PC %d\n", instructions, pc);
+
 	while(instructions > 0)
 	{
 		size_t instructionsInThisPage =
 			util::min(instructionsPerPage - pageOffset, (size_t)instructions);
 	
+		device_report(" copying %d instructions from page %d\n", 
+			(int)instructionsInThisPage, (int)page);
 		PageDataType* pageData = getCodePage(code_begin() + page);
 		device_assert(pageData != 0);
 
-		ir::InstructionContainer* instructions =
+		ir::InstructionContainer* container =
 			reinterpret_cast<ir::InstructionContainer*>(pageData);
 	
-		std::memcpy(code, instructions + pageOffset,
+		std::memcpy(code, container + pageOffset,
 			sizeof(ir::InstructionContainer) * instructionsInThisPage);
 	
 		instructions -= instructionsInThisPage;
 		pageOffset    = 0;
 		page         += 1;
+
+		device_report("  %d instructions are remaining\n", instructions);
 	}
 }
 

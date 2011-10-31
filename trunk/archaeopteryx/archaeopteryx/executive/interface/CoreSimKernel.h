@@ -20,6 +20,11 @@ class CoreSimKernel
     public:
         //__device__ CoreSimKernel(void *gpuState, char* binaryName);
         __device__ void launchKernel(unsigned int simulatedBlocks, executive::CoreSimBlock* blocks, ir::Binary* binary);
+        
+    public:
+    	// Interface to CoreSimBlock
+    	__device__ size_t translateVirtualToPhysicalAddress(
+    		size_t virtualAddress) const;
 
 };
 
