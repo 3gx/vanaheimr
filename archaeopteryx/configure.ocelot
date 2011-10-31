@@ -11,7 +11,7 @@
 			ignoreIrrelevantWrites: true
 		},
 		debugger: {
-			enabled: true,
+			enabled: false,
 			kernelFilter: "launchSimulation",
 			alwaysAttach: true
 		},

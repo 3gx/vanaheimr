@@ -13,7 +13,9 @@
 #include <archaeopteryx/executive/interface/CoreSimThread.h>
 
 //Forward declarations
-namespace ir        { class Binary; }
+namespace ir        { class Binary;        }
+namespace executive { class CoreSimKernel; }
+
 
 /*! \brief A namespace for program execution */
 namespace executive
@@ -37,6 +39,7 @@ class CoreSimBlock
                 unsigned int sharedMemoryPerBlock;
                 ir::Binary*  binary;
         };
+        
     private:
         //FetchUnit m_fetchUnit;
         typedef unsigned long long Register;
@@ -48,6 +51,7 @@ class CoreSimBlock
         typedef CoreSimThread* Warp;
         Warp m_warp;
         bool m_predicateMask[WARP_SIZE]; 
+        const CoreSimKernel* m_kernel;
 
     private:
         __device__ void clearAllBarrierBits();
@@ -58,6 +62,7 @@ class CoreSimBlock
         __device__ InstructionContainer fetchInstruction(PC pc);
         __device__ void executeWarp(InstructionContainer* instruction, PC pc);
         __device__ unsigned int getThreadIdInWarp();
+        __device__ void initializeSpecialRegisters();
 
     public:
         // Initializes the state of the block
@@ -65,7 +70,8 @@ class CoreSimBlock
         //  2) shared memory 
         //  3) local memory for each thread
         //  4) thread contexts
-        __device__ void setupCoreSimBlock(unsigned int blockId);
+        __device__ void setupCoreSimBlock(unsigned int blockId,
+        	unsigned int registers, const CoreSimKernel* kernel);
         __device__ void setupBinary(ir::Binary* binary);
     
     public:

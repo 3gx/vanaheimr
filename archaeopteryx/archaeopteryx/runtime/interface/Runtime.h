@@ -6,12 +6,13 @@
 */
 #pragma once
 
-#include <archaeopteryx/executive/interface/CoreSimKernel.h>
-#include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/ir/interface/Binary.h>
 
 // Forward Declarations
 namespace util { class File; }
+
+namespace executive { class CoreSimBlock; }
+namespace executive { class CoreSimKernel; }
 
 namespace rt
 {
@@ -28,6 +29,9 @@ class Runtime
         __device__ static void* translateCudaAddressToSimulatedAddress(void* CudaAddress);
         __device__ static void setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta);
         __device__ static void setupMemoryConfig(unsigned int localMemoryPerThread, unsigned int sharedMemoryPerCta);
+        __device__ static void setupArgument(const void* data, size_t size,
+        	size_t offset);
+        __device__ static size_t baseOfUserMemory();
         __device__ static void setupKernelEntryPoint(const char* functionName);
         __device__ static void launchSimulation();
         __device__ static void munmap(size_t address);
@@ -37,12 +41,12 @@ class Runtime
     public:
         struct RuntimeState 
         {
-            ir::Binary*              m_loadedBinary;
-            void*                    m_physicalMemory;
-            executive::CoreSimKernel m_kernel;
-            executive::CoreSimBlock* m_blocks;//an array of blocks?
-            unsigned int             m_simulatedBlocks;
-            ir::Binary::PC           m_launchSimulationAtPC;
+            ir::Binary*               m_loadedBinary;
+            void*                     m_physicalMemory;
+            executive::CoreSimKernel* m_kernel;
+            executive::CoreSimBlock*  m_blocks;//an array of blocks?
+            unsigned int              m_simulatedBlocks;
+            ir::Binary::PC            m_launchSimulationAtPC;
         };
         
     public:

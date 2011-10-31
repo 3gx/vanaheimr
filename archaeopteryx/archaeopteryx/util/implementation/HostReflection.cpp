@@ -29,7 +29,7 @@ namespace ocelot
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace util
 {
@@ -110,7 +110,7 @@ __device__ void HostReflection::sendAsynchronous(const Message& m)
 	
 	std::memcpy(buffer + sizeof(Header), m.payload(), m.payloadSize());
 	 
-	printf(" sending asynchronous gpu->host message "
+	device_report(" sending asynchronous gpu->host message "
 		"(%d type, %d id, %d size, %d handler)\n", Asynchronous,	
 		header->threadId, bytes, m.handler());
 	
@@ -140,17 +140,17 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 	std::memcpy(buffer + sizeof(SynchronousHeader), m.payload(),
 		m.payloadSize());
 	 
-	printf(" sending synchronous gpu->host message "
+	device_report(" sending synchronous gpu->host message "
 		"(%d type, %d id, %d size, %d handler, %x flag)\n", Synchronous,	
 		header->threadId, bytes, m.handler(), header->address);
 	
 	while(!_deviceToHost->push(buffer, bytes));
 
-	printf("  waiting for ack...\n");
+	device_report("  waiting for ack...\n");
 	
 	while(*flag == false);
 
-	printf("   ...received ack\n");
+	device_report("   ...received ack\n");
 	
 	delete flag;
 	delete[] buffer;
@@ -160,7 +160,7 @@ __device__ void HostReflection::receive(Message& m)
 {
 	while(!_hostToDevice->peek());
 
-	std::printf(" receiving cpu->gpu message.");
+	device_report(" receiving cpu->gpu message.");
 
 	size_t bytes = m.payloadSize() + sizeof(Header);
 
@@ -168,7 +168,7 @@ __device__ void HostReflection::receive(Message& m)
 	
 	_hostToDevice->pull(buffer, bytes);
 
-	std::printf("  bytes: %d\n", (int)(bytes - sizeof(Header)));
+	device_report("  bytes: %d\n", (int)(bytes - sizeof(Header)));
 
 	std::memcpy(m.payload(), (buffer + sizeof(Header)), m.payloadSize());
 
@@ -543,7 +543,7 @@ __host__ size_t HostReflection::HostQueue::_read(void* data, size_t size)
 __device__ HostReflection::DeviceQueue::DeviceQueue(QueueMetaData* m)
 : _metadata(m)
 {
-	std::printf("binding device queue to metadata (%d size, "
+	device_report("binding device queue to metadata (%d size, "
 		"%d head, %d tail, %d mutex)\n", (int)m->size, (int)m->head,
 		(int)m->tail, m->mutex);
 }
@@ -561,7 +561,7 @@ __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 	
 	if(!_lock()) return false;	
 
-	std::printf("pushing %d bytes into gpu->cpu queue.\n", (int)size);
+	device_report("pushing %d bytes into gpu->cpu queue.\n", (int)size);
 
 	size_t end  = _metadata->size;
 	size_t head = _metadata->head;
@@ -578,7 +578,7 @@ __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 	std::memcpy(_metadata->deviceBegin, (char*)data + firstCopy, secondCopy);
 	_metadata->head = secondCopyNecessary ? secondCopy : head + firstCopy;
 	
-	std::printf(" after push (%d used, %d remaining, %d size)\n",
+	device_report(" after push (%d used, %d remaining, %d size)\n",
 		(int)_used(), (int)_capacity(), (int)this->size());
 	
 	_unlock();
@@ -768,12 +768,6 @@ __global__ void _teardownHostReflection()
 
 __host__ HostReflection::BootUp::~BootUp()
 {
-	// wait for kernel launches to complete
-	while(!_launches.empty())
-	{
-		boost::thread::yield();	
-	}
-
 	report("Destroying host reflection");
 
 	// kill the thread
@@ -783,6 +777,7 @@ __host__ HostReflection::BootUp::~BootUp()
 	
 	// destroy the device queues
 	_teardownHostReflection<<<1, 1>>>();
+	cudaThreadSynchronize();
 	
 	// destroy the host queues
 	delete _hostToDeviceQueue;
@@ -840,7 +835,9 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 		_deviceToHostQueue->pull(&address, sizeof(void*));
 	
 		report("   synchronous ack to address: " << address);
-		cudaMemset(address, true, sizeof(bool));
+		bool value = true;
+		
+		cudaMemcpyAsync(address, &value, sizeof(bool), cudaMemcpyHostToDevice);
 		header.size -= sizeof(void*);
 	}
 
@@ -860,25 +857,53 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 	return true;
 }
 
+__host__ static bool areAnyCudaKernelsRunning()
+{
+	cudaEvent_t event;
+	
+	cudaEventCreate(&event);
+	
+	cudaEventRecord(event);
+	
+	bool running = cudaEventQuery(event) == cudaErrorNotReady;
+	
+	cudaEventDestroy(event);
+	
+	return running;
+}
+
 __host__ void HostReflection::BootUp::_run()
 {
 	report(" Host reflection worker thread started.");
 
-	while(!_kill || !_launches.empty() || _handleMessage())
+	while(true)
 	{
+		if(_kill)
+		{
+			if(!areAnyCudaKernelsRunning())
+			{
+				if(_launches.empty() && !_handleMessage())
+				{
+					break;
+				}
+			}
+		}
+	
 		if(!_launches.empty())
 		{
 			_launchNextKernel();
 		}
 		else if(!_handleMessage())
 		{
-			boost::thread::yield();
+			boost::this_thread::sleep(boost::posix_time::milliseconds(20));
 		}
 		else
 		{
 			while(_handleMessage());
 		}
 	}
+
+	report("  Host reflection worker thread joined.");
 }
 
 __host__ void HostReflection::BootUp::_launchNextKernel()

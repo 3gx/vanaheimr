@@ -7,13 +7,18 @@
 
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/ir/interface/Instruction.h>
+#include <archaeopteryx/executive/interface/CoreSimKernel.h>
 
 namespace executive
 {
 
-__device__ void CoreSimBlock::setupCoreSimBlock(unsigned int blockId)
+__device__ void CoreSimBlock::setupCoreSimBlock(unsigned int blockId,
+	unsigned int registers, const CoreSimKernel* kernel)
 {
     m_blockState.blockId = blockId;
+    m_blockState.registersPerThread = registers;
+    m_kernel = kernel;
+    
     printf("Setting up core sim block %p, %d threads, %d registers\n", this, m_blockState.threadsPerBlock, m_blockState.registersPerThread);
 
     m_registerFiles  = new Register[m_blockState.registersPerThread *
@@ -70,7 +75,10 @@ __device__ void CoreSimBlock::roundRobinScheduler()
 {
     if (getThreadIdInWarp() == 0)
     {
-        if (m_warp - m_threads + WARP_SIZE > m_blockState.threadsPerBlock)
+    	unsigned int currentWarp = m_warp - m_threads;
+    	cta_report("Running round robin scheduler, current warp is [%d, %d]\n",
+    		currentWarp, currentWarp + WARP_SIZE);
+        if (currentWarp + WARP_SIZE >= m_blockState.threadsPerBlock)
         {
             m_warp = m_threads;
         }
@@ -78,6 +86,9 @@ __device__ void CoreSimBlock::roundRobinScheduler()
         {
             m_warp += WARP_SIZE;
         }
+
+    	cta_report(" selected warp [%d, %d]\n", (int)(m_warp - m_threads),
+    		(int)(m_warp - m_threads) + WARP_SIZE);
     }
     //barrier
 }
@@ -106,14 +117,15 @@ __device__ unsigned int CoreSimBlock::findNextPC(unsigned int& returnPriority)
     {
         if (getThreadIdInWarp() % i == 0)
         {
-            unsigned int neighborsPriority = priority[getThreadIdInWarp() + i/2].x;
-            unsigned int neighborsPC       = priority[getThreadIdInWarp() + i/2].y;
+        	unsigned int neighborsThreadId = getThreadIdInWarp() + i/2;
+            unsigned int neighborsPriority = priority[neighborsThreadId].x;
+            unsigned int neighborsPC       = priority[neighborsThreadId].y;
 
             bool local = localThreadPriority > neighborsPriority;
 
             localThreadPriority = local ? localThreadPriority : neighborsPriority;
             localThreadPC       = local ? localThreadPC       : neighborsPC;
-            device_report("\tThread [%d]: LocalThreadPriority: %d, neighborsPriority: %d \n", threadIdx.x, localThreadPriority, neighborsPriority);
+            device_report("\tThread [%d]: LocalThreadPriority: %d, neighborsPriority[%d]: %d \n", threadIdx.x, localThreadPriority, neighborsThreadId, neighborsPriority);
         }
         // warp_barrier
         if (getThreadIdInWarp() % i == 0)
@@ -126,6 +138,8 @@ __device__ unsigned int CoreSimBlock::findNextPC(unsigned int& returnPriority)
 
     unsigned int maxPriority = priority[0].x;
     unsigned int maxPC       = priority[0].y;
+ 
+    cta_report(" max priority is %d, max pc is %d\n", maxPriority, maxPC);
  
     returnPriority = maxPriority;
 
@@ -169,6 +183,23 @@ __device__ unsigned int CoreSimBlock::getThreadIdInWarp()
     return (threadIdx.x % WARP_SIZE);
 }
 
+__device__ void CoreSimBlock::initializeSpecialRegisters()
+{
+	cta_report("Intializing special registers for %d threads\n", 
+		m_blockState.threadsPerBlock);
+	for(unsigned int tid = threadIdx.x; tid < m_blockState.threadsPerBlock;
+		tid += blockDim.x)
+	{
+		// r32 is parameter memory (0x00000000 for now)
+		setRegister(tid, 32, 0);
+		
+		// r33 is the global thread id 
+		setRegister(tid, 33, tid);
+	}
+
+	cta_report(" done\n");
+}
+
 // Entry point to the block simulation
 // It performs the following operations
 //   1) Schedule group of simulated threads onto CUDA warps (static/round-robin)
@@ -179,7 +210,9 @@ __device__ unsigned int CoreSimBlock::getThreadIdInWarp()
 //   6) Save the new PC, goto 1 if all threads are not done
  __device__ void CoreSimBlock::runBlock()
 {
-    m_warp           = m_threads + threadIdx.x - getThreadIdInWarp();
+    m_warp = m_threads + threadIdx.x - getThreadIdInWarp();
+
+	initializeSpecialRegisters();
 
     cta_report("Running core-sim-block loop for simulated cta %d\n", 
         m_blockState.blockId);
@@ -190,11 +223,10 @@ __device__ unsigned int CoreSimBlock::getThreadIdInWarp()
 
     while (!areAllThreadsFinished())
     {
-        roundRobinScheduler();
         ++scheduledCount;
         PC nextPC = findNextPC(priority);
 
-        cta_report(" next PC is %d, priority %d\n", nextPC, priority);
+        cta_report(" next PC is %d, priority %d\n", (int)nextPC, priority);
 
         // only execute if all threads in this warp are NOT waiting on a barrier
         if (priority != 0)
@@ -213,23 +245,32 @@ __device__ unsigned int CoreSimBlock::getThreadIdInWarp()
             scheduledCount = 0;
             executedCount  = 0;
         }
+
+        roundRobinScheduler();
     }
 }
 
 __device__ CoreSimThread::Value CoreSimBlock::getRegister(unsigned int threadId, unsigned int reg)
 {
-    return m_registerFiles[(m_blockState.registersPerThread * threadId)+reg];
+    Value v = m_registerFiles[(m_blockState.registersPerThread * threadId)+reg];
+
+	device_report("(%d): reading register r%d, (%p)\n", threadId, reg, v);
+
+	return v;
 }
 
-__device__ void CoreSimBlock::setRegister(unsigned int reg,
-	unsigned int threadId, const CoreSimThread::Value& result)
+__device__ void CoreSimBlock::setRegister(unsigned int threadId,
+	unsigned int reg, const CoreSimThread::Value& result)
 {
+	device_report("(%d): setting register r%d, (%p)\n",
+		threadId, reg, result);
+
     m_registerFiles[(m_blockState.registersPerThread*threadId)+reg] = result;
 }
 
 __device__ CoreSimThread::Value CoreSimBlock::translateVirtualToPhysical(const CoreSimThread::Value v)
 {
-    return v; // we will modify this to something much sophisticated later
+    return m_kernel->translateVirtualToPhysicalAddress(v);
 }
 
 
