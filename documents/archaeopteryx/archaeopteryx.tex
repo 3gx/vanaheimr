@@ -292,6 +292,34 @@ executes one machine instruction for each virtual instruction as a baseline.
 % Section 4 - 3000 words
 \section{Simulator Core Design}
 \label{sec:core-design}
+% CoreSimKernel: is the global work distributor. It maps the expected number of 
+% simulated SMs onto CoreSimBlocks.
+% CoreSimBlock: Each coresimblock models the H/w concept of Streaming multiprocessor
+% Each SM executes an independent unit of code that for a given number of threads.
+% there are units of threads called CTA (cooperative thread array) as the name suggests
+% work symbiotically by data in shared memory. Usually there are more threads in a
+% CTA than the actual number of threads an SM can execute on hardware, this is where
+% the concept of warps comes into picture. Warps are the number of threads that 
+% are grouped by hardware to execute simultaneously. Usually each thread in a warp
+% has a specific hardware lane allocated for it.
+% CoresimThread corresponds to a unit of thread execcuted on the hardware.
+% In this simulator, we have designed the system such that multiple CoresimBlocks 
+% (corresponding to a actual SM) can be simulated on a given hardware SM. Similarly
+% a single hardware thread simulates multiple simulated threads. This is useful
+% for studies that determine the next generation hardware specifications. All the
+% state for each of those multiple blocks that is swapped in and out is handled 
+% by the simulator's coresimblock.   
+% The SM (coresimblock) contains its own scheduler that groups simulated threads
+% into blocks, maintains their corresponding state, register files and fetches &
+% executes those threads. Usually the initial state for the SM is set by the 
+% global work distributor while the simulation configuration like no. of threads in
+% each SM is set by the runtime. 
+
+% i.) Talk about underlying hardware and the arch we want to simulate, the relationship
+% between them and the differences
+% ii.) talk about the programming model - CTAs, blocks, threads etc.
+% iii,) talk about the runtime and how it maps the execution model in (ii) to
+% the underlying hardware in (i).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
