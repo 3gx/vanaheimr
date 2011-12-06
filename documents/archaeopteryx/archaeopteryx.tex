@@ -199,7 +199,52 @@ by an evaluation of the speed and accuracy of the simulator.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 2 - 500 words
 \section{Vanaheimr}
-\label{sec:}
+\label{sec:vanaheimr}
+
+Vanaheimr is an architecture that is optimized to execute Multi-BSP programs
+that express a high degree of parallelism hierarchically.  The memory system
+is composed of memory controllers that are tiled across the processor die
+and connected to 3D DRAM modules either directly through vias, or
+indirectly through a silicon interposer.  The cache is organized
+into an H-tree structure, with clusters at each level of the hierarchy.  Each
+level is connected by a stage of an indirect network.  The cache bank size,
+number of levels, as well as degree of connectivity at each level is
+configurable.  The cores themselves implement a hierarchical SIMD architecture.
+The main difference between this and a traditional SIMD processor is that the
+unit of control that is broadcast to multiple execution units is larger than
+a single instruction; it is referred to as a sub-kernel.  The architecture
+is intended to scale across regular and irregular applications by varying the
+ratio of execution units to memory, and the number of levels in the
+interconnection network.  
+
+\subsection{Architecture}
+This paper is concerned with the design of a functional simulator for the
+Vanaheimr architecture, so only the essential aspects are mentioned here. 
+Additional details about the architecture are described in related
+work~\cite{ref:vanaheimr}.  
+
+Vanaheimr targets 100 TFLOPs peak throughput at a 5nm technology node on a
+300mm$^2$ die, while peak single-threaded CPU performance is currently limited
+to less than 15 GFLOPs~\cite{ref:sandybridge-peak}.  In order to bridge the gap
+between simulator and hardware performance, the Archqopteryx simulator is
+implemented using Multi-BSP algorithms intended to execute on a commodity
+parallel processor, such as NVIDIA Kepler with a peak throughput of 2.5 TFLOPs
+or greater.
+
+Although some components, namely the SIMD lanes, used in the Vanaheimr
+architecture map naturally onto the CUDA model, the memory system, network,
+and core control logic exhibit either serial operation in hardware or many
+fine-grained dependences.  These components are modeled individually leveraging
+bulk-parallelism where it exists (such as among network buffers and lanes),
+falling back to serial execution where it does not (such as the SIMD instruction
+fetch to broadcast loop), and composed together hierarchically into groups
+that expand or contract the amount of parallelism in the simulation.  
+
+\subsection{Programming Model}
+Vanaheimr programs are compiled into an intermediate form, VIR (the Vahanheimr
+Internal Representation), from a high level language such as CUDA with nested
+parallelism, OpenCL, Phalanx, Sequoia, or any other that can be mapped onto
+the Multi-BSP model.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -207,39 +252,29 @@ by an evaluation of the speed and accuracy of the simulator.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 2 - 750 words
 \section{Executive Summary}
+\label{sec:summary}
 
 This paper begins with a concrete example of the simulation of single
 application on an instance of the Vanaheimr processor architecture.  
 
-\subsection{Vanaheimr}
+\subsection{Compilation}
 
-Vanaheimr is an architecture that is optimized to execute Multi-BSP programs
-that express a large degree of parallelism hierarchically.  The memory system
-is composed of memory controllers that are tiled across the processor die
-and directly connect to 3D DRAM modules either directly through vias, or
-indirectly through a silicon interposer.  The cache is organized
-into an H tree structure, with clusters at each level of the hierarchy.  Each
-level is connected by a stage of an indirect network.  The cache bank size,
-number of levels, as well as degree of connectivity at each level is
-configurable.  The cores themselves # TODO
-
-Although some components, namely the SIMD lanes, used in the Vanaheimr
-architecture map naturally onto the CUDA model, the memory system, network,
-and core control logic exhibit either serial operation in hardware or many
-fine-grained dependences.  These 
-
-Vanaheimr programs are compiled into an intermediate form, VIR (the Vahanheimr
-Internal Representation), from a high level language such as CUDA with nested
-parallelism, OpenCL, Phalanx, Sequoia, or any other that can be mapped onto
-the Multi-BSP model.  
-
-
+\subsection{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 3 - 1750 words
 \section{Framework Design}
+\label{sec:framework-design}
+
+\subsection{Execution Model}
+
+\subsection{Host Reflection}
+
+\paragraph{File IO}
+
+\paragraph{Program Representation}
 
 Intrinsic functions are lowered as late as possible, below the
 VIR level, allowing a backend compiler to map them directly onto hardware
@@ -251,22 +286,24 @@ executes one machine instruction for each virtual instruction as a baseline.
 % Vanaheimr core figure
 %
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 4 - 3000 words
 \section{Simulator Core Design}
+\label{sec:core-design}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 5 1000 words
 \section{Experimental Evaluation}
+\label{sec:experiments}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 6 - 500 words
 \section{Related Work}
+\label{related-work}
 
 % PTL-Sim
 
