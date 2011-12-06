@@ -46,12 +46,13 @@
 % High Level Organization (See individual sections for details) - 8000 words
 % 
 % Chapter 1) - Introduction                            - 1000 words
-% Chapter 2) - Executive Summary (emphasis on speedup) - 750  words
-% Chapter 3) - Framework Design                        - 1750 words
-% Chapter 4) - Simulator Core Design                   - 3000 words
-% Chapter 5) - Experimental Evaluation                 - 1000 words
-% Chapter 6) - Related Work                            - 500  words
-% Chapter 7) - Conclusions                             - 500  words
+% Chapter 2) - Vanaheimr introduction                  - 500  words
+% Chapter 3) - Executive Summary (emphasis on speedup) - 750  words
+% Chapter 4) - Framework Design                        - 1750 words
+% Chapter 5) - Simulator Core Design                   - 3000 words
+% Chapter 6) - Experimental Evaluation                 - 1000 words
+% Chapter 7) - Related Work                            - 500  words
+% Chapter 8) - Conclusions                             - 500  words
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -73,6 +74,7 @@ No Affiliation \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 1 - 1000 words
 \section{Introduction}
+\label{sec:introduction}
 
 % Survey of the space
 The transition to many core computing has coincided with the growth of
@@ -109,7 +111,7 @@ programming hazards as they move to \textit{non-uniform memory access} (NUMA)
 organizations to reduce on-chip network overheads.  
 
 These performance hazards complicate GPU programming. In fact, sequential
-algorithms mapped to single core CPUs are still competitive with GPUs for many
+algorithms mapped to single CPU cores are still competitive with GPUs for many
 application domains (e.g. database queries, loss-less compression,
 lexing/parsing, or graph analytics) despite a 300x (and exponentially growing)
 difference in peak throughput.  Two of the most important problems in computing
@@ -184,16 +186,72 @@ Specifically, this paper makes the following contributions:
 		We demonstrate a Nx speedup.
 \end{itemize}
 
+\subsection{Outline}
+
+This document is organized as follows.  The first section walks through the
+execution of sample application on the proposed simulator.  The second section
+provides a high level overview of the simulator framework.  The third section
+drills down into the implementation details of the simulator.  This is followed
+by an evaluation of the speed and accuracy of the simulator.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Section 2 - 500 words
+\section{Vanaheimr}
+\label{sec:}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 2 - 750 words
 \section{Executive Summary}
+
+This paper begins with a concrete example of the simulation of single
+application on an instance of the Vanaheimr processor architecture.  
+
+\subsection{Vanaheimr}
+
+Vanaheimr is an architecture that is optimized to execute Multi-BSP programs
+that express a large degree of parallelism hierarchically.  The memory system
+is composed of memory controllers that are tiled across the processor die
+and directly connect to 3D DRAM modules either directly through vias, or
+indirectly through a silicon interposer.  The cache is organized
+into an H tree structure, with clusters at each level of the hierarchy.  Each
+level is connected by a stage of an indirect network.  The cache bank size,
+number of levels, as well as degree of connectivity at each level is
+configurable.  The cores themselves # TODO
+
+Although some components, namely the SIMD lanes, used in the Vanaheimr
+architecture map naturally onto the CUDA model, the memory system, network,
+and core control logic exhibit either serial operation in hardware or many
+fine-grained dependences.  These 
+
+Vanaheimr programs are compiled into an intermediate form, VIR (the Vahanheimr
+Internal Representation), from a high level language such as CUDA with nested
+parallelism, OpenCL, Phalanx, Sequoia, or any other that can be mapped onto
+the Multi-BSP model.  
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 3 - 1750 words
 \section{Framework Design}
+
+Intrinsic functions are lowered as late as possible, below the
+VIR level, allowing a backend compiler to map them directly onto hardware
+acceleration if available.  For simplicity, the Archaeopteryx core model
+executes one machine instruction for each virtual instruction as a baseline.
+
+%
+% Vanaheimr high level figure
+% Vanaheimr core figure
+%
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -217,7 +275,7 @@ Specifically, this paper makes the following contributions:
 % GPGPU-SIM, Barra, GPU-Ocelot
 \cite{ref:ocelot-pact}
 
-% 
+% Parallel simulation, PDES, multi-threaded, CUDA simulation of many-core
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
