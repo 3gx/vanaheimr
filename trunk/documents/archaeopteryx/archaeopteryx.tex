@@ -61,7 +61,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Title and Authors
 \title{Archaeopteryx\\
-Simulating Future Architectures on GPUs}
+A Multi-BSP Processor Simulator}
 
 \author{Sudnya Diamos and Gregory Diamos  \\
 No Affiliation \\
@@ -188,11 +188,18 @@ Specifically, this paper makes the following contributions:
 
 \subsection{Outline}
 
-This document is organized as follows.  The first section walks through the
-execution of sample application on the proposed simulator.  The second section
-provides a high level overview of the simulator framework.  The third section
-drills down into the implementation details of the simulator.  This is followed
-by an evaluation of the speed and accuracy of the simulator.
+This document is organized as follows.  
+Section~\ref{sec:vanaheimr} briefly describes the processor being simulated.
+Section~\ref{sec:summary} walks through the execution of sample application on
+the proposed simulator.
+Section~\ref{sec:framework-design} provides a high level overview of the 
+simulator framework. 
+Section~\ref{sec:core-design} drills down into the implementation details of 
+the simulator.  
+This is followed by Section~\ref{sec:experiments}, which provides an evaluation
+of the speed and accuracy of the simulator.
+Section~\ref{sec:related-work} surveys related work, and
+Section~\ref{sec:conclusion} concludes the paper.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -209,45 +216,99 @@ indirectly through a silicon interposer.  The cache is organized
 into an H-tree structure, with clusters at each level of the hierarchy.  Each
 level is connected by a stage of an indirect network.  The cache bank size,
 number of levels, as well as degree of connectivity at each level is
-configurable.  The cores themselves implement a hierarchical SIMD architecture.
+configurable.  
+
+The cores themselves implement a hierarchical SIMD architecture.
 The main difference between this and a traditional SIMD processor is that the
 unit of control that is broadcast to multiple execution units is larger than
-a single instruction; it is referred to as a sub-kernel.  The architecture
-is intended to scale across regular and irregular applications by varying the
-ratio of execution units to memory, and the number of levels in the
-interconnection network.  
+a single instruction; it is referred to as a sub-kernel.  Cores may be
+heterogeneous at the micro-architecture level to balance sequential against
+parallel efficiency.  However, they all implement the same ISA and execution 
+model. The architecture is intended to scale across regular and irregular 
+applications by varying the ratio of execution units to memory, and the number 
+of levels in the interconnection network.  
 
-\subsection{Architecture}
 This paper is concerned with the design of a functional simulator for the
 Vanaheimr architecture, so only the essential aspects are mentioned here. 
 Additional details about the architecture are described in related
 work~\cite{ref:vanaheimr}.  
 
+\subsection{Architecture}
 Vanaheimr targets 100 TFLOPs peak throughput at a 5nm technology node on a
 300mm$^2$ die, while peak single-threaded CPU performance is currently limited
 to less than 15 GFLOPs~\cite{ref:sandybridge-peak}.  In order to bridge the gap
-between simulator and hardware performance, the Archqopteryx simulator is
-implemented using Multi-BSP algorithms intended to execute on a commodity
-parallel processor, such as NVIDIA Kepler with a peak throughput of 2.5 TFLOPs
-or greater.
+between simulator and hardware performance, the Archaeopteryx simulator is
+implemented using Multi-BSP algorithms that are intended to execute on a
+commodity parallel processor, such as NVIDIA Kepler with a peak throughput of
+2.5 TFLOPs or greater.
 
 Although some components, namely the SIMD lanes, used in the Vanaheimr
 architecture map naturally onto the CUDA model, the memory system, network,
 and core control logic exhibit either serial operation in hardware or many
-fine-grained dependences.  These components are modeled individually leveraging
-bulk-parallelism where it exists (such as among network buffers and lanes),
-falling back to serial execution where it does not (such as the SIMD instruction
-fetch to broadcast loop), and composed together hierarchically into groups
-that expand or contract the amount of parallelism in the simulation.  
+fine-grained dependences.  These components are modeled individually by
+leveraging bulk-parallelism where it exists (such as among network buffers and
+lanes), and falling back to serial execution where it does not (such as the
+SIMD instruction fetch to broadcast loop). Individual components are composed 
+together hierarchically into levels in the final Multi-BSP simulation that
+expand or contract the amount of parallelism during execution.  
 
 \subsection{Programming Model}
 Vanaheimr programs are compiled into an intermediate form, VIR (the Vahanheimr
 Internal Representation), from a high level language such as CUDA with nested
 parallelism, OpenCL, Phalanx, Sequoia, or any other that can be mapped onto
-the Multi-BSP model.  
+the Multi-BSP model. VIR is a RISC-like instruction set that shares many opcodes
+and the type system with LLVM.  However, it also defines a flexible mechanism
+for declaring scratchpad memory that is shared at different levels in a 
+hierarchical thread array (HTA).  
+
+During compilation, a program is first lowered into VIR, where device agnostic
+optimizations are applied. Then, a device-specific backend transforms the code
+to conform to the machine ABI for function calls and variable layout in memory. 
+It also translates VIR opcodes into machine instructions and performs scheduling
+and resource allocation of memory, registers, and code.  A final binary is
+produced that is suitable for execution in a SPMD fashion.
+
+% Kernel Launch
+%  - synchronous
+%  - asynchronous
+Programs begin with a single thread entering a \textit{main} function.  This
+thread may perform scalar operations, or make system calls to allocate memory or
+interact with IO devices; it may also create additional threads by launching a
+HTA.  HTAs can be launched synchronously or asynchronously.  Synchronous
+launches suspend the calling thread until the HTA returns, while asynchronous
+launches create a continuation that launches the HTA after the current thread
+finishes.  Parallelism can be specified statically via the launch of a single
+multi-level HTA, or it can be created dynamically, via the recursive launch of
+many HTAs with fewer levels.  This allows regular applications to avoid the
+overheads of runtime work creation, and irregular applications to adjust the
+amount of parallelism to match the shape of data-dependent problems.
+
+% Memory allocation
+%  - static
+%  - dynamic
+Memory allocation is performed statically with automatic variables, or
+dynamically via a malloc equivalent.  The main difference between these concepts
+and their sequential counterparts is that they also specify the level in the HTA
+at which they are replicated.  For example, a statically sized array of integers
+could be allocated per-thread, once for the entire HTA, or replicated at any
+other level.  Similarly, a call to malloc could be made by each thread to
+allocate memory to store a private data structure, or by a single-thread to
+allocate memory that is shared across threads at the same level.  
+The exact mechanism used to specify the scope of a variable is left to the 
+programming language designer.  This mechanism is meant to communicate this 
+information to the runtime or compiler, which can control the placement of these
+memory allocations at the appropriate level in the memory hierarchy.
+
+% Synchronization
+%  - barriers
+%  - call-return
+Synchronization can be performed explicitly via barriers at any level of a HTA,
+or implicitly through the bulk-synchronization mechanism as HTAs complete.  This
+means that memory that was modified by a synchronously launched HTA will be 
+immediately available to the calling thread when it resumes.  
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 2 - 750 words
@@ -257,9 +318,23 @@ the Multi-BSP model.
 This paper begins with a concrete example of the simulation of single
 application on an instance of the Vanaheimr processor architecture.  
 
+\subsection{Application}
+
+% Saxpy
+
+% Data distribution, initialized randomly
+
+% Kernel execution, a two-level HTA mapped onto cores
+
 \subsection{Compilation}
 
-\subsection{}
+% Main thread example
+
+% Example inner loop of saxpy
+
+% 
+
+\subsection{Execution}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -331,7 +406,7 @@ executes one machine instruction for each virtual instruction as a baseline.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 6 - 500 words
 \section{Related Work}
-\label{related-work}
+\label{sec:related-work}
 
 % PTL-Sim
 
@@ -347,6 +422,7 @@ executes one machine instruction for each virtual instruction as a baseline.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 7 - 500 words
 \section{Conclusion}
+\label{sec:conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
