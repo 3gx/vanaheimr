@@ -34,7 +34,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Configure Packages
 \graphicspath{{images/}} 
-\DeclareGraphicsExtensions{.pdf,.jpeg,.png} 
+\DeclareGraphicsExtensions{.pdf,.jpeg,.jpg,.png} 
 \pagenumbering{arabic}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -102,7 +102,6 @@ where hardware can use SIMD pipelines and bulk data transfers to exploit
 control and data locality among threads.  However, current designs suffer
 from steep performance cliffs when executing programs with irregular control
 flow and data access patterns.  
-%They are also 
 %from branch divergence (when threads take
 %different paths through the program) and memory divergence (when threads perform
 %scatter or gather memory accesses).  
@@ -110,9 +109,9 @@ They are also beginning to introduce new
 programming hazards as they move to \textit{non-uniform memory access} (NUMA)
 organizations to reduce on-chip network overheads.  
 
-These performance hazards complicate GPU programming. In fact, sequential
-algorithms mapped to single CPU cores are still competitive with GPUs for many
-application domains (e.g. database queries, loss-less compression,
+These performance hazards limit the potential of GPU programming. In fact,
+sequential algorithms mapped to single CPU cores are still competitive with GPUs
+for many application domains (e.g. database queries, loss-less compression,
 lexing/parsing, or graph analytics) despite a 300x (and exponentially growing)
 difference in peak throughput.  Two of the most important problems in computing
 today involve designing architectures with more gradual performance cliffs
@@ -240,7 +239,7 @@ to less than 15 GFLOPs~\cite{ref:sandybridge-peak}.  In order to bridge the gap
 between simulator and hardware performance, the Archaeopteryx simulator is
 implemented using Multi-BSP algorithms that are intended to execute on a
 commodity parallel processor, such as NVIDIA Kepler with a peak throughput of
-2.5 TFLOPs or greater.
+2.5 TFLOPs (GK104) or greater.
 
 Although some components, namely the SIMD lanes, used in the Vanaheimr
 architecture map naturally onto the CUDA model, the memory system, network,
@@ -318,23 +317,143 @@ immediately available to the calling thread when it resumes.
 This paper begins with a concrete example of the simulation of single
 application on an instance of the Vanaheimr processor architecture.  
 
-\subsection{Application}
+\subsection{Application Overview}
 
-% Saxpy
+%%
+%% Saxpy figure
+%%
+\begin{figure}
+	\begin{center}
+		%% TODO replace with real image
+		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
+		\caption{The SAXPY kernel CUDA "C" source code.}
+		\label{fig:saxpy-kernel-source}
+	\end{center}
+\end{figure}
+
+SAXPY is the canonical example of a data-parallel program from the dense linear
+algebra application domain.  A single multiply-accumulate kernel is applied to
+each element in a one-dimensional vector.  The CUDA C source code for this
+kernel is shown in Figure~\ref{fig:saxpy-kernel-source}.
+
+%%
+%% Main thread figure
+%%
+\begin{figure}
+	\begin{center}
+		%% TODO replace with real image
+		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
+		\caption{The main program thread CUDA "C" source code.}
+		\label{fig:saxpy-main-thread}
+	\end{center}
+\end{figure}
 
 % Data distribution, initialized randomly
+The program begins with a single thread, which allocates the X and Y arrays,
+then initializes them with random data.  It then applies a block-cyclic
+data-distribution to the X and Y arrays, which partitions them into contiguous
+blocks that are allocated on the same DRAM module, managed by the same memory
+controller, and processed by the same core.  Once memory has been initialized,
+the main thread launches the SAXPY kernel synchronously, expanding the amount
+of parallelism.  The dimensions of the input and output data sets are known
+statically, as are the elements from each set that will be processed by each
+thread.  This simplifies the problems of creating data distributions and HTAs,
+and they can be created at once when the kernel is launched.  More complex
+applications may require creating additional HTAs or changing data distributions
+during kernel execution.  However, the simple example of SAXPY is covered first.  
+
+Once the kernel returns control transfers back to the main thread and
+memory is synchronized, the results are verified, memory is freed, and the
+program exits.  
+
+% Data distributions - detail
+Although SAXPY is a completely data-parallel algorithm with one operation
+naturally mapping onto a single thread, the kernel is composed of a two-level
+hierarchy of thread arrays, with each array containing several hundred threads.
+This is done to reduce the overhead of launching individual threads, and to
+coarsen the granularity of the input and output data distributions.  This
+coarsening eases the process of mapping thread arrays to cores with good data
+locality.
 
 % Kernel execution, a two-level HTA mapped onto cores
+The kernel launch specifies the dimensions of the HTA as well as the input
+parameters to the kernel.  A two-level HTA is created.  The first level is an
+array of 1024 threads and the second level is an array of arrays that covers
+the entire input and output data sets.  No scratchpad memory is allocated since
+this application simply reads an input and writes an output without any reuse
+or any inter-thread communication.  The kernel parameters (pointers to the X, Y
+arrays and the value of A) are broadcast to each thread; they are initialized
+before the thread is created.  After it has been created, each thread determines
+its id, finds the offset of the elements in X and Y that it should process,
+performs the $Y = A*X+Y$ calculation, and exits.
 
 \subsection{Compilation}
 
+In order to execute Vanaheimr programs such as SAXPY on the Archeopteryx
+simulator, they must be compiled into the VIR form from source.  
+
+% Programming model changes
+Vanaheimr's programming model extends the baseline defined by CUDA "C" in
+several ways, for example, by allowing device threads to call CUDA API routines,
+
+
 % Main thread example
 
-% Example inner loop of saxpy
 
-% 
+% Example inner loop (kernel) of saxpy
+
+% Mapping into VIR 
+%% - show C line to instruction translation
+The mapping from CUDA "C" into VIR is performed in a straightforward manner.
+NVIDIA's CUDA compiler is used as a frontend to lower the C-like language into
+a virtual assembly language, PTX.  A modified version of the Ocelot compiler is
+then used transform PTX into VIR.  During this process, several PTX intrinsics
+for launching HTAs, declaring statically allocated variables with specific
+HTA-level scoping, and dynamically allocating scratch-pad memory are recognized
+as PTX intrinsic functions and converted into VIR abstractions.  These
+abstractions can be analyzed and optimized by the VIR optimizing compiler, which
+is also written in CUDA.
+
+%% - show parameter memory passing
+%% Parameters
+Kernel parameters are declared explicitly in VIR in kernel definitions. 
+For example, the VIR representation of the SAXPY kernel in 
+Figure~\ref{fig:saxpy-vir} includes the variables X, Y, and A in the kernel
+prototype.  These parameters are accessed via explicit load
+instructions in the kernel body. In a real implementation, these parameter
+accesses would be either converted into reads from pre-initialized registers or
+loads from memory by a backend compiler for Vanaheimr.  However, since this
+form of the program is simulated directly, they are supported by the simulator
+and complete in a single instruction.
+
+% - show data distribution, per-thread group
 
 \subsection{Execution}
+
+Once the program has been compiled into a binary, it is ready for execution. 
+The Archaeopteryx simulator is a stand-alone CUDA program that takes a compiled
+VIR binary as an input.  The simulator begins by starting up the host CPU
+threads that implement the extensions to the CUDA API, and launching a single
+CUDA kernel with a single thread.   This thread uses the CUDA API extensions to
+open the VIR binary and read the symbol table.  It determines the memory
+requirements and HTA configuration of the binary's "main" function, sets up the
+simulator state, points the work distributor at a descriptor of the first
+simulated HTA, and finally enters the main simulator loop.  
+
+% Main simulator thread
+%% Binary loading
+%% Thread launcher, scheduler
+%%% Multi-level thread launch
+
+% Overview
+
+% SM simulator
+%% SM worker threads
+
+% Memory traffic
+%% LD/ST ports
+%% Router traversal
+%% Memory controller
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -343,11 +462,11 @@ application on an instance of the Vanaheimr processor architecture.
 \section{Framework Design}
 \label{sec:framework-design}
 
-\subsection{Execution Model}
+\subsection{Simulator Structure}
 
-\subsection{Host Reflection}
+As a consequence, only the kernels from CUDA applications can be simulated.  
 
-\paragraph{File IO}
+\subsection{Asynchronous Multi-BSP Kernel Launches}
 
 \paragraph{Program Representation}
 
@@ -360,6 +479,26 @@ executes one machine instruction for each virtual instruction as a baseline.
 % Vanaheimr high level figure
 % Vanaheimr core figure
 %
+
+\subsection{File I/O}
+Archeopteryx supports file I/O operations or other system calls from any thread
+in the simulated program, including the main thread, but also from individual
+threads in a HTA.  It also makes use of this functionality within the
+implmenetation of the simulator components. Currently, this functionality is
+primarily used for reading input files, accessing the simulated program's
+binary, and reporting messages to the simulator console such as aggregate
+statistics or error messages. 
+
+This functionality is currently implemented with message passing between
+CUDA threads and a supporting runtime executing on the host CPU.  The NVIDIA
+CUDA runtime is augmented with additional functionality for receving messages
+through shared GPU-CPU memory queues, decoding them, performing I/O operations
+or system calls, and replying back to threads.  This is done due to a lack of
+device drivers or other OS-level functionality that is available on current GPUs
+to CUDA applications. If future GPUs support system calls directly, an updated
+implementation of Archeopteryx could map these operations directly onto system
+calls and bypass the CPU completely.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -400,6 +539,34 @@ executes one machine instruction for each virtual instruction as a baseline.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 5 1000 words
 \section{Experimental Evaluation}
+
+\subsection{Micro-benchmarks}
+
+These benchmarks are intended to measure the limits of performance on the
+simulator.
+
+\paragraph{Instruction Throughput}
+
+\paragraph{Thread/HTA Launch Rate}
+
+\paragraph{Barrier Rate}
+
+\paragraph{Function Call Rate}
+
+\paragraph{Branch Rate}
+
+\paragraph{Memory Requests}
+
+\subsection{Simulator Speed}
+
+\subsection{Simulator Accuracy}
+
+\paragraph{Dynamic Instruction Count}
+
+\paragraph{Branch Divergence}
+
+\paragraph{Memory Transactions}
+
 \label{sec:experiments}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -408,14 +575,22 @@ executes one machine instruction for each virtual instruction as a baseline.
 \section{Related Work}
 \label{sec:related-work}
 
-% PTL-Sim
+% PTL-Sim, Simple-Scalar
+
+% Analytical models
+
+% Statistical models
 
 % RAMP
 
-% GPGPU-SIM, Barra, GPU-Ocelot
+% GPU Simulators - GPGPU-SIM, Barra, GPU-Ocelot
 \cite{ref:ocelot-pact}
 
 % Parallel simulation, PDES, multi-threaded, CUDA simulation of many-core
+
+% RTL simulation, Verilog, Bluespec, etc
+
+% PTX Instrumentation - Lynx, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
