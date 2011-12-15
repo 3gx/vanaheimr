@@ -395,10 +395,9 @@ simulator, they must be compiled into the VIR form from source.
 % Programming model changes
 Vanaheimr's programming model extends the baseline defined by CUDA "C" in
 several ways, for example, by allowing device threads to call CUDA API routines,
-
+and by extending the two-level CUDA kernel to an HTA with unbounded levels.
 
 % Main thread example
-
 
 % Example inner loop (kernel) of saxpy
 
@@ -427,6 +426,12 @@ form of the program is simulated directly, they are supported by the simulator
 and complete in a single instruction.
 
 % - show data distribution, per-thread group
+As simulated HTAs are launched, they can specify the launch of any level in the
+hierarchy to be replicated for each partition of a data distribution.  This
+allows the work distribution mechanism to schedule thread arrays on SMs that
+are physically closer to the associated data partition.  In this example, the
+partitions of the X and Y arrays are striped across the memory controllers in
+Vanaheimr, and the corresponding thread arrays are scheduled on the nearest SM.
 
 \subsection{Execution}
 
@@ -444,6 +449,31 @@ simulated HTA, and finally enters the main simulator loop.
 %% Binary loading
 %% Thread launcher, scheduler
 %%% Multi-level thread launch
+The simulator loop proceeds in a conservative
+time-step fashion over four main components, the SMs, the network, and the
+memory controllers, and the work distributor.  A single CUDA kernel is launched
+by the main simulator thread for each component.  The SM component launches a
+thread array for each SM in the simulated machine, which begins executing
+threads until they block on memory events that have not yet been simulated. 
+The network model launches one thread array for each router in the network,
+which propagates flits for the current time-step.  The memory model launches one
+thread array for each memory controller, which arbitrates among current requests
+and generates responses.  Finally, the work distributor tracks simulated threads
+that are currently executing along with those that are waiting for memory or
+SM contexts to become available.  When a new thread array is launched on an SM,
+it allocates memory for data structures associated with those threads, such as
+stack memory, and initializes registers and memory, such as the thread id or
+stack pointer, conforming to the Vanaheimr ABI.
+
+Once set in motion, this process continues until all threads in a simulated HTA
+have completed and no pending HTAs have been launched.  At this time, the
+simulation is complete.
+
+For the SAXPY program, the binary's "main" starts with a single thread.  This is
+scheduled on an SM, which executes instruction by instruction up to the point
+where it launches the main SAXPY kernel.  This launch is performed by a direct
+call into the simulator to create a new HTA descriptor and pass it to the work
+distributor.  
 
 % Overview
 
@@ -454,6 +484,7 @@ simulated HTA, and finally enters the main simulator loop.
 %% LD/ST ports
 %% Router traversal
 %% Memory controller
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -484,7 +515,7 @@ executes one machine instruction for each virtual instruction as a baseline.
 Archeopteryx supports file I/O operations or other system calls from any thread
 in the simulated program, including the main thread, but also from individual
 threads in a HTA.  It also makes use of this functionality within the
-implmenetation of the simulator components. Currently, this functionality is
+implementation of the simulator components. Currently, this functionality is
 primarily used for reading input files, accessing the simulated program's
 binary, and reporting messages to the simulator console such as aggregate
 statistics or error messages. 
@@ -576,21 +607,27 @@ simulator.
 \label{sec:related-work}
 
 % PTL-Sim, Simple-Scalar
+\cite{ref:ptl-sim}, \cite{ref:simple-scalar}
 
 % Analytical models
 
 % Statistical models
 
 % RAMP
+\cite{ref:ramp}
 
 % GPU Simulators - GPGPU-SIM, Barra, GPU-Ocelot
 \cite{ref:ocelot-pact}
 
 % Parallel simulation, PDES, multi-threaded, CUDA simulation of many-core
+\cite{ref:pdes}, \cite{ref:multi-threaded-sim},
+\cite{ref:cuda-simulation-of-many-core}
 
 % RTL simulation, Verilog, Bluespec, etc
+\cite{ref:verilog-cuda}, \cite{ref:bluespec} 
 
 % PTX Instrumentation - Lynx, 
+\cite{ref:lynx}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -598,6 +635,7 @@ simulator.
 % Section 7 - 500 words
 \section{Conclusion}
 \label{sec:conclusion}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
