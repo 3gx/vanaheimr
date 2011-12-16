@@ -471,9 +471,16 @@ simulation is complete.
 
 For the SAXPY program, the binary's "main" starts with a single thread.  This is
 scheduled on an SM, which executes instruction by instruction up to the point
-where it launches the main SAXPY kernel.  This launch is performed by a direct
-call into the simulator to create a new HTA descriptor and pass it to the work
-distributor.  
+where it launches the main SAXPY kernel.  This launch is performed by
+compiler-generated code to create a HTA descriptor and push it into a queue
+owned by the work-distributor.  Since the call is synchronous, the thread
+saves its live state (registers, stack) and exits.  The return point is
+indicated in the HTA descriptor.  Eventually the work-distributor will read from
+the launch queue and begin launching thread arrays on idle SMs.  These threads
+will execute the SAXPY kernel and eventually return.  Once all threads have 
+returned, the work-distributor starts up the main thread again at the
+instruction after the HTA launch, and it continues to completion.  At this
+point, the simulation is finished.  
 
 % Overview
 
