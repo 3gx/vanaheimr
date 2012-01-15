@@ -568,10 +568,69 @@ calls and bypass the CPU completely.
 % each SM is set by the runtime. 
 
 % i.) Talk about underlying hardware and the arch we want to simulate, the relationship
-% between them and the differences
+% between them and the differences 
+% background on fermi/kepler
+%%%% key features of fermi/kepler (simd) that determine how you wrote your code - 
+%%%% things that were modeled: stuff we kept in mind while writing this code (explicit)
+% SM: simd lanes, all arch details... list ALL like cache, fetch unit, alu, mmu/addr trans etc.
+
+(I) Overview of the simulated architecture
+
 % ii.) talk about the programming model - CTAs, blocks, threads etc.
-% iii,) talk about the runtime and how it maps the execution model in (ii) to
+% state to simulate a thread/cta
+% operations - instr, barriers that can be performed
+
+% iii.) talk about the runtime and how it maps the execution model in (ii) to
 % the underlying hardware in (i).
+
+%%%Life of an instruction through the simulator
+Currently the trend in processor architecture development is to incrementally 
+modify and enhance features without completely redesigning something from scratch. 
+This trend helped us leverage the current underlying features to simulate the 
+next architecture and evaluate the performance of similar workloads on them. 
+The crux of design for the simulator core was to follow the SIMT paradigm, the 
+cache hierarchy, the ownership of ALUs as well as the memory management unit. 
+We used the CUDA programming language to write the simulator. We chose this 
+parallel language since it already has the concept of a group of threads (similar 
+to an HTA), hardware lanes where the threads are executed as well a single 
+execution entity that is a thread. We leveraged CUDA to map our new architecture's 
+concepts onto existing hardware. 
+
+The simulator models the Streaming Multiprocessor of the target architecture. This
+entails the part of the core where actual instructions are executed for many
+hundreds of threads. 
+
+At the start of the simulation, an initial state is set up by a runtime which 
+determines the various architectural configurations like the total number of 
+simulated threads, the number of threads in each HTA, the amount of shared 
+memory for each HTA as well as the local memory per thread. These attributes 
+can be varied by architects for performing experiments and studies for the 
+optimal values in the next architecture. 
+
+We describe the flow of an instruction through the simulated 
+pipeline through all stages in order to explain the execution model in detail. 
+The fetch stage occurs when an instruction is loaded from a binary file that 
+stores it in an ABI of the simulated architecture. The ABI format is a ....?
+Once fetched, there is a lookup into an array of structures of all the opcodes 
+for the architecture we are simulating and on a match, the execute stage for that 
+opcode occurs. In the execute stage, the operands are decoded depending on the 
+instruction opcode. For simplicity, we have only single addressing and oprand modes
+in each of our simulated instruction set. After decoding the oprands, the actual 
+operation corresponding to the instruction is performed and the result is stored 
+in the destination. The program counter is advanced to the next instruction. 
+All the stages in a pipeline after fetch are executed by each thread. To avoid 
+multiple redundant accessess to the disk for reading the binary, we perform it 
+only once for each step and reuse it for all simulated threads.
+  
+% Scheduler
+% Fetch broadcast
+% Address translation & memory conflict resolution
+
+% Performance optimizations (jump table to reduce branch count for opcode/operand
+%  type, jump table+ for divergence handling,
+%  register file organization for coalescing)
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
