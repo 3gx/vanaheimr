@@ -253,16 +253,16 @@ __device__ CoreSimThread::Value CoreSimBlock::getRegister(unsigned int threadId,
 {
     Value v = m_registerFiles[(m_blockState.registersPerThread * threadId)+reg];
 
-	device_report("(%d): reading register r%d, (%p)\n", threadId, reg, v);
+    device_report("(%d): reading register r%d, (%p)\n", threadId, reg, v);
 
-	return v;
+    return v;
 }
 
 __device__ void CoreSimBlock::setRegister(unsigned int threadId,
 	unsigned int reg, const CoreSimThread::Value& result)
 {
-	device_report("(%d): setting register r%d, (%p)\n",
-		threadId, reg, result);
+    device_report("(%d): setting register r%d, (%p)\n",
+        threadId, reg, result);
 
     m_registerFiles[(m_blockState.registersPerThread*threadId)+reg] = result;
 }
