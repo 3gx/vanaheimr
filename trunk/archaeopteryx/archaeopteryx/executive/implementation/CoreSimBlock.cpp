@@ -185,19 +185,18 @@ __device__ unsigned int CoreSimBlock::getThreadIdInWarp()
 
 __device__ void CoreSimBlock::initializeSpecialRegisters()
 {
-	cta_report("Intializing special registers for %d threads\n", 
-		m_blockState.threadsPerBlock);
-	for(unsigned int tid = threadIdx.x; tid < m_blockState.threadsPerBlock;
-		tid += blockDim.x)
-	{
-		// r32 is parameter memory (0x00000000 for now)
-		setRegister(tid, 32, 0);
-		
-		// r33 is the global thread id 
-		setRegister(tid, 33, tid);
-	}
+    cta_report("Intializing special registers for %d threads\n", 
+        m_blockState.threadsPerBlock);
+    for(unsigned int tid = threadIdx.x; tid < m_blockState.threadsPerBlock;
+        tid += blockDim.x)
+    {
+        // r32 is parameter memory (0x00000000 for now)
+        setRegister(tid, 32, 0);
+        // r33 is the global thread id 
+        setRegister(tid, 33, tid);
+    }
 
-	cta_report(" done\n");
+    cta_report(" done\n");
 }
 
 // Entry point to the block simulation
@@ -212,7 +211,7 @@ __device__ void CoreSimBlock::initializeSpecialRegisters()
 {
     m_warp = m_threads + threadIdx.x - getThreadIdInWarp();
 
-	initializeSpecialRegisters();
+    initializeSpecialRegisters();
 
     cta_report("Running core-sim-block loop for simulated cta %d\n", 
         m_blockState.blockId);
