@@ -673,6 +673,33 @@ a series of conditional branches with as many code blocks as the size of the ISA
 the performance of our simulator we introduced a jump table for opcode, operand look up. This 
 jump table eliminated all the divergent code blocks except one. 
 
+%shmem dsnt handle spills well
+The fastest way to access data on a GPU is from a register. So to run the simulation at the  
+maximum memory bandwidth, all the data accessess would have to be from the register file. We should 
+note that register files in hardware cannot be dynamically indexed. Thus mapping registers 
+from the simulated binaries onto hardware register file would not be possible without self modifying 
+code. In this project we concern ourselves with writing a parallel simulator to execute parallel code 
+in the most optimal way. Writing applications with self modifying code is beyond the scope of this 
+project. Additionally, mapping data accessess to register file in hardware would cause the accessess 
+from the simulated binary to compete with the accessess simulator's binary. We should note that while 
+performing architectural studies we would require to simulate a system with much bigger register file 
+size causing starvation in some cases. The next option would be to use shared memory for this data that 
+was being maximally accessed, but that would require additional support to handle spilling/overflow. 
+We chose L1 cache over shared memory since the eviction of an entry from cache and algorithm to 
+leverage locality is implicit in L1 cache. The register file was organized in a way that caused all 
+the threads' access to a certain index register to be on the same cache line, thus allowing memory 
+coalescing. This way, we did not have to bake the operands from the simulated binary onto actual 
+registers on hardware, thus keeping programs flexible and allowing a the simulator once compiled to 
+simulate multiple CUDA binaries one after the other. 
+
+%% Comments
+% Compare using the L1 data cache to actually using the register file
+%% Actually using the register file would allow the simulator to run as 
+%% fast as possible, using the data cache is slower, but more flexible 
+%% (overflow is handled implicilty) and easier to implement (does not require self-modifying code in the simulator)
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
