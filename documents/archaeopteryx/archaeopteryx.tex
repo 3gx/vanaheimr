@@ -673,7 +673,6 @@ a series of conditional branches with as many code blocks as the size of the ISA
 the performance of our simulator we introduced a jump table for opcode, operand look up. This 
 jump table eliminated all the divergent code blocks except one. 
 
-%shmem dsnt handle spills well
 The fastest way to access data on a GPU is from a register. So to run the simulation at the  
 maximum memory bandwidth, all the data accessess would have to be from the register file. We should 
 note that register files in hardware cannot be dynamically indexed. Thus mapping registers 
@@ -690,7 +689,10 @@ leverage locality is implicit in L1 cache. The register file was organized in a 
 the threads' access to a certain index register to be on the same cache line, thus allowing memory 
 coalescing. This way, we did not have to bake the operands from the simulated binary onto actual 
 registers on hardware, thus keeping programs flexible and allowing a the simulator once compiled to 
-simulate multiple CUDA binaries one after the other. 
+simulate multiple CUDA binaries one after the other. We should keep in mind that L1 cache was better 
+that shared memory in this case due to the size of registers per thread and nature of these accesses 
+being aligned to a cache line of L1. However the tag line can prove to be a limitation of L1 cache 
+access speed for other data access patterns. 
 
 %% Comments
 % Compare using the L1 data cache to actually using the register file
