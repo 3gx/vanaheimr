@@ -232,6 +232,15 @@ Vanaheimr architecture, so only the essential aspects are mentioned here.
 Additional details about the architecture are described in related
 work~\cite{ref:vanaheimr}.  
 
+\begin{figure}
+	\begin{center}
+		%% TODO replace with real image
+		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
+		\caption{An overview of the Vanaheimr processor architecture.}
+		\label{fig:vanaheimr}
+	\end{center}
+\end{figure}
+
 \subsection{Architecture}
 Vanaheimr targets 100 TFLOPs peak throughput at a 5nm technology node on a
 300mm$^2$ die, while peak single-threaded CPU performance is currently limited
@@ -252,6 +261,16 @@ together hierarchically into levels in the final Multi-BSP simulation that
 expand or contract the amount of parallelism during execution.  
 
 \subsection{Programming Model}
+
+\begin{figure}
+	\begin{center}
+		%% TODO replace with real image
+		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
+		\caption{An overview of the Vanaheimr execution model.}
+		\label{fig:vanaheimr-execution-model}
+	\end{center}
+\end{figure}
+
 Vanaheimr programs are compiled into an intermediate form, VIR (the Vahanheimr
 Internal Representation), from a high level language such as CUDA with nested
 parallelism, OpenCL, Phalanx, Sequoia, or any other that can be mapped onto
@@ -433,7 +452,7 @@ are physically closer to the associated data partition.  In this example, the
 partitions of the X and Y arrays are striped across the memory controllers in
 Vanaheimr, and the corresponding thread arrays are scheduled on the nearest SM.
 
-\subsection{Execution}
+\subsection{Simulation}
 
 Once the program has been compiled into a binary, it is ready for execution. 
 The Archaeopteryx simulator is a stand-alone CUDA program that takes a compiled
@@ -482,17 +501,6 @@ returned, the work-distributor starts up the main thread again at the
 instruction after the HTA launch, and it continues to completion.  At this
 point, the simulation is finished.  
 
-% Overview
-
-% SM simulator
-%% SM worker threads
-
-% Memory traffic
-%% LD/ST ports
-%% Router traversal
-%% Memory controller
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -500,33 +508,37 @@ point, the simulation is finished.
 \section{Framework Design}
 \label{sec:framework-design}
 
-\subsection{Simulator Structure}
-
-As a consequence, only the kernels from CUDA applications can be simulated.  
-
-\subsection{Asynchronous Multi-BSP Kernel Launches}
-
-\paragraph{Program Representation}
-
-Intrinsic functions are lowered as late as possible, below the
-VIR level, allowing a backend compiler to map them directly onto hardware
-acceleration if available.  For simplicity, the Archaeopteryx core model
-executes one machine instruction for each virtual instruction as a baseline.
+The simulator framework is composed of a two major components, the runtime,
+and the simulator core.  The runtime is a component that manages
+interactions with the simulated application, provides access to system services
+that are not natively available in CUDA, and directs the execution of the
+simulator core.  The simulator core includes the models for the SMs, network, 
+off-chip memory, and the work distributor.  They are described as follows.
 
 %
 % Vanaheimr high level figure
 % Vanaheimr core figure
 %
 
-\subsection{File I/O}
-Archeopteryx supports file I/O operations or other system calls from any thread
-in the simulated program, including the main thread, but also from individual
-threads in a HTA.  It also makes use of this functionality within the
-implementation of the simulator components. Currently, this functionality is
-primarily used for reading input files, accessing the simulated program's
-binary, and reporting messages to the simulator console such as aggregate
-statistics or error messages. 
+\subsection{Simulator Runtime}
 
+The simulator runtime is responsible for loading binaries for simulation, and
+providing access to functionality that is not natively provided by CUDA.
+
+\paragraph{Simulation Startup}
+A single threaded HTA drives the execution of the runtime.
+Simple operations like binary loading and initial memory space setup are
+performed directly by this thread.  More heavy-weight operations such as memory
+initialization are performed by synchronously launching additional HTAs.
+
+
+%As a consequence, only the kernels from CUDA applications can be simulated.  
+
+\paragraph{Accessing Host Functionality}
+CUDA natively supports basic functionality for performing computation,
+allocating global memory, and some limited system functionality such as printf
+while a kernel is running on the GPU.  However, more complex operations like
+file I/O or launching additional kernels are not supported natively. 
 This functionality is currently implemented with message passing between
 CUDA threads and a supporting runtime executing on the host CPU.  The NVIDIA
 CUDA runtime is augmented with additional functionality for receving messages
@@ -536,6 +548,23 @@ device drivers or other OS-level functionality that is available on current GPUs
 to CUDA applications. If future GPUs support system calls directly, an updated
 implementation of Archeopteryx could map these operations directly onto system
 calls and bypass the CPU completely.
+
+\paragraph{System Calls}
+Archeopteryx supports file I/O operations or other system calls from any thread
+in the simulated program, including the main thread, but also from individual
+threads in a HTA.  It also makes use of this functionality within the
+implementation of the simulator components. Currently, this functionality is
+primarily used for reading input files, accessing the simulated program's
+binary, and reporting messages to the simulator console such as aggregate
+statistics or error messages. 
+
+\paragraph{Memory Management}
+
+\paragraph{HTA Launches}
+
+\subsection{Simulator Core}
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -659,7 +688,7 @@ We use coalescing while laying out the register files for each thread in a group
 allocated array of memory that is used as register files for all the threads in that block, the 
 n-th register for thread-1 will be next to the n-th register of thread-0. This enables the 
 hardware to combine accessess.
- 
+
 
 %Performance optimizations (jump table to reduce branch count for opcode/operand
 %  type, jump table+ for divergence handling,
@@ -731,6 +760,10 @@ memory model, but does yield high performance while simulating applications as d
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Section 5 1000 words
 \section{Experimental Evaluation}
+\label{sec:experiments}
+
+This section evaluates the performance of the simulator 
+
 
 \subsection{Micro-benchmarks}
 
@@ -759,7 +792,12 @@ simulator.
 
 \paragraph{Memory Transactions}
 
-\label{sec:experiments}
+\paragraph{Related Work Comparison}
+
+% Ocelot
+% Barra
+% Archaeopteryx
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
