@@ -694,13 +694,37 @@ that shared memory in this case due to the size of registers per thread and natu
 being aligned to a cache line of L1. However the tag line can prove to be a limitation of L1 cache 
 access speed for other data access patterns. 
 
-%% Comments
-% Compare using the L1 data cache to actually using the register file
-%% Actually using the register file would allow the simulator to run as 
-%% fast as possible, using the data cache is slower, but more flexible 
-%% (overflow is handled implicilty) and easier to implement (does not require self-modifying code in the simulator)
+%%talk about how shared mem is better for somethings (rows cols etc.)
+%%???
+%% barriers-> within a warp left to h/w for doing, for warps... pri set to 0 to
+%% indicate waiting on barrier or not
+Synchronization across all the threads within a block is implemented using the well known 'barrier' 
+mechanism. The hardware implements barriers across threads that are simultaneously executing on it. 
+Barriers across threads in a block that are scheduled in different groups are implemented using a 
+priority mechanism. Each schedulable group of threads has a barrier bit set to true that is set only 
+when all the threads contained in it have reached the barrier. When the scheduler looks for a group 
+to run, it does not select a group with the barrier bit set to false since that indicates there are 
+some threads in it that haven't yet reached the barrier and synchronized to run in lock step.
+ 
 
+%% conflict & coalescing when modeling shared memory
+Our simulator models shared memory by mapping simulated shared memory on real hardware shared memory. 
+For simulated architectures that have a bigger shared memory configuration, the spilled over memory is 
+mapped on global memory. The address translation unit then swaps this chunk of memory from global 
+address space to shared address space as and when needed. 
 
+Shared memory is simulated by using the hardware shared memory as a software managed cache. The load 
+store units make a request to the software cache to access data from some addresses. The software cache 
+is a n-? way associative cache. There is a conflict resolution unit that arbitrates the requests from 
+all the load store units to the software cache. It also coalesces all the requests to the cache such 
+that they map on to as fewer cache lines as possible for best performance. The accesses that map to 
+the same cache line but require a line flush are serailized by the conflict resolution unit. For simplicity 
+the simulator has as many load store units as real hardware. This does not simulate memory cycle accurate 
+memory model, but does yield high performance while simulating applications as discussed in section ? 
+%% coalescing and transactions to global memory
+%% how ld st alignment was modeled
+%% how the model scales for gpus with diff no. of cores
+%% how CTAs with logical threads > h/w threads are implemented and how are they expected to scale.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
