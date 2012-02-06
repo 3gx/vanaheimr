@@ -34,8 +34,8 @@ public:
 
 public:
 	const std::string& name() const;
-	Module* module();
-	Linkage linkage() const;
+	Module*            module();
+	Linkage            linkage() const;
 
 private:
 	std::string _name;

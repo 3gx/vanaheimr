@@ -6,6 +6,10 @@
 
 #pragma once
 
+// Vanaheimr Includes
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/Global.h>
+
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
@@ -74,8 +78,8 @@ public:
 
 public:
 	//! Function info
-	size_t size() const;
-	bool empty() const;
+	size_t size()  const;
+	bool   empty() const;
 
 public:
 	//! Function Iteration
@@ -87,8 +91,8 @@ public:
 
 public:
 	//! Global info
-	size_t global_size() const;
-	bool global_empty() const;
+	size_t global_size()  const;
+	bool   global_empty() const;
 	
 public:
 	std::string name;
