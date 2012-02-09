@@ -21,14 +21,24 @@ class Global : public Variable
 {
 public:
 	Global(const std::string& name = "", Module* m = 0,
-		Linkage l = ExternalLinkage);
-	
+		Linkage l = ExternalLinkage, Constant* c = 0);
+	~Global();
+
 public:
-	Constant* intializer();
+	bool hasInitializer() const;
+
+	Constant*       intializer();
 	const Constant* initializer() const;
 
 public:
 	void setInitializer(Constant* c);
+
+public:
+	Global(const Global&)            = delete;
+	Global& operator=(const Global&) = delete;
+	
+private:
+	Constant* _initializer; // owned by the global
 
 };
 

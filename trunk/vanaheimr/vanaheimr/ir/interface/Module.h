@@ -10,6 +10,9 @@
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/Global.h>
 
+// Forward Declarations
+namespace vanaheimr { class Compiler; }
+
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
@@ -22,8 +25,8 @@ namespace ir
 class Module
 {
 public:
-	typedef std::list<Function> FunctionList;
-	typedef std::list<Global>   GlobalList;
+	typedef std::list<Function>  FunctionList;
+	typedef std::list<Global>    GlobalList;
 
 	typedef FunctionList::iterator       iterator;
 	typedef FunctionList::const_iterator const_iterator;
@@ -32,7 +35,7 @@ public:
 
 public:
 	/*! \brief Create a new module with the specified name */
-	Module(const std::string& name);
+	Module(const std::string& name, Compiler* compiler);
 	~Module();
 	
 public:
@@ -100,7 +103,10 @@ public:
 private:
 	FunctionList _functions;
 	GlobalList   _globals;
-
+	ConstantList _constants;
+	
+private:
+	Compiler*    _compiler;
 };
 
 }
