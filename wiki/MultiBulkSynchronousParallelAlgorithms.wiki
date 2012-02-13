@@ -2,7 +2,7 @@
 
 = The Multi-Bulk-Synchronous-Parallel Model =
 
-  * Leslie G. Valiant. 2008. A Bridging Model for Multi-core Computing. In Proceedings of the 16th annual European symposium on Algorithms (ESA '08)[http://people.seas.harvard.edu/~valiant/bridging-2010.pdf paper]
+  * Leslie G. Valiant. 2008. A Bridging Model for Multi-core Computing. In Proceedings of the 16th annual European symposium on Algorithms (ESA '08). [http://people.seas.harvard.edu/~valiant/bridging-2010.pdf paper]
 
 
 = Sorting =
