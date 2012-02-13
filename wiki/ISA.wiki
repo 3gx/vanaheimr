@@ -18,6 +18,19 @@ Most of the LLVM type system is adopted here with the explicit limit to common w
  * f32 - IEEE754 float
  * f64 - IEEE754 double
 
+== Values ==
+
+The Vanaheimr ISA uses a strict SSA form for all instructions.  Values
+are uniquely defined once, either by an instruction or as a global that
+dominates the program entry point.  PHI join nodes are explicit in the
+dataflow representation of the program.
+
+== Predicates ==
+
+All instructions support an optional predicate operand, which controls
+the conditional execution of the instruction.  PSI join nodes are made 
+explicit in the dataflow representation of a program.
+
 == Instructions ==
 
 === Arithmetic and Logical ===
