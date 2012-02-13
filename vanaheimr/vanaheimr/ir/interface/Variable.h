@@ -27,7 +27,8 @@ public:
 	};
 
 public:
-	Variable(const std::string& name, Module* module, Linkage linkage);
+	Variable(const std::string& name, Module* module,
+		Type* type, Linkage linkage);
 
 public:
 	void setModule(Module* m);
@@ -41,7 +42,7 @@ private:
 	std::string _name;
 	Module*     _module;
 	Linkage     _linkage;
-
+	Type*       _type;
 };
 
 }

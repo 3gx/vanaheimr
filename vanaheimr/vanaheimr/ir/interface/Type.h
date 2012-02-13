@@ -18,22 +18,27 @@ class Type
 {
 public:
 	typedef std::vector<const Type*> TypeVector;
-
+	typedef compiler::Compiler       Compiler;
+	
 public:
-	Type(const std::string& name);
+	Type(const std::string& name, Compiler* compiler);
 
 public
 	const std::string& name() const;
+	Id                 id()   const;
 
 public:
-	bool isPrimitive() const;
-	bool isInteger() const;
-	bool isFloatingPoint() const;
+	bool isPrimitive()            const;
+	bool isInteger()              const;
+	bool isFloatingPoint()        const;
 	bool isSinglePrecisionFloat() const;
 	bool isDoublePrecisionFloat() const;
 
 private:
 	std::string _name;
+	Id          _id;
+	Compiler*   _compiler;
+	
 };
 
 /*! \brief A type for an arbitrary bit-width integer */

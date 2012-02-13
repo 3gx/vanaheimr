@@ -21,7 +21,7 @@ class Global : public Variable
 {
 public:
 	Global(const std::string& name = "", Module* m = 0,
-		Linkage l = ExternalLinkage, Constant* c = 0);
+		Type* t = 0, Linkage l = ExternalLinkage, Constant* c = 0);
 	~Global();
 
 public:
