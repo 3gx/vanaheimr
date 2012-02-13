@@ -2,12 +2,9 @@
 
 = The Multi-Bulk-Synchronous-Parallel Model =
 
-  * [http://people.seas.harvard.edu/~valiant/bridging-2010.pdf link]
+  * Leslie G. Valiant. 2008. A Bridging Model for Multi-core Computing. In Proceedings of the 16th annual European symposium on Algorithms (ESA '08)[http://people.seas.harvard.edu/~valiant/bridging-2010.pdf paper]
 
 
-= Details =
+= Sorting =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+D. Merrill and A. Grimshaw, “High Performance and Scalable Radix Sorting: A case study of implementing dynamic parallelism for GPU computing,” Parallel Processing Letters, vol. 21, no. 2, pp. 245-272, 2011. [http://back40computing.googlecode.com/svn/wiki/documents/PplGpuSortingPreprint.pdf paper]
