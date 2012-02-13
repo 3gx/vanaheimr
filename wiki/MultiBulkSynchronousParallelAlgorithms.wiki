@@ -8,3 +8,17 @@
 = Sorting =
 
   * D. Merrill and A. Grimshaw, “High Performance and Scalable Radix Sorting: A case study of implementing dynamic parallelism for GPU computing,” Parallel Processing Letters, vol. 21, no. 2, pp. 245-272, 2011. [http://back40computing.googlecode.com/svn/wiki/documents/PplGpuSortingPreprint.pdf paper]
+
+
+= Dense Linear Algebra =
+
+= Algebraic Multigrid =
+
+= Graph Partitioning =
+
+= Graph Coloring =
+
+= Relational Algebra =
+
+= Fourier Transform =
+
