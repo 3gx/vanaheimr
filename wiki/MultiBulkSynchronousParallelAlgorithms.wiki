@@ -12,6 +12,8 @@
 
 = Dense Linear Algebra =
 
+= Sparse Linear Algebra =
+
 = Algebraic Multigrid =
 
 = Graph Partitioning =
@@ -21,4 +23,3 @@
 = Relational Algebra =
 
 = Fourier Transform =
-
