@@ -28,4 +28,6 @@
 
 = Relational Algebra =
 
+  * Gregory Diamos, Haicheng Wu, Ashwin Lele, Jin Wang, and Sudhakar Yalamanchili. Relational Algorithms for Multi-Bulk-Synchronous Processors. Tech Report. [http://www.gdiamos.net/papers/relational-algorithms.pdf paper]
+
 = Fourier Transform =
