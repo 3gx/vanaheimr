@@ -20,6 +20,8 @@
 
 = Graph Partitioning =
 
+= Graph Traversal =
+
 = Graph Coloring =
 
 = Relational Algebra =
