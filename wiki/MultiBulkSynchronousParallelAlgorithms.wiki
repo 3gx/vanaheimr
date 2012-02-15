@@ -31,3 +31,4 @@
   * Gregory Diamos, Haicheng Wu, Ashwin Lele, Jin Wang, and Sudhakar Yalamanchili. Relational Algorithms for Multi-Bulk-Synchronous Processors. Tech Report. [http://www.gdiamos.net/papers/relational-algorithms.pdf paper]
 
 = Fourier Transform =
+  * Yuri Dotsenko, Sara S. Baghsorkhi, Brandon Lloyd, and Naga K. Govindaraju. 2011. Auto-tuning of fast fourier transform on graphics processors. In Proceedings of the 16th ACM symposium on Principles and practice of parallel programming (PPoPP '11). [http://impact.crhc.illinois.edu/ftp/conference/sara2011.pdf paper]
