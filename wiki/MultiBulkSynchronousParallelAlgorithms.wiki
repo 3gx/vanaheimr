@@ -22,6 +22,8 @@
 
 = Graph Traversal =
 
+  * Merrill, D., Garland, M., and Grimshaw, A. High Performance and Scalable GPU Graph Traversal. Technical Report CS2011-05, Department of Computer Science, University of Virginia. Aug. 2011. [https://sites.google.com/site/duanemerrill/BFS_TR.pdf?attredirects=0 paper]
+
 = Graph Coloring =
 
 = Relational Algebra =
