@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Vanaheimr Includes
+#include <vanaheimr/ir/interface/Instruction.h>
+
 namespace vanaheimr
 {
 
@@ -16,7 +19,7 @@ namespace ir
 class BasicBlock
 {
 public:
-	typedef std::list<VIRInstruction> InstructionList;
+	typedef std::list<Instruction> InstructionList;
 
 	typedef InstructionList::iterator       iterator;
 	typedef InstructionList::const_iterator const_iterator;
@@ -29,13 +32,13 @@ public:
 	
 public:
 	/*! \brief Return the terminator instruction if there is one */
-	      VIRInstruction* terminator();
+	      Instruction* terminator();
 	/*! \brief Return the terminator instruction if there is one */
-	const VIRInstruction* terminator() const;
+	const Instruction* terminator() const;
 
 public:
 	/*! \brief Inserts a new terminator instruction, possibly replacing */
-	void setTerminator(const VIRInstruction& i);
+	void setTerminator(const Instruction& i);
 
 public:
 	iterator       begin();
@@ -49,11 +52,11 @@ public:
 	size_t size()  const;
 
 public:
-	void push_back( const VIRInstruction& i);
-	void push_front(const VIRInstruction& i);
+	void push_back( const Instruction& i);
+	void push_front(const Instruction& i);
 
 public:
-	iterator insert(iterator position, const VIRInstruction& i);
+	iterator insert(iterator position, const Instruction& i);
 
 private:
 	Function*       _function;

@@ -9,6 +9,7 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/BasicBlock.h>
 #include <vanaheimr/ir/interface/Argument.h>
+#include <vanaheimr/ir/interface/Value.h>
 
 namespace vanaheimr
 {
@@ -22,6 +23,7 @@ class Function : public Variable
 public:
 	typedef std::list<BasicBlock> BasicBlockList;
 	typedef std::list<Argument>   ArgumentList;
+	typedef std::list<Value>      ValueList;
 
 	typedef BasicBlockList::iterator       iterator;
 	typedef BasicBlockList::const_iterator const_iterator;
@@ -52,6 +54,9 @@ public:
 	const BasicBlock& back() const;
 
 public:
+	iterator newBasicBlock(iterator position, const std::string& name);
+
+public:
 	argument_iterator       argument_begin();
 	const_argument_iterator argument_begin() const;
 	
@@ -62,9 +67,21 @@ public:
 	size_t argument_size()  const;
 	bool   argument_empty() const;
 
+public:
+	value_iterator       value_begin();
+	const_value_iterator value_begin() const;
+	
+	value_iterator       value_end();
+	const_value_iterator value_end() const;
+
+public:
+	size_t value_size()  const;
+	bool   value_empty() const;
+
 private:
 	BasicBlockList _lists;
 	ArgumentList   _arguments;
+	ValueList      _values;
 };
 
 }

@@ -7,7 +7,10 @@
 #pragma once 
 
 // Forward Declarations
-namespace ir { class Module; }
+                      namespace ir { class Module; }
+                      namespace ir { class Kernel; }
+                      namespace ir { class Global; }
+namespace vanaheimr { namespace ir { class Module; } }
 
 
 namespace vanaheimr
@@ -20,6 +23,10 @@ class PTXToVIRTranslator
 {
 public:
 	typedef ::ir::Module PTXModule;
+	typedef ::ir::Kernel PTXKernel;
+	typedef ::ir::Global PTXGlobal;
+
+	typedef vanaheimr::ir::Module VIRModule;
 
 public:
 	PTXToVIRTranslator(Compiler* compiler);
@@ -30,7 +37,14 @@ public:
 	void translate(const PTXModule& m);
 
 private:
-	Compiler* _compiler;
+	void _translateGlobal(const PTXGlobal&);
+	void _translateKernel(const PTXKernel&);
+
+private:
+	Compiler*  _compiler;
+	
+	VIRModule*       _vir;
+	const PTXModule* _ptx;
 
 };
 

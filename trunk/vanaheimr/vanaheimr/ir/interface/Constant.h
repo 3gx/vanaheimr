@@ -14,10 +14,17 @@ namespace ir
 class Constant
 {
 public:
+	typedef std::vector<uint8_t> DataVector;
+
+public:
 	Constant(const Type* type);
 
 public:
-	virtual bool isNullValue() const;
+	/*! \brief Is the constant equivalent to 0 */
+	virtual bool isNullValue() const = 0;
+	
+	/*! \brief Get a binary representation of the constant */
+	virtual DataVector data() const = 0;
 	
 public:
 	const Type* type() const;
@@ -41,6 +48,10 @@ public:
 	FloatingPointConstant(const FloatingPointConstant& f);
 	FloatingPointConstant& operator=(const FloatingPointConstant& f);
 
+public:
+	bool isNullValue() const;
+	DataVector data() const;
+	
 private:
 	union
 	{
@@ -65,6 +76,10 @@ public:
 public:
 	IntegerConstant& operator=(uint64_t i);
 
+public:
+	bool isNullValue() const;
+	DataVector data() const;
+
 private:
 	uint64_t _value;
 };
@@ -87,6 +102,10 @@ public:
 	PointerConstant& operator=(uint64_t i);
 	PointerConstant& operator=(void*    i);
 
+public:
+	bool isNullValue() const;
+	DataVector data() const;
+
 private:
 	uint64_t _pointer;
 };
@@ -100,6 +119,10 @@ public:
 public:
 	Constant*       getMember(unsigned int index);
 	const Constant* getMember(unsigned int index) const;
+
+public:
+	bool isNullValue() const;
+	DataVector data() const;
 
 private:
 	typedef std::vector<Constant*> ConstantVector;
@@ -117,6 +140,10 @@ public:
 public:
 	void*    data() const;
 	uint64_t size() const;
+
+public:
+	bool isNullValue() const;
+	DataVector data() const;
 	
 private:
 	typedef std::vector<uint8_t> DataVector;
@@ -143,7 +170,7 @@ public:
 	operator const BasicBlock*() const;
 	
 public:
-	PointerConstant& operator=(const BasicBlock* b);
+	BasicBlockAddressConstant& operator=(const BasicBlock* b);
 
 private:
 	const BasicBlock* _basicBlock;

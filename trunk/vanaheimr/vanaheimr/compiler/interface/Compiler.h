@@ -21,10 +21,14 @@ class Compiler
 {
 public:
 	typedef std::vector<Type*> TypeVector;
+	typedef std::list<Module>  ModuleList;
 	
 	typedef TypeVector::iterator       iterator;
 	typedef TypeVector::const_iterator const_iterator;
 
+	typedef ModuleList::iterator       module_iterator;
+	typedef ModuleList::const_iterator const_module_iterator;
+	
 public:
 	Compiler();
 
@@ -40,13 +44,27 @@ public:
 	size_t size()  const;
 
 public:
+	module_iterator       module_begin();
+	const_module_iterator module_begin() const;
+
+	module_iterator       module_end();
+	const_module_iterator module_end() const;
+
+public:
+	module_iterator newModule(const std::string& name);
+
+public:
 	/*! \brief Lookup a type by name, return 0 if it doesn't exist */
 	Type*       getType(const std::string& name);
 	/*! \brief Lookup a type by name, return 0 if it doesn't exist */
 	const Type* getType(const std::string& typeName) const;
 
+public:
+	static Compiler* getSingleton();
+
 private:
 	TypeVector _types;
+	ModuleList _modules;
 
 };	
 
