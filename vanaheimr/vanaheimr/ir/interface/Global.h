@@ -16,7 +16,7 @@ namespace vanaheimr
 namespace ir
 {
 
-/*! \brief Describes a vanaheimr function */
+/*! \brief Describes a vanaheimr globally-scoped variable */
 class Global : public Variable
 {
 public:

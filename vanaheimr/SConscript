@@ -1,0 +1,32 @@
+#! /usr/bin/python
+
+################################################################################
+#	\file   SConscript
+#	\author Gregory Diamos <gregory.diamos@gatech.edu>
+#   \date   Tuesday February 21, 2012
+#	\brief  The SCons master build script for Ocelot
+################################################################################
+
+
+# find all source files in the source tree
+sources = []
+directories = ['vanaheimr/asm/implementation', 
+	'vanaheimr/ir/implementation',
+	'vanaheimr/compiler/implementation',
+	'vanaheimr/translation/implementation']
+extensions = ['*.cpp']
+
+
+for dir in directories:
+	for ext in extensions:
+		regexp = os.path.join(dir, ext)
+		sources.extend(env.Glob(regexp))
+
+# Set dependent libraries
+
+
+# Create the vanaheimr library
+libvanaheimr = env.SharedLibrary('vanaheimr', sources, LIBS=ocelot_dep_libs)
+
+
+
