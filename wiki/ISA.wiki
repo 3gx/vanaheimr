@@ -18,6 +18,11 @@ Most of the LLVM type system is adopted here with the explicit limit to common w
  * f32 - IEEE754 float
  * f64 - IEEE754 double
 
+= Aggregate Types =
+
+Core data types may be aggregated together to form structures, arrays,
+and pointers.
+
 == Values ==
 
 The Vanaheimr ISA uses a strict SSA form for all instructions.  Values
@@ -55,7 +60,8 @@ explicit in the dataflow representation of a program.
 
 === Control Flow ===
 
- * bra  - branch to a label based on a condition, indirect branching is also supported
+ * bra  - branch to a label/register based on a condition, indirect branching is also supported
+ * call - branch to a label/register based on a condition, takes a list of values as parameters, allows returning via ret.
 
 === Data Manipulation ===
 
@@ -79,6 +85,10 @@ explicit in the dataflow representation of a program.
 
  * bar    - barrier at various levels of granularity (each corresponding to a level in the thread hierarchy)
  * fence  - wait until all previous memory requests are visible at the specified level in the thread hierarchy
+
+=== Task Creation ===
+ * launch - similar to call, but creates a new BSP kernel launch and stores a handle
+            to the launch in a register.
 
 == Intrinsics ==
 
