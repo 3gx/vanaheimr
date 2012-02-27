@@ -48,6 +48,9 @@ public:
 	/*! \brief Insert a function into the module, it takes ownership */
 	void insertFunction(const Function& f);
 
+	/*! \brief Add a new function */
+	iterator newFunction(const std::string& name, Linkage l);
+
 	/*! \brief Remove a function from the module, it is deleted */
 	void removeFunction(Function* f);
 
