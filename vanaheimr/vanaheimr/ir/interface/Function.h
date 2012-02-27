@@ -42,6 +42,12 @@ public:
 	iterator       end();
 	const_iterator end() const;
 
+	iterator       entry_block();
+	const_iterator entry_block() const;
+
+	iterator       exit_block();
+	const_iterator exit_block() const;
+
 public:
 	size_t size()  const;
 	bool   empty() const;
@@ -79,9 +85,12 @@ public:
 	bool   value_empty() const;
 
 private:
-	BasicBlockList _lists;
+	BasicBlockList _blocks;
 	ArgumentList   _arguments;
 	ValueList      _values;
+	
+	iterator _entry;
+	iterator _exit;
 };
 
 }

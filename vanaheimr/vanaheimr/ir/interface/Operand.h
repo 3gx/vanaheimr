@@ -6,24 +6,14 @@
 
 #pragma once
 
+// Forwar Declarations
+namespace vanaheimr { namespace ir { class VirtualRegister; } }
+
 namespace vanaheimr
 {
 
 namespace ir
 {
-
-/*! \brief A primitive data type */
-enum DataType
-{
-	i1,
-	i8,
-	i16,
-	i32,
-	i64,
-	f32,
-	f64,
-	InvalidDataType
-};
 
 /*! \brief Represents a single instruction operand */
 class Operand
@@ -36,7 +26,7 @@ public:
 		Immediate,
 		Predicate,
 		Indirect,
-		BranchTarget,
+		Address,
 		InvalidOperand
 	};
 	
@@ -44,12 +34,22 @@ public:
 	typedef unsigned int RegisterType;
 
 public:
+	Operand(OperandMode mode, Instruction* instruction);
+
+public:
 	/*! \brief Is the operand a register */
 	bool isRegister() const;
 
 public:
 	/*! \brief The mode of the operand determines how it is accessed */
-	OperandMode mode;	
+	OperandMode mode() const;
+
+	/*! \brief The owning instruction */
+	Instruction* instruction() const;
+
+private:
+	OperandMode  _mode;
+	Instruction* _instruction;
 };
 
 typedef Operand::RegisterType RegisterType;
@@ -58,29 +58,34 @@ typedef Operand::RegisterType RegisterType;
 class RegisterOperand : public Operand
 {
 public:
+	RegisterOperand(Value* reg, Instruction* i);
+
+public:
 	/*! \brief The register being accessed */
-	RegisterType reg;
-	/*! \brief The data type */
-	DataType type;
+	Value* reg;
 };
 
 /*! \brief An immediate operand */
 class ImmediateOperand : public Operand
 {
 public:
+	ImmediateOperand(uint64_t v, Instruction* i);
+	ImmediateOperand(double   d, Instruction* i);
+
+public:
 	/*! \brief The immediate value */
 	union
 	{
-		long long unsigned int uint;
-		double                 fp;
+		uint64_t uint;
+		double   fp;
 	};
 
 	/*! \brief The data type */
-	DataType type;
+	const Type* type;
 };
 
 /*! \brief A predicate operand */
-class PredicateOperand : public Operand
+class PredicateOperand : public RegisterOperand
 {
 public:
 	/*! \brief The modifier on the predicate */
@@ -94,30 +99,32 @@ public:
 	};
 
 public:
-	/*! \brief The register being accessed */
-	RegisterType reg;
+	PredicateOperand(Value* reg, PredicateModifier mod, Instruction* i);
+
+public:
 	/*! \brief The predicate modifier */
 	PredicateModifier modifier;
 };
 
 /*! \brief An indirect operand */
-class IndirectOperand : public Operand
+class IndirectOperand : public RegisterOperand
 {
 public:
-	/*! \brief The register being accessed */
-	RegisterType reg;
+	IndirectOperand(Value* reg, int64_t offset, Instruction* i);
+
+public:
 	/*! \brief The offset to add to the register */
-	int offset;
-	/*! \brief The data type */
-	DataType type;
+	int64_t offset;
 };
 
-/*! \brief A branch target operand */
-class BranchTargetOperand : public Operand
+/*! \brief An address operand */
+class AddressOperand : public Operand
 {
 public:
-	BasicBlock* target;
+	AddressOperand(GlobalValue* value, Instruction* i);
 
+public:
+	GlobalValue* globalValue;
 };
 
 }

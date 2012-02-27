@@ -36,6 +36,7 @@ public:
 		Fptosi,
 		Fptoui,
 		Fptrunc,
+		Launch,
 		Ld,
 		Lshr,
 		Membar,
@@ -266,6 +267,12 @@ public:
 
 public:
 	Operand* link;
+
+};
+
+/*! \brief Launch a new HTA at the specified entry point */
+class Launch : public Instruction
+{
 
 };
 

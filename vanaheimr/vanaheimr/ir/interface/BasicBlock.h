@@ -19,7 +19,7 @@ namespace ir
 class BasicBlock
 {
 public:
-	typedef std::list<Instruction> InstructionList;
+	typedef std::list<Instruction*> InstructionList;
 
 	typedef InstructionList::iterator       iterator;
 	typedef InstructionList::const_iterator const_iterator;
@@ -38,7 +38,7 @@ public:
 
 public:
 	/*! \brief Inserts a new terminator instruction, possibly replacing */
-	void setTerminator(const Instruction& i);
+	void setTerminator(Instruction* i);
 
 public:
 	iterator       begin();
@@ -52,11 +52,11 @@ public:
 	size_t size()  const;
 
 public:
-	void push_back( const Instruction& i);
-	void push_front(const Instruction& i);
+	void push_back( Instruction* i);
+	void push_front(Instruction* i);
 
 public:
-	iterator insert(iterator position, const Instruction& i);
+	iterator insert(iterator position, Instruction* i);
 
 private:
 	Function*       _function;
