@@ -63,6 +63,8 @@ private:
 private:
 	typedef std::unordered_map<PTXRegiserId,
 		ir::Function::register_iterator> RegisterMap;
+	typedef std::unordered_map<std::string,
+		ir::Function::iterator> BasicBlockMap;
 
 private:
 	ir::Operand* _newTranslatedOperand(const PTXOperand& ptx);
@@ -71,7 +73,7 @@ private:
 private:
 	ir::VirtualRegister* _getRegister(PTXRegisterId id);
 	ir::Variable*        _getGlobal(const std::string& name);
-	ir::Variable*        _getBasicBlock(const std::string& name);
+	ir::BasicBlock*      _getBasicBlock(const std::string& name);
 	ir::Operand*         _getSpecialValueOperand(unsigned int id);
 	ir::VirtualRegiser*  _newTemporaryRegister();
 	const ir::Type*      _getType(PTXDataType type);
@@ -84,8 +86,8 @@ private:
 	const PTXBasicBlock*  _block;
 	const PTXInstruction* _instruction;
 	
-	RegisterMap _registers;
-
+	RegisterMap   _registers;
+	BasicBlockMap _blocks;
 };
 
 }

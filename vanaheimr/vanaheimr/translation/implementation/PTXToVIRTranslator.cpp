@@ -469,9 +469,31 @@ ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
 	return &*reg->second;
 }
 
-ir::Variable* PTXToVIRTranslator::_getGlobal(const std::string& name);
+ir::Variable* PTXToVIRTranslator::_getGlobal(const std::string& name)
+{
+	ir::Module::global_iterator global = _module->getGlobal(name);
+	
+	if(global == _module->global_end())
+	{
+		throw std::runtime_error("Global variable " + name
+			+ " used without declaration.");
+	}
+	
+	return &*global;
+}
 
-ir::Variable* PTXToVIRTranslator::_getBasicBlock(const std::string& name);
+ir::Variable* PTXToVIRTranslator::_getBasicBlock(const std::string& name)
+{
+	BasicBlockMap::iterator block = _blocks.find(name);
+	
+	if(block == _blocks.end())
+	{
+		throw std::runtime_error("Basic block " + name
+			+ " was not declared in this function.");
+	}
+
+	return &*block->second;
+}
 
 ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id)
 {

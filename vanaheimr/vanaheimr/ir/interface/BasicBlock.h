@@ -8,6 +8,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Instruction.h>
+#include <vanaheimr/ir/interface/Variable.h>
 
 namespace vanaheimr
 {

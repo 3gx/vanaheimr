@@ -121,10 +121,10 @@ public:
 class AddressOperand : public Operand
 {
 public:
-	AddressOperand(GlobalValue* value, Instruction* i);
+	AddressOperand(Global* value, Instruction* i);
 
 public:
-	GlobalValue* globalValue;
+	Global* globalValue;
 };
 
 }
