@@ -9,7 +9,7 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/BasicBlock.h>
 #include <vanaheimr/ir/interface/Argument.h>
-#include <vanaheimr/ir/interface/Value.h>
+#include <vanaheimr/ir/interface/VirtualRegister.h>
 
 namespace vanaheimr
 {
@@ -21,15 +21,18 @@ namespace ir
 class Function : public Variable
 {
 public:
-	typedef std::list<BasicBlock> BasicBlockList;
-	typedef std::list<Argument>   ArgumentList;
-	typedef std::list<Value>      ValueList;
+	typedef std::list<BasicBlock>      BasicBlockList;
+	typedef std::list<Argument>        ArgumentList;
+	typedef std::list<VirtualRegister> VirtualRegisterList;
 
 	typedef BasicBlockList::iterator       iterator;
 	typedef BasicBlockList::const_iterator const_iterator;
 
 	typedef ArgumentList::iterator       argument_iterator;
 	typedef ArgumentList::const_iterator const_argument_iterator;
+
+	typedef VirtualRegisterList::iterator       register_iterator;
+	typedef VirtualRegisterList::const_iterator const_register_iterator;
 
 public:
 	Function(const std::string& name = "", Module* m = 0,
@@ -61,6 +64,8 @@ public:
 
 public:
 	iterator newBasicBlock(iterator position, const std::string& name);
+	register_iterator newVirtualRegister(const Type* type,
+		const std::string& name = "");
 
 public:
 	argument_iterator       argument_begin();
@@ -74,20 +79,20 @@ public:
 	bool   argument_empty() const;
 
 public:
-	value_iterator       value_begin();
-	const_value_iterator value_begin() const;
+	register_iterator       register_begin();
+	const_register_iterator register_begin() const;
 	
-	value_iterator       value_end();
-	const_value_iterator value_end() const;
+	register_iterator       register_end();
+	const_register_iterator register_end() const;
 
 public:
-	size_t value_size()  const;
-	bool   value_empty() const;
+	size_t register_size()  const;
+	bool   register_empty() const;
 
 private:
-	BasicBlockList _blocks;
-	ArgumentList   _arguments;
-	ValueList      _values;
+	BasicBlockList      _blocks;
+	ArgumentList        _arguments;
+	VirtualRegisterList _registers;
 	
 	iterator _entry;
 	iterator _exit;

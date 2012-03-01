@@ -77,6 +77,24 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	}
 }
 
+void PTXToVIRTranslator::_translateRegisterValue(const PTXRegister& reg)
+{
+	std::stringstream name;
+	
+	name << "r"  << reg.reg;
+	
+	if(_registers.count(reg.reg) != 0)
+	{
+		throw std::runtime_error("Added duplicate virtual register '"
+			+ name.str() + "'");
+	}
+	
+	ir::Function::register_iterator newRegister = _function->newVirtualRegister(
+		_getType(reg.type), name.str());
+
+	_registers.insert(std::make_pair(reg.reg, newRegister));
+}
+
 void PTXToVIRTranslator::_translateBasicBlock(const PTXBasicBlock& basicBlock)
 {
 	VIRFunction::iterator block = _function->newBlock(_function->exit_block(),
@@ -235,7 +253,7 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedPredicateOperand(
 		throw std::runtime_error("Predicate operands must be registers.");
 	}
 	
-	return new ir::PredicateOperand(_getValue(ptx.reg), _instruction);
+	return new ir::PredicateOperand(_getRegister(ptx.reg), _instruction);
 }
 
 static bool isSimpleUnaryInstruction(const PTXInstruction& ptx)
@@ -385,11 +403,11 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	{
 	case PTXOperand::Register:
 	{
-		return new ir::RegisterOperand(_getValue(ptx.reg), _instruction);
+		return new ir::RegisterOperand(_getRegister(ptx.reg), _instruction);
 	}
 	case PTXOperand::Indirect:
 	{
-		return new ir::IndirectOperand(_getValue(ptx.reg),
+		return new ir::IndirectOperand(_getRegister(ptx.reg),
 			ptx.offset, _instruction);
 	}
 	case PTXOperand::Immediate:
@@ -411,7 +429,7 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	}
 	case PTXOperand::BitBucket:
 	{
-		return _newTemporaryOperand();
+		return new ir::RegisterOperand(_newTemporaryRegister(), _instruction);
 	}
 	default: break;
 	}
@@ -420,7 +438,112 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 		+ ptx.toString());
 }
 
+ir::Operand* PTXToVIRTranslator::_newTranslatedPredicateOperand(
+	const PTXOperand& ptx)
+{
+	VirtualRegister* predicateRegister = 0;
 
+	if(ptx.condition != PTXOperand::PT && ptx.condition != PTXOperand::nPT)
+	{
+		predicateRegister = _getRegister(ptx.reg);
+	}
+	
+	return new ir::PredicateOperand(_getRegister(ptx.reg),
+		_translatePredicateCondition(ptx.condition), _instruction);
+}
+
+ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
+{
+	RegisterMap::iterator reg = _registers.find(id);
+	
+	if(reg == _registers.end())
+	{
+		std::stringstream name;
+		
+		name << "r" << id;
+
+		throw std::runtime_error("PTX register " + name.str()
+			+ " used without declaration.");
+	}
+	
+	return &*reg->second;
+}
+
+ir::Variable* PTXToVIRTranslator::_getGlobal(const std::string& name);
+
+ir::Variable* PTXToVIRTranslator::_getBasicBlock(const std::string& name);
+
+ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id)
+{
+
+}
+
+ir::VirtualRegiser* PTXToVIRTranslator::_newTemporaryRegister()
+{
+	ir::Function::register_iterator temp = _function->newVirtualRegister(
+		_getType("i64"));
+		
+	return &*temp;
+}
+
+static std::string translateTypeName(::ir::PTXOperand::DataType type)
+{
+	switch(type)
+	{
+	case ::ir::PTXOperand::b8:  /* fall through */
+	case ::ir::PTXOperand::s8:  /* fall through */
+	case ::ir::PTXOperand::u8:
+	{
+		return "i8";
+	}
+	case ::ir::PTXOperand::s16: /* fall through */
+	case ::ir::PTXOperand::u16: /* fall through */
+	case ::ir::PTXOperand::b16:
+	{
+		return "i16";
+	}
+	case ::ir::PTXOperand::s32: /* fall through */
+	case ::ir::PTXOperand::b32: /* fall through */
+	case ::ir::PTXOperand::u32:
+	{
+		return "i32";
+	}
+	case ::ir::PTXOperand::s64: /* fall through */
+	case ::ir::PTXOperand::b64: /* fall through */
+	case ::ir::PTXOperand::u64:
+	{
+		return "i64";
+	}
+	case ::ir::PTXOperand::f32:
+	{
+		return "f32";
+	}
+	case ::ir::PTXOperand::f64:
+	{
+		return "f64";
+	}
+	case ::ir::PTXOperand::pred:
+	{
+		return "i1";
+	}
+	default: break;
+	}
+	
+	return "";
+}
+
+const ir::Type* PTXToVIRTranslator::_getType(PTXDataType type)
+{
+	const ir::Type* type = _compiler->getType(translateTypeName(type));
+
+	if(type == 0)
+	{
+		throw std::runtime_error("PTX translated type name '"
+			+ translateTypeName(type) + "' is not a valid Vanaheimr type.");
+	}
+	
+	return type;
+}
 
 }
 

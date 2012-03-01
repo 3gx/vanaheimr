@@ -40,20 +40,18 @@ private:
 	typedef ::ir::BasicBlock     PTXBasicBlock;
 	typedef ::ir::PTXInstruction PTXInstruction;
 	typedef ::ir::PTXOperand     PTXOperand;
+	typedef int                  PTXDataType;
 
-	typedef ::analysis::DataflowGraph::Register PTXRegister;
+	typedef ::analysis::DataflowGraph::Register   PTXRegister;
+	typedef ::analysis::DataflowGraph::RegisterId PTXRegisterId;
 
 	typedef vanaheimr::ir::Module VIRModule;
-
-	typedef std::unordered_map<PTXRegiserId,
-		ir::Function::value_iterator> ValueMap;
 
 private:
 	void _translateGlobal(const PTXGlobal&);
 	void _translateKernel(const PTXKernel&);
-	void _translateBasicBlock(const PTXBasicBlock&);
-
 	void _translateRegisterValue(const PTXRegister& );
+	void _translateBasicBlock(const PTXBasicBlock&);
 
 private:
 	void _translateInstruction(const PTXInstruction& );
@@ -63,12 +61,30 @@ private:
 	bool _translateSimpleBinaryInstruction(const PTXInstruction& );
 
 private:
+	typedef std::unordered_map<PTXRegiserId,
+		ir::Function::register_iterator> RegisterMap;
+
+private:
+	ir::Operand* _newTranslatedOperand(const PTXOperand& ptx);
+	ir::Operand* _newTranslatedPredicateOperand(const PTXOperand& ptx);
+
+private:
+	ir::VirtualRegister* _getRegister(PTXRegisterId id);
+	ir::Variable*        _getGlobal(const std::string& name);
+	ir::Variable*        _getBasicBlock(const std::string& name);
+	ir::Operand*         _getSpecialValueOperand(unsigned int id);
+	ir::VirtualRegiser*  _newTemporaryRegister();
+	const ir::Type*      _getType(PTXDataType type);
+
+private:
 	Compiler*  _compiler;
 	
-	VIRModule*       _vir;
-	const PTXModule* _ptx;
-
-	ValueMap _registerToValueMap;
+	VIRModule*            _vir;
+	const PTXModule*      _ptx;
+	const PTXBasicBlock*  _block;
+	const PTXInstruction* _instruction;
+	
+	RegisterMap _registers;
 
 };
 
