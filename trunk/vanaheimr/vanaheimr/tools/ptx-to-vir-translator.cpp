@@ -9,7 +9,7 @@
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
-#include <vanaheimr/translator/interface/PTXToVIRTranslator.h>
+#include <vanaheimr/translation/interface/PTXToVIRTranslator.h>
 
 // Ocelot Includes
 #include <ocelot/ir/interface/Module.h>
@@ -30,7 +30,7 @@ static void translate(const std::string& virFileName,
 	compiler::Compiler* virCompiler = compiler::Compiler::getSingleton();
 	
 	// Translate the PTX
-	translator::PTXToVIRTranslator translator(virCompiler);
+	translation::PTXToVIRTranslator translator(virCompiler);
 	
 	try
 	{

@@ -9,6 +9,8 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Operand.h>
 
+// Standard Library Includes 
+#include <vector>
 
 namespace vanaheimr
 {
@@ -64,6 +66,9 @@ public:
 
 public:
 	Instruction();
+
+	Instruction(const Instruction&);
+	Instruction& operator=(const Instruction&);
 
 public:
 	bool isLoad()   const;
@@ -236,12 +241,12 @@ public:
 	};
 
 public:
-	Atom();
-	Atom(const Atom& i);
+	Bra();
+	Bra(const Bra& i);
 
-	~Atom();
+	~Bra();
 
-	Atom& operator=(const Atom& i);
+	Bra& operator=(const Bra& i);
 
 public:
 	virtual Instruction* clone() const;

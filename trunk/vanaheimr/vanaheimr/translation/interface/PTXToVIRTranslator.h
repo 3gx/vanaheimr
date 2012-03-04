@@ -6,19 +6,28 @@
 
 #pragma once 
 
+// Vanaheimr Includes
+#include <vanaheimr/ir/interface/Function.h>
+
+// Standard Library Includes
+#include <unordered_map>
+#include <string>
+
 // Forward Declarations
                       namespace ir { class Module;         }
                       namespace ir { class Kernel;         }
                       namespace ir { class Global;         }
                       namespace ir { class BasicBlock;     }
                       namespace ir { class PTXInstruction; }
+                      namespace ir { class PTXOperand;     }
+                      namespace ir { class PTXKernel;      }
 namespace vanaheimr { namespace ir { class Module;         } }
 
 
 namespace vanaheimr
 {
 
-namespace translator
+namespace translation
 {
 
 class PTXToVIRTranslator
@@ -42,15 +51,14 @@ private:
 	typedef ::ir::PTXOperand     PTXOperand;
 	typedef int                  PTXDataType;
 
-	typedef ::analysis::DataflowGraph::Register   PTXRegister;
-	typedef ::analysis::DataflowGraph::RegisterId PTXRegisterId;
+	typedef unsigned int PTXRegisterId;
 
 	typedef vanaheimr::ir::Module VIRModule;
 
 private:
 	void _translateGlobal(const PTXGlobal&);
 	void _translateKernel(const PTXKernel&);
-	void _translateRegisterValue(const PTXRegister& );
+	void _translateRegisterValue(PTXRegisterId, PTXDataType);
 	void _translateBasicBlock(const PTXBasicBlock&);
 
 private:
@@ -61,7 +69,7 @@ private:
 	bool _translateSimpleBinaryInstruction(const PTXInstruction& );
 
 private:
-	typedef std::unordered_map<PTXRegiserId,
+	typedef std::unordered_map<PTXRegisterId,
 		ir::Function::register_iterator> RegisterMap;
 	typedef std::unordered_map<std::string,
 		ir::Function::iterator> BasicBlockMap;
@@ -75,7 +83,7 @@ private:
 	ir::Variable*        _getGlobal(const std::string& name);
 	ir::BasicBlock*      _getBasicBlock(const std::string& name);
 	ir::Operand*         _getSpecialValueOperand(unsigned int id);
-	ir::VirtualRegiser*  _newTemporaryRegister();
+	ir::VirtualRegister* _newTemporaryRegister();
 	const ir::Type*      _getType(PTXDataType type);
 
 private:

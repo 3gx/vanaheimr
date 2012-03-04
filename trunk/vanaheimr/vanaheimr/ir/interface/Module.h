@@ -9,6 +9,7 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/Global.h>
+#include <vanaheimr/ir/interface/Constant.h>
 
 // Forward Declarations
 namespace vanaheimr { class Compiler; }
@@ -27,11 +28,16 @@ class Module
 public:
 	typedef std::list<Function>  FunctionList;
 	typedef std::list<Global>    GlobalList;
+	typedef std::list<Constant>  ConstantList;
 
 	typedef FunctionList::iterator       iterator;
 	typedef FunctionList::const_iterator const_iterator;
+
 	typedef GlobalList::iterator         global_iterator;
 	typedef GlobalList::const_iterator   const_global_iterator;
+
+	typedef ConstantList::iterator         constant_iterator;
+	typedef ConstantList::const_iterator   const_constant_iterator;
 
 public:
 	/*! \brief Create a new module with the specified name */
@@ -49,7 +55,7 @@ public:
 	void insertFunction(const Function& f);
 
 	/*! \brief Add a new function */
-	iterator newFunction(const std::string& name, Linkage l);
+	iterator newFunction(const std::string& name, Variable::Linkage l);
 
 	/*! \brief Remove a function from the module, it is deleted */
 	void removeFunction(Function* f);
@@ -65,8 +71,8 @@ public:
 	global_iterator insertGlobal(const Global& g);
 	
 	/*! \brief Create a new global, the module owns it */
-	global_iterator newGlobal(const std::string& name = "",
-		Type* t, Linkage l);
+	global_iterator newGlobal(const std::string& name,
+		Type* t, Variable::Linkage l);
 
 	/*! \brief Remove a global from the module, it is deleted */
 	void removeGlobal(global_iterator g);
@@ -103,6 +109,19 @@ public:
 	//! Global info
 	size_t global_size()  const;
 	bool   global_empty() const;
+
+public:
+	//! Constant Iteration
+	constant_iterator       constant_begin();
+	const_constant_iterator constant_begin() const;
+
+	constant_iterator       constant_end();
+	const_constant_iterator constant_end() const;
+
+public:
+	//! Constant info
+	size_t constant_size()  const;
+	bool   constant_empty() const;
 	
 public:
 	std::string name;

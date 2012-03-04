@@ -10,7 +10,7 @@
 namespace vanaheimr
 {
 
-namespace translator
+namespace translation
 {
 
 PTXToVIRTranslator::PTXToVIRTranslator(Compiler* compiler)
@@ -69,7 +69,15 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	
 	::ir::ControlFlowGraph::ConstBlockPointerVector sequence =
 		kernel.cfg()->executable_sequence();
+
+	// Keep a record of blocks
+	for(::ir::ControlFlowGraph::ConstBlockPointerVector::iterator
+		block = sequence.begin(); block != sequence.end(); ++block)
+	{
+		_translateBasicBlock(**block);
+	}
 	
+	// Translate blocks
 	for(::ir::ControlFlowGraph::ConstBlockPointerVector::iterator
 		block = sequence.begin(); block != sequence.end(); ++block)
 	{

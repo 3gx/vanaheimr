@@ -138,7 +138,6 @@ public:
 	ArrayConstant(const void* data, uint64_t size);
 
 public:
-	void*    data() const;
 	uint64_t size() const;
 
 public:
@@ -146,10 +145,7 @@ public:
 	DataVector data() const;
 	
 private:
-	typedef std::vector<uint8_t> DataVector;
-	
-private:
-	DataArray _value;
+	DataVector _value;
 };
 
 /*! \brief An array constant */

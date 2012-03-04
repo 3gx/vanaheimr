@@ -7,8 +7,12 @@
 #pragma once
 
 // Vanaheimr Includes
-#include <vanaheimr/ir/interface/BasicBlock.h>
-#include <vanaheimr/ir/interface/Argument.h>
+#include <vanaheimr/ir/interface/Variable.h>
+
+// Forward  Declarations
+namespace vanaheimr { namespace ir { class Module;   } }
+namespace vanaheimr { namespace ir { class Constant; } }
+namespace vanaheimr { namespace ir { class Type;     } }
 
 namespace vanaheimr
 {
@@ -29,6 +33,9 @@ public:
 
 	Constant*       intializer();
 	const Constant* initializer() const;
+
+public:
+	size_t bytes() const;
 
 public:
 	void setInitializer(Constant* c);
