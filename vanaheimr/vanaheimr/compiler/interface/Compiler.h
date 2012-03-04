@@ -5,9 +5,11 @@
 	
 */
 
+// Standard Library Includes
+#include <vanaheimr/ir/interface/Module.h>
 
 // Forward Declarations
-namespace vanaheimr { namespace ir { class Type; } }
+namespace vanaheimr { namespace ir { class Type;   } }
 
 namespace vanaheimr
 {
@@ -20,8 +22,8 @@ namespace compiler
 class Compiler
 {
 public:
-	typedef std::vector<Type*> TypeVector;
-	typedef std::list<Module>  ModuleList;
+	typedef std::vector<ir::Type*> TypeVector;
+	typedef std::list<ir::Module>  ModuleList;
 	
 	typedef TypeVector::iterator       iterator;
 	typedef TypeVector::const_iterator const_iterator;
@@ -55,9 +57,9 @@ public:
 
 public:
 	/*! \brief Lookup a type by name, return 0 if it doesn't exist */
-	Type*       getType(const std::string& name);
+	ir::Type*       getType(const std::string& name);
 	/*! \brief Lookup a type by name, return 0 if it doesn't exist */
-	const Type* getType(const std::string& typeName) const;
+	const ir::Type* getType(const std::string& typeName) const;
 
 public:
 	static Compiler* getSingleton();

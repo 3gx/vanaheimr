@@ -10,6 +10,12 @@
 #include <vanaheimr/ir/interface/Instruction.h>
 #include <vanaheimr/ir/interface/Variable.h>
 
+// Standard Library Includes
+#include <list>
+
+// Forward Declarations
+namespace vanaheimr { namespace ir { class Function; } }
+
 namespace vanaheimr
 {
 

@@ -6,8 +6,14 @@
 
 #pragma once
 
-// Forwar Declarations
+// Standard Library Includes
+#include <cstdint>
+
+// Forward Declarations
 namespace vanaheimr { namespace ir { class VirtualRegister; } }
+namespace vanaheimr { namespace ir { class Variable;        } }
+namespace vanaheimr { namespace ir { class Instruction;     } }
+namespace vanaheimr { namespace ir { class Type;            } }
 
 namespace vanaheimr
 {
@@ -58,11 +64,11 @@ typedef Operand::RegisterType RegisterType;
 class RegisterOperand : public Operand
 {
 public:
-	RegisterOperand(Value* reg, Instruction* i);
+	RegisterOperand(VirtualRegister* reg, Instruction* i);
 
 public:
 	/*! \brief The register being accessed */
-	Value* reg;
+	VirtualRegister* reg;
 };
 
 /*! \brief An immediate operand */
@@ -99,7 +105,8 @@ public:
 	};
 
 public:
-	PredicateOperand(Value* reg, PredicateModifier mod, Instruction* i);
+	PredicateOperand(VirtualRegister* reg,
+		PredicateModifier mod, Instruction* i);
 
 public:
 	/*! \brief The predicate modifier */
@@ -110,7 +117,7 @@ public:
 class IndirectOperand : public RegisterOperand
 {
 public:
-	IndirectOperand(Value* reg, int64_t offset, Instruction* i);
+	IndirectOperand(VirtualRegister* reg, int64_t offset, Instruction* i);
 
 public:
 	/*! \brief The offset to add to the register */
@@ -121,10 +128,10 @@ public:
 class AddressOperand : public Operand
 {
 public:
-	AddressOperand(Global* value, Instruction* i);
+	AddressOperand(Variable* value, Instruction* i);
 
 public:
-	Global* globalValue;
+	Variable* globalValue;
 };
 
 }
