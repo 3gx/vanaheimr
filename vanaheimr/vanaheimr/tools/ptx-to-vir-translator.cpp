@@ -17,6 +17,9 @@
 // Hydrazine Includes
 #include <hydrazine/implementation/ArgumentParser.h>
 
+// Standard Library Includes
+#include <fstream>
+
 namespace vanaheimr
 {
 
@@ -44,8 +47,9 @@ static void translate(const std::string& virFileName,
 	}
 	
 	// Output the VIR module
-	vanaheimr::ir::Module* virModule = virCompiler.getModule(ptxFileName);
-	assert(virModule != 0);
+	vanaheimr::compiler::Compiler::module_iterator virModule =
+		virCompiler->getModule(ptxFileName);
+	assert(virModule != virCompiler->module_end());
 	
 	virModule->name = virFileName;
 	
@@ -60,7 +64,7 @@ static void translate(const std::string& virFileName,
 	
 	try
 	{
-		virModule->write(virFile);
+		virModule->writeAssembly(virFile);
 	}
 	catch(const std::exception& e)
 	{
@@ -71,7 +75,7 @@ static void translate(const std::string& virFileName,
 
 }
 
-int main(int argc, const char** argv)
+int main(int argc, char** argv)
 {
 	hydrazine::ArgumentParser parser(argc, argv);
 

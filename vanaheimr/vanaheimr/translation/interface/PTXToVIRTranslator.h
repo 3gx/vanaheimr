@@ -36,7 +36,7 @@ public:
 	typedef ::ir::Module     PTXModule;
 
 public:
-	PTXToVIRTranslator(Compiler* compiler);
+	PTXToVIRTranslator(compiler::Compiler* compiler);
 	
 public:
 	/*! \brief Translate the specified PTX module, adding it to the
@@ -87,7 +87,7 @@ private:
 	const ir::Type*      _getType(PTXDataType type);
 
 private:
-	Compiler*  _compiler;
+	compiler::Compiler* _compiler;
 	
 	VIRModule*            _vir;
 	const PTXModule*      _ptx;
