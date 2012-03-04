@@ -12,7 +12,7 @@
 #include <vanaheimr/ir/interface/Constant.h>
 
 // Forward Declarations
-namespace vanaheimr { class Compiler; }
+namespace vanaheimr { namespace compiler { class Compiler; } }
 
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
@@ -41,7 +41,7 @@ public:
 
 public:
 	/*! \brief Create a new module with the specified name */
-	Module(const std::string& name, Compiler* compiler);
+	Module(const std::string& name, compiler::Compiler* compiler);
 	~Module();
 	
 public:
@@ -132,7 +132,7 @@ private:
 	ConstantList _constants;
 	
 private:
-	Compiler*    _compiler;
+	compiler::Compiler* _compiler;
 };
 
 }

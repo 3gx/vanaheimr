@@ -54,6 +54,10 @@ public:
 
 public:
 	module_iterator newModule(const std::string& name);
+	
+public:
+	module_iterator getModule(const std::string& name);
+	const_module_iterator getModule(const std::string& name) const;
 
 public:
 	/*! \brief Lookup a type by name, return 0 if it doesn't exist */
