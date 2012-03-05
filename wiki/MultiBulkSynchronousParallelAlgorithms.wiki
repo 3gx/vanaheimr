@@ -26,6 +26,8 @@
 
 = Graph Coloring =
 
+  * A.V. Pascal Grosset, Peihong Zhu, Shusen Liu, Suresh Venkatasubramanian, Mary Hall. Evaluating Graph Coloring on GPUs. PPoPP'11. [http://www.cs.utah.edu/~suresh/papers/ppopp/ppopp.pdf paper]
+
 = Relational Algebra =
 
   * Gregory Diamos, Haicheng Wu, Ashwin Lele, Jin Wang, and Sudhakar Yalamanchili. Relational Algorithms for Multi-Bulk-Synchronous Processors. Tech Report. [http://www.gdiamos.net/papers/relational-algorithms.pdf paper]
