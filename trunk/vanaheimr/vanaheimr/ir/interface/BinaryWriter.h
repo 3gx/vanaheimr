@@ -21,11 +21,34 @@ namespace ir
 class BinaryWriter
 {
 public:
+    typedef std::vector<SymbolTableEntry> SymbolTableEntryVector;
+    typedef SymbolTableEntryVector::iterator symbol_iterator;
+public:
     BinaryWriter(const Module& inputModule);
     void writeBinary(std::ostream& binary);
 
 private:
-    void writeHeader();
+    Header m_header;
+    std::vector<InstructionContainer> m_instructions;
+    std::vector<char> m_data;
+    std::vector<SymbolTableEntry> m_symbolTable;
+    std::vector<char> m_strings;
+
+private:
+    void populateHeader();
+    void populateInstructions();
+    void populateData();
+    void linkSymbols();
+
+private:
+    InstructionContainer convertToContainer(Instruction); 
+
+    size_t getHeaderOffset() const;
+    size_t getInstructionOffset() const;
+    size_t getDataOffset() const;
+    size_t getSymbolTableOffset() const;
+    size_t getStringOffset() const;
+
 }//class BinaryWriter ends
 
 }//namespace ir
