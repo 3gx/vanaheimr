@@ -505,7 +505,7 @@ ir::Variable* PTXToVIRTranslator::_getBasicBlock(const std::string& name)
 
 ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id)
 {
-
+	assertM(false, "Special values not implemented yet.");
 }
 
 ir::VirtualRegiser* PTXToVIRTranslator::_newTemporaryRegister()
