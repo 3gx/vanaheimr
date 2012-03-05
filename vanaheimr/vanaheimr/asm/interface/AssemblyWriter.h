@@ -1,7 +1,7 @@
-/*! \file   BinaryWriter.h
+/*! \file   AssemblyWriter.h
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
-	\date   Sunday February 12, 2012
-	\brief  The header file for the BinaryWriter class.
+	\date   Sunday March 4, 2012
+	\brief  The header file for the AssemblyWriter class.
 */
 
 #pragma once
@@ -16,10 +16,10 @@ namespace asm
 {
 
 /*! \brief Used to write a module to an object file */
-class BinaryWriter
+class AssemblyWriter
 {
 public:
-	BinaryWriter();
+	AssemblyWriter();
 
 public:
 	void write(std::ostream& stream, const ir::Module& m);
