@@ -23,6 +23,10 @@ class BinaryWriter
 public:
     typedef std::vector<SymbolTableEntry> SymbolTableEntryVector;
     typedef SymbolTableEntryVector::iterator symbol_iterator;
+
+public:
+    static const unsigned int PageSize = (1 << 15); // 32 KB
+
 public:
     BinaryWriter(const Module& inputModule);
     void writeBinary(std::ostream& binary);

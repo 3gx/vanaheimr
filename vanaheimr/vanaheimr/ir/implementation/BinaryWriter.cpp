@@ -96,6 +96,17 @@ namespace ir
         }
     }
 
+    void populateHeader()
+    {
+        m_header.dataPages    = (m_data.size() + PageSize - 1) / PageSize; 
+        m_header.codePages    = ((m_instructions.size()*sizeof(InstructionContainer)) + PageSize - 1) / PageSize;
+        m_header.symbols      = m_symbolTable.size(); 
+        m_header.stringPages  = (m_strings.size() + PageSize - 1) / PageSize;
+        m_header.dataOffset   = getDataOffset();
+        m_header.codeOffset   = getCodeOffset();
+        m_header.symbolOffset = getSymbolOffset();
+        m_header.stringOffset = getStringOffset();
+    }
 
     size_t getHeaderOffset() const
     {
@@ -112,7 +123,7 @@ namespace ir
         return (m_instruction.size() * sizeof(InstructionContainer)) + getInstructionOffset();
     }
 
-    size_t getSymbolTaleOffset() const
+    size_t getSymbolTableOffset() const
     {
         return (m_data.size() * sizeof(char)) + getDataOffset();
     }
