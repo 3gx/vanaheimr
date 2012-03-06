@@ -24,6 +24,10 @@ public:
 public:
 	void write(std::ostream& stream, const ir::Module& m);
 
+private:
+	void writeFunction(std::ostream& stream, const ir::Function& f);
+	void writeGlobal(std::ostream& stream, const ir::Global& g);
+	
 };
 
 }
