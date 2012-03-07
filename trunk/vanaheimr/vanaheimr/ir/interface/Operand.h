@@ -32,8 +32,7 @@ public:
 		Immediate,
 		Predicate,
 		Indirect,
-		Address,
-		InvalidOperand
+		Address
 	};
 	
 	/*! \brief A type to hold a register idenfitier */

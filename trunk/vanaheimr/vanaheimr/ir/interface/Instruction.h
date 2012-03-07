@@ -78,6 +78,9 @@ public:
 
 public:
 	virtual Instruction* clone() const = 0;
+
+public:
+	static std::string toString(Opcode o);
 	
 public:
 	/*! \brief The instruction opcode */

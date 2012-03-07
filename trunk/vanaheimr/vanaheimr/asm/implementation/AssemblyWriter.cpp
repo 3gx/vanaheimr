@@ -156,7 +156,30 @@ void AssemblyWriter::writeBasicBlock(std::ostream& stream,
 		stream << "\t\t";
 		writeOpcode(stream, instruction.opcode);
 		
+		for(ir::Instruction::OperandVector::const_iterator
+			write = instruction.writes.begin();
+			write != instruction.writes.end(); ++write)
+		{
+			if(write != instruction.writes.begin()) stream << ", ";
+			
+			writeOperand(stream, **write);
+		}
 		
+		if(!instruction.writes.empty() && !instruction.reads.empty())
+		{
+			stream << ", ";
+		}
+		
+		for(ir::Instruction::OperandVector::const_iterator
+			read = instruction.reads.begin();
+			read != instruction.reads.end(); ++read)
+		{
+			if(reads != instruction.reads.begin()) stream << ", ";
+			
+			writeOperand(stream, **read);
+		}
+		
+		stream << "\n";
 	}
 }
 
@@ -194,6 +217,45 @@ void AssemblyWriter::writeInitializer(std::ostream& stream,
 	const ir::Constant& constant)
 {
 	assertM(false, "Not implemented.");
+}
+
+void AssemblyWriter::writeOpcode(std::ostream& stream, unsigned int opcode)
+{
+	stream << ir::Instruction::toString((ir::Instruction::Opcode)opcode);
+}
+
+void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
+{
+	switch(o.mode())
+	{
+	case ir::Operand::Register:
+	{
+		const ir::RegisterOperand& operand =
+			static_cast<const ir::RegisterOperand&>(o);
+		
+		writeVirtualRegister(stream, *operand->virtualRegister);
+		
+		break;
+	}
+	case ir::Operand::Immediate:
+	{
+		
+		
+		break;
+	}
+	case ir::Operand::Predicate:
+	{
+		break;
+	}
+	case ir::Operand::Indirect:
+	{
+		break;
+	}
+	case ir::Operand::Address:
+	{
+		break;
+	}
+	}
 }
 
 }
