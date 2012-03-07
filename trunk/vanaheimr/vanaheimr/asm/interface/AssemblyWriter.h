@@ -7,7 +7,14 @@
 #pragma once
 
 // Forward Declarations
-namespace vanaheimr{ namespace ir { class Module; } }
+namespace vanaheimr{ namespace ir { class Module;     } }
+namespace vanaheimr{ namespace ir { class Function;   } }
+namespace vanaheimr{ namespace ir { class Global;     } }
+namespace vanaheimr{ namespace ir { class Variable;   } }
+namespace vanaheimr{ namespace ir { class Argument;   } }
+namespace vanaheimr{ namespace ir { class BasicBlock; } }
+namespace vanaheimr{ namespace ir { class Type;       } }
+namespace vanaheimr{ namespace ir { class Constant;   } }
 
 namespace vanaheimr
 {
@@ -27,7 +34,13 @@ public:
 private:
 	void writeFunction(std::ostream& stream, const ir::Function& f);
 	void writeGlobal(std::ostream& stream, const ir::Global& g);
+
+	void writeLinkage(std::ostream& stream, const ir::Variable& v);
+	void writeArgument(std::ostream& stream, const ir::Argument& a);
+	void writeBasicBlock(std::ostream& stream, const ir::BasicBlock& b);
 	
+	void writeType(std::ostream& stream, const ir::Type& t);
+	void writeInitializer(std::ostream& stream, const ir::Constant& c);
 };
 
 }

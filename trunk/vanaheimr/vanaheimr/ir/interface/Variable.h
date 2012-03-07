@@ -33,9 +33,16 @@ public:
 		PrivateLinkage      //! Like Internal, but omit from symbol table.
 	};
 
+	enum Visibility
+	{
+		HiddenVisibility,
+		VisibleVisibility,
+		ProtectedVisibility
+	};
+
 public:
 	Variable(const std::string& name, Module* module,
-		Type* type, Linkage linkage);
+		Type* type, Linkage linkage, Visibility visibility);
 
 public:
 	void setModule(Module* m);
@@ -44,11 +51,14 @@ public:
 	const std::string& name() const;
 	Module*            module();
 	Linkage            linkage() const;
+	Visibility         visibility() const;
+	Type               type() const;
 
 private:
 	std::string _name;
 	Module*     _module;
 	Linkage     _linkage;
+	Visibility  _visibility;
 	Type*       _type;
 };
 
