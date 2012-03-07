@@ -15,6 +15,7 @@ namespace vanaheimr{ namespace ir { class Argument;   } }
 namespace vanaheimr{ namespace ir { class BasicBlock; } }
 namespace vanaheimr{ namespace ir { class Type;       } }
 namespace vanaheimr{ namespace ir { class Constant;   } }
+namespace vanaheimr{ namespace ir { class Operand;    } }
 
 namespace vanaheimr
 {
@@ -41,6 +42,9 @@ private:
 	
 	void writeType(std::ostream& stream, const ir::Type& t);
 	void writeInitializer(std::ostream& stream, const ir::Constant& c);
+
+	void writeOpcode(std::ostream& stream, unsigned int opcode);
+	void writeOperand(std::ostream& stream, const ir::Operand& o);
 };
 
 }
