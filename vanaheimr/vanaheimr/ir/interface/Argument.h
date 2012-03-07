@@ -24,12 +24,14 @@ namespace ir
 class Argument
 {
 public:
-	Argument(Type* type, Function* f, const std::string& name = "");
+	Argument(const Type* type, Function* f, const std::string& name = "");
 
 public:
 	const std::string& name() const;
+	const Type& type() const();
 
 private:
+	const Type* _type;
 	Function*   _function;
 	std::string _name;
 };
