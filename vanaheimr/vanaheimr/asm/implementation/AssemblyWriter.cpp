@@ -239,20 +239,74 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 	}
 	case ir::Operand::Immediate:
 	{
+		const ir::ImmediateOperand& operand =
+			static_cast<const ir::ImmediateOperand&>(o);
 		
+		writeType(stream, *operand.type);
+		
+		stream << "0x" << std::hex << operand.uint << std::dec;
 		
 		break;
 	}
 	case ir::Operand::Predicate:
 	{
+		const ir::PredicateOperand& operand =
+			static_cast<const ir::PredicateOperand&>(o);
+		
+		switch(operand.condition)
+		{
+		case ir::PredicateOperand::InversePredicate
+		{
+			stream << "!";
+			
+			// fall through
+		}
+		case ir::PredicateOperand::StraightPredicate
+		{
+			stream << "@";
+			
+			writeVirtualRegister(stream, *operand->virtualRegister);
+
+			break;
+		}
+		case ir::PredicateOperand::PredicateTrue
+		{
+			stream << "@pt";
+			break;
+		}
+		case ir::PredicateOperand::PredicateFalse
+		{
+			stream << "!@pt";
+			break;
+		}
+		}
+			
 		break;
 	}
 	case ir::Operand::Indirect:
 	{
+		const ir::IndirectOperand& operand =
+			static_cast<const ir::IndirectOperand&>(o);
+		
+		stream << "[ ";
+		
+		writeVirtualRegister(stream, *operand->virtualRegister);
+	
+		stream << " + " << std::hex << operand.offset << std::dec << " ]";
+		
 		break;
 	}
 	case ir::Operand::Address:
 	{
+		const ir::AddressOperand& operand =
+			static_cast<const ir::AddressOperand&>(o);
+		
+		writeType(stream, operand.globalValue->type);
+		
+		stream << " ";
+		
+		stream << operand.globalValue->name;
+		
 		break;
 	}
 	}
