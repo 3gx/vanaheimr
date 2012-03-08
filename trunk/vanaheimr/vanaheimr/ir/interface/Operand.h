@@ -99,8 +99,7 @@ public:
         StraightPredicate,
 		InversePredicate,
 		PredicateTrue,
-		PredicateFalse,
-		InvalidPredicate
+		PredicateFalse
 	};
 
 public:
