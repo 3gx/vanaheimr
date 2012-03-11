@@ -7,7 +7,14 @@
 
 #pragma once
 
-namespace vanahaimr
+// Standard Library Includes
+#include <string>
+#include <vector>
+
+// Forward Declarations
+namespace vanaheimr { namespace compiler { class Compiler; } }
+
+namespace vanaheimr
 {
 
 namespace ir
@@ -19,11 +26,12 @@ class Type
 public:
 	typedef std::vector<const Type*> TypeVector;
 	typedef compiler::Compiler       Compiler;
+	typedef unsigned int             Id;
 	
 public:
 	Type(const std::string& name, Compiler* compiler);
 
-public
+public:
 	const std::string& name() const;
 	Id                 id()   const;
 
@@ -81,7 +89,7 @@ public:
 class ArrayType : public AggregateType
 {
 public:
-	PointerType(const Type* t, unsigned int elementCount);
+	ArrayType(const Type* t, unsigned int elementCount);
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;

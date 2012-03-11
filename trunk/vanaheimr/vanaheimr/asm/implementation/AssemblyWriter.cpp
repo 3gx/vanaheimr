@@ -7,10 +7,25 @@
 // Vanaheimr Includes
 #include <vanaheimr/asm/interface/AssemblyWriter.h>
 
+#include <vanaheimr/ir/interface/Module.h>
+#include <vanaheimr/ir/interface/Type.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Standard Library Includes
+#include <stdexcept>
+
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace vanaheimr
 {
 
-namespace asm
+namespace as
 {
 
 AssemblyWriter::AssemblyWriter()
@@ -37,13 +52,13 @@ void AssemblyWriter::write(std::ostream& stream, const ir::Module& module)
 void AssemblyWriter::writeFunction(std::ostream& stream,
 	const ir::Function& function)
 {
-	report(" For function '" << function.name << "'");
+	report(" For function '" << function.name() << "'");
 
 	stream << ".function ";
 	
 	writeLinkage(stream, function); 
 	
-	stream << " " << function.name << "(";
+	stream << " " << function.name() << "(";
 	
 	for(ir::Function::const_argument_iterator
 		argument = function.argument_begin();
@@ -67,17 +82,19 @@ void AssemblyWriter::writeFunction(std::ostream& stream,
 
 void AssemblyWriter::writeGlobal(std::ostream& stream, const ir::Global& global)
 {
-	report(" For global '" << global.name << "'");
+	report(" For global '" << global.name() << "'");
 	
 	stream << ".global ";
 	
 	writeLinkage(stream, global);
-	writeType(stream, global);
+	writeType(stream, global.type());
+	
+	stream << global.name() << " ";
 	
 	if(global.hasInitializer())
 	{
 		stream << " = ";
-		writeInitializer(stream, global.initializer());
+		writeInitializer(stream, *global.initializer());
 	}
 }
 
@@ -149,32 +166,32 @@ void AssemblyWriter::writeArgument(std::ostream& stream,
 void AssemblyWriter::writeBasicBlock(std::ostream& stream,
 	const ir::BasicBlock& block)
 {
-	stream << "\t" << block.name() << ":\n";
+	stream << "\t BB_" << block.id() << ":\n";
 	
 	for(auto instruction : block)
 	{
 		stream << "\t\t";
-		writeOpcode(stream, instruction.opcode);
+		writeOpcode(stream, instruction->opcode);
 		
 		for(ir::Instruction::OperandVector::const_iterator
-			write = instruction.writes.begin();
-			write != instruction.writes.end(); ++write)
+			write = instruction->writes.begin();
+			write != instruction->writes.end(); ++write)
 		{
-			if(write != instruction.writes.begin()) stream << ", ";
+			if(write != instruction->writes.begin()) stream << ", ";
 			
 			writeOperand(stream, **write);
 		}
 		
-		if(!instruction.writes.empty() && !instruction.reads.empty())
+		if(!instruction->writes.empty() && !instruction->reads.empty())
 		{
 			stream << ", ";
 		}
 		
 		for(ir::Instruction::OperandVector::const_iterator
-			read = instruction.reads.begin();
-			read != instruction.reads.end(); ++read)
+			read = instruction->reads.begin();
+			read != instruction->reads.end(); ++read)
 		{
-			if(reads != instruction.reads.begin()) stream << ", ";
+			if(read != instruction->reads.begin()) stream << ", ";
 			
 			writeOperand(stream, **read);
 		}
@@ -198,7 +215,7 @@ void AssemblyWriter::writeType(std::ostream& stream, const ir::Type& type)
 		{
 			stream << ".float ";
 		}
-		else if(type.isDoublePrevisionFloat())
+		else if(type.isDoublePrecisionFloat())
 		{
 			stream << ".double ";
 		}
@@ -233,7 +250,7 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 		const ir::RegisterOperand& operand =
 			static_cast<const ir::RegisterOperand&>(o);
 		
-		writeVirtualRegister(stream, *operand->virtualRegister);
+		writeVirtualRegister(stream, *operand.virtualRegister);
 		
 		break;
 	}
@@ -253,28 +270,28 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 		const ir::PredicateOperand& operand =
 			static_cast<const ir::PredicateOperand&>(o);
 		
-		switch(operand.condition)
+		switch(operand.modifier)
 		{
-		case ir::PredicateOperand::InversePredicate
+		case ir::PredicateOperand::InversePredicate:
 		{
 			stream << "!";
 			
 			// fall through
 		}
-		case ir::PredicateOperand::StraightPredicate
+		case ir::PredicateOperand::StraightPredicate:
 		{
 			stream << "@";
 			
-			writeVirtualRegister(stream, *operand->virtualRegister);
+			writeVirtualRegister(stream, *operand.virtualRegister);
 
 			break;
 		}
-		case ir::PredicateOperand::PredicateTrue
+		case ir::PredicateOperand::PredicateTrue:
 		{
 			stream << "@pt";
 			break;
 		}
-		case ir::PredicateOperand::PredicateFalse
+		case ir::PredicateOperand::PredicateFalse:
 		{
 			stream << "!@pt";
 			break;
@@ -288,9 +305,9 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 		const ir::IndirectOperand& operand =
 			static_cast<const ir::IndirectOperand&>(o);
 		
-		stream << "[ ";
 		
-		writeVirtualRegister(stream, *operand->virtualRegister);
+		stream << "[ ";
+		writeVirtualRegister(stream, *operand.virtualRegister);
 	
 		stream << " + " << std::hex << operand.offset << std::dec << " ]";
 		
@@ -301,11 +318,11 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 		const ir::AddressOperand& operand =
 			static_cast<const ir::AddressOperand&>(o);
 		
-		writeType(stream, operand.globalValue->type);
+		writeType(stream, operand.globalValue->type());
 		
 		stream << " ";
 		
-		stream << operand.globalValue->name;
+		stream << operand.globalValue->name();
 		
 		break;
 	}

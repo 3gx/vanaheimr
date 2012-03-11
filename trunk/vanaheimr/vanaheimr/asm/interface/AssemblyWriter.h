@@ -6,21 +6,25 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <ostream>
+
 // Forward Declarations
-namespace vanaheimr{ namespace ir { class Module;     } }
-namespace vanaheimr{ namespace ir { class Function;   } }
-namespace vanaheimr{ namespace ir { class Global;     } }
-namespace vanaheimr{ namespace ir { class Variable;   } }
-namespace vanaheimr{ namespace ir { class Argument;   } }
-namespace vanaheimr{ namespace ir { class BasicBlock; } }
-namespace vanaheimr{ namespace ir { class Type;       } }
-namespace vanaheimr{ namespace ir { class Constant;   } }
-namespace vanaheimr{ namespace ir { class Operand;    } }
+namespace vanaheimr{ namespace ir { class Module;          } }
+namespace vanaheimr{ namespace ir { class Function;        } }
+namespace vanaheimr{ namespace ir { class Global;          } }
+namespace vanaheimr{ namespace ir { class Variable;        } }
+namespace vanaheimr{ namespace ir { class Argument;        } }
+namespace vanaheimr{ namespace ir { class BasicBlock;      } }
+namespace vanaheimr{ namespace ir { class Type;            } }
+namespace vanaheimr{ namespace ir { class Constant;        } }
+namespace vanaheimr{ namespace ir { class Operand;         } }
+namespace vanaheimr{ namespace ir { class VirtualRegister; } }
 
 namespace vanaheimr
 {
 
-namespace asm
+namespace as
 {
 
 /*! \brief Used to write a module to an object file */
@@ -45,6 +49,9 @@ private:
 
 	void writeOpcode(std::ostream& stream, unsigned int opcode);
 	void writeOperand(std::ostream& stream, const ir::Operand& o);
+
+	void writeVirtualRegister(std::ostream& stream,
+		const ir::VirtualRegister& v);
 };
 
 }

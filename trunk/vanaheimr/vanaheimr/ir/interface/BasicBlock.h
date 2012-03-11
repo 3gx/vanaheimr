@@ -55,9 +55,9 @@ public:
 	const_iterator end() const;
 
 public:
-	bool   empty() const;
-	size_t size()  const;
-
+	bool        empty() const;
+	size_t      size()  const;
+	Id          id()    const;
 public:
 	void push_back( Instruction* i);
 	void push_front(Instruction* i);
