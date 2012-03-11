@@ -67,7 +67,7 @@ public:
 
 public:
 	/*! \brief The register being accessed */
-	VirtualRegister* reg;
+	VirtualRegister* virtualRegister;
 };
 
 /*! \brief An immediate operand */

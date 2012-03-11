@@ -52,7 +52,7 @@ public:
 	Module*            module();
 	Linkage            linkage() const;
 	Visibility         visibility() const;
-	Type               type() const;
+	const Type&        type() const;
 
 private:
 	std::string _name;

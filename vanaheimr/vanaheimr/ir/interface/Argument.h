@@ -28,7 +28,7 @@ public:
 
 public:
 	const std::string& name() const;
-	const Type& type() const();
+	const Type& type() const;
 
 private:
 	const Type* _type;
