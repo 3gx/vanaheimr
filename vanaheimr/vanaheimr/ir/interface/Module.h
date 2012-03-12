@@ -28,7 +28,7 @@ class Module
 public:
 	typedef std::list<Function>  FunctionList;
 	typedef std::list<Global>    GlobalList;
-	typedef std::list<Constant>  ConstantList;
+	typedef std::list<Constant*>  ConstantList;
 
 	typedef FunctionList::iterator       iterator;
 	typedef FunctionList::const_iterator const_iterator;
