@@ -72,7 +72,7 @@ public:
 	
 	/*! \brief Create a new global, the module owns it */
 	global_iterator newGlobal(const std::string& name,
-		Type* t, Variable::Linkage l);
+		const Type* t, Variable::Linkage l);
 
 	/*! \brief Remove a global from the module, it is deleted */
 	void removeGlobal(global_iterator g);

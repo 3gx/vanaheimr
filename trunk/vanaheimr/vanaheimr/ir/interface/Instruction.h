@@ -35,10 +35,13 @@ public:
 		Bitcast,
 		Bra,
 		Call,
+		Fdiv,
+		Fmul,
 		Fpext,
 		Fptosi,
 		Fptoui,
 		Fptrunc,
+		Frem,
 		Launch,
 		Ld,
 		Lshr,
@@ -109,6 +112,9 @@ public:
 	UnaryInstruction& operator=(const UnaryInstruction& i);
 
 public:
+	virtual Instruction* clone() const = 0;
+
+public:
 	/*! \brief The destination operand. */
 	Operand* d;
 	/*! \brief The source operand. */
@@ -128,7 +134,7 @@ public:
 	BinaryInstruction& operator=(const BinaryInstruction& i);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const = 0;
 
 public:
 	/*! \brief The destination operand. */
@@ -164,6 +170,9 @@ public:
 	};
 	
 public:
+	Instruction* clone() const;
+
+public:
 	/*! \brief The comparison operation */
 	Comparison comparison;
 };
@@ -171,17 +180,24 @@ public:
 /*! \brief An add instruction */
 class Add : public BinaryInstruction
 {
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief An and instruction */
 class And : public BinaryInstruction
 {
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Perform arithmetic shift right */
 class Ashr : public BinaryInstruction
 {
-
+public:
+	Instruction* clone() const;
 };
 
 /*! \brief An atomic operation instruction */
@@ -213,7 +229,7 @@ public:
 	Atom& operator=(const Atom& i);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 public:
 	Operation operation;
@@ -223,13 +239,18 @@ public:
 /*! \brief Perform a thread group barrier */
 class Bar : public Instruction
 {
+
 public:
+	Instruction* clone() const;
 	
 };
 
 /*! \brief Perform a raw bitcast */
 class Bitcast : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -279,9 +300,21 @@ public:
 
 };
 
-/*! \brief Launch a new HTA at the specified entry point */
-class Launch : public Instruction
+/*! \brief Floating point division */
+class Fdiv : public BinaryInstruction
 {
+
+public:
+	Instruction* clone() const;
+
+};
+
+/*! \brief Floating point multiplication */
+class Fmul : public BinaryInstruction
+{
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -289,11 +322,17 @@ class Launch : public Instruction
 class Fpext : public UnaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief A floating point to signed integer instruction */
 class Fptosi : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -301,11 +340,35 @@ class Fptosi : public UnaryInstruction
 class Fptoui : public UnaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief A floating point precision truncate instruction */
 class Fptrunc : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
+
+};
+
+/*! \brief Floating point remainder */
+class Frem : public BinaryInstruction
+{
+
+public:
+	Instruction* clone() const;
+
+};
+
+/*! \brief Launch a new HTA at the specified entry point */
+class Launch : public Instruction
+{
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -313,11 +376,17 @@ class Fptrunc : public UnaryInstruction
 class Ld : public UnaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Logical shift right */
 class Lshr : public BinaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -334,6 +403,9 @@ public:
 	};
 
 public:
+	Instruction* clone() const;
+
+public:
 	Level level;	
 };
 
@@ -342,11 +414,17 @@ public:
 class Mul : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Perform a logical OR operation */
 class Or : public BinaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -354,11 +432,17 @@ class Or : public BinaryInstruction
 class Ret : public UnaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Compare two operands and set a third predicate */
 class SetP : public ComparisonInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -366,11 +450,17 @@ class SetP : public ComparisonInstruction
 class Sext : public UnaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Perform signed division */
 class Sdiv : public BinaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -378,11 +468,17 @@ class Sdiv : public BinaryInstruction
 class Shl : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Convert a signed int to a floating point */
 class Sitofp : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -390,11 +486,17 @@ class Sitofp : public UnaryInstruction
 class Srem : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Perform a store operation */
 class St : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -402,11 +504,17 @@ class St : public UnaryInstruction
 class Sub : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Truncate an integer */
 class Trunc : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 	
 };
 
@@ -414,11 +522,17 @@ class Trunc : public UnaryInstruction
 class Udiv : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Convert an unsigned int to a floating point */
 class Uitofp : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 
 };
 
@@ -426,17 +540,26 @@ class Uitofp : public UnaryInstruction
 class Urem : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Perform a logical OR operation */
 class Xor : public BinaryInstruction
 {
 
+public:
+	Instruction* clone() const;
+
 };
 
 /*! \brief Zero extend an integer */
 class Zext : public UnaryInstruction
 {
+
+public:
+	Instruction* clone() const;
 	
 };
 

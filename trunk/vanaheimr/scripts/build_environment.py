@@ -245,6 +245,9 @@ def Environment():
 	# get libc++
 	if env['CXX'] == 'c++':
 		env.AppendUnique(CPPPATH = getLibCXXPaths()[0])
+	
+	# set extra libs 
+	env.Replace(EXTRA_LIBS=getExtraLibs())
 
 	# get ocelot paths
 	(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
@@ -253,22 +256,17 @@ def Environment():
 	env.AppendUnique(CPPPATH = ocelot_inc_path)
 	env.AppendUnique(CXXFLAGS = ocelot_cflags)
 	env.AppendUnique(LINKFLAGS = ocelot_lflags)
-	env.Replace(OCELOT_LIBS = ocelot_libs)
+	env.AppendUnique(EXTRA_LIBS = ocelot_libs)
 
 	# set ocelot include path
 	env.Prepend(CPPPATH = os.path.dirname(thisDir))
 	env.AppendUnique(LIBPATH = os.path.abspath('.'))
 	
-	# set extra libs 
-	env.Replace(EXTRA_LIBS=getExtraLibs())
-	
 	# we need librt on linux
 	if os.name == 'posix':
 		env.AppendUnique(EXTRA_LIBS = ['-lrt']) 
-	
-	# set ocelot libs
-	ocelot_libs = '-locelot'
-	env.Replace(OCELOT_LDFLAGS=ocelot_libs)
+
+	print env['EXTRA_LIBS']
 
 	# generate help text
 	Help(vars.GenerateHelpText(env))

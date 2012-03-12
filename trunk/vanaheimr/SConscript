@@ -43,9 +43,12 @@ if 'install' in COMMAND_LINE_TARGETS:
 	libvanaheimr = env.Install(
 		os.path.join(env['install_path'], "lib"), libvanaheimr)
 
+vanaheimr_dep_libs.insert(0, '-lvanaheimr')
+
 # Create programs
 PTXToVIRTranslator = env.Program('ptx-to-vir-translator',
-	['vanaheimr/tools/ptx-to-vir-translator.cpp'], LIBS=libvanaheimr)
+	['vanaheimr/tools/ptx-to-vir-translator.cpp'], LIBS=vanaheimr_dep_libs)
+env.Depends(PTXToVIRTranslator, libvanaheimr)
 
 Default(PTXToVIRTranslator)
 
