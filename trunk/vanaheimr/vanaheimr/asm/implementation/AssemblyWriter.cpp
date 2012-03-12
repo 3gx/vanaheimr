@@ -329,6 +329,13 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 	}
 }
 
+void AssemblyWriter::writeVirtualRegister(std::ostream& stream,
+	const ir::VirtualRegister& v)
+{
+	writeType(stream, *v.type);
+	stream << "%r" << v.id;
+}
+
 }
 
 }
