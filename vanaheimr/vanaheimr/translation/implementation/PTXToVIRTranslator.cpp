@@ -7,13 +7,22 @@
 // Vanaheimr Includes
 #include <vanaheimr/translation/interface/PTXToVIRTranslator.h>
 
+#include <vanaheimr/compiler/interface/Compiler.h>
+
+// Ocelot Includes
+#include <ocelot/ir/interface/Module.h>
+#include <ocelot/ir/interface/PTXKernel.h>
+
+// Standard Library Includes
+#include <stdexcept>
+
 namespace vanaheimr
 {
 
 namespace translation
 {
 
-PTXToVIRTranslator::PTXToVIRTranslator(Compiler* compiler)
+PTXToVIRTranslator::PTXToVIRTranslator(compiler::Compiler* compiler)
 : _compiler(compiler)
 {
 
@@ -21,8 +30,8 @@ PTXToVIRTranslator::PTXToVIRTranslator(Compiler* compiler)
 
 void PTXToVIRTranslator::translate(const PTXModule& m)
 {
-	_ptx = &m;
-	_vir = &*_compiler->newModule(m.name);
+	_ptx    = &m;
+	_module = &*_compiler->newModule(m.path());
 	
 	// Translate globals
 	for(PTXModule::GlobalMap::const_iterator global = m.globals().begin();
@@ -33,19 +42,19 @@ void PTXToVIRTranslator::translate(const PTXModule& m)
 	
 	// Translate kernel functions
 	for(PTXModule::KernelMap::const_iterator kernel = m.kernels().begin();
-		kernel != m.kernels.().end(); ++kernel)
+		kernel != m.kernels().end(); ++kernel)
 	{
-		_translateKernel(kernel->second);
+		_translateKernel(*kernel->second);
 	}
 }
 
 void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 {
-	VIRModule::global_iterator virGlobal = _vir->newGlobal(global.name,
-		_translateType(global.statement.type),
+	ir::Module::global_iterator virGlobal = _module->newGlobal(
+		global.statement.name, _getType(global.statement.type),
 		_translateLinkage(global.statement.attribute));
 		
-	if(global.initializedBytes() != 0)
+	if(global.statement.initializedBytes() != 0)
 	{
 		virGlobal->setInitializer(_translateInitializer(global));
 	}
@@ -53,18 +62,18 @@ void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 
 void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 {
-	VIRModule::iterator function = _vir->newFunction(kernel.name(),
-		Variable::ExternalLinkage);
+	ir::Module::iterator function = _module->newFunction(kernel.name,
+		_translateLinkingDirective(kernel.getPrototype().linkingDirective));
 	
 	_function = &*function;
 	
 	// Translate Values
-	PTXKernel::RegisterVector registers = kernel.getReferencedRegsisters();
+	PTXKernel::RegisterVector registers = kernel.getReferencedRegisters();
 	
 	for(PTXKernel::RegisterVector::iterator reg = registers.begin();
 		reg != registers.end(); ++reg)
 	{
-		_translateRegisterValue(**reg);
+		_translateRegisterValue(reg->id, reg->type);
 	}
 	
 	::ir::ControlFlowGraph::ConstBlockPointerVector sequence =
@@ -85,28 +94,29 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	}
 }
 
-void PTXToVIRTranslator::_translateRegisterValue(const PTXRegister& reg)
+void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
+	PTXDataType type)
 {
 	std::stringstream name;
 	
-	name << "r"  << reg.reg;
+	name << "r"  << reg;
 	
-	if(_registers.count(reg.reg) != 0)
+	if(_registers.count(reg) != 0)
 	{
 		throw std::runtime_error("Added duplicate virtual register '"
 			+ name.str() + "'");
 	}
 	
 	ir::Function::register_iterator newRegister = _function->newVirtualRegister(
-		_getType(reg.type), name.str());
+		_getType(type), name.str());
 
-	_registers.insert(std::make_pair(reg.reg, newRegister));
+	_registers.insert(std::make_pair(reg, newRegister));
 }
 
 void PTXToVIRTranslator::_translateBasicBlock(const PTXBasicBlock& basicBlock)
 {
-	VIRFunction::iterator block = _function->newBlock(_function->exit_block(),
-		basicBlock.name);
+	ir::Function::iterator block = _function->newBasicBlock(
+		_function->exit_block(), basicBlock.label);
 		
 	_block = &*block;
 	
@@ -139,8 +149,12 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 	return false;
 }
 
-static ir::UnaryInstruction* newUnaryInstruction(const PTXInstruction& ptx)
+static ir::UnaryInstruction* newUnaryInstruction(
+	const ::ir::PTXInstruction& ptx)
 {
+	typedef ::ir::PTXInstruction PTXInstruction;
+	typedef ::ir::PTXOperand     PTXOperand;
+	
 	switch(ptx.opcode)
 	{
 	case PTXInstruction::Ld: // fall through
@@ -158,9 +172,9 @@ static ir::UnaryInstruction* newUnaryInstruction(const PTXInstruction& ptx)
 	}
 	case PTXInstruction::Cvt:
 	{
-		if(PTXOperand::isFloat(ptx.d))
+		if(PTXOperand::isFloat(ptx.d.type))
 		{
-			if(PTXOperand::isFloat(ptx.a))
+			if(PTXOperand::isFloat(ptx.a.type))
 			{
 				if(ptx.d.type == PTXOperand::f32)
 				{
@@ -185,7 +199,7 @@ static ir::UnaryInstruction* newUnaryInstruction(const PTXInstruction& ptx)
 					}
 				}
 			}
-			else if(PTXOperand::isSigned(ptx.a))
+			else if(PTXOperand::isSigned(ptx.a.type))
 			{
 				return new ir::Sitofp;
 			}
@@ -194,23 +208,25 @@ static ir::UnaryInstruction* newUnaryInstruction(const PTXInstruction& ptx)
 				return new ir::Uitofp;
 			}
 		}
-		else if(PTXOperand::isSigned(ptx.d))
+		else if(PTXOperand::isSigned(ptx.d.type))
 		{
-			if(PTXOperand::isFloat(ptx.a))
+			if(PTXOperand::isFloat(ptx.a.type))
 			{
 				return new ir::Fptosi;
 			}
 			else
 			{
-				if(PTXOperand::bytes(ptx.a) > PTXOperand::bytes(ptx.d))
+				if(PTXOperand::bytes(ptx.a.type) >
+					PTXOperand::bytes(ptx.d.type))
 				{
 					return new ir::Trunc;
 				}
-				else if(PTXOperand::bytes(ptx.d == PTXOperand::bytes(ptx.a))
+				else if(PTXOperand::bytes(ptx.d.type) ==
+					PTXOperand::bytes(ptx.a.type))
 				{
 					return new ir::Bitcast;
 				}
-				else if(PTXOperand::isSigned(ptx.a))
+				else if(PTXOperand::isSigned(ptx.a.type))
 				{
 					return new ir::Sext;
 				}
@@ -222,17 +238,19 @@ static ir::UnaryInstruction* newUnaryInstruction(const PTXInstruction& ptx)
 		}
 		else
 		{
-			if(PTXOperand::isFloat(ptx.a))
+			if(PTXOperand::isFloat(ptx.a.type))
 			{
 				return new ir::Fptoui;
 			}
 			else
 			{
-				if(PTXOperand::bytes(ptx.a) > PTXOperand::bytes(ptx.d))
+				if(PTXOperand::bytes(ptx.a.type) >
+					PTXOperand::bytes(ptx.d.type))
 				{
 					return new ir::Trunc;
 				}
-				else if(PTXOperand::bytes(ptx.d == PTXOperand::bytes(ptx.a))
+				else if(PTXOperand::bytes(ptx.d.type) ==
+					PTXOperand::bytes(ptx.a.type))
 				{
 					return new ir::Bitcast;
 				}
@@ -253,19 +271,10 @@ static ir::UnaryInstruction* newUnaryInstruction(const PTXInstruction& ptx)
 	return 0;	
 }
 
-ir::Operand* PTXToVIRTranslator::_newTranslatedPredicateOperand(
-	const PTXOperand& ptx)
+static bool isSimpleUnaryInstruction(const ::ir::PTXInstruction& ptx)
 {
-	if(ptx.addressMode != PTXOperand::Register)
-	{
-		throw std::runtime_error("Predicate operands must be registers.");
-	}
-	
-	return new ir::PredicateOperand(_getRegister(ptx.reg), _instruction);
-}
+	typedef ::ir::PTXInstruction PTXInstruction;
 
-static bool isSimpleUnaryInstruction(const PTXInstruction& ptx)
-{
 	switch(ptx.opcode)
 	{
 	case PTXInstruction::Ld:
@@ -297,10 +306,11 @@ bool PTXToVIRTranslator::_translateSimpleUnaryInstruction(
 	const PTXInstruction& ptx)
 {
 	if(!isSimpleUnaryInstruction(ptx)) return false;
-	
+
 	ir::UnaryInstruction* vir = newUnaryInstruction(ptx);
+	_instruction = vir;
 	
-	vir->guard = _newTranslatedPredicateOperand(ptx.pg);
+	vir->guard = _translatePredicateOperand(ptx.pg);
 	vir->d     = _newTranslatedOperand(ptx.d);
 	vir->a     = _newTranslatedOperand(ptx.a);
 	
@@ -309,8 +319,10 @@ bool PTXToVIRTranslator::_translateSimpleUnaryInstruction(
 	return true;
 }
 
-static bool isSimpleBinaryInstruction(const PTXInstruction& ptx)
+static bool isSimpleBinaryInstruction(const ::ir::PTXInstruction& ptx)
 {
+	typedef ::ir::PTXInstruction PTXInstruction;
+
 	switch(ptx.opcode)
 	{
 	case PTXInstruction::Add: // fall through
@@ -335,8 +347,12 @@ static bool isSimpleBinaryInstruction(const PTXInstruction& ptx)
 	return false;
 }
 
-static ir::BinaryInstruction* newBinaryInstruction(const PTXInstruction& ptx)
+static ir::BinaryInstruction* newBinaryInstruction(
+	const ::ir::PTXInstruction& ptx)
 {
+	typedef ::ir::PTXInstruction PTXInstruction;
+	typedef ::ir::PTXOperand     PTXOperand;
+	
 	switch(ptx.opcode)
 	{
 	case PTXInstruction::Add:
@@ -349,15 +365,32 @@ static ir::BinaryInstruction* newBinaryInstruction(const PTXInstruction& ptx)
 	}
 	case PTXInstruction::Div:
 	{
-		return new ir::Div;		
+		if(PTXOperand::isFloat(ptx.type))
+		{
+			return new ir::Fdiv;
+		}
+		else
+		{
+			if(PTXOperand::isSigned(ptx.type))
+			{
+				return new ir::Sdiv;
+			}
+			else
+			{
+				return new ir::Udiv;
+			}
+		}
 	}
 	case PTXInstruction::Mul:
 	{
-		return new ir::Mul;		
-	}
-	case PTXInstruction::Not:
-	{
-		return new ir::Not;		
+		if(PTXOperand::isFloat(ptx.type))
+		{
+			return new ir::Fmul;
+		}
+		else
+		{
+			return new ir::Mul;
+		}
 	}
 	case PTXInstruction::Or:
 	{
@@ -365,7 +398,21 @@ static ir::BinaryInstruction* newBinaryInstruction(const PTXInstruction& ptx)
 	}
 	case PTXInstruction::Rem:
 	{
-		return new ir::Rem;		
+		if(PTXOperand::isFloat(ptx.type))
+		{
+			return new ir::Frem;
+		}
+		else
+		{
+			if(PTXOperand::isSigned(ptx.type))
+			{
+				return new ir::Srem;
+			}
+			else
+			{
+				return new ir::Urem;
+			}
+		}
 	}
 	case PTXInstruction::Shl:
 	{
@@ -395,7 +442,7 @@ bool PTXToVIRTranslator::_translateSimpleBinaryInstruction(
 	
 	ir::BinaryInstruction* vir = newBinaryInstruction(ptx);
 	
-	vir->guard = _newTranslatedPredicatedOperand(ptx.pg);
+	vir->guard = _translatePredicateOperand(ptx.pg);
 	vir->d     = _newTranslatedOperand(ptx.d);
 	vir->a     = _newTranslatedOperand(ptx.a);
 	vir->b     = _newTranslatedOperand(ptx.d);
@@ -420,15 +467,15 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	}
 	case PTXOperand::Immediate:
 	{
-		return new ir::ImmediateOperand(ptx.imm_uint, _instruction);
+		return new ir::ImmediateOperand((uint64_t)ptx.imm_uint, _instruction);
 	}
 	case PTXOperand::Address:
 	{
-		return new ir::AddressOperand(_getGlobal(ptx.name), _instruction);
+		return new ir::AddressOperand(_getGlobal(ptx.identifier), _instruction);
 	}
 	case PTXOperand::Label:
 	{
-		return new ir::AddressOperand(_getBasicBlock(ptx.name),
+		return new ir::AddressOperand(_getBasicBlock(ptx.identifier),
 			_instruction);
 	}
 	case PTXOperand::Special:
@@ -446,18 +493,44 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 		+ ptx.toString());
 }
 
-ir::Operand* PTXToVIRTranslator::_newTranslatedPredicateOperand(
+static ir::PredicateOperand::PredicateModifier translatePredicateCondition(
+	::ir::PTXOperand::PredicateCondition c)
+{
+	switch(c)
+	{
+	case ::ir::PTXOperand::PT:
+	{
+		return ir::PredicateOperand::PredicateTrue;
+	}
+	case ::ir::PTXOperand::nPT:
+	{
+		return ir::PredicateOperand::PredicateFalse;
+	}
+	case ::ir::PTXOperand::Pred:
+	{
+		return ir::PredicateOperand::StraightPredicate;
+	}
+	case ::ir::PTXOperand::InvPred:
+	{
+		return ir::PredicateOperand::InversePredicate;
+	}
+	}
+
+	return ir::PredicateOperand::StraightPredicate;
+}
+
+ir::PredicateOperand PTXToVIRTranslator::_translatePredicateOperand(
 	const PTXOperand& ptx)
 {
-	VirtualRegister* predicateRegister = 0;
+	ir::VirtualRegister* predicateRegister = 0;
 
 	if(ptx.condition != PTXOperand::PT && ptx.condition != PTXOperand::nPT)
 	{
 		predicateRegister = _getRegister(ptx.reg);
 	}
 	
-	return new ir::PredicateOperand(_getRegister(ptx.reg),
-		_translatePredicateCondition(ptx.condition), _instruction);
+	return ir::PredicateOperand(predicateRegister,
+		translatePredicateCondition(ptx.condition), _instruction);
 }
 
 ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
@@ -508,7 +581,7 @@ ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id)
 	assertM(false, "Special values not implemented yet.");
 }
 
-ir::VirtualRegiser* PTXToVIRTranslator::_newTemporaryRegister()
+ir::VirtualRegister* PTXToVIRTranslator::_newTemporaryRegister()
 {
 	ir::Function::register_iterator temp = _function->newVirtualRegister(
 		_getType("i64"));
@@ -562,17 +635,54 @@ static std::string translateTypeName(::ir::PTXOperand::DataType type)
 	return "";
 }
 
-const ir::Type* PTXToVIRTranslator::_getType(PTXDataType type)
+const ir::Type* PTXToVIRTranslator::_getType(PTXDataType ptxType)
 {
-	const ir::Type* type = _compiler->getType(translateTypeName(type));
+	return _getType(translateTypeName((::ir::PTXOperand::DataType)ptxType));
+}
+
+const ir::Type* PTXToVIRTranslator::_getType(const std::string& typeName)
+{
+	const ir::Type* type = _compiler->getType(typeName);
 
 	if(type == 0)
 	{
 		throw std::runtime_error("PTX translated type name '"
-			+ translateTypeName(type) + "' is not a valid Vanaheimr type.");
+			+ typeName + "' is not a valid Vanaheimr type.");
 	}
 	
 	return type;
+}
+
+ir::Variable::Linkage PTXToVIRTranslator::_translateLinkage(PTXAttribute attr)
+{
+	if(attr == ::ir::PTXStatement::Extern)
+	{
+		return ir::Variable::ExternalLinkage;
+	}
+	else
+	{
+		return ir::Variable::PrivateLinkage;
+	}
+}
+
+ir::Variable::Linkage PTXToVIRTranslator::_translateLinkingDirective(
+	PTXLinkingDirective d)
+{
+	if(d == PTXKernel::Prototype::Extern)
+	{
+		return ir::Variable::ExternalLinkage;
+	}
+	else
+	{
+		return ir::Variable::PrivateLinkage;
+	}
+}
+
+ir::Constant* PTXToVIRTranslator::_translateInitializer(const PTXGlobal& g)
+{
+	assertM(false, "Not implemented.");
+	
+	return 0;
 }
 
 }

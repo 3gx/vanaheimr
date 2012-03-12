@@ -8,21 +8,24 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/Variable.h>
 
 // Standard Library Includes
 #include <unordered_map>
 #include <string>
 
 // Forward Declarations
-                      namespace ir { class Module;         }
-                      namespace ir { class Kernel;         }
-                      namespace ir { class Global;         }
-                      namespace ir { class BasicBlock;     }
-                      namespace ir { class PTXInstruction; }
-                      namespace ir { class PTXOperand;     }
-                      namespace ir { class PTXKernel;      }
-namespace vanaheimr { namespace ir { class Module;         } }
-
+                      namespace ir       { class Module;           }
+                      namespace ir       { class PTXKernel;        }
+                      namespace ir       { class Global;           }
+                      namespace ir       { class BasicBlock;       }
+                      namespace ir       { class PTXInstruction;   }
+                      namespace ir       { class PTXOperand;       }
+                      namespace ir       { class PTXKernel;        }
+namespace vanaheimr { namespace ir       { class Module;           } }
+namespace vanaheimr { namespace ir       { class PredicateOperand; } }
+namespace vanaheimr { namespace ir       { class Constant;         } }
+namespace vanaheimr { namespace compiler { class Compiler;         } }
 
 namespace vanaheimr
 {
@@ -44,7 +47,7 @@ public:
 	void translate(const PTXModule& m);
 
 private:
-	typedef ::ir::Kernel         PTXKernel;
+	typedef ::ir::PTXKernel      PTXKernel;
 	typedef ::ir::Global         PTXGlobal;
 	typedef ::ir::BasicBlock     PTXBasicBlock;
 	typedef ::ir::PTXInstruction PTXInstruction;
@@ -52,8 +55,8 @@ private:
 	typedef int                  PTXDataType;
 
 	typedef unsigned int PTXRegisterId;
-
-	typedef vanaheimr::ir::Module VIRModule;
+	typedef unsigned int PTXAttribute;
+	typedef unsigned int PTXLinkingDirective;
 
 private:
 	void _translateGlobal(const PTXGlobal&);
@@ -75,27 +78,33 @@ private:
 		ir::Function::iterator> BasicBlockMap;
 
 private:
-	ir::Operand* _newTranslatedOperand(const PTXOperand& ptx);
-	ir::Operand* _newTranslatedPredicateOperand(const PTXOperand& ptx);
+	ir::Operand*         _newTranslatedOperand(const PTXOperand& ptx);
+	ir::PredicateOperand _translatePredicateOperand(const PTXOperand& ptx);
 
 private:
-	ir::VirtualRegister* _getRegister(PTXRegisterId id);
-	ir::Variable*        _getGlobal(const std::string& name);
-	ir::BasicBlock*      _getBasicBlock(const std::string& name);
-	ir::Operand*         _getSpecialValueOperand(unsigned int id);
-	ir::VirtualRegister* _newTemporaryRegister();
-	const ir::Type*      _getType(PTXDataType type);
-
+	ir::VirtualRegister*  _getRegister(PTXRegisterId id);
+	ir::Variable*         _getGlobal(const std::string& name);
+	ir::Variable*         _getBasicBlock(const std::string& name);
+	ir::Operand*          _getSpecialValueOperand(unsigned int id);
+	ir::VirtualRegister*  _newTemporaryRegister();
+	const ir::Type*       _getType(PTXDataType type);
+	const ir::Type*       _getType(const std::string& name);
+	ir::Variable::Linkage _translateLinkage(PTXAttribute linkage);
+	ir::Variable::Linkage _translateLinkingDirective(PTXLinkingDirective d);
+	ir::Constant*         _translateInitializer(const PTXGlobal& g);
+	
 private:
 	compiler::Compiler* _compiler;
+	ir::Module*         _module;
+	ir::Function*       _function;
+	ir::BasicBlock*     _block;
+	ir::Instruction*    _instruction;
 	
-	VIRModule*            _vir;
 	const PTXModule*      _ptx;
-	const PTXBasicBlock*  _block;
-	const PTXInstruction* _instruction;
 	
 	RegisterMap   _registers;
 	BasicBlockMap _blocks;
+	
 };
 
 }

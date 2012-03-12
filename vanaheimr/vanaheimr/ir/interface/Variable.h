@@ -42,7 +42,7 @@ public:
 
 public:
 	Variable(const std::string& name, Module* module,
-		Type* type, Linkage linkage, Visibility visibility);
+		const Type* type, Linkage linkage, Visibility visibility);
 
 public:
 	void setModule(Module* m);

@@ -23,7 +23,7 @@ namespace ir
 {
 
 /*! \brief A list of instructions ending with a terminator. */
-class BasicBlock
+class BasicBlock : public Variable
 {
 public:
 	typedef std::list<Instruction*> InstructionList;
@@ -58,6 +58,7 @@ public:
 	bool        empty() const;
 	size_t      size()  const;
 	Id          id()    const;
+	
 public:
 	void push_back( Instruction* i);
 	void push_front(Instruction* i);
