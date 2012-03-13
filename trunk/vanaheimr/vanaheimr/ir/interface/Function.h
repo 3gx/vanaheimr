@@ -36,7 +36,10 @@ public:
 
 public:
 	Function(const std::string& name = "", Module* m = 0,
-		Linkage l = ExternalLinkage);
+		Linkage l = PrivateLinkage, Visibility v = HiddenVisibility,
+		const Type* type = 0);
+	Function(const Function& f);
+	Function& operator=(const Function& f);
 	
 public:
 	iterator       begin();
@@ -96,6 +99,9 @@ private:
 	
 	iterator _entry;
 	iterator _exit;
+
+	BasicBlock::Id      _nextBlockId;
+	VirtualRegister::Id _nextRegisterId;
 };
 
 }
