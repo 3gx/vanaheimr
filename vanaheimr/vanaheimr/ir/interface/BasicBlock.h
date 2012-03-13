@@ -34,7 +34,7 @@ public:
 	typedef unsigned int Id;
 
 public:
-	BasicBlock(Function* f, Id i);
+	BasicBlock(Function* f, Id i, const std::string& name);
 	~BasicBlock();
 	
 public:
@@ -55,9 +55,10 @@ public:
 	const_iterator end() const;
 
 public:
-	bool        empty() const;
-	size_t      size()  const;
-	Id          id()    const;
+	bool               empty() const;
+	size_t             size()  const;
+	Id                 id()    const;
+	const std::string& name() const;
 	
 public:
 	void push_back( Instruction* i);
@@ -70,6 +71,7 @@ private:
 	Function*       _function;
 	InstructionList _instructions;
 	Id              _id;
+	std::string     _name;
 };
 
 }
