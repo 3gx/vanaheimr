@@ -4,6 +4,12 @@
 	\brief  The header file for the Constant family of classes.
 */
 
+// Standard Library Includes
+#include <vector>
+
+// Forward Declarations
+namespace vanaheimr { namespace ir { class BasicBlock; } }
+
 namespace vanaheimr
 {
 
@@ -25,6 +31,12 @@ public:
 	
 	/*! \brief Get a binary representation of the constant */
 	virtual DataVector data() const = 0;
+	
+	/*! \brief Get the size of the constant in bytes */
+	virtual size_t bytes() const = 0;
+	
+	/*! \brief Create a new copy of the constant */
+	virtual Constant* clone() const = 0;
 	
 public:
 	const Type* type() const;

@@ -42,6 +42,9 @@ public:
 	bool isSinglePrecisionFloat() const;
 	bool isDoublePrecisionFloat() const;
 
+public:
+	virtual size_t bytes() const = 0;
+
 private:
 	std::string _name;
 	Id          _id;
