@@ -29,6 +29,10 @@ public:
 	~Global();
 
 public:
+	Global(const Global&);
+	Global& operator=(const Global&);
+
+public:
 	bool hasInitializer() const;
 
 	Constant*       intializer();
@@ -39,10 +43,6 @@ public:
 
 public:
 	void setInitializer(Constant* c);
-
-public:
-	Global(const Global&)            = delete;
-	Global& operator=(const Global&) = delete;
 	
 private:
 	Constant* _initializer; // owned by the global

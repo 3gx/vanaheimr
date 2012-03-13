@@ -45,6 +45,11 @@ public:
 	~Module();
 	
 public:
+	/*! \brief Deep copy */
+	Module(const Module& r);
+	Module& operator=(const Module& r);
+	
+public:
 	/*! \brief Get a named function in the module, return 0 if not found */
 	iterator getFunction(const std::string& name);
 
@@ -52,30 +57,30 @@ public:
 	const_iterator getFunction(const std::string& name) const;
 	
 	/*! \brief Insert a function into the module, it takes ownership */
-	void insertFunction(const Function& f);
+	iterator insertFunction(iterator position, const Function& f);
 
 	/*! \brief Add a new function */
 	iterator newFunction(const std::string& name, Variable::Linkage l);
 
 	/*! \brief Remove a function from the module, it is deleted */
-	void removeFunction(Function* f);
+	iterator removeFunction(iterator f);
 
 public:
 	/*! \brief Get a named global in the module, return 0 if not found */
 	global_iterator getGlobal(const std::string& name);
 
 	/*! \brief Get a named global in the module, return 0 if not found */
-	const global_iterator getGlobal(const std::string& name) const;
+	const_global_iterator getGlobal(const std::string& name) const;
 	
 	/*! \brief Insert a global into the module, it takes ownership */
-	global_iterator insertGlobal(const Global& g);
+	global_iterator insertGlobal(global_iterator, const Global& g);
 	
 	/*! \brief Create a new global, the module owns it */
 	global_iterator newGlobal(const std::string& name,
 		const Type* t, Variable::Linkage l);
 
 	/*! \brief Remove a global from the module, it is deleted */
-	void removeGlobal(global_iterator g);
+	global_iterator removeGlobal(global_iterator g);
 
 public:
 	/*! \brief Write the module to a binary */
