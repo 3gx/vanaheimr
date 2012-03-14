@@ -66,6 +66,10 @@ public:
 	const ir::Type* getType(const std::string& typeName) const;
 
 public:
+	/*! \brief Get the basic block type */
+	const ir::Type* getBasicBlockType() const;
+
+public:
 	static Compiler* getSingleton();
 
 private:

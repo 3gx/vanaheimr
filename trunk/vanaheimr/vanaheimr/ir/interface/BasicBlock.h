@@ -36,6 +36,8 @@ public:
 public:
 	BasicBlock(Function* f, Id i, const std::string& name);
 	~BasicBlock();
+	BasicBlock(const BasicBlock& b);
+	BasicBlock& operator=(const BasicBlock&);
 	
 public:
 	/*! \brief Return the terminator instruction if there is one */
@@ -55,23 +57,36 @@ public:
 	const_iterator end() const;
 
 public:
-	bool               empty() const;
-	size_t             size()  const;
-	Id                 id()    const;
-	const std::string& name() const;
+	Instruction*&        front();
+	Instruction* const & front() const;
+
+	Instruction*&        back();
+	Instruction* const & back() const;
+
+public:
+	bool   empty() const;
+	size_t size()  const;
+
+public:
+	Id id() const;
 	
 public:
+	/*! \brief Pushes an instruction copy to the back of the block */
 	void push_back( Instruction* i);
+	/*! \brief Pushes an instruction copy to the front of the block */
 	void push_front(Instruction* i);
 
 public:
+	/*! \brief Inserts an instruction copy into the block */
 	iterator insert(iterator position, Instruction* i);
+
+public:
+	void clear();
 
 private:
 	Function*       _function;
 	InstructionList _instructions;
 	Id              _id;
-	std::string     _name;
 };
 
 }
