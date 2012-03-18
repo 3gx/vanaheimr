@@ -136,6 +136,11 @@ const ir::Type* Compiler::getType(const std::string& typeName) const
 	return *type;
 }
 
+const ir::Type* Compiler::getBasicBlockType() const
+{
+	return getType("_ZTBasicBlock");
+}
+
 Compiler* Compiler::getSingleton()
 {
 	return &singleton;

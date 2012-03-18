@@ -13,6 +13,9 @@
 #include <vector>
 #include <string>
 
+// Forward Declaration
+namespace vanaheimr { namespace ir { class BasicBlock; } }
+
 namespace vanaheimr
 {
 
@@ -49,7 +52,7 @@ public:
 		Mul,
 		Or,
 		Ret,
-		SetP,
+		Setp,
 		Sext,
 		Sdiv,
 		Shl,
@@ -69,7 +72,8 @@ public:
 	typedef std::vector<Operand*> OperandVector;
 
 public:
-	Instruction();
+	Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
+	~Instruction();
 
 	Instruction(const Instruction&);
 	Instruction& operator=(const Instruction&);
@@ -79,6 +83,9 @@ public:
 	bool isStore()  const;
 	bool isBranch() const;
 	bool isCall()   const;
+	
+public:
+	void clear();
 
 public:
 	virtual Instruction* clone() const = 0;
@@ -91,12 +98,15 @@ public:
 	Opcode opcode;
 
 	/*! \brief The guard predicate */
-	PredicateOperand guard;
+	PredicateOperand* guard;
 
 	/*! \brief The set of all operands read by the instruction */
 	OperandVector reads;
 	/*! \brief The set of all operands written by the instruction */
 	OperandVector writes;
+
+	/*!  \brief The basic block that the instruction is contained in */
+	BasicBlock* block;
 
 };
 
@@ -104,10 +114,8 @@ public:
 class UnaryInstruction : public Instruction
 {
 public:
-	UnaryInstruction();
+	UnaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
 	UnaryInstruction(const UnaryInstruction& i);
-
-	~UnaryInstruction();
 
 	UnaryInstruction& operator=(const UnaryInstruction& i);
 
@@ -126,10 +134,8 @@ public:
 class BinaryInstruction : public Instruction
 {
 public:
-	BinaryInstruction();
+	BinaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
 	BinaryInstruction(const BinaryInstruction& i);
-
-	~BinaryInstruction();
 
 	BinaryInstruction& operator=(const BinaryInstruction& i);
 
@@ -168,7 +174,11 @@ public:
 		NotANumber,
 		InvalidComparison
 	};
-	
+
+public:
+	ComparisonInstruction(Opcode o = InvalidOpcode,
+		Comparison c = InvalidComparison, BasicBlock* b = 0);
+
 public:
 	Instruction* clone() const;
 
@@ -181,6 +191,9 @@ public:
 class Add : public BinaryInstruction
 {
 public:
+	Add(BasicBlock* b = 0);
+
+public:
 	Instruction* clone() const;
 
 };
@@ -189,6 +202,9 @@ public:
 class And : public BinaryInstruction
 {
 public:
+	And(BasicBlock* b = 0);
+
+public:
 	Instruction* clone() const;
 
 };
@@ -196,6 +212,9 @@ public:
 /*! \brief Perform arithmetic shift right */
 class Ashr : public BinaryInstruction
 {
+public:
+	Ashr(BasicBlock* b = 0);
+
 public:
 	Instruction* clone() const;
 };
@@ -221,10 +240,8 @@ public:
 	};
 
 public:
-	Atom();
+	Atom(Operation op = InvalidOperation, BasicBlock* b = 0);
 	Atom(const Atom& i);
-
-	~Atom();
 
 	Atom& operator=(const Atom& i);
 
@@ -239,6 +256,8 @@ public:
 /*! \brief Perform a thread group barrier */
 class Bar : public Instruction
 {
+public:
+	Bar(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -248,6 +267,8 @@ public:
 /*! \brief Perform a raw bitcast */
 class Bitcast : public UnaryInstruction
 {
+public:
+	Bitcast(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -266,10 +287,8 @@ public:
 	};
 
 public:
-	Bra();
+	Bra(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
 	Bra(const Bra& i);
-
-	~Bra();
 
 	Bra& operator=(const Bra& i);
 
@@ -285,10 +304,8 @@ public:
 class Call : public Bra
 {
 public:
-	Call();
+	Call(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
 	Call(const Call& i);
-
-	~Call();
 
 	Call& operator=(const Call& i);
 
@@ -403,6 +420,9 @@ public:
 	};
 
 public:
+	Membar(Level = InvalidLevel, BasicBlock* b = 0);
+
+public:
 	Instruction* clone() const;
 
 public:
@@ -438,8 +458,10 @@ public:
 };
 
 /*! \brief Compare two operands and set a third predicate */
-class SetP : public ComparisonInstruction
+class Setp : public ComparisonInstruction
 {
+public:
+	Setp(Comparison c = InvalidComparison, BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -492,11 +514,20 @@ public:
 };
 
 /*! \brief Perform a store operation */
-class St : public UnaryInstruction
+class St : public Instruction
 {
+public:
+	St(BasicBlock* b = 0);
+
+	St(const St&);
+	St& operator=(const St&);
 
 public:
 	Instruction* clone() const;
+
+public:
+	Operand* d;
+	Operand* a;
 
 };
 
