@@ -23,6 +23,11 @@ namespace baldr
         return ((this->getX()*k), (this->getY()*k), (this->getZ()*k));
     }
 
+    XYZ XYZ::scalarDivide(float k)
+    {
+        return ((this->getX()/k), (this->getY()/k), (this->getZ()/k));
+    }
+
     XYZ XYZ::add(XYZ v2)
     {
         XYZ temp;
