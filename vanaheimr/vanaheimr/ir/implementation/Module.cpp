@@ -26,6 +26,41 @@ Module::Module(const std::string& n, compiler::Compiler* c)
 
 }
 
+Module::Module(const Module& m)
+: name(m.name), _compiler(m._compiler)
+{
+	operator=(m);
+}
+
+Module& Module::operator=(const Module& m)
+{
+	if(&m == this) return *this;
+	
+	clear();
+	
+	name      = m.name;
+	_compiler = m._compiler;
+	
+	for(auto function : _functions)
+	{
+		_functions.push_back(function);
+		_functions.back().setModule(this);
+	}
+	
+	for(auto global : _globals)
+	{
+		_globals.push_back(global);
+		_globals.back().setModule(this);
+	}
+	
+	for(auto constant : _constants)
+	{
+		_constants.push_back(constant->clone());
+	}
+	
+	return *this;
+}
+
 Module::~Module()
 {
 	for(constant_iterator constant = constant_begin();
@@ -210,6 +245,15 @@ size_t Module::constant_size() const
 bool Module::constant_empty() const
 {
 	return _constants.empty();
+}
+
+void Module::clear()
+{
+	for(auto constant : _constants) delete constant;
+
+	_functions.clear();
+	_globals.clear();
+	_constants.clear();
 }
 
 }

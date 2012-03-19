@@ -26,14 +26,12 @@ class Type
 public:
 	typedef std::vector<const Type*> TypeVector;
 	typedef compiler::Compiler       Compiler;
-	typedef unsigned int             Id;
 	
 public:
 	Type(const std::string& name, Compiler* compiler);
 
 public:
-	const std::string& name() const;
-	Id                 id()   const;
+	virtual const std::string& name() const;
 
 public:
 	bool isPrimitive()            const;
@@ -47,7 +45,6 @@ public:
 
 private:
 	std::string _name;
-	Id          _id;
 	Compiler*   _compiler;
 	
 };
@@ -56,11 +53,15 @@ private:
 class IntegerType : public Type
 {
 public:
-	IntegerType(unsigned int bits);
+	IntegerType(Compiler* c, unsigned int bits);
 
 public:
 	bool isBitWidthAPowerOfTwo() const;
 	unsigned int bits() const;
+	size_t bytes() const;
+
+public:
+	static std::string integerName(unsigned int bits);
 
 private:
 	unsigned int _bits;
@@ -69,18 +70,29 @@ private:
 /*! \brief A type for an IEEE compliant 32-bit floating point type */
 class FloatType : public Type
 {
+public:
+	FloatType(Compiler* c);
 
+public:
+	size_t bytes() const;
 };
 
 /*! \brief A type for an IEEE compliant 64-bit floating point type */
 class DoubleType : public Type
 {
+public:
+	DoubleType(Compiler* c);
 
+public:
+	size_t bytes() const;
 };
 
 /*! \brief Common functionality for aggregates (structures and arrays) */
 class AggregateType : public Type
 {
+public:
+	AggregateType(Compiler* c);
+
 public:
 	virtual const Type*  getTypeAtIndex  (unsigned int index) const = 0;
 	virtual bool         isIndexValid    (unsigned int index) const = 0;
@@ -92,7 +104,7 @@ public:
 class ArrayType : public AggregateType
 {
 public:
-	ArrayType(const Type* t, unsigned int elementCount);
+	ArrayType(Compiler* c, const Type* t, unsigned int elementCount);
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
@@ -111,7 +123,7 @@ private:
 class StructureType : public AggregateType
 {
 public:
-	StructureType(const TypeVector& types);
+	StructureType(Compiler* c, const TypeVector& types);
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
@@ -127,7 +139,7 @@ private:
 class PointerType : public AggregateType
 {
 public:
-	PointerType(const Type* );
+	PointerType(Compiler* c, const Type* t);
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
@@ -146,7 +158,8 @@ public:
 	typedef TypeVector::const_iterator iterator;
 
 public:
-	FunctionType(const Type* returnType, const TypeVector& argumentTypes);
+	FunctionType(Compiler* c, const Type* returnType,
+		const TypeVector& argumentTypes);
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
@@ -156,6 +169,10 @@ public:
 public:
 	iterator begin() const;
 	iterator end()   const;
+
+public:
+	static std::string functionPrototypeName(const Type* returnType,
+		const TypeVector& argumentTypes);
 
 private:
 	const Type* _returnType;

@@ -82,6 +82,7 @@ public:
 
 public:
 	void clear();
+	void setFunction(Function*);
 
 private:
 	Function*       _function;

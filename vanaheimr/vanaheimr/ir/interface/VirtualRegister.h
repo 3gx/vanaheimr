@@ -6,6 +6,13 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
+// Forward Declarations
+namespace vanaheimr { namespace ir { class Function; } }
+namespace vanaheimr { namespace ir { class Type;     } }
+
 namespace vanaheimr
 {
 

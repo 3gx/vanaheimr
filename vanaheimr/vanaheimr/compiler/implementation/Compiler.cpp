@@ -20,6 +20,19 @@ static Compiler singleton;
 Compiler::Compiler()
 {
 	// TODO Add in common types
+	_types.push_back(new ir::IntegerType(this, 1) );
+	_types.push_back(new ir::IntegerType(this, 8) );
+	_types.push_back(new ir::IntegerType(this, 16));
+	_types.push_back(new ir::IntegerType(this, 32));
+	_types.push_back(new ir::IntegerType(this, 64));
+
+	_types.push_back(new ir::FloatType(this));
+	_types.push_back(new ir::DoubleType(this));
+}
+
+Compiler::~Compiler()
+{
+	for(auto type : *this) delete type;
 }
 
 Compiler::iterator Compiler::begin()
@@ -104,36 +117,26 @@ Compiler::const_module_iterator Compiler::getModule(
 
 ir::Type* Compiler::getType(const std::string& name)
 {
-	iterator type = _types.end();
+	iterator type = _types.begin();
 	
 	for( ; type != _types.end(); ++type)
 	{
-		if((*type)->name() == name) break;
+		if((*type)->name() == name) return *type;
 	}
 	
-	if(type == _types.end())
-	{
-		return 0;
-	}
-	
-	return *type;
+	return 0;
 }
 
 const ir::Type* Compiler::getType(const std::string& typeName) const
 {
-	const_iterator type = _types.end();
+	const_iterator type = _types.begin();
 	
 	for( ; type != _types.end(); ++type)
 	{
-		if((*type)->name() == typeName) break;
+		if((*type)->name() == typeName) return *type;
 	}
 	
-	if(type == _types.end())
-	{
-		return 0;
-	}
-	
-	return *type;
+	return 0;
 }
 
 const ir::Type* Compiler::getBasicBlockType() const

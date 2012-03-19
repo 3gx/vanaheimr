@@ -52,6 +52,9 @@ public:
 	/*! \brief The owning instruction */
 	Instruction* instruction() const;
 
+public:
+	virtual Operand* clone() const = 0;
+
 private:
 	OperandMode  _mode;
 	Instruction* _instruction;
@@ -66,8 +69,15 @@ public:
 	RegisterOperand(VirtualRegister* reg, Instruction* i);
 
 public:
+	virtual Operand* clone() const;
+
+public:
 	/*! \brief The register being accessed */
 	VirtualRegister* virtualRegister;
+
+protected:
+	RegisterOperand(VirtualRegister* reg, Instruction* i, OperandMode m);
+
 };
 
 /*! \brief An immediate operand */
@@ -76,6 +86,9 @@ class ImmediateOperand : public Operand
 public:
 	ImmediateOperand(uint64_t v, Instruction* i);
 	ImmediateOperand(double   d, Instruction* i);
+
+public:
+	Operand* clone() const;
 
 public:
 	/*! \brief The immediate value */
@@ -107,6 +120,9 @@ public:
 		PredicateModifier mod, Instruction* i);
 
 public:
+	Operand* clone() const;
+
+public:
 	/*! \brief The predicate modifier */
 	PredicateModifier modifier;
 };
@@ -118,6 +134,9 @@ public:
 	IndirectOperand(VirtualRegister* reg, int64_t offset, Instruction* i);
 
 public:
+	Operand* clone() const;
+
+public:
 	/*! \brief The offset to add to the register */
 	int64_t offset;
 };
@@ -127,6 +146,9 @@ class AddressOperand : public Operand
 {
 public:
 	AddressOperand(Variable* value, Instruction* i);
+
+public:
+	Operand* clone() const;
 
 public:
 	Variable* globalValue;

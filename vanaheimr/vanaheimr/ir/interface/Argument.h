@@ -30,6 +30,9 @@ public:
 	const std::string& name() const;
 	const Type& type() const;
 
+public:
+	void setFunction(Function* f);
+
 private:
 	const Type* _type;
 	Function*   _function;

@@ -180,7 +180,7 @@ public:
 		Comparison c = InvalidComparison, BasicBlock* b = 0);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const = 0;
 
 public:
 	/*! \brief The comparison operation */
@@ -250,7 +250,7 @@ public:
 
 public:
 	Operation operation;
-	Operand*   c;
+	Operand*  c;
 };
 
 /*! \brief Perform a thread group barrier */
@@ -320,6 +320,8 @@ public:
 /*! \brief Floating point division */
 class Fdiv : public BinaryInstruction
 {
+public:
+	Fdiv(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -329,6 +331,8 @@ public:
 /*! \brief Floating point multiplication */
 class Fmul : public BinaryInstruction
 {
+public:
+	Fmul(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -338,6 +342,8 @@ public:
 /*! \brief A floating point precision extension instruction */
 class Fpext : public UnaryInstruction
 {
+public:
+	Fpext(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -347,6 +353,8 @@ public:
 /*! \brief A floating point to signed integer instruction */
 class Fptosi : public UnaryInstruction
 {
+public:
+	Fptosi(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -356,6 +364,8 @@ public:
 /*! \brief A floating point to unsigned integer instruction */
 class Fptoui : public UnaryInstruction
 {
+public:
+	Fptoui(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -365,6 +375,8 @@ public:
 /*! \brief A floating point precision truncate instruction */
 class Fptrunc : public UnaryInstruction
 {
+public:
+	Fptrunc(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -374,6 +386,8 @@ public:
 /*! \brief Floating point remainder */
 class Frem : public BinaryInstruction
 {
+public:
+	Frem(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -383,6 +397,8 @@ public:
 /*! \brief Launch a new HTA at the specified entry point */
 class Launch : public Instruction
 {
+public:
+	Launch(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -392,6 +408,8 @@ public:
 /*! \brief Load a value from memory */
 class Ld : public UnaryInstruction
 {
+public:
+	Ld(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -401,6 +419,8 @@ public:
 /*! \brief Logical shift right */
 class Lshr : public BinaryInstruction
 {
+public:
+	Lshr(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -433,6 +453,8 @@ public:
 /*! \brief Multiply two operands together */
 class Mul : public BinaryInstruction
 {
+public:
+	Mul(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -442,6 +464,8 @@ public:
 /*! \brief Perform a logical OR operation */
 class Or : public BinaryInstruction
 {
+public:
+	Or(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -451,6 +475,8 @@ public:
 /*! \brief Return from the current function call, or exit */
 class Ret : public UnaryInstruction
 {
+public:
+	Ret(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -471,6 +497,8 @@ public:
 /*! \brief Sign extend an integer */
 class Sext : public UnaryInstruction
 {
+public:
+	Sext(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -480,6 +508,8 @@ public:
 /*! \brief Perform signed division */
 class Sdiv : public BinaryInstruction
 {
+public:
+	Sdiv(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -489,6 +519,8 @@ public:
 /*! \brief Perform shift left */
 class Shl : public BinaryInstruction
 {
+public:
+	Shl(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -498,6 +530,8 @@ public:
 /*! \brief Convert a signed int to a floating point */
 class Sitofp : public UnaryInstruction
 {
+public:
+	Sitofp(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -507,6 +541,8 @@ public:
 /*! \brief Perform a signed remainder operation */
 class Srem : public BinaryInstruction
 {
+public:
+	Srem(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -534,6 +570,8 @@ public:
 /*! \brief Perform a subtract operation */
 class Sub : public BinaryInstruction
 {
+public:
+	Sub(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -543,6 +581,8 @@ public:
 /*! \brief Truncate an integer */
 class Trunc : public UnaryInstruction
 {
+public:
+	Trunc(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -552,6 +592,8 @@ public:
 /*! \brief Perform an unsigned division operation */
 class Udiv : public BinaryInstruction
 {
+public:
+	Udiv(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -561,6 +603,8 @@ public:
 /*! \brief Convert an unsigned int to a floating point */
 class Uitofp : public UnaryInstruction
 {
+public:
+	Uitofp(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -570,15 +614,19 @@ public:
 /*! \brief Perform an unsigned remainder operation */
 class Urem : public BinaryInstruction
 {
+public:
+	Urem(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
 
 };
 
-/*! \brief Perform a logical OR operation */
+/*! \brief Perform a logical XOR operation */
 class Xor : public BinaryInstruction
 {
+public:
+	Xor(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -588,6 +636,8 @@ public:
 /*! \brief Zero extend an integer */
 class Zext : public UnaryInstruction
 {
+public:
+	Zext(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;

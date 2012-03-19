@@ -33,7 +33,12 @@ public:
 	
 public:
 	Compiler();
-
+	~Compiler();
+	
+public:
+	          Compiler( const Compiler&) = delete;
+	Compiler& operator=(const Compiler&) = delete;	
+	
 public:
 	iterator       begin();
 	const_iterator begin() const;

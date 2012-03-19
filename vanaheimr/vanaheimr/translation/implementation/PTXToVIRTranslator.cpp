@@ -166,10 +166,6 @@ static ir::UnaryInstruction* newUnaryInstruction(
 	{
 		return new ir::Bitcast;
 	}
-	case PTXInstruction::St:
-	{
-		return new ir::St;
-	}
 	case PTXInstruction::Cvt:
 	{
 		if(PTXOperand::isFloat(ptx.d.type))
@@ -519,7 +515,7 @@ static ir::PredicateOperand::PredicateModifier translatePredicateCondition(
 	return ir::PredicateOperand::StraightPredicate;
 }
 
-ir::PredicateOperand PTXToVIRTranslator::_translatePredicateOperand(
+ir::PredicateOperand* PTXToVIRTranslator::_translatePredicateOperand(
 	const PTXOperand& ptx)
 {
 	ir::VirtualRegister* predicateRegister = 0;
@@ -529,7 +525,7 @@ ir::PredicateOperand PTXToVIRTranslator::_translatePredicateOperand(
 		predicateRegister = _getRegister(ptx.reg);
 	}
 	
-	return ir::PredicateOperand(predicateRegister,
+	return new ir::PredicateOperand(predicateRegister,
 		translatePredicateCondition(ptx.condition), _instruction);
 }
 

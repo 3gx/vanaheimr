@@ -92,6 +92,9 @@ public:
 	size_t register_size()  const;
 	bool   register_empty() const;
 
+public:
+	void clear();
+
 private:
 	BasicBlockList      _blocks;
 	ArgumentList        _arguments;
