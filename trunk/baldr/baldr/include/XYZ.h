@@ -13,6 +13,7 @@ class XYZ
         float dotProduct(XYZ v2);
         XYZ crossProduct(XYZ v2);
         XYZ scalarProduct(float k);
+        XYZ scalarDivide(float k);
         XYZ add(XYZ v2);
         XYZ subtract();
         float distance(XYZ v2);
