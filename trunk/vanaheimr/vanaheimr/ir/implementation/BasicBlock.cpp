@@ -161,6 +161,11 @@ void BasicBlock::clear()
 	}
 }
 
+void BasicBlock::setFunction(Function* f)
+{
+	_function = f;
+}
+
 }
 
 }

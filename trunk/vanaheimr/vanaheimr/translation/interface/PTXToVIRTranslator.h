@@ -78,8 +78,8 @@ private:
 		ir::Function::iterator> BasicBlockMap;
 
 private:
-	ir::Operand*         _newTranslatedOperand(const PTXOperand& ptx);
-	ir::PredicateOperand _translatePredicateOperand(const PTXOperand& ptx);
+	ir::Operand*          _newTranslatedOperand(const PTXOperand& ptx);
+	ir::PredicateOperand* _translatePredicateOperand(const PTXOperand& ptx);
 
 private:
 	ir::VirtualRegister*  _getRegister(PTXRegisterId id);

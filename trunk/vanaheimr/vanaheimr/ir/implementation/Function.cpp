@@ -25,14 +25,37 @@ Function::Function(const std::string& n, Module* m, Linkage l, Visibility v,
 }
 
 Function::Function(const Function& f)
-: Variable(f)
+: Variable(f), _nextBlockId(0), _nextRegisterId(0)
 {
-	assertM(false, "Not implemented.");
+	operator=(f);
 }
 
 Function& Function::operator=(const Function& f)
 {
-	assertM(false, "Not implemented.");
+	if(&f == this) return *this;
+	
+	clear();
+	
+	for(const_iterator block = f.begin(); block != f.end(); ++block)
+	{
+		if(block == f.exit_block())  continue;
+		if(block == f.entry_block()) continue;
+	
+		auto newBlock = _blocks.insert(exit_block(), *block);
+		newBlock->setFunction(this);
+	}
+	
+	_arguments = f._arguments;
+	
+	for(auto argument : _arguments)
+	{
+		argument.setFunction(this);
+	}
+	
+	// TODO implement registers
+	assert(f.register_empty());
+	
+	return *this;
 }
 
 Function::iterator Function::begin()
@@ -176,6 +199,19 @@ size_t Function::register_size() const
 bool Function::register_empty() const
 {
 	return _registers.empty();
+}
+
+void Function::clear()
+{
+	_blocks.clear();
+	_arguments.clear();
+	_registers.clear();
+	
+	_nextBlockId    = 0;
+	_nextRegisterId = 0;
+
+	_entry = newBasicBlock(end(), "__Entry");
+	_exit  = newBasicBlock(end(), "__Exit");
 }
 
 }

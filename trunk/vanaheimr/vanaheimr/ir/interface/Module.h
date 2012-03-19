@@ -129,6 +129,9 @@ public:
 	bool   constant_empty() const;
 	
 public:
+	void clear();
+	
+public:
 	std::string name;
 	
 private:

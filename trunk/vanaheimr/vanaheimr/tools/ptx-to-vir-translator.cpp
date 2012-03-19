@@ -84,8 +84,8 @@ int main(int argc, char** argv)
 
 	parser.description("This program compiles a PTX file into a VIR binary.");
 
-	parser.parse("--input", "-i",  ptxFileName, "", "The input PTX file path.");
-	parser.parse("--output", "-o", virFileName,
+	parser.parse("-i", "--input",  ptxFileName, "", "The input PTX file path.");
+	parser.parse("-o", "--output", virFileName,
 		"", "The output VIR file path.");
 
 	parser.parse();

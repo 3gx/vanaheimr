@@ -59,7 +59,7 @@ private:
 	Module*     _module;
 	Linkage     _linkage;
 	Visibility  _visibility;
-	Type*       _type;
+	const Type* _type;
 };
 
 }

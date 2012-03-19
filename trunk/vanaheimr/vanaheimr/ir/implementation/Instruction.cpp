@@ -20,7 +20,7 @@ Instruction::Instruction(Opcode o, BasicBlock* b)
 
 }
 
-Instruction::~Instruction
+Instruction::~Instruction()
 {
 	clear();
 }
@@ -28,7 +28,7 @@ Instruction::~Instruction
 Instruction::Instruction(const Instruction& i)
 : opcode(i.opcode), block(i.block)
 {
-	for(auto operand : i.read)
+	for(auto operand : i.reads)
 	{
 		if(operand != 0)
 		{
@@ -40,9 +40,9 @@ Instruction::Instruction(const Instruction& i)
 		}
 	}
 	
-	guard = reads[0];
+	guard = static_cast<PredicateOperand*>(reads[0]);
 	
-	for(auto operand : i.write)
+	for(auto operand : i.writes)
 	{
 		if(operand != 0)
 		{
@@ -64,7 +64,7 @@ Instruction& Instruction::operator=(const Instruction& i)
 	opcode = i.opcode;
 	block  = i.block;
 	
-	for(auto operand : i.read)
+	for(auto operand : i.reads)
 	{
 		if(operand != 0)
 		{
@@ -76,9 +76,9 @@ Instruction& Instruction::operator=(const Instruction& i)
 		}
 	}
 	
-	guard = reads[0];
+	guard = static_cast<PredicateOperand*>(reads[0]);
 	
-	for(auto operand : i.write)
+	for(auto operand : i.writes)
 	{
 		if(operand != 0)
 		{
@@ -95,17 +95,17 @@ Instruction& Instruction::operator=(const Instruction& i)
 
 bool Instruction::isLoad() const
 {
-	return opcode == Ld || opcode == Atom;
+	return opcode == Ld  || opcode == Atom;
 }
 
 bool Instruction::isStore() const
 {
-	return opcode == St || opcode == Atom;
+	return opcode == St  || opcode == Atom;
 }
 
 bool Instruction::isBranch() const
 {
-	return opcode == Bra || opcode == Call ;
+	return opcode == Bra || opcode == Call;
 }
 
 bool Instruction::isCall() const
@@ -122,7 +122,7 @@ void Instruction::clear()
 	writes.clear();
 }
 
-static std::string Instruction::toString(Opcode o)
+std::string Instruction::toString(Opcode o)
 {
 	switch(o)
 	{
@@ -176,7 +176,7 @@ UnaryInstruction::UnaryInstruction(Opcode o, BasicBlock* b)
 }
 
 UnaryInstruction::UnaryInstruction(const UnaryInstruction& i)
-: Instruction(*i), d(writes.back()), a(reads.back())
+: Instruction(i), d(writes[0]), a(reads[1])
 {
 	
 }
@@ -193,8 +193,8 @@ UnaryInstruction& UnaryInstruction::operator=(const UnaryInstruction& i)
 	return *this;
 }
 
-BinaryInstruction::BinaryInstruction()
-: Instruction(o, b), d(0), a(0), b(0)
+BinaryInstruction::BinaryInstruction(Opcode o, BasicBlock* bb)
+: Instruction(o, bb), d(0), a(0), b(0)
 {
 	writes.push_back(d);
 	 reads.push_back(a);
@@ -202,7 +202,7 @@ BinaryInstruction::BinaryInstruction()
 }
 
 BinaryInstruction::BinaryInstruction(const BinaryInstruction& i)
-: Instruction(*i), d(writes.back()), a(reads[1]), b(reads[2])
+: Instruction(i), d(writes.back()), a(reads[1]), b(reads[2])
 {
 	
 }
@@ -227,102 +227,97 @@ ComparisonInstruction::ComparisonInstruction(Opcode o,
 
 }
 
-Instruction* ComparisonInstruction::clone() const
-{
-	return ComparisonInstruction(*this);
-}
-
 Add::Add(BasicBlock* b)
-: BinaryInstruction(Add, b)
+: BinaryInstruction(Instruction::Add, b)
 {
 
 }
 
 Instruction* Add::clone() const
 {
-	return Add(*this);
+	return new Add(*this);
 }
 
 /*! \brief An and instruction */
 And::And(BasicBlock* b)
-: BinaryInstruction(And, b)
+: BinaryInstruction(Instruction::And, b)
 {
 
 }
 
 Instruction* And::clone() const
 {
-	return And(*this);
+	return new And(*this);
 }
 
 /*! \brief Perform arithmetic shift right */
 Ashr::Ashr(BasicBlock* b)
-: Ashr(Ashr, b)
+: BinaryInstruction(Instruction::Ashr, b)
 {
 
 }
 
 Instruction* Ashr::clone() const
 {
-	return Ashr(*this);
+	return new Ashr(*this);
 }
 
 /*! \brief An atomic operation instruction */
 Atom::Atom(Operation o, BasicBlock* b)
-: BinaryInstruction(o, b), c(0)
+: BinaryInstruction(Instruction::Atom, b), operation(o), c(0)
 {
 	reads.push_back(c);
 }
 
 Atom::Atom(const Atom& i)
-: BinaryInstruction(i), c(0)
+: BinaryInstruction(i)
 {
-	reads.push_back(c);
+	c = reads[3];
 }
 
 Atom& Atom::operator=(const Atom& i)
 {
 	if(&i == this) return *this;
 	
-	BinaryInstruction::operator=(i)
+	BinaryInstruction::operator=(i);
 	
-	c = reads.back();
+	c = reads[3];
 	
 	return *this;
 }
 
 Instruction* Atom::clone() const
 {
-	return Atom(*this);
+	return new Atom(*this);
 }
 
 /*! \brief Perform a thread group barrier */
 Bar::Bar(BasicBlock* b)
-: Instruction(Bar, b)
+: Instruction(Instruction::Bar, b)
 {
 
 }
 
 Instruction* Bar::clone() const
 {
-	return Bar(*this);
+	return new Bar(*this);
 }
 
 /*! \brief Perform a raw bitcast */
 Bitcast::Bitcast(BasicBlock* b)
-: UnaryInstruction(Bitcast, b)
+: UnaryInstruction(Instruction::Bitcast, b)
 {
 
 }
 
 Instruction* Bitcast::clone() const
 {
-	return Bitcast(*this);
+	return new Bitcast(*this);
 }
 
 /*! \brief Perform a branch */
 Bra::Bra(BranchModifier m, BasicBlock* b)
-: Instruction(Bra, b), target(0), modifier(m)
+: Instruction(Instruction::Bra, b), target(0), modifier(m)
 {
 
 }
@@ -347,7 +342,7 @@ Bra& Bra::operator=(const Bra& i)
 
 Instruction* Bra::clone() const
 {
-	return Bra(*this);
+	return new Bra(*this);
 }
 
 /*! \brief Branch and save the return pc */
@@ -376,252 +371,252 @@ Call& Call::operator=(const Call& i)
 
 Instruction* Call::clone() const
 {
-	return Call(*this);
+	return new Call(*this);
 }
 
 /*! \brief Floating point division */
 Fdiv::Fdiv(BasicBlock* b)
-: BinaryInstruction(Fdiv, b)
+: BinaryInstruction(Instruction::Fdiv, b)
 {
 
 }
 
 Instruction* Fdiv::clone() const
 {
-	return Fdiv(*this);
+	return new Fdiv(*this);
 }
 
 /*! \brief Floating point multiplication */
 Fmul::Fmul(BasicBlock* b)
-: BinaryInstruction(Fmul, b)
+: BinaryInstruction(Instruction::Fmul, b)
 {
 
 }
 
 Instruction* Fmul::clone() const
 {
-	return Fmul(*this);
+	return new Fmul(*this);
 }
 
 /*! \brief A floating point precision extension instruction */
 Fpext::Fpext(BasicBlock* b)
-: UnaryInstruction(Fpext, b)
+: UnaryInstruction(Instruction::Fpext, b)
 {
 
 }
 
 Instruction* Fpext::clone() const
 {
-	return Fpext(*this);
+	return new Fpext(*this);
 }
 
 /*! \brief A floating point to signed integer instruction */
 Fptosi::Fptosi(BasicBlock* b)
-: UnaryInstruction(Fptosi, b)
+: UnaryInstruction(Instruction::Fptosi, b)
 {
 
 }
 
 Instruction* Fptosi::clone() const
 {
-	return Fptosi(*this);
+	return new Fptosi(*this);
 }
 
 /*! \brief A floating point to unsigned integer instruction */
 Fptoui::Fptoui(BasicBlock* b)
-: UnaryInstruction(Fptoui, b)
+: UnaryInstruction(Instruction::Fptoui, b)
 {
 
 }
 
 Instruction* Fptoui::clone() const
 {
-	return Fptoui(*this);
+	return new Fptoui(*this);
 }
 
 /*! \brief A floating point precision truncate instruction */
 Fptrunc::Fptrunc(BasicBlock* b)
-: UnaryInstruction(Fptrunc, b)
+: UnaryInstruction(Instruction::Fptrunc, b)
 {
 
 }
 
 Instruction* Fptrunc::clone() const
 {
-	return Fptrunc(*this);
+	return new Fptrunc(*this);
 }
 
 /*! \brief Floating point remainder */
-Fprem::Fprem(BasicBlock* b)
-: BinaryInstruction(Fprem, b)
+Frem::Frem(BasicBlock* b)
+: BinaryInstruction(Instruction::Frem, b)
 {
 
 }
 
-Instruction* Fprem::clone() const
+Instruction* Frem::clone() const
 {
-	return Fprem(*this);
+	return new Frem(*this);
 }
 
 /*! \brief Launch a new HTA at the specified entry point */
 Launch::Launch(BasicBlock* b)
-: Instruction(Launch, b)
+: Instruction(Instruction::Launch, b)
 {
 
 }
 
 Instruction* Launch::clone() const
 {
-	return Launch(*this);
+	return new Launch(*this);
 }
 
 /*! \brief Load a value from memory */
 Ld::Ld(BasicBlock* b)
-: UnaryInstruction(Ld, b)
+: UnaryInstruction(Instruction::Ld, b)
 {
 
 }
 
 Instruction* Ld::clone() const
 {
-	return Ld(*this);
+	return new Ld(*this);
 }
 
 /*! \brief Logical shift right */
 Lshr::Lshr(BasicBlock* b)
-: UnaryInstruction(Lshr, b)
+: BinaryInstruction(Instruction::Lshr, b)
 {
 
 }
 
 Instruction* Lshr::clone() const
 {
-	return Lshr(*this);
+	return new Lshr(*this);
 }
 
 /*! \brief Wait until memory operations at the specified level have completed */
 Membar::Membar(Level l, BasicBlock* b)
-: Instruction(Membar, b), level(l)
+: Instruction(Instruction::Membar, b), level(l)
 {
 
 }
 
 Instruction* Membar::clone() const
 {
-	return Membar(*this);
+	return new Membar(*this);
 }
 
 /*! \brief Multiply two operands together */
 Mul::Mul(BasicBlock* b)
-: BinaryInstruction(Mul, b)
+: BinaryInstruction(Instruction::Mul, b)
 {
 
 }
 
 Instruction* Mul::clone() const
 {
-	return Mul(*this);
+	return new Mul(*this);
 }
 
 /*! \brief Perform a logical OR operation */
 Or::Or(BasicBlock* b)
-: BinaryInstruction(Or, b)
+: BinaryInstruction(Instruction::Or, b)
 {
 
 }
 
 Instruction* Or::clone() const
 {
-	return Or(*this);
+	return new Or(*this);
 }
 
 /*! \brief Return from the current function call, or exit */
 Ret::Ret(BasicBlock* b)
-: UnaryInstruction(Ret, b)
+: UnaryInstruction(Instruction::Ret, b)
 {
 
 }
 
 Instruction* Ret::clone() const
 {
-	return Ret(*this);
+	return new Ret(*this);
 }
 
 /*! \brief Compare two operands and set a third predicate */
 Setp::Setp(Comparison c, BasicBlock* b)
-: ComparisonInstruction(Setp, c, b)
+: ComparisonInstruction(Instruction::Setp, c, b)
 {
 
 }
 
 Instruction* Setp::clone() const
 {
-	return Setp(*this);
+	return new Setp(*this);
 }
 
 /*! \brief Sign extend an integer */
 Sext::Sext(BasicBlock* b)
-: UnaryInstruction(Sext, b)
+: UnaryInstruction(Instruction::Sext, b)
 {
 
 }
 
 Instruction* Sext::clone() const
 {
-	return Sext(*this);
+	return new Sext(*this);
 }
 
 /*! \brief Perform signed division */
 Sdiv::Sdiv(BasicBlock* b)
-: BinaryInstruction(Sdiv, b)
+: BinaryInstruction(Instruction::Sdiv, b)
 {
 
 }
 
 Instruction* Sdiv::clone() const
 {
-	return Sdiv(*this);
+	return new Sdiv(*this);
 }
 
 /*! \brief Perform shift left */
 Shl::Shl(BasicBlock* b)
-: BinaryInstriction(Shl, b)
+: BinaryInstruction(Instruction::Shl, b)
 {
 	
 }
 
 Instruction* Shl::clone() const
 {
-	return Shl(*this);
+	return new Shl(*this);
 }
 
 /*! \brief Convert a signed int to a floating point */
 Sitofp::Sitofp(BasicBlock* b)
-: UnaryInstruction(Sitofp, b)
+: UnaryInstruction(Instruction::Sitofp, b)
 {
 
 }
 
 Instruction* Sitofp::clone() const
 {
-	return Sitofp(*this);
+	return new Sitofp(*this);
 }
 
 /*! \brief Perform a signed remainder operation */
 Srem::Srem(BasicBlock* b)
-: BinaryInstruction(Srem, b)
+: BinaryInstruction(Instruction::Srem, b)
 {
 
 }
 
 Instruction* Srem::clone() const
 {
-	return Srem(*this);
+	return new Srem(*this);
 }
 
 /*! \brief Perform a store operation */
 St::St(BasicBlock* b)
-: Instruction(St, b)
+: Instruction(Instruction::St, b)
 {
 	reads.push_back(0);
 	reads.push_back(0);
@@ -652,83 +647,91 @@ St& St::operator=(const St& s)
 
 Instruction* St::clone() const
 {
-	return St(*this);
+	return new St(*this);
 }
 
 /*! \brief Perform a subtract operation */
 Sub::Sub(BasicBlock* b)
-: BinaryInstruction(Sub, b)
+: BinaryInstruction(Instruction::Sub, b)
 {
 
 }
 
 Instruction* Sub::clone() const
 {
-	return Sub(*this);
+	return new Sub(*this);
 }
 
 /*! \brief Truncate an integer */
 Trunc::Trunc(BasicBlock* b)
-: BinaryInstruction(Trunc, b)
+: UnaryInstruction(Instruction::Trunc, b)
 {
 
 }
 
 Instruction* Trunc::clone() const
 {
-	return Trunc(*this);
+	return new Trunc(*this);
 }
 
 /*! \brief Perform an unsigned division operation */
 Udiv::Udiv(BasicBlock* b)
-: BinaryInstruction(Udiv, b)
+: BinaryInstruction(Instruction::Udiv, b)
 {
 
 }
 
 Instruction* Udiv::clone() const
 {
-	return Udiv(*this);
+	return new Udiv(*this);
 }
 
 /*! \brief Convert an unsigned int to a floating point */
 Uitofp::Uitofp(BasicBlock* b)
-: UnaryInstruction(Uitofp, b)
+: UnaryInstruction(Instruction::Uitofp, b)
 {
 
 }
 
 Instruction* Uitofp::clone() const
 {
-	return Uitofp(*this);
+	return new Uitofp(*this);
 }
 
 /*! \brief Perform an unsigned remainder operation */
-Urem::Urem(BasicBlock* b);
-Instruction* Urem::clone() const;
-
-/*! \brief Perform a logical OR operation */
-Or::Or(BasicBlock* b)
-: BinaryInstruction(Or, b)
+Urem::Urem(BasicBlock* b)
+: BinaryInstruction(Instruction::Urem, b)
 {
 
 }
 
-Instruction* Or::clone() const
+Instruction* Urem::clone() const
 {
-	return Or(*this);
+	return new Urem(*this);
+}
+
+/*! \brief Perform a logical XOR operation */
+Xor::Xor(BasicBlock* b)
+: BinaryInstruction(Instruction::Xor, b)
+{
+
+}
+
+Instruction* Xor::clone() const
+{
+	return new Xor(*this);
 }
 
 /*! \brief Zero extend an integer */
 Zext::Zext(BasicBlock* b)
-: UnaryInstruction(Zext, b)
+: UnaryInstruction(Instruction::Zext, b)
 {
 
 }
 
 Instruction* Zext::clone() const
 {
-	return Zext(*this);
+	return new Zext(*this);
 }
 
 }
