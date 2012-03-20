@@ -8,13 +8,17 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Module.h>
-// Forward Declarations
+
+#include <vanaheimr/asm/interface/SymbolTableEntry.h>
+
+// Archaeopteryx Includes
+#include <archaeopteryx/ir/interface/Instruction.h>
 
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
 /*! \brief A namespace for the internal representation */
-namespace ir
+namespace as
 {
 
 /*! \brief Represents a single compilation unit. */
@@ -28,7 +32,7 @@ public:
     static const unsigned int PageSize = (1 << 15); // 32 KB
 
 public:
-    BinaryWriter(const Module& inputModule);
+    BinaryWriter(const ir::Module& inputModule);
     void writeBinary(std::ostream& binary);
 
 private:

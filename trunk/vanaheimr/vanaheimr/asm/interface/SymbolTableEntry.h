@@ -4,15 +4,13 @@
 	\brief  The header file for the specification of the symbol table of the binary
 */
 
-// Vanaheimr Includes
-// Forward Declarations
-
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
 /*! \brief A namespace for the internal representation */
-namespace ir
+namespace as
 {
+
 class SymbolTableEntry
 {
 public:
@@ -20,6 +18,8 @@ public:
     uint32_t attributes   : 32;
     uint64_t stringOffset : 64;
     uint64_t offset       : 64;
+};
+
 }
 
 }
