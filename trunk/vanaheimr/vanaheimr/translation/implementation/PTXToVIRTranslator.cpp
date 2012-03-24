@@ -7,14 +7,26 @@
 // Vanaheimr Includes
 #include <vanaheimr/translation/interface/PTXToVIRTranslator.h>
 
+#include <vanaheimr/ir/interface/Type.h>
+
 #include <vanaheimr/compiler/interface/Compiler.h>
 
 // Ocelot Includes
 #include <ocelot/ir/interface/Module.h>
 #include <ocelot/ir/interface/PTXKernel.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <stdexcept>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -30,6 +42,8 @@ PTXToVIRTranslator::PTXToVIRTranslator(compiler::Compiler* compiler)
 
 void PTXToVIRTranslator::translate(const PTXModule& m)
 {
+	report("Translating PTX module '"  << m.path() << "'");
+
 	_ptx    = &m;
 	_module = &*_compiler->newModule(m.path());
 	
@@ -50,6 +64,8 @@ void PTXToVIRTranslator::translate(const PTXModule& m)
 
 void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 {
+	report(" Translating PTX global " << global.statement.toString());
+	
 	ir::Module::global_iterator virGlobal = _module->newGlobal(
 		global.statement.name, _getType(global.statement.type),
 		_translateLinkage(global.statement.attribute));
@@ -62,6 +78,8 @@ void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 
 void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 {
+	report(" Translating PTX kernel '" << kernel.getPrototype().toString());
+
 	ir::Module::iterator function = _module->newFunction(kernel.name,
 		_translateLinkingDirective(kernel.getPrototype().linkingDirective));
 	
@@ -83,6 +101,8 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	for(::ir::ControlFlowGraph::ConstBlockPointerVector::iterator
 		block = sequence.begin(); block != sequence.end(); ++block)
 	{
+		if(*block == kernel.cfg()->get_entry_block()) continue;
+		if(*block == kernel.cfg()->get_exit_block())  continue;
 		_translateBasicBlock(**block);
 	}
 	
@@ -90,6 +110,9 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	for(::ir::ControlFlowGraph::ConstBlockPointerVector::iterator
 		block = sequence.begin(); block != sequence.end(); ++block)
 	{
+		if(*block == kernel.cfg()->get_entry_block()) continue;
+		if(*block == kernel.cfg()->get_exit_block())  continue;
+
 		_translateBasicBlock(**block);
 	}
 }
@@ -97,6 +120,10 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
 	PTXDataType type)
 {
+	report("  Translating PTX register "
+		<< PTXOperand::toString((PTXOperand::DataType) type)
+		<< " r" << reg);
+
 	std::stringstream name;
 	
 	name << "r"  << reg;
@@ -110,14 +137,18 @@ void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
 	ir::Function::register_iterator newRegister = _function->newVirtualRegister(
 		_getType(type), name.str());
 
+	report("   to " << newRegister->type->name() << " r" << newRegister->id);
+
 	_registers.insert(std::make_pair(reg, newRegister));
 }
 
 void PTXToVIRTranslator::_translateBasicBlock(const PTXBasicBlock& basicBlock)
 {
+	report("  Translating PTX basic block " << basicBlock.label);
+
 	ir::Function::iterator block = _function->newBasicBlock(
 		_function->exit_block(), basicBlock.label);
-		
+
 	_block = &*block;
 	
 	for(PTXBasicBlock::const_instruction_iterator
@@ -133,6 +164,10 @@ void PTXToVIRTranslator::_translateBasicBlock(const PTXBasicBlock& basicBlock)
 
 void PTXToVIRTranslator::_translateInstruction(const PTXInstruction& ptx)
 {
+	report("   Translating PTX instruction " << ptx.toString());
+
+	_ptxInstruction = &ptx;
+
 	// Translate complex instructions
 	if(_translateComplexInstruction(ptx)) return;
 	
@@ -467,7 +502,17 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	}
 	case PTXOperand::Address:
 	{
-		return new ir::AddressOperand(_getGlobal(ptx.identifier), _instruction);
+		if(_ptxInstruction->addressSpace == PTXInstruction::Param &&
+			ptx.isArgument)
+		{
+			return new ir::ArgumentOperand(_getArgument(ptx.identifier),
+				_instruction);
+		}
+		else
+		{
+			return new ir::AddressOperand(
+				_getGlobal(ptx.identifier), _instruction);
+		}
 	}
 	case PTXOperand::Label:
 	{
@@ -570,6 +615,20 @@ ir::Variable* PTXToVIRTranslator::_getBasicBlock(const std::string& name)
 	}
 
 	return &*block->second;
+}
+
+ir::Argument* PTXToVIRTranslator::_getArgument(const std::string& name)
+{
+	for(ir::Function::argument_iterator argument = _function->argument_begin();
+		argument != _function->argument_end(); ++argument)
+	{
+		if(argument->name() == name) return &*argument;
+	}
+	
+	throw std::runtime_error("Argument " + name
+		+ " was not declared in this function.");
+		
+	return nullptr;
 }
 
 ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id)

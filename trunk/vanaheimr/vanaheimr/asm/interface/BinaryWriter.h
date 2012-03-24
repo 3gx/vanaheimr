@@ -25,6 +25,7 @@ namespace as
 class BinaryWriter
 {
 public:
+	typedef ::ir::Instruction
     typedef std::vector<SymbolTableEntry> SymbolTableEntryVector;
     typedef SymbolTableEntryVector::iterator symbol_iterator;
 

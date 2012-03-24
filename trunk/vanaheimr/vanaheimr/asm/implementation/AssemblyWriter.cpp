@@ -326,6 +326,19 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 		
 		break;
 	}
+	case ir::Operand::Argument:
+	{
+		const ir::ArgumentOperand& operand =
+			static_cast<const ir::ArgumentOperand&>(o);
+		
+		writeType(stream, operand.argument->type());
+		
+		stream << " ";
+		
+		stream << operand.argument->name();
+		
+		break;
+	}
 	}
 }
 
