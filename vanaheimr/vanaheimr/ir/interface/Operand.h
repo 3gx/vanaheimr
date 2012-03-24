@@ -10,6 +10,7 @@
 #include <cstdint>
 
 // Forward Declarations
+namespace vanaheimr { namespace ir { class Argument;        } }
 namespace vanaheimr { namespace ir { class VirtualRegister; } }
 namespace vanaheimr { namespace ir { class Variable;        } }
 namespace vanaheimr { namespace ir { class Instruction;     } }
@@ -32,7 +33,8 @@ public:
 		Immediate,
 		Predicate,
 		Indirect,
-		Address
+		Address,
+		Argument
 	};
 	
 	/*! \brief A type to hold a register idenfitier */
@@ -152,6 +154,19 @@ public:
 
 public:
 	Variable* globalValue;
+};
+
+class ArgumentOperand : public Operand
+{
+public:
+	ArgumentOperand(ir::Argument* a, Instruction* i);
+
+public:
+	Operand* clone() const;
+	
+public:
+	ir::Argument* argument;
+
 };
 
 }

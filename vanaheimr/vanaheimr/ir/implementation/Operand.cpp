@@ -104,6 +104,17 @@ Operand* AddressOperand::clone() const
 	return new AddressOperand(*this);
 }
 
+ArgumentOperand::ArgumentOperand(ir::Argument* a, Instruction* i)
+: Operand(Argument, i), argument(a)
+{
+	
+}
+
+Operand* ArgumentOperand::clone() const
+{
+	return new ArgumentOperand(*this);
+}
+
 }
 
 }

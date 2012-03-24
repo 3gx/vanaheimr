@@ -85,6 +85,7 @@ private:
 	ir::VirtualRegister*  _getRegister(PTXRegisterId id);
 	ir::Variable*         _getGlobal(const std::string& name);
 	ir::Variable*         _getBasicBlock(const std::string& name);
+	ir::Argument*         _getArgument(const std::string& name);
 	ir::Operand*          _getSpecialValueOperand(unsigned int id);
 	ir::VirtualRegister*  _newTemporaryRegister();
 	const ir::Type*       _getType(PTXDataType type);
@@ -101,6 +102,7 @@ private:
 	ir::Instruction*    _instruction;
 	
 	const PTXModule*      _ptx;
+	const PTXInstruction* _ptxInstruction;
 	
 	RegisterMap   _registers;
 	BasicBlockMap _blocks;
