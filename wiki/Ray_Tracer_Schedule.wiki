@@ -1,13 +1,22 @@
 #summary Milestones for the ray tracer example application
 
-= Introduction =
+= Stage 1 =
 
-Add your content here.
+Reference implementation in C++.
 
+== Milestone 1 ==
 
-= Details =
+ Draws a single sphere as a PNG image.
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+=== Tasks ===
+ * SCons build scripts.
+ * Library interface for writing an image to a file.
+ * Debugging intersection test,, camera, renderer.
+
+== Milestone 2 ==
+ 
+ Draw cornell box with three spheres.
+
+= Stage 2 =
+
+Partial implementation in CUDA.
