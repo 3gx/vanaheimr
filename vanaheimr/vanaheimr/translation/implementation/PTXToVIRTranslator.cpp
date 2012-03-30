@@ -344,6 +344,8 @@ bool PTXToVIRTranslator::_translateSimpleUnaryInstruction(
 	vir->guard = _translatePredicateOperand(ptx.pg);
 	vir->d     = _newTranslatedOperand(ptx.d);
 	vir->a     = _newTranslatedOperand(ptx.a);
+
+	report("   to " << vir->toString());
 	
 	_block->push_back(vir);
 	
@@ -521,7 +523,7 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	}
 	case PTXOperand::Special:
 	{
-		return _getSpecialValueOperand(ptx.special);
+		return _getSpecialValueOperand(ptx.special, ptx.vIndex);
 	}
 	case PTXOperand::BitBucket:
 	{
@@ -572,6 +574,51 @@ ir::PredicateOperand* PTXToVIRTranslator::_translatePredicateOperand(
 	
 	return new ir::PredicateOperand(predicateRegister,
 		translatePredicateCondition(ptx.condition), _instruction);
+}
+
+ir::VirtualRegister* PTXToVIRTranslator::_getSpecialVirtualRegister(
+	unsigned int id, unsigned int vectorIndex)
+{
+	unsigned int hash = (id << 4) | vectorIndex;
+
+	RegisterMap::iterator reg = _specialRegisters.find(hash);
+
+	if(reg == _specialRegisters.end())
+	{
+		std::stringstream stream;
+	
+		bool isScalar = true;
+		switch (id) 
+		{
+		case PTXOperand::tid: // fall through
+		case PTXOperand::ntid: // fall through
+		case PTXOperand::ctaId: // fall through
+		case PTXOperand::nctaId:  // fall through
+		case PTXOperand::smId:  // fall through
+		case PTXOperand::nsmId:  // fall through
+		case PTXOperand::gridId:  // fall through
+			isScalar = false;
+			break;
+		default:
+			isScalar = true;
+		}
+		
+		if(vectorIndex != PTXOperand::v1 || isScalar) 
+		{
+			stream << PTXOperand::toString((PTXOperand::SpecialRegister)id);
+		}
+		else
+		{
+			stream << PTXOperand::toString((PTXOperand::SpecialRegister)id) +
+				"." + PTXOperand::toString((PTXOperand::VectorIndex)vectorIndex);
+		}
+
+		ir::Function::register_iterator newRegister =
+			_function->newVirtualRegister(_getType("i32"), stream.str());
+		reg = _specialRegisters.insert(std::make_pair(hash, newRegister)).first;
+	}
+
+	return &*reg->second;
 }
 
 ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
@@ -631,9 +678,9 @@ ir::Argument* PTXToVIRTranslator::_getArgument(const std::string& name)
 	return nullptr;
 }
 
-ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id)
+ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id, unsigned int vIndex)
 {
-	assertM(false, "Special values not implemented yet.");
+	return new ir::RegisterOperand(_getSpecialVirtualRegister(id, vIndex), _instruction);
 }
 
 ir::VirtualRegister* PTXToVIRTranslator::_newTemporaryRegister()

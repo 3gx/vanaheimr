@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <cstdint>
+#include <string>
 
 // Forward Declarations
 namespace vanaheimr { namespace ir { class Argument;        } }
@@ -56,6 +57,7 @@ public:
 
 public:
 	virtual Operand* clone() const = 0;
+	virtual std::string toString() const = 0;
 
 private:
 	OperandMode  _mode;
@@ -72,6 +74,8 @@ public:
 
 public:
 	virtual Operand* clone() const;
+	virtual std::string toString() const;
+
 
 public:
 	/*! \brief The register being accessed */
@@ -91,6 +95,7 @@ public:
 
 public:
 	Operand* clone() const;
+	std::string toString() const;
 
 public:
 	/*! \brief The immediate value */
@@ -123,6 +128,7 @@ public:
 
 public:
 	Operand* clone() const;
+	std::string toString() const;
 
 public:
 	/*! \brief The predicate modifier */
@@ -137,6 +143,7 @@ public:
 
 public:
 	Operand* clone() const;
+	std::string toString() const;
 
 public:
 	/*! \brief The offset to add to the register */
@@ -151,6 +158,7 @@ public:
 
 public:
 	Operand* clone() const;
+	std::string toString() const;
 
 public:
 	Variable* globalValue;
@@ -163,6 +171,7 @@ public:
 
 public:
 	Operand* clone() const;
+	std::string toString() const;
 	
 public:
 	ir::Argument* argument;
