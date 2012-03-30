@@ -6,6 +6,10 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/VirtualRegister.h>
+#include <vanaheimr/ir/interface/Type.h>
+
+// Standard Library Includes
+#include <sstream>
 
 namespace vanaheimr
 {
@@ -18,6 +22,15 @@ VirtualRegister::VirtualRegister(const std::string& n, Id i,
 : name(n), id(i), function(f), type(t)
 {
 
+}
+
+std::string VirtualRegister::toString() const
+{
+	std::stringstream stream;
+
+	stream << type->name() << " %r" << id;
+
+	return stream.str();
 }
 
 }

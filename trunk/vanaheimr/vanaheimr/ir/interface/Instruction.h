@@ -83,6 +83,8 @@ public:
 	bool isStore()  const;
 	bool isBranch() const;
 	bool isCall()   const;
+public:
+	std::string toString() const;
 	
 public:
 	void clear();

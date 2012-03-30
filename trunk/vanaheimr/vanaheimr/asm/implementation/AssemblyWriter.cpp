@@ -171,31 +171,7 @@ void AssemblyWriter::writeBasicBlock(std::ostream& stream,
 	for(auto instruction : block)
 	{
 		stream << "\t\t";
-		writeOpcode(stream, instruction->opcode);
-		
-		for(ir::Instruction::OperandVector::const_iterator
-			write = instruction->writes.begin();
-			write != instruction->writes.end(); ++write)
-		{
-			if(write != instruction->writes.begin()) stream << ", ";
-			
-			writeOperand(stream, **write);
-		}
-		
-		if(!instruction->writes.empty() && !instruction->reads.empty())
-		{
-			stream << ", ";
-		}
-		
-		for(ir::Instruction::OperandVector::const_iterator
-			read = instruction->reads.begin();
-			read != instruction->reads.end(); ++read)
-		{
-			if(read != instruction->reads.begin()) stream << ", ";
-			
-			writeOperand(stream, **read);
-		}
-		
+		stream << instruction->toString();
 		stream << "\n";
 	}
 }
@@ -304,7 +280,6 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 	{
 		const ir::IndirectOperand& operand =
 			static_cast<const ir::IndirectOperand&>(o);
-		
 		
 		stream << "[ ";
 		writeVirtualRegister(stream, *operand.virtualRegister);

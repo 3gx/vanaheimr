@@ -7,6 +7,9 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Instruction.h>
 
+// Stdandard Library Includes
+#include <sstream>
+
 namespace vanaheimr
 {
 
@@ -111,6 +114,35 @@ bool Instruction::isBranch() const
 bool Instruction::isCall() const
 {
 	return opcode == Call;
+}
+
+std::string Instruction::toString() const
+{
+	std::stringstream stream;
+
+	stream << toString(opcode);
+	
+	for(auto write : writes)
+	{
+		if(write != *writes.begin()) stream << ", ";
+		
+		stream << write->toString();
+	}
+	
+	if(!writes.empty() && !reads.empty())
+	{
+		stream << ", ";
+	}
+	
+	for(auto read : reads)
+	{
+		if(read != *reads.begin()) stream << ", ";
+		
+		stream << read->toString();
+	}
+
+	return stream.str();
+
 }
 
 void Instruction::clear()

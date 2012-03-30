@@ -30,6 +30,9 @@ public:
 		Function* function, const Type* t);
 
 public:
+	std::string toString() const;
+
+public:
 	std::string name;
 	Id          id;
 	Function*   function;
