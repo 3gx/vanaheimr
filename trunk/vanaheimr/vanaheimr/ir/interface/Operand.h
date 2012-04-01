@@ -116,7 +116,7 @@ public:
 	/*! \brief The modifier on the predicate */
 	enum PredicateModifier
 	{
-        StraightPredicate,
+		StraightPredicate,
 		InversePredicate,
 		PredicateTrue,
 		PredicateFalse
@@ -125,6 +125,9 @@ public:
 public:
 	PredicateOperand(VirtualRegister* reg,
 		PredicateModifier mod, Instruction* i);
+
+public:
+	bool isAlwaysTrue() const;
 
 public:
 	Operand* clone() const;

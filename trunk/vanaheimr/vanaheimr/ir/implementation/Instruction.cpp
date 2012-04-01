@@ -96,6 +96,14 @@ Instruction& Instruction::operator=(const Instruction& i)
 	return *this;
 }
 
+void Instruction::setGuard(PredicateOperand* p)
+{
+	delete guard;
+	
+	reads[0] = p;
+	guard    = p;
+}
+
 bool Instruction::isLoad() const
 {
 	return opcode == Ld  || opcode == Atom;
@@ -119,8 +127,13 @@ bool Instruction::isCall() const
 std::string Instruction::toString() const
 {
 	std::stringstream stream;
-
-	stream << toString(opcode);
+	
+	if(!guard->isAlwaysTrue())
+	{
+		stream << guard->toString() << " ";
+	}
+	
+	stream << toString(opcode) << " ";
 	
 	for(auto write : writes)
 	{
@@ -129,14 +142,25 @@ std::string Instruction::toString() const
 		stream << write->toString();
 	}
 	
-	if(!writes.empty() && !reads.empty())
+	if(!writes.empty() && reads.size() > 1)
 	{
 		stream << ", ";
 	}
 	
+	bool first = true;
+
 	for(auto read : reads)
 	{
-		if(read != *reads.begin()) stream << ", ";
+		if(read == *reads.begin()) continue;
+		
+		if(!first)
+		{
+			 stream << ", ";
+		}
+		else
+		{
+			first = false;
+		}
 		
 		stream << read->toString();
 	}
@@ -225,6 +249,22 @@ UnaryInstruction& UnaryInstruction::operator=(const UnaryInstruction& i)
 	return *this;
 }
 
+void UnaryInstruction::setD(Operand* o)
+{
+	delete d;
+	
+	d         = o;
+	writes[0] = o;
+}
+
+void UnaryInstruction::setA(Operand* o)
+{
+	delete a;
+	
+	a        = o;
+	reads[1] = o;
+}
+
 BinaryInstruction::BinaryInstruction(Opcode o, BasicBlock* bb)
 : Instruction(o, bb), d(0), a(0), b(0)
 {
@@ -250,6 +290,30 @@ BinaryInstruction& BinaryInstruction::operator=(const BinaryInstruction& i)
 	b =  reads[2];
 	
 	return *this;
+}
+
+void BinaryInstruction::setD(Operand* o)
+{
+	delete d;
+	
+	d         = o;
+	writes[0] = o;
+}
+
+void BinaryInstruction::setA(Operand* o)
+{
+	delete a;
+	
+	a        = o;
+	reads[1] = o;
+}
+
+void BinaryInstruction::setB(Operand* o)
+{
+	delete b;
+	
+	b        = o;
+	reads[2] = o;
 }
 
 ComparisonInstruction::ComparisonInstruction(Opcode o,

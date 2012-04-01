@@ -99,6 +99,11 @@ PredicateOperand::PredicateOperand(VirtualRegister* reg,
 
 }
 
+bool PredicateOperand::isAlwaysTrue() const
+{
+	return modifier == PredicateTrue;
+}
+
 Operand* PredicateOperand::clone() const
 {
 	return new PredicateOperand(*this);

@@ -341,9 +341,9 @@ bool PTXToVIRTranslator::_translateSimpleUnaryInstruction(
 	ir::UnaryInstruction* vir = newUnaryInstruction(ptx);
 	_instruction = vir;
 	
-	vir->guard = _translatePredicateOperand(ptx.pg);
-	vir->d     = _newTranslatedOperand(ptx.d);
-	vir->a     = _newTranslatedOperand(ptx.a);
+	vir->setGuard(_translatePredicateOperand(ptx.pg));
+	vir->setD(_newTranslatedOperand(ptx.d));
+	vir->setA(_newTranslatedOperand(ptx.a));
 
 	report("   to " << vir->toString());
 	
@@ -475,11 +475,13 @@ bool PTXToVIRTranslator::_translateSimpleBinaryInstruction(
 	
 	ir::BinaryInstruction* vir = newBinaryInstruction(ptx);
 	
-	vir->guard = _translatePredicateOperand(ptx.pg);
-	vir->d     = _newTranslatedOperand(ptx.d);
-	vir->a     = _newTranslatedOperand(ptx.a);
-	vir->b     = _newTranslatedOperand(ptx.d);
+	vir->setGuard(_translatePredicateOperand(ptx.pg));
+	vir->setD(_newTranslatedOperand(ptx.d));
+	vir->setA(_newTranslatedOperand(ptx.a));
+	vir->setB(_newTranslatedOperand(ptx.b));
 	
+	report("   to " << vir->toString());
+
 	_block->push_back(vir);
 	
 	return true;
@@ -610,7 +612,7 @@ ir::VirtualRegister* PTXToVIRTranslator::_getSpecialVirtualRegister(
 		else
 		{
 			stream << PTXOperand::toString((PTXOperand::SpecialRegister)id) +
-				"." + PTXOperand::toString((PTXOperand::VectorIndex)vectorIndex);
+				"_" + PTXOperand::toString((PTXOperand::VectorIndex)vectorIndex);
 		}
 
 		ir::Function::register_iterator newRegister =
