@@ -18,9 +18,9 @@ namespace ir
 {
 
 Instruction::Instruction(Opcode o, BasicBlock* b)
-: opcode(o), block(b)
+: opcode(o), guard(0), block(b)
 {
-
+	reads.push_back(guard);
 }
 
 Instruction::~Instruction()
