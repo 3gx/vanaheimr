@@ -299,7 +299,8 @@ static ir::UnaryInstruction* newUnaryInstruction(
 	}
 	}
 	
-	return 0;	
+	assertM(false, "Invalid simple unary translation");	
+	return 0;
 }
 
 static bool isSimpleUnaryInstruction(const ::ir::PTXInstruction& ptx)
@@ -308,8 +309,8 @@ static bool isSimpleUnaryInstruction(const ::ir::PTXInstruction& ptx)
 
 	switch(ptx.opcode)
 	{
-	case PTXInstruction::Ld:
 	case PTXInstruction::Ldu:
+	case PTXInstruction::Ld:
 	case PTXInstruction::Mov:
 	case PTXInstruction::St:
 	{
@@ -464,7 +465,8 @@ static ir::BinaryInstruction* newBinaryInstruction(
 		break;
 	}
 	}
-	
+
+	assertM(false, "Invalid simple binary instruction.");	
 	return 0;
 }
 
