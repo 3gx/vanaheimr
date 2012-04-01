@@ -79,6 +79,10 @@ public:
 	Instruction& operator=(const Instruction&);
 
 public:
+	/*! \brief Sets the predicate guard, the instruction now owns it */
+	void setGuard(PredicateOperand* g);
+
+public:
 	bool isLoad()   const;
 	bool isStore()  const;
 	bool isBranch() const;
@@ -122,6 +126,12 @@ public:
 	UnaryInstruction& operator=(const UnaryInstruction& i);
 
 public:
+	/*! \brief Set the destination, the instruction takes ownership */
+	void setD(Operand* d);
+	/*! \brief Set the source, the instruction takes ownership */
+	void setA(Operand* a);
+
+public:
 	virtual Instruction* clone() const = 0;
 
 public:
@@ -140,6 +150,14 @@ public:
 	BinaryInstruction(const BinaryInstruction& i);
 
 	BinaryInstruction& operator=(const BinaryInstruction& i);
+
+public:
+	/*! \brief Set the destination, the instruction takes ownership */
+	void setD(Operand* d);
+	/*! \brief Set the first source, the instruction takes ownership */
+	void setA(Operand* a);
+	/*! \brief Set the second source, the instruction takes ownership */
+	void setB(Operand* b);
 
 public:
 	virtual Instruction* clone() const = 0;
@@ -248,6 +266,10 @@ public:
 	Atom& operator=(const Atom& i);
 
 public:
+	/*! \brief Set the third source, the instruction takes ownership */
+	void setC(Operand* c);
+
+public:
 	virtual Instruction* clone() const;
 
 public:
@@ -295,6 +317,10 @@ public:
 	Bra& operator=(const Bra& i);
 
 public:
+	/*! \brief Set the target operand, the instruction takes onwership */
+	void setTarget(Operand* o);
+
+public:
 	virtual Instruction* clone() const;
 
 public:
@@ -311,6 +337,9 @@ public:
 
 	Call& operator=(const Call& i);
 
+public:
+	/*! \brief Set the link operand, the instruction takes onwership */
+	void setLink(Operand* o);
 public:
 	Instruction* clone() const;
 
@@ -559,6 +588,12 @@ public:
 
 	St(const St&);
 	St& operator=(const St&);
+
+public:
+	/*! \brief Set the destination, the instruction takes ownership */
+	void setD(Operand* d);
+	/*! \brief Set the source, the instruction takes ownership */
+	void setA(Operand* a);
 
 public:
 	Instruction* clone() const;
