@@ -740,6 +740,21 @@ St& St::operator=(const St& s)
 	return *this;
 }
 
+void St::setD(Operand* o)
+{
+	delete d;
+	
+	d        = o;
+	reads[1] = d;
+}
+
+void St::setA(Operand* o)
+{
+	delete a;
+	
+	a        = o;
+	reads[2] = o;
+}
 
 Instruction* St::clone() const
 {
