@@ -90,8 +90,8 @@ protected:
 class ImmediateOperand : public Operand
 {
 public:
-	ImmediateOperand(uint64_t v, Instruction* i);
-	ImmediateOperand(double   d, Instruction* i);
+	ImmediateOperand(uint64_t v, Instruction* i, const Type* t);
+	ImmediateOperand(double   d, Instruction* i, const Type* t);
 
 public:
 	Operand* clone() const;

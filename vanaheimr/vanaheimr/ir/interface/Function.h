@@ -69,6 +69,10 @@ public:
 	iterator newBasicBlock(iterator position, const std::string& name);
 	register_iterator newVirtualRegister(const Type* type,
 		const std::string& name = "");
+	argument_iterator newArgument(const Type* type,
+		const std::string& name);
+	argument_iterator newReturnValue(const Type* type,
+		const std::string& name);
 
 public:
 	argument_iterator       argument_begin();
@@ -81,6 +85,16 @@ public:
 	size_t argument_size()  const;
 	bool   argument_empty() const;
 
+public:
+	argument_iterator       returned_begin();
+	const_argument_iterator returned_begin() const;
+	
+	argument_iterator       returned_end();
+	const_argument_iterator returned_end() const;
+
+public:
+	size_t returned_size()  const;
+	bool   returned_empty() const;
 public:
 	register_iterator       register_begin();
 	const_register_iterator register_begin() const;
@@ -97,6 +111,7 @@ public:
 
 private:
 	BasicBlockList      _blocks;
+	ArgumentList        _returnValues;
 	ArgumentList        _arguments;
 	VirtualRegisterList _registers;
 	

@@ -62,6 +62,20 @@ void PTXToVIRTranslator::translate(const PTXModule& m)
 	}
 }
 
+void PTXToVIRTranslator::_translateParameter(const PTXParameter& parameter)
+{
+	if(parameter.returnArgument)
+	{
+		_function->newReturnValue(_getType(parameter.type),
+			parameter.name);
+	}
+	else
+	{
+		_function->newArgument(_getType(parameter.type),
+			parameter.name);
+	}
+}
+
 void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 {
 	report(" Translating PTX global " << global.statement.toString());
@@ -84,6 +98,14 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 		_translateLinkingDirective(kernel.getPrototype().linkingDirective));
 	
 	_function = &*function;
+
+	// Translate Arguments
+	for(PTXKernel::ParameterVector::const_iterator
+		argument = kernel.arguments.begin();
+		argument != kernel.arguments.end(); ++argument)
+	{
+		_translateParameter(*argument);
+	}
 	
 	// Translate Values
 	PTXKernel::RegisterVector registers = kernel.getReferencedRegisters();
@@ -181,6 +203,17 @@ void PTXToVIRTranslator::_translateInstruction(const PTXInstruction& ptx)
 
 bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 {
+	switch(ptx.opcode)
+	{
+		case PTXInstruction::St:
+		{
+			_translateSt(ptx);
+			return true; 
+		}
+
+		default: break;	
+	}
+
 	return false;
 }
 
@@ -312,7 +345,6 @@ static bool isSimpleUnaryInstruction(const ::ir::PTXInstruction& ptx)
 	case PTXInstruction::Ldu:
 	case PTXInstruction::Ld:
 	case PTXInstruction::Mov:
-	case PTXInstruction::St:
 	{
 		return true;
 		break;
@@ -489,6 +521,19 @@ bool PTXToVIRTranslator::_translateSimpleBinaryInstruction(
 	return true;
 }
 
+void PTXToVIRTranslator::_translateSt(const PTXInstruction& ptx)
+{
+	ir::St* st = new ir::St(_block);
+	
+	st->setGuard(_translatePredicateOperand(ptx.pg));
+	st->setD(_newTranslatedOperand(ptx.d));
+	st->setA(_newTranslatedOperand(ptx.a));
+
+	report("   to " << st->toString());
+
+	_block->push_back(st);
+}
+
 ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 {
 	switch(ptx.addressMode)
@@ -504,12 +549,13 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	}
 	case PTXOperand::Immediate:
 	{
-		return new ir::ImmediateOperand((uint64_t)ptx.imm_uint, _instruction);
+		return new ir::ImmediateOperand((uint64_t)ptx.imm_uint, _instruction,
+			_getType(ptx.type));
 	}
 	case PTXOperand::Address:
 	{
 		if(_ptxInstruction->addressSpace == PTXInstruction::Param &&
-			ptx.isArgument)
+			_isArgument(ptx.identifier))
 		{
 			return new ir::ArgumentOperand(_getArgument(ptx.identifier),
 				_instruction);
@@ -676,6 +722,12 @@ ir::Argument* PTXToVIRTranslator::_getArgument(const std::string& name)
 		if(argument->name() == name) return &*argument;
 	}
 	
+	for(ir::Function::argument_iterator argument = _function->returned_begin();
+		argument != _function->returned_end(); ++argument)
+	{
+		if(argument->name() == name) return &*argument;
+	}
+	
 	throw std::runtime_error("Argument " + name
 		+ " was not declared in this function.");
 		
@@ -789,6 +841,23 @@ ir::Constant* PTXToVIRTranslator::_translateInitializer(const PTXGlobal& g)
 	assertM(false, "Not implemented.");
 	
 	return 0;
+}
+
+bool PTXToVIRTranslator::_isArgument(const std::string& name)
+{
+	for(ir::Function::argument_iterator argument = _function->argument_begin();
+		argument != _function->argument_end(); ++argument)
+	{
+		if(argument->name() == name) return true;
+	}
+	
+	for(ir::Function::argument_iterator argument = _function->returned_begin();
+		argument != _function->returned_end(); ++argument)
+	{
+		if(argument->name() == name) return true;
+	}
+	
+	return false;
 }
 
 }

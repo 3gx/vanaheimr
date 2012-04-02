@@ -22,6 +22,7 @@
                       namespace ir       { class PTXInstruction;   }
                       namespace ir       { class PTXOperand;       }
                       namespace ir       { class PTXKernel;        }
+                      namespace ir       { class Parameter;        }
 namespace vanaheimr { namespace ir       { class Module;           } }
 namespace vanaheimr { namespace ir       { class PredicateOperand; } }
 namespace vanaheimr { namespace ir       { class Constant;         } }
@@ -49,6 +50,7 @@ public:
 private:
 	typedef ::ir::PTXKernel      PTXKernel;
 	typedef ::ir::Global         PTXGlobal;
+	typedef ::ir::Parameter      PTXParameter;
 	typedef ::ir::BasicBlock     PTXBasicBlock;
 	typedef ::ir::PTXInstruction PTXInstruction;
 	typedef ::ir::PTXOperand     PTXOperand;
@@ -61,6 +63,7 @@ private:
 private:
 	void _translateGlobal(const PTXGlobal&);
 	void _translateKernel(const PTXKernel&);
+	void _translateParameter(const PTXParameter& argument);
 	void _translateRegisterValue(PTXRegisterId, PTXDataType);
 	void _translateBasicBlock(const PTXBasicBlock&);
 
@@ -70,6 +73,8 @@ private:
 	bool _translateComplexInstruction(const PTXInstruction& );
 	bool _translateSimpleUnaryInstruction(const PTXInstruction& );
 	bool _translateSimpleBinaryInstruction(const PTXInstruction& );
+
+	void _translateSt(const PTXInstruction& );
 
 private:
 	typedef std::unordered_map<PTXRegisterId,
@@ -94,6 +99,7 @@ private:
 	ir::Variable::Linkage _translateLinkage(PTXAttribute linkage);
 	ir::Variable::Linkage _translateLinkingDirective(PTXLinkingDirective d);
 	ir::Constant*         _translateInitializer(const PTXGlobal& g);
+	bool                  _isArgument(const std::string& name);
 	
 private:
 	compiler::Compiler* _compiler;

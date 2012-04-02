@@ -141,6 +141,18 @@ Function::register_iterator Function::newVirtualRegister(const Type* type,
 		VirtualRegister(name, _nextRegisterId++, this, type));	
 }
 
+Function::argument_iterator Function::newArgument(const Type* type,
+	const std::string& name)
+{
+	return _arguments.insert(argument_end(), Argument(type, this, name));
+}
+
+Function::argument_iterator Function::newReturnValue(const Type* type,
+	const std::string& name)
+{
+	return _returnValues.insert(returned_end(), Argument(type, this, name));
+}
+
 Function::argument_iterator Function::argument_begin()
 {
 	return _arguments.begin();
@@ -169,6 +181,36 @@ size_t Function::argument_size() const
 bool Function::argument_empty() const
 {
 	return _arguments.empty();
+}
+
+Function::argument_iterator Function::returned_begin()
+{
+	return _returnValues.begin();
+}
+
+Function::const_argument_iterator Function::returned_begin() const
+{
+	return _returnValues.begin();
+}
+
+Function::argument_iterator Function::returned_end()
+{
+	return _returnValues.end();
+}
+
+Function::const_argument_iterator Function::returned_end() const
+{
+	return _returnValues.end();
+}
+
+size_t Function::returned_size() const
+{
+	return _returnValues.size();
+}
+
+bool Function::returned_empty() const
+{
+	return _returnValues.empty();
 }
 
 Function::register_iterator Function::register_begin()

@@ -64,14 +64,14 @@ RegisterOperand::RegisterOperand(VirtualRegister* reg, Instruction* i,
 
 }
 
-ImmediateOperand::ImmediateOperand(uint64_t v, Instruction* i)
-: Operand(Immediate, i)
+ImmediateOperand::ImmediateOperand(uint64_t v, Instruction* i, const Type* t)
+: Operand(Immediate, i), type(t)
 {
 	uint = v;
 }
 
-ImmediateOperand::ImmediateOperand(double d, Instruction* i)
-: Operand(Immediate, i)
+ImmediateOperand::ImmediateOperand(double d, Instruction* i, const Type* t)
+: Operand(Immediate, i), type(t)
 {
 	fp = d;
 }
