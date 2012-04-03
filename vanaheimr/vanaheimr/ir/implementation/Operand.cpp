@@ -85,7 +85,7 @@ std::string ImmediateOperand::toString() const
 {
 	std::stringstream stream;
 
-	stream << type->name();
+	stream << type->name() << " ";
 		
 	stream << "0x" << std::hex << uint << std::dec;
 
@@ -184,10 +184,13 @@ std::string AddressOperand::toString() const
 {
 	std::stringstream stream;
 		
-	stream << globalValue->type().name();
-	
-	stream << " ";
-	
+	if(!globalValue->type().isBasicBlock())
+	{	
+		stream << globalValue->type().name();
+		
+		stream << " ";
+	}
+		
 	stream << globalValue->name();
 
 	return stream.str();
@@ -207,11 +210,11 @@ Operand* ArgumentOperand::clone() const
 std::string ArgumentOperand::toString() const
 {
 	std::stringstream stream;
-		
+
 	stream << argument->type().name();
 	
 	stream << " ";
-	
+
 	stream << argument->name();
 	
 	return stream.str();

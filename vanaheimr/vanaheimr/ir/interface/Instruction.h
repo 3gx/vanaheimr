@@ -182,7 +182,7 @@ public:
 		OrderedNotEqual,
 		OrderedLessThan,
 		OrderedLessOrEqual,
-		OrderedGreater,
+		OrderedGreaterThan,
 		OrderedGreaterOrEqual,
 		UnorderedEqual,
 		UnorderedNotEqual,
@@ -504,7 +504,7 @@ public:
 };
 
 /*! \brief Return from the current function call, or exit */
-class Ret : public UnaryInstruction
+class Ret : public Instruction
 {
 public:
 	Ret(BasicBlock* b =  0);

@@ -39,6 +39,7 @@ public:
 	bool isFloatingPoint()        const;
 	bool isSinglePrecisionFloat() const;
 	bool isDoublePrecisionFloat() const;
+	bool isBasicBlock()           const;
 
 public:
 	virtual size_t bytes() const = 0;
@@ -177,6 +178,16 @@ public:
 private:
 	const Type* _returnType;
 	TypeVector  _argumentTypes;
+};
+
+/*! \brief A type for a basic block */
+class BasicBlockType : public Type
+{
+public:
+	BasicBlockType(Compiler* c);
+
+public:
+	size_t bytes() const;
 };
 
 }

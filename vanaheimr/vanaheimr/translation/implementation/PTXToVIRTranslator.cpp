@@ -125,7 +125,7 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	{
 		if(*block == kernel.cfg()->get_entry_block()) continue;
 		if(*block == kernel.cfg()->get_exit_block())  continue;
-		_translateBasicBlock(**block);
+		_recordBasicBlock(**block);
 	}
 	
 	// Translate blocks
@@ -159,19 +159,40 @@ void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
 	ir::Function::register_iterator newRegister = _function->newVirtualRegister(
 		_getType(type), name.str());
 
-	report("   to " << newRegister->type->name() << " r" << newRegister->id);
+	report("    to " << newRegister->type->name() << " r" << newRegister->id);
 
 	_registers.insert(std::make_pair(reg, newRegister));
+}
+
+void PTXToVIRTranslator::_recordBasicBlock(const PTXBasicBlock& basicBlock)
+{
+	report("  Record PTX basic block " << basicBlock.label);
+	
+	ir::Function::iterator block = _function->newBasicBlock(
+		_function->exit_block(), basicBlock.label);	
+
+	if(_blocks.count(basicBlock.label) != 0)
+	{
+		throw std::runtime_error("Added duplicate basic block '"
+			+ basicBlock.label + "'");
+	}
+	
+	_blocks.insert(std::make_pair(basicBlock.label, block));
 }
 
 void PTXToVIRTranslator::_translateBasicBlock(const PTXBasicBlock& basicBlock)
 {
 	report("  Translating PTX basic block " << basicBlock.label);
+	
+	BasicBlockMap::iterator block = _blocks.find(basicBlock.label);
+	
+	if(block == _blocks.end())
+	{
+		throw std::runtime_error("Basic block " + basicBlock.label
+			+ " was not declared in this function.");
+	}
 
-	ir::Function::iterator block = _function->newBasicBlock(
-		_function->exit_block(), basicBlock.label);
-
-	_block = &*block;
+	_block = &*block->second;
 	
 	for(PTXBasicBlock::const_instruction_iterator
 		instruction = basicBlock.instructions.begin();
@@ -210,7 +231,21 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 			_translateSt(ptx);
 			return true; 
 		}
-
+		case PTXInstruction::SetP:
+		{
+			_translateSetp(ptx);
+			return true;
+		}
+		case PTXInstruction::Bra:
+		{
+			_translateBra(ptx);
+			return true;
+		}
+		case PTXInstruction::Exit:
+		{
+			_translateExit(ptx);
+			return true;
+		}
 		default: break;	
 	}
 
@@ -378,7 +413,7 @@ bool PTXToVIRTranslator::_translateSimpleUnaryInstruction(
 	vir->setD(_newTranslatedOperand(ptx.d));
 	vir->setA(_newTranslatedOperand(ptx.a));
 
-	report("   to " << vir->toString());
+	report("    to " << vir->toString());
 	
 	_block->push_back(vir);
 	
@@ -514,7 +549,7 @@ bool PTXToVIRTranslator::_translateSimpleBinaryInstruction(
 	vir->setA(_newTranslatedOperand(ptx.a));
 	vir->setB(_newTranslatedOperand(ptx.b));
 	
-	report("   to " << vir->toString());
+	report("    to " << vir->toString());
 
 	_block->push_back(vir);
 	
@@ -529,9 +564,89 @@ void PTXToVIRTranslator::_translateSt(const PTXInstruction& ptx)
 	st->setD(_newTranslatedOperand(ptx.d));
 	st->setA(_newTranslatedOperand(ptx.a));
 
-	report("   to " << st->toString());
+	report("    to " << st->toString());
 
 	_block->push_back(st);
+}
+
+static ir::ComparisonInstruction::Comparison translateComparison(
+	::ir::PTXOperand::DataType d, ::ir::PTXInstruction::CmpOp cmp)
+{
+	typedef ::ir::PTXInstruction PTXInstruction;
+	typedef ::ir::PTXOperand     PTXOperand;
+	
+	switch(cmp)
+	{
+	case PTXInstruction::Eq:  return ir::ComparisonInstruction::OrderedEqual;
+	case PTXInstruction::Ne:  return ir::ComparisonInstruction::OrderedNotEqual;
+	case PTXInstruction::Lo:  /* fall through */
+	case PTXInstruction::Lt:  return ir::ComparisonInstruction::OrderedLessThan;
+	case PTXInstruction::Ls:  /* fall through */
+	case PTXInstruction::Le:  return ir::ComparisonInstruction::OrderedLessOrEqual;
+	case PTXInstruction::Hi:  /* fall through */
+	case PTXInstruction::Gt:  return ir::ComparisonInstruction::OrderedGreaterThan;
+	case PTXInstruction::Hs:  /* fall through */ 
+	case PTXInstruction::Ge:  return ir::ComparisonInstruction::OrderedGreaterOrEqual;
+	case PTXInstruction::Equ: return ir::ComparisonInstruction::UnorderedEqual;
+	case PTXInstruction::Neu: return ir::ComparisonInstruction::UnorderedNotEqual;
+	case PTXInstruction::Ltu: return ir::ComparisonInstruction::UnorderedLessThan;
+	case PTXInstruction::Leu: return ir::ComparisonInstruction::UnorderedLessOrEqual;
+	case PTXInstruction::Gtu: return ir::ComparisonInstruction::UnorderedGreaterThan;
+	case PTXInstruction::Geu: return ir::ComparisonInstruction::UnorderedGreaterOrEqual;
+	case PTXInstruction::Num: return ir::ComparisonInstruction::IsANumber;
+	case PTXInstruction::Nan: return ir::ComparisonInstruction::NotANumber;
+	case PTXInstruction::CmpOp_Invalid: break;
+	}
+
+	return ir::ComparisonInstruction::InvalidComparison;
+}
+
+void PTXToVIRTranslator::_translateSetp(const PTXInstruction& ptx)
+{	
+	ir::Setp* setp = new ir::Setp(translateComparison(
+		ptx.type, ptx.comparisonOperator), _block);
+	
+	if(ptx.c.addressMode == PTXOperand::Invalid)
+	{
+		setp->setGuard(_translatePredicateOperand(ptx.pg));
+		setp->setD(_newTranslatedOperand(ptx.d));
+		setp->setA(_newTranslatedOperand(ptx.a));
+		setp->setB(_newTranslatedOperand(ptx.b));
+	}
+	else
+	{
+		assertM(false, "not implemented.");
+	}
+
+	report("    to " << setp->toString());
+	
+	_block->push_back(setp);
+}
+
+void PTXToVIRTranslator::_translateBra(const PTXInstruction& ptx)
+{
+	ir::Bra::BranchModifier modifier =
+		ptx.uni ? ir::Bra::UniformBranch : ir::Bra::MultitargetBranch;
+
+	ir::Bra* bra = new ir::Bra(modifier, _block);
+	
+	bra->setGuard(_translatePredicateOperand(ptx.pg));
+	bra->setTarget(_newTranslatedOperand(ptx.d));
+
+	report("    to " << bra->toString());
+	
+	_block->push_back(bra);
+}
+
+void PTXToVIRTranslator::_translateExit(const PTXInstruction& ptx)
+{
+	ir::Ret* exit = new ir::Ret(_block);
+	
+	exit->setGuard(_translatePredicateOperand(ptx.pg));
+
+	report("    to " << exit->toString());
+	
+	_block->push_back(exit);
 }
 
 ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
@@ -640,12 +755,12 @@ ir::VirtualRegister* PTXToVIRTranslator::_getSpecialVirtualRegister(
 		bool isScalar = true;
 		switch (id) 
 		{
-		case PTXOperand::tid: // fall through
-		case PTXOperand::ntid: // fall through
-		case PTXOperand::ctaId: // fall through
+		case PTXOperand::tid:     // fall through
+		case PTXOperand::ntid:    // fall through
+		case PTXOperand::ctaId:   // fall through
 		case PTXOperand::nctaId:  // fall through
-		case PTXOperand::smId:  // fall through
-		case PTXOperand::nsmId:  // fall through
+		case PTXOperand::smId:    // fall through
+		case PTXOperand::nsmId:   // fall through
 		case PTXOperand::gridId:  // fall through
 			isScalar = false;
 			break;

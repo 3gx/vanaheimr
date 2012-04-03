@@ -57,6 +57,11 @@ bool Type::isDoublePrecisionFloat() const
 	return typeid(DoubleType) == typeid(this);
 }
 
+bool Type::isBasicBlock() const
+{
+	return name() == "_ZTBasicBlock";
+}
+
 IntegerType::IntegerType(Compiler* c, unsigned int bits)
 : Type(integerName(bits), c), _bits(bits)
 {
@@ -261,6 +266,17 @@ std::string FunctionType::functionPrototypeName(const Type* returnType,
 	stream << ")";
 	
 	return stream.str();
+}
+
+BasicBlockType::BasicBlockType(Compiler* c)
+: Type("_ZTBasicBlock", c)
+{
+
+}
+
+size_t BasicBlockType::bytes() const
+{
+	return 0;
 }
 
 }

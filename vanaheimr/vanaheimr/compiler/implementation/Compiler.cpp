@@ -28,6 +28,8 @@ Compiler::Compiler()
 
 	_types.push_back(new ir::FloatType(this));
 	_types.push_back(new ir::DoubleType(this));
+
+	_types.push_back(new ir::BasicBlockType(this));
 }
 
 Compiler::~Compiler()
@@ -92,14 +94,12 @@ Compiler::module_iterator Compiler::newModule(const std::string& name)
 
 Compiler::module_iterator Compiler::getModule(const std::string& name)
 {
-	module_iterator module = module_end();
-	
-	for( ; module != module_end(); ++module)
+	for(module_iterator module = module_begin(); module != module_end(); ++module)
 	{
-		if(module->name == name) break;
+		if(module->name == name) return module;
 	}
 	
-	return module;
+	return module_end();
 }
 
 Compiler::const_module_iterator Compiler::getModule(

@@ -1,4 +1,4 @@
-/*! \file   PTXToVIRTranslator.h
+/*!	\file   PTXToVIRTranslator.h
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\date   Sunday Fubruary 12, 2012
 	\brief  The header file for the PTXToVIRTranslator class.
@@ -65,6 +65,7 @@ private:
 	void _translateKernel(const PTXKernel&);
 	void _translateParameter(const PTXParameter& argument);
 	void _translateRegisterValue(PTXRegisterId, PTXDataType);
+	void _recordBasicBlock(const PTXBasicBlock&);
 	void _translateBasicBlock(const PTXBasicBlock&);
 
 private:
@@ -75,6 +76,9 @@ private:
 	bool _translateSimpleBinaryInstruction(const PTXInstruction& );
 
 	void _translateSt(const PTXInstruction& );
+	void _translateSetp(const PTXInstruction& );
+	void _translateBra(const PTXInstruction& );
+	void _translateExit(const PTXInstruction& );
 
 private:
 	typedef std::unordered_map<PTXRegisterId,

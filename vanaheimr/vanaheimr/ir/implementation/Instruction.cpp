@@ -415,13 +415,13 @@ Instruction* Bitcast::clone() const
 Bra::Bra(BranchModifier m, BasicBlock* b)
 : Instruction(Instruction::Bra, b), target(0), modifier(m)
 {
-
+	reads.push_back(0);
 }
 
 Bra::Bra(const Bra& i)
-: Instruction(i), target(reads[1]), modifier(i.modifier)
+: Instruction(i), modifier(i.modifier)
 {
-
+	target = reads[1];
 }
 
 Bra& Bra::operator=(const Bra& i)
@@ -436,6 +436,14 @@ Bra& Bra::operator=(const Bra& i)
 	return *this;
 }
 
+void Bra::setTarget(Operand* o)
+{
+	delete target;
+
+	target   = o;
+	reads[1] = o;
+}
+
 Instruction* Bra::clone() const
 {
 	return new Bra(*this);
@@ -445,7 +453,7 @@ Instruction* Bra::clone() const
 Call::Call(BranchModifier m, BasicBlock* b)
 : Bra(m, b), link(0)
 {
-
+	reads.push_back(0);
 }
 
 Call::Call(const Call& i)
@@ -628,7 +636,7 @@ Instruction* Or::clone() const
 
 /*! \brief Return from the current function call, or exit */
 Ret::Ret(BasicBlock* b)
-: UnaryInstruction(Instruction::Ret, b)
+: Instruction(Instruction::Ret, b)
 {
 
 }
