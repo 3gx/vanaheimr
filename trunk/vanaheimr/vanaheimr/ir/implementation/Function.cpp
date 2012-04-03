@@ -10,6 +10,16 @@
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
+// Standard Library Includes
+#include <unordered_map>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace vanaheimr
 {
 
@@ -32,6 +42,9 @@ Function::Function(const Function& f)
 
 Function& Function::operator=(const Function& f)
 {
+	typedef std::unordered_map<VirtualRegister::Id,
+		VirtualRegister*> VirtualRegisterMap;
+
 	if(&f == this) return *this;
 	
 	clear();
@@ -51,9 +64,58 @@ Function& Function::operator=(const Function& f)
 	{
 		argument.setFunction(this);
 	}
+
+	_returnValues = f._returnValues;
 	
-	// TODO implement registers
-	assert(f.register_empty());
+	for(auto value : _returnValues)
+	{
+		value.setFunction(this);
+	}
+	
+	// Virtual Registers
+	VirtualRegisterMap registerMapping;
+
+	for(const_register_iterator reg = f.register_begin(); reg != f.register_end(); ++reg)
+	{
+		registerMapping.insert(std::make_pair(
+			reg->id, &*newVirtualRegister(reg->type, reg->name)));
+	}
+
+	for(iterator block = begin(); block != end(); ++block)
+	{
+		for(auto instruction : *block)
+		{
+			for(auto operand : instruction->reads)
+			{
+				if(operand->isRegister())
+				{
+					ir::RegisterOperand* reg =
+						static_cast<ir::RegisterOperand*>(operand);
+				
+					VirtualRegisterMap::iterator mapping =
+						registerMapping.find(reg->virtualRegister->id);
+					assert(mapping != registerMapping.end());
+					
+					reg->virtualRegister = mapping->second;
+				}
+			}
+			
+			for(auto operand : instruction->writes)
+			{
+				if(operand->isRegister())
+				{
+					ir::RegisterOperand* reg =
+						static_cast<ir::RegisterOperand*>(operand);
+				
+					VirtualRegisterMap::iterator mapping =
+						registerMapping.find(reg->virtualRegister->id);
+					assert(mapping != registerMapping.end());
+					
+					reg->virtualRegister = mapping->second;
+				}
+			}
+		}
+	}
 	
 	return *this;
 }

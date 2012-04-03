@@ -9,7 +9,10 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Operand.h>
 
-/*! \brief A namespace for the compiler internal representation */
+namespace archaeopteryx
+{
+
+/*! \brief A namespace for the simulator internal representation */
 namespace ir
 {
 
@@ -378,4 +381,7 @@ union InstructionContainer
 };
 
 }
+
+}
+
 

@@ -43,6 +43,10 @@ BasicBlock& BasicBlock::operator=(const BasicBlock& bb)
 	if(this == &bb) return *this;
 	
 	clear();
+
+	Variable::operator=(bb);
+
+	_id = bb.id();
 	
 	for(auto instruction : bb)
 	{

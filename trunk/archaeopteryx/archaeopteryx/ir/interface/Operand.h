@@ -6,6 +6,9 @@
 
 #pragma once
 
+namespace archaeopteryx
+{
+
 namespace ir
 {
 
@@ -113,6 +116,8 @@ union OperandContainer
 	IndirectOperand  asIndirect;
 	Operand          asOperand;
 };
+
+}
 
 }
 
