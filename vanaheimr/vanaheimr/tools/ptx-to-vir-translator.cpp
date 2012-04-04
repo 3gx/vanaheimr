@@ -53,7 +53,7 @@ static void translate(const std::string& virFileName,
 	
 	virModule->name = virFileName;
 	
-	std::ofstream virFile(virFileName);
+	std::ofstream virFile(virFileName.c_str());
 	
 	if(!virFile.is_open())
 	{
@@ -70,6 +70,8 @@ static void translate(const std::string& virFileName,
 	{
 		std::cerr << "Compilation Failed: binary writing failed.\n"; 
 		std::cerr << "  Message: " << e.what() << "\n"; 
+		
+		std::remove(virFileName.c_str());
 	}
 }
 

@@ -28,7 +28,34 @@ Operand::Operand(OperandMode mode, Instruction* instruction)
 
 bool Operand::isRegister() const
 {
-	return mode() == Register || mode() == Immediate || mode() == Predicate;
+	if(mode() == Register || mode() == Indirect) 
+	{
+		return true;
+	}
+
+	if(mode() == Predicate)
+	{
+		const PredicateOperand* pred = static_cast<const PredicateOperand*>(this);
+
+		return pred->modifier == PredicateOperand::InversePredicate ||
+			pred->modifier == PredicateOperand::StraightPredicate;
+	}
+
+	return false;
+}
+
+bool Operand::isArgument() const
+{
+	return mode() == Argument;
+}
+
+bool Operand::isBasicBlock() const
+{
+	if(mode() != Address) return false;
+
+	const AddressOperand* address = static_cast<const AddressOperand*>(this);
+
+	return address->globalValue->type().isBasicBlock();
 }
 
 Operand::OperandMode Operand::mode() const

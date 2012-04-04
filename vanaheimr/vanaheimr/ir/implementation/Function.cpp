@@ -44,11 +44,19 @@ Function& Function::operator=(const Function& f)
 {
 	typedef std::unordered_map<VirtualRegister::Id,
 		VirtualRegister*> VirtualRegisterMap;
+	typedef std::unordered_map<std::string, Argument*>
+		ArgumentMap;
+	typedef std::unordered_map<BasicBlock::Id,
+		BasicBlock*> BasicBlockMap;
 
 	if(&f == this) return *this;
 	
 	clear();
 	
+	_nextBlockId    = f._nextBlockId;
+
+	BasicBlockMap basicBlockMapping;
+
 	for(const_iterator block = f.begin(); block != f.end(); ++block)
 	{
 		if(block == f.exit_block())  continue;
@@ -56,20 +64,28 @@ Function& Function::operator=(const Function& f)
 	
 		auto newBlock = _blocks.insert(exit_block(), *block);
 		newBlock->setFunction(this);
+	
+		basicBlockMapping.insert(std::make_pair(newBlock->id(), &*newBlock));
 	}
 	
 	_arguments = f._arguments;
-	
-	for(auto argument : _arguments)
+	ArgumentMap argumentMapping;
+
+	for(argument_iterator argument = argument_begin();
+		argument != argument_end(); ++argument)
 	{
-		argument.setFunction(this);
+		argumentMapping.insert(std::make_pair(argument->name(), &*argument));
+
+		argument->setFunction(this);
 	}
 
 	_returnValues = f._returnValues;
 	
-	for(auto value : _returnValues)
+	for(argument_iterator value = returned_begin(); value != returned_end(); ++value)
 	{
-		value.setFunction(this);
+		argumentMapping.insert(std::make_pair(value->name(), &*value));
+
+		value->setFunction(this);
 	}
 	
 	// Virtual Registers
@@ -80,17 +96,23 @@ Function& Function::operator=(const Function& f)
 		registerMapping.insert(std::make_pair(
 			reg->id, &*newVirtualRegister(reg->type, reg->name)));
 	}
+	
+	report("Copying Function");
 
 	for(iterator block = begin(); block != end(); ++block)
 	{
+		report(" " << block->name());
 		for(auto instruction : *block)
 		{
+			report("  " << instruction->toString());
 			for(auto operand : instruction->reads)
 			{
+				report("   read " << operand->toString());				
+
 				if(operand->isRegister())
 				{
-					ir::RegisterOperand* reg =
-						static_cast<ir::RegisterOperand*>(operand);
+					RegisterOperand* reg =
+						static_cast<RegisterOperand*>(operand);
 				
 					VirtualRegisterMap::iterator mapping =
 						registerMapping.find(reg->virtualRegister->id);
@@ -98,14 +120,41 @@ Function& Function::operator=(const Function& f)
 					
 					reg->virtualRegister = mapping->second;
 				}
+
+				if(operand->isArgument())
+				{
+					ArgumentOperand* argument =
+						static_cast<ArgumentOperand*>(operand);	
+				
+					ArgumentMap::iterator mapping =
+						argumentMapping.find(argument->argument->name());
+					assert(mapping != argumentMapping.end());
+
+					argument->argument = mapping->second;
+				}
+
+				if(operand->isBasicBlock())
+				{
+					AddressOperand* address =
+						static_cast<AddressOperand*>(operand);
+					
+					BasicBlock* block = static_cast<BasicBlock*>(address->globalValue);
+
+					BasicBlockMap::iterator mapping = basicBlockMapping.find(block->id());
+					assert(mapping != basicBlockMapping.end());
+
+					address->globalValue = mapping->second;
+				}
 			}
 			
 			for(auto operand : instruction->writes)
 			{
+				report("   write " << operand->toString());				
+				
 				if(operand->isRegister())
 				{
-					ir::RegisterOperand* reg =
-						static_cast<ir::RegisterOperand*>(operand);
+					RegisterOperand* reg =
+						static_cast<RegisterOperand*>(operand);
 				
 					VirtualRegisterMap::iterator mapping =
 						registerMapping.find(reg->virtualRegister->id);

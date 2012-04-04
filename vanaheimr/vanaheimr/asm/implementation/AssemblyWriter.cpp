@@ -74,6 +74,8 @@ void AssemblyWriter::writeFunction(std::ostream& stream,
 	for(ir::Function::const_iterator block = function.begin();
 		block != function.end(); ++block)
 	{
+		if(block == function.exit_block())  continue;
+		if(block == function.entry_block()) continue;
 		writeBasicBlock(stream, *block);
 	}
 	

@@ -39,7 +39,7 @@ bool Type::isPrimitive() const
 
 bool Type::isInteger() const
 {
-	return typeid(this) == typeid(IntegerType);
+	return typeid(*this) == typeid(IntegerType);
 }
 
 bool Type::isFloatingPoint() const
@@ -49,17 +49,17 @@ bool Type::isFloatingPoint() const
 
 bool Type::isSinglePrecisionFloat() const
 {
-	return typeid(FloatType) == typeid(this);
+	return typeid(FloatType) == typeid(*this);
 }
 
 bool Type::isDoublePrecisionFloat() const
 {
-	return typeid(DoubleType) == typeid(this);
+	return typeid(DoubleType) == typeid(*this);
 }
 
 bool Type::isBasicBlock() const
 {
-	return name() == "_ZTBasicBlock";
+	return typeid(BasicBlockType) == typeid(*this);
 }
 
 IntegerType::IntegerType(Compiler* c, unsigned int bits)

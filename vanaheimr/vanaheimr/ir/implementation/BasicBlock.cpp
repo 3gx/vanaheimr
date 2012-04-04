@@ -34,7 +34,7 @@ BasicBlock::BasicBlock(const BasicBlock& bb)
 {
 	for(auto instruction : bb)
 	{
-		push_back(instruction);
+		push_back(instruction->clone());
 	}
 }
 
@@ -50,7 +50,7 @@ BasicBlock& BasicBlock::operator=(const BasicBlock& bb)
 	
 	for(auto instruction : bb)
 	{
-		push_back(instruction);
+		push_back(instruction->clone());
 	}
 	
 	return *this;
