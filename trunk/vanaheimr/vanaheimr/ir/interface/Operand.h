@@ -47,6 +47,12 @@ public:
 public:
 	/*! \brief Is the operand a register */
 	bool isRegister() const;
+	
+	/*! \brief Is the operand a function argument */
+	bool isArgument() const;
+	
+	/*! \brief Is the operand a basic block */
+	bool isBasicBlock() const;
 
 public:
 	/*! \brief The mode of the operand determines how it is accessed */
