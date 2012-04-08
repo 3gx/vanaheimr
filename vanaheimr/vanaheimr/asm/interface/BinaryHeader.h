@@ -1,17 +1,17 @@
-/*! \file   BinaryHeader.h
+/*!	\file   BinaryHeader.h
 	\date   Saturday March 4, 2012
 	\author Sudnya Diamos <mailsudnya@gmail.com>
 	\brief  The header file for the specification of the header of the binary
 */
 
-// Vanaheimr Includes
-// Forward Declarations
+// Standard Library Includes
+#include <cstdint>
 
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
 /*! \brief A namespace for the internal representation */
-namespace ir
+namespace as
 {
 class BinaryHeader
 {
@@ -24,6 +24,8 @@ public:
     uint64_t codeOffset    : 64;
     uint64_t symbolOffset  : 64;
     uint64_t stringsOffset : 64;
+};
+
 }
 
 }

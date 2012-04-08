@@ -258,10 +258,13 @@ def Environment():
 	env.AppendUnique(LINKFLAGS = ocelot_lflags)
 	env.AppendUnique(EXTRA_LIBS = ocelot_libs)
 
-	# set ocelot include path
+	# set vanaheimr include path
 	env.Prepend(CPPPATH = os.path.dirname(thisDir))
 	env.AppendUnique(LIBPATH = os.path.abspath('.'))
 	
+	# set archaeopteryx include path
+	env.Prepend(CPPPATH = '../../archaeopteryx')
+
 	# we need librt on linux
 	if os.name == 'posix':
 		env.AppendUnique(EXTRA_LIBS = ['-lrt']) 

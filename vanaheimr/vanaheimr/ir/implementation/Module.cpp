@@ -8,6 +8,7 @@
 #include <vanaheimr/ir/interface/Module.h>
 
 #include <vanaheimr/asm/interface/AssemblyWriter.h>
+#include <vanaheimr/asm/interface/BinaryWriter.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
@@ -145,9 +146,11 @@ Module::global_iterator Module::removeGlobal(global_iterator g)
 	return _globals.erase(g);
 }
 
-void Module::writeBinary(std::ostream&)
+void Module::writeBinary(std::ostream& stream)
 {
-	assertM(false, "Not implemented.");
+	as::BinaryWriter writer;
+	
+	writer.write(stream, *this);
 }
 
 void Module::writeAssembly(std::ostream& stream)
