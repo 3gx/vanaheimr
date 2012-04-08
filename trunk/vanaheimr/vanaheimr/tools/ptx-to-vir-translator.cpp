@@ -25,7 +25,7 @@ namespace vanaheimr
 
 /*! \brief Load a PTX module, translate it to VIR, output the result */
 static void translate(const std::string& virFileName,
-	const std::string& ptxFileName)
+	const std::string& ptxFileName, bool binary)
 {
 	// Load the PTX module
 	::ir::Module ptxModule(ptxFileName);
@@ -52,8 +52,15 @@ static void translate(const std::string& virFileName,
 	assert(virModule != virCompiler->module_end());
 	
 	virModule->name = virFileName;
+
+	std::ios_base::openmode mode = std::ios_base::out;
+
+	if(binary)
+	{
+		mode |= std::ios_base::binary;
+	}
 	
-	std::ofstream virFile(virFileName.c_str());
+	std::ofstream virFile(virFileName.c_str(), mode);
 	
 	if(!virFile.is_open())
 	{
@@ -64,7 +71,14 @@ static void translate(const std::string& virFileName,
 	
 	try
 	{
-		virModule->writeAssembly(virFile);
+		if(binary)
+		{
+			virModule->writeBinary(virFile);
+		}
+		else
+		{
+			virModule->writeAssembly(virFile);
+		}
 	}
 	catch(const std::exception& e)
 	{
@@ -83,16 +97,18 @@ int main(int argc, char** argv)
 
 	std::string ptxFileName;
 	std::string virFileName;
+	bool writeBinary;
 
 	parser.description("This program compiles a PTX file into a VIR binary.");
 
 	parser.parse("-i", "--input",  ptxFileName, "", "The input PTX file path.");
 	parser.parse("-o", "--output", virFileName,
 		"", "The output VIR file path.");
-
+	parser.parse("-b", "--use-binary-format", writeBinary, false, "Output a VIR binary "
+		"bytecode file rather than an assembly file.");
 	parser.parse();
 	
-	vanaheimr::translate(virFileName, ptxFileName);
+	vanaheimr::translate(virFileName, ptxFileName, writeBinary);
 
 	return 0;
 }

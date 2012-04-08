@@ -1,4 +1,4 @@
-/*! \file   BinaryWriter.cpp
+/*!	\file   BinaryWriter.cpp
 	\date   Saturday February 25, 2012
 	\author Sudnya Diamos <mailsudnya@gmail.com>
 	\brief  The implementation file for the helper class that traslates compiler IR to a binary.
@@ -7,50 +7,66 @@
 // Vanaheimr Includes
 #include <vanaheimr/asm/interface/BinaryWriter.h>
 
-// Forward Declarations
+#include <vanaheimr/ir/interface/Module.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
+
 /*! \brief A namespace for the internal representation */
 namespace as
 {
-BinaryWriter(const Module& inputModule) : m_module(inputModule)
+
+BinaryWriter::BinaryWriter()
+: m_module(0)
 {
+
 }
 
-void writeBinary(std::ostream& binary)
+void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 {
+	m_module = &m;
+
 	populateData();
 	populateInstructions();
 	linkSymbols();
 	
 	populateHeader();
 
-	binary.write(&m_header, sizeof(Header));
-	binary.write(m_symbolTable.data(), getSymbolTableSize());
-	binary.write(m_instructions.data(), getInstructionStreamSize());
-	binary.write(m_data.data(), getDataSize());
-	binary.write(m_stringTable.data(), getStringTableSize());
-
+	binary.write((const char*)&m_header, sizeof(BinaryHeader));
+	binary.write((const char*)m_symbolTable.data(), getSymbolTableSize());
+	binary.write((const char*)m_instructions.data(), getInstructionStreamSize());
+	binary.write((const char*)m_data.data(), getDataSize());
+	binary.write((const char*)m_stringTable.data(), getStringTableSize());
 }
 
-void populateData()
+void BinaryWriter::populateData()
 {
-	for (Module::const_global_iterator i = m_module.global_begin(); i != m_module.global_end(); ++i)
+	for (ir::Module::const_global_iterator i = m_module->global_begin(); i != m_module->global_end(); ++i)
 	{
-		Constant::DataVector blob;
+		ir::Constant::DataVector blob;
 		
 		if (i->hasInitializer())
 		{
-			Constant* initializer = i->initializer();
+			const ir::Constant* initializer = i->initializer();
 			SymbolTableEntry temp;
 			temp.type = 0x1;
 			temp.attributes = 0x0;
-			temp.stringOffset = m_strings.size();
-			m_strings.push_back(i->name);
+			temp.stringOffset = m_stringTable.size();
+			std::copy(i->name().begin(), i->name().end(), std::back_inserter(m_stringTable));
+			m_stringTable.push_back('\0');
 			temp.offset = m_data.size();//needs fix to offset within file instead of datasection
-			m_symbolTableEntry.push_back(temp);
+			m_symbolTable.push_back(temp);
 			blob = initializer->data();
 		}
 		else
@@ -62,80 +78,108 @@ void populateData()
 	}
 }
 
-void populateInstructions()
+void BinaryWriter::populateInstructions()
 {
-	for (Module::iterator function = m_module.begin(); function != m_module.end(); ++function)
+	for (ir::Module::const_iterator function = m_module->begin(); function != m_module->end(); ++function)
 	{
-	   SymbolTableEntry temp;
-	   temp.type = 0x2;
-	   temp.attributes = 0x0;
-	   temp.stringOffset = m_strings.size();
-	   m_strings.push_back(function->name());
-	   temp.offset = m_instructions.size() * sizeof(InstructionContainer);
-	   m_symbolTableEntry.push_back(temp);
-	   for (Function::iterator bb = function->begin(); bb != function->end(); ++bb)
-	   {
-		  for (BasicBlock::iterator inst = bb->begin(); inst != bb->end(); ++inst)
-		  {
-			  m_instructions.push_back(convertToContainer(*inst));
-		  }
-	   } 
+		SymbolTableEntry temp;
+		temp.type = 0x2;
+		temp.attributes = 0x0;
+		temp.stringOffset = m_stringTable.size();
+		std::copy(function->name().begin(), function->name().end(), std::back_inserter(m_stringTable));
+		m_stringTable.push_back('\0');
+		temp.offset = m_instructions.size() * sizeof(InstructionContainer);
+		m_symbolTable.push_back(temp);
+		
+		for (ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
+		{
+			for (ir::BasicBlock::const_iterator inst = bb->begin(); inst != bb->end(); ++inst)
+			{
+				m_instructions.push_back(convertToContainer(**inst));
+			}
+		} 
 	}
 }
 
-void linkSymbols()
+void BinaryWriter::linkSymbols()
 {
 	for (symbol_iterator symb = m_symbolTable.begin(); symb != m_symbolTable.end(); ++symb)
 	{
 		if (symb->type == 1)
 		{
 			symb->offset += getInstructionOffset();
-		} else if (symb->type == 2)
+		}
+		else if (symb->type == 2)
 		{
 			symb->offset += getDataOffset();
 		}
 	}
 }
 
-void populateHeader()
+void BinaryWriter::populateHeader()
 {
-	m_header.dataPages    = (m_data.size() + PageSize - 1) / PageSize; 
-	m_header.codePages    = ((m_instructions.size()*sizeof(InstructionContainer)) + PageSize - 1) / PageSize;
-	m_header.symbols      = m_symbolTable.size(); 
-	m_header.stringPages  = (m_strings.size() + PageSize - 1) / PageSize;
-	m_header.dataOffset   = getDataOffset();
-	m_header.codeOffset   = getCodeOffset();
-	m_header.symbolOffset = getSymbolOffset();
-	m_header.stringOffset = getStringOffset();
+	m_header.dataPages     = (m_data.size() + PageSize - 1) / PageSize; 
+	m_header.codePages     = ((m_instructions.size()*sizeof(InstructionContainer)) + PageSize - 1) / PageSize;
+	m_header.symbols       = m_symbolTable.size(); 
+	m_header.stringPages   = (m_stringTable.size() + PageSize - 1) / PageSize;
+	m_header.dataOffset    = getDataOffset();
+	m_header.codeOffset    = getInstructionOffset();
+	m_header.symbolOffset  = getSymbolTableOffset();
+	m_header.stringsOffset = getStringTableOffset();
 }
 
-size_t getHeaderOffset() const
+size_t BinaryWriter::getHeaderOffset() const
 {
 	return 0;
 }
 
-size_t getInstructionOffset() const
+size_t BinaryWriter::getInstructionOffset() const
 {
 	return sizeof(m_header);
 }
 
-size_t getDataOffset() const
+size_t BinaryWriter::getDataOffset() const
 {
-	return (m_instruction.size() * sizeof(InstructionContainer)) + getInstructionOffset();
+	return getInstructionStreamSize() + getInstructionOffset();
 }
 
-size_t getSymbolTableOffset() const
+size_t BinaryWriter::getSymbolTableOffset() const
 {
-	return (m_data.size() * sizeof(char)) + getDataOffset();
+	return getDataSize() + getDataOffset();
 }
 
-size_t getStringOffset() const
+size_t BinaryWriter::getStringTableOffset() const
 {
-	 return (m_symbolTable.size() * sizeof(SymbolTableEntry)) + getSymbolTableOffset();
+	 return getSymbolTableSize() + getSymbolTableOffset();
 }
 
-void convertToContainer(Instruction instruction)
+size_t BinaryWriter::getSymbolTableSize() const
 {
+	return m_symbolTable.size() * sizeof(SymbolTableEntry);
+}
+
+size_t BinaryWriter::getInstructionStreamSize() const
+{
+	return m_instructions.size() * sizeof(InstructionContainer);
+}
+
+size_t BinaryWriter::getDataSize() const
+{
+	return m_data.size();
+}
+
+size_t BinaryWriter::getStringTableSize() const
+{
+	return m_stringTable.size();
+}
+
+BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(const Instruction& instruction)
+{
+	InstructionContainer container;
+
+	assertM(false, "Not implemented.");
+
+	return container;
 }
 
 }
