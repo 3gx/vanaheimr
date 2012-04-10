@@ -3,6 +3,7 @@
         \author Sudnya Diamos <mailsudnya@gmail.com>
         \brief  The implementation file for the XVZ class for 3 D coordinates 
 */
+#include <cmath>
 
 #include <baldr/include/XYZ.h>
 
@@ -15,41 +16,41 @@ namespace baldr
 
     XYZ XYZ::crossProduct(XYZ v2)
     {
-        return this; //FIX ME WHEN YOU NEED ME
+        return *this; //FIX ME WHEN YOU NEED ME
     }
 
     XYZ XYZ::scalarProduct(float k)
     {
-        return ((this->getX()*k), (this->getY()*k), (this->getZ()*k));
+        return XYZ((this->getX()*k), (this->getY()*k), (this->getZ()*k));
     }
 
     XYZ XYZ::scalarDivide(float k)
     {
-        return ((this->getX()/k), (this->getY()/k), (this->getZ()/k));
+        return XYZ((this->getX()/k), (this->getY()/k), (this->getZ()/k));
     }
 
     XYZ XYZ::add(XYZ v2)
     {
         XYZ temp;
-        temp.x = this->getX() + v2.getX();
-        temp.y = this->getY() + v2.getY();
-        temp.z = this->getZ() + v2.getZ();
+        temp.setX (this->getX() + v2.getX());
+        temp.setY (this->getY() + v2.getY());
+        temp.setZ (this->getZ() + v2.getZ());
         return temp;
     }
 
     XYZ XYZ::subtract(XYZ v2)
     {
         XYZ temp;
-        temp.x = this->getX() - v2.getX();
-        temp.y = this->getY() - v2.getY();
-        temp.z = this->getZ() - v2.getZ();
+        temp.setX (this->getX() - v2.getX());
+        temp.setY (this->getY() - v2.getY());
+        temp.setZ (this->getZ() - v2.getZ());
         return temp;
     }
 
     float XYZ::distance(XYZ v2)
     {
         XYZ distance = this->subtract(v2);
-        return sqrt((distance->getX()*distance->getX()) + (distance->getY()*distance->getY()) + (distance->getZ()*distance->getZ()));
+        return sqrt((distance.getX()*distance.getX()) + (distance.getY()*distance.getY()) + (distance.getZ()*distance.getZ()));
 /*        float x, y, z;
         x = this->getX() - v2->getX();
         y = this->getY() - v2->getY();

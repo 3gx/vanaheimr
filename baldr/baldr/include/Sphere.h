@@ -17,15 +17,15 @@ namespace baldr
 {
 namespace SceneObjects
 {
-    class Sphere : public Shape
-        {
-            public:
-                Sphere(float radius, XYZ centre) : m_radius(radius), m_centre(centre);
-                bool doesIntersect(Ray R);
-            //something specific to only spheres
-            private:
-                float m_radius;
-                XYZ   m_centre;        
-        }
+class Sphere : public Shape
+{
+    public:
+        Sphere(float radius, XYZ centre) : m_radius(radius), m_centre(centre) {};
+        virtual bool doesIntersect(const Ray& R);
+    //something specific to only spheres
+    private:
+        float m_radius;
+        XYZ   m_centre;        
+};
 }
 }
