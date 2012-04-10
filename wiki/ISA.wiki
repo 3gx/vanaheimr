@@ -144,6 +144,10 @@ The memory model of VIR is tightly coupled with the ISA to create an association
 
 Automatic variables are defined with a scoping level. A scoping level indicates which level of the thread hierarchy the memory is associated with. Level 0 is per threads, level 1 is per thread group, and so on.
 
+Dynamic memory allocations are also defined with a scoping level. 
+The default level is 0, which makes allocations local to the thread
+that allocated them, but still globally accessible.  Allocations at other levels may be used for more efficient data sharing among threads.
+
 = ABI =
 *TBD* although the low level details regarding calling conventions and memory layout should
 not be exposed here.
