@@ -87,8 +87,7 @@ explicit in the dataflow representation of a program.
  * fence  - wait until all previous memory requests are visible at the specified level in the thread hierarchy
 
 === Task Creation ===
- * launch - similar to call, but creates a new BSP kernel launch and stores a handle
-            to the launch in a register.
+ * launch - similar to call, but creates a new BSP kernel launch and stores a handle to the launch in a register.
 
 == Intrinsics ==
 
