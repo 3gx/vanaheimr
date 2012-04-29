@@ -10,6 +10,10 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <vector>
+#include <string>
+
 namespace baldr
 {
 

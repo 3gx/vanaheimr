@@ -33,7 +33,7 @@ gCompilerOptions = {
         'g++' : {'warn_all' : '-Wall',
             'warn_errors' : '-Werror',
             'optimization' : '-O2', 'debug' : '-g', 
-            'exception_handling' : '', 'standard': '-std=c++0x'},
+            'exception_handling' : '', 'standard': ''},
         'c++' : {'warn_all' : '-Wall',
             'warn_errors' : '-Werror',
             'optimization' : '-O2', 'debug' : '-g',
@@ -115,7 +115,7 @@ def getExtraLibs():
     if os.name == 'nt':
         return []
     else:
-        return []
+        return ['-lpng']
 
 def importEnvironment():
     env = {  }
@@ -132,8 +132,14 @@ def importEnvironment():
     if 'TMP' in os.environ:
         env['TMP'] = os.environ['TMP']
     
+    if 'LIBRARY_PATH' in os.environ:
+        env['LIBRARY_PATH'] = os.environ['LIBRARY_PATH']
+    
     if 'LD_LIBRARY_PATH' in os.environ:
         env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
+    
+    if 'CPLUS_INCLUDE_PATH' in os.environ:
+        env['CPLUS_INCLUDE_PATH'] = os.environ['CPLUS_INCLUDE_PATH']
 
     return env
 
