@@ -87,6 +87,11 @@ public:
 	bool isStore()  const;
 	bool isBranch() const;
 	bool isCall()   const;
+
+public:
+	bool isUnary()  const;
+	bool isBinary() const;
+
 public:
 	std::string toString() const;
 	

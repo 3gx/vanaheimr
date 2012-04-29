@@ -124,6 +124,16 @@ bool Instruction::isCall() const
 	return opcode == Call;
 }
 
+bool Instruction::isUnary() const
+{
+	return typeid(*this) == typeid(UnaryInstruction);
+}
+
+bool Instruction::isBinary() const
+{
+	return typeid(*this) == typeid(BinaryInstruction);
+}
+
 std::string Instruction::toString() const
 {
 	std::stringstream stream;
