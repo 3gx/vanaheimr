@@ -181,6 +181,8 @@ def Environment():
     # get C compiler switches
     env.AppendUnique(CFLAGS = getCFLAGS(env['mode'], env['Wall'], \
         env['Werror'], env.subst('$CC')))
+    env.AppendUnique(CXXFLAGS = getCXXFLAGS(env['mode'], env['Wall'], \
+        env['Werror'], env.subst('$CXX')))
 
     # get linker switches
     env.AppendUnique(LINKFLAGS = getLINKFLAGS(env['mode'], env.subst('$LINK')))

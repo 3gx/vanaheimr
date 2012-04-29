@@ -4,6 +4,10 @@
 	\brief  The header file for the ImageFile class.
 */
 
+// Standard Library Includes
+#include <string>
+#include <vector>
+
 #pragma once
 
 namespace baldr
@@ -15,6 +19,7 @@ class ImageFile
 public:
 	class Pixel
 	{
+	public:
 		unsigned int red   : 8;
 		unsigned int green : 8;
 		unsigned int blue  : 8;
