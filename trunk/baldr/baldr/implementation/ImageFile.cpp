@@ -12,6 +12,7 @@
 
 // Standard Library Includes
 #include <cstdio>
+#include <stdexcept>
 
 namespace baldr
 {
@@ -24,7 +25,7 @@ ImageFile::ImageFile(unsigned int width, unsigned int height)
 void ImageFile::clear()
 {
 	_width  = 0;
-	_heaght = 0;
+	_height = 0;
 
 	_pixels.clear();
 }
@@ -41,12 +42,19 @@ void ImageFile::setPixel(unsigned int x, unsigned int y,
 	unsigned int red, unsigned int green,
 	unsigned int blue, unsigned int alpha)
 {
-	_pixels[_getIndex(x, y)] = {reg, green, blue, alpha};
+	Pixel p;
+
+	p.red   = red;
+	p.green = green;
+	p.blue  = blue;
+	p.alpha = alpha;
+
+	_pixels[_getIndex(x, y)] = p;
 }
 
 void ImageFile::write(const std::string& filename)
 {
-	FILE* file = std::open(filename.c_str(), "wb");
+	FILE* file = std::fopen(filename.c_str(), "wb");
 
 	if(file == 0)
 	{
@@ -75,7 +83,10 @@ void ImageFile::write(const std::string& filename)
 
 	png_write_info(writeStructure, pngInfo);
 
-	png_write_image(writeStructure, _pixels.data());
+	for(unsigned int i = 0; i < _height; ++i)
+	{
+		png_write_row(writeStructure, (png_bytep)&_pixels[_getIndex(0,i)]);
+	}
 
 	png_write_end(writeStructure, 0);
 
@@ -84,7 +95,7 @@ void ImageFile::write(const std::string& filename)
 
 unsigned int ImageFile::_getIndex(unsigned int x, unsigned int y)
 {
-	return y * _height + w;
+	return y * _height + x;
 }
 
 }

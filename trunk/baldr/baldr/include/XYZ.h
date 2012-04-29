@@ -21,9 +21,9 @@ class XYZ
         float getY() { return m_y; };
         float getZ() { return m_z; };
         
-        float setX(float x) { m_x = x; };
-        float setY(float y) { m_y = y; };
-        float setZ(float z) { m_z = z; };
+        void setX(float x) { m_x = x; };
+        void setY(float y) { m_y = y; };
+        void setZ(float z) { m_z = z; };
     private:
         float m_x, m_y, m_z;
 };
