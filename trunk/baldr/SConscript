@@ -44,6 +44,10 @@ if 'install' in COMMAND_LINE_TARGETS:
 
 baldr_dep_libs.insert(0, '-lbaldr')
 
+# Create programs
+TestSphere = env.Program('test-sphere',
+	['baldr/test/TestSphere.cpp'], LIBS=baldr_dep_libs)
+
 # Install rules
 if 'install' in COMMAND_LINE_TARGETS:
     print 'Installing baldr...'
