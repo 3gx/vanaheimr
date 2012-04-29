@@ -36,11 +36,12 @@ public:
 		Immediate,
 		Predicate,
 		Indirect,
+		Symbol,
 		InvalidOperand
 	};
 	
 	/*! \brief A type to hold a register idenfitier */
-	typedef unsigned int RegisterType;
+	typedef uint32_t RegisterType;
 
 public:
 	/*! \brief The mode of the operand determines how it is accessed */
@@ -66,8 +67,8 @@ public:
 	/*! \brief The immediate value */
 	union
 	{
-		long long unsigned int uint;
-		double                 fp;
+		uint64_t uint;
+		double   fp;
 	};
 
 	/*! \brief The data type */
@@ -81,7 +82,7 @@ public:
 	/*! \brief The modifier on the predicate */
 	enum PredicateModifier
 	{
-        StraightPredicate,
+        	StraightPredicate,
 		InversePredicate,
 		PredicateTrue,
 		PredicateFalse,
@@ -102,9 +103,17 @@ public:
 	/*! \brief The register being accessed */
 	RegisterType reg;
 	/*! \brief The offset to add to the register */
-	int offset;
+	uint64_t offset;
 	/*! \brief The data type */
 	DataType type;
+};
+
+/*! \brief A symbol operand */
+class SymbolOperand : public Operand
+{
+public:
+	uint64_t symbolTableOffset;
+
 };
 
 /*! \brief A union over the different operand types */
@@ -114,6 +123,7 @@ union OperandContainer
 	ImmediateOperand asImmediate;
 	PredicateOperand asPredicate;
 	IndirectOperand  asIndirect;
+	SymbolOperand    asSymbol;
 	Operand          asOperand;
 };
 

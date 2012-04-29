@@ -82,7 +82,6 @@ public:
 	virtual Operand* clone() const;
 	virtual std::string toString() const;
 
-
 public:
 	/*! \brief The register being accessed */
 	VirtualRegister* virtualRegister;

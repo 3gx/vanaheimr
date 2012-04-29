@@ -80,7 +80,7 @@ unsigned int IntegerType::bits() const
 
 size_t IntegerType::bytes() const
 {
-	return bytes() + 7 / 8;
+	return (bits() + 7) / 8;
 }
 
 std::string IntegerType::integerName(unsigned int bits)
