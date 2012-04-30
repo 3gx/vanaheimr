@@ -21,6 +21,9 @@
 // Forward Declarations
 namespace vanaheimr { namespace ir { class Module;      } }
 namespace vanaheimr { namespace ir { class Instruction; } }
+namespace vanaheimr { namespace ir { class Operand;     } }
+namespace vanaheimr { namespace ir { class Argument;    } }
+namespace vanaheimr { namespace ir { class Variable;    } }
 
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
@@ -34,7 +37,9 @@ class BinaryWriter
 {
 public:
 	typedef vanaheimr::ir::Instruction Instruction;
+	typedef vanaheimr::ir::Operand Operand;
 	typedef archaeopteryx::ir::InstructionContainer InstructionContainer;
+	typedef archaeopteryx::ir::OperandContainer     OperandContainer;
 	typedef std::vector<SymbolTableEntry> SymbolTableEntryVector;
 	typedef SymbolTableEntryVector::iterator symbol_iterator;
 
@@ -52,8 +57,6 @@ private:
 	void linkSymbols();
 
 private:
-	InstructionContainer convertToContainer(const Instruction&); 
-
 	size_t getHeaderOffset() const;
 	size_t getInstructionOffset() const;
 	size_t getDataOffset() const;
@@ -64,6 +67,17 @@ private:
 	size_t getInstructionStreamSize() const;
 	size_t getDataSize() const;
 	size_t getStringTableSize() const;
+	
+	void convertBinaryInstruction(InstructionContainer& container,
+		const Instruction& instruction);
+	void convertUnaryInstruction(InstructionContainer& container,
+		const Instruction& instruction);
+	
+	OperandContainer     convertOperand(const Operand&);
+	InstructionContainer convertToContainer(const Instruction&); 
+
+	size_t getSymbolTableOffset(const ir::Argument* a);
+	size_t getSymbolTableOffset(const ir::Variable* g);
 
 private:
 	typedef std::vector<InstructionContainer> InstructionVector;

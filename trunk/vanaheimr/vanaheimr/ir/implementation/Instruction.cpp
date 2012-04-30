@@ -9,6 +9,7 @@
 
 // Stdandard Library Includes
 #include <sstream>
+#include <typeinfo>
 
 namespace vanaheimr
 {
