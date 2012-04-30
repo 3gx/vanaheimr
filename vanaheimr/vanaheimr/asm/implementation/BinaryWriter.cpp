@@ -8,6 +8,7 @@
 #include <vanaheimr/asm/interface/BinaryWriter.h>
 
 #include <vanaheimr/ir/interface/Module.h>
+#include <vanaheimr/ir/interface/Type.h>
 
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
@@ -65,7 +66,7 @@ void BinaryWriter::populateData()
 			temp.stringOffset = m_stringTable.size();
 			std::copy(i->name().begin(), i->name().end(), std::back_inserter(m_stringTable));
 			m_stringTable.push_back('\0');
-			temp.offset = m_data.size();//needs fix to offset within file instead of datasection
+			temp.offset = m_data.size();
 			m_symbolTable.push_back(temp);
 			blob = initializer->data();
 		}
@@ -233,7 +234,84 @@ static archaeopteryx::ir::Instruction::Opcode convertOpcode(ir::Instruction::Opc
 	return AInstruction::InvalidOpcode;	
 }
 
-static archaeopteryx::ir::OperandContainer convertOperand(const ir::Operand& operand)
+static archaeopteryx::ir::DataType convertType(const ir::Type* type)
+{
+	if(type->isInteger())
+	{
+		const ir::IntegerType* integer = static_cast<const ir::IntegerType*>(type);
+
+		switch(integer->bits())
+		{
+		case 1:
+		{
+			return archaeopteryx::ir::i1;
+		}
+		case 8:
+		{
+			return archaeopteryx::ir::i8;
+		}
+		case 16:
+		{
+			return archaeopteryx::ir::i16;
+		}
+		case 32:
+		{
+			return archaeopteryx::ir::i32;
+		}
+		case 64:
+		{
+			return archaeopteryx::ir::i64;
+		}
+		default: assertM(false, "Invalid integer bit width.");
+		}
+	}
+	else if(type->isFloatingPoint())
+	{
+		if(type->isSinglePrecisionFloat())
+		{
+			return archaeopteryx::ir::f32;
+		}
+		else
+		{
+			return archaeopteryx::ir::f64;
+		}
+	}
+
+	assertM(false, "Data type conversion not implemented in binary writer");
+
+	return archaeopteryx::ir::InvalidDataType;
+}
+
+static archaeopteryx::ir::PredicateOperand::PredicateModifier convertPredicate(
+	ir::PredicateOperand::PredicateModifier modifier)
+{
+	switch(modifier)
+	{
+	case ir::PredicateOperand::StraightPredicate:
+	{
+		return archaeopteryx::ir::PredicateOperand::StraightPredicate;
+	}
+	case ir::PredicateOperand::InversePredicate:
+	{
+		return archaeopteryx::ir::PredicateOperand::InversePredicate;
+	}
+	case ir::PredicateOperand::PredicateTrue:
+	{
+		return archaeopteryx::ir::PredicateOperand::PredicateTrue;
+	}
+	case ir::PredicateOperand::PredicateFalse:
+	{
+		return archaeopteryx::ir::PredicateOperand::PredicateFalse;
+	}
+	default: break;
+	}
+
+	assertM(false, "Invalid predicate.");
+
+	return archaeopteryx::ir::PredicateOperand::InvalidPredicate;
+}
+
+archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Operand& operand)
 {
 	archaeopteryx::ir::OperandContainer result;
 
@@ -307,7 +385,7 @@ static archaeopteryx::ir::OperandContainer convertOperand(const ir::Operand& ope
 	return result;
 }
 
-static void convertUnaryInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::convertUnaryInstruction(archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::UnaryInstruction& unary =
@@ -317,7 +395,7 @@ static void convertUnaryInstruction(archaeopteryx::ir::InstructionContainer& con
 	container.asUnaryInstruction.a = convertOperand(*unary.a);
 }
 
-static void convertBinaryInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::convertBinaryInstruction(archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::BinaryInstruction& binary =
@@ -353,6 +431,16 @@ BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(const Instru
 	}
 	
 	return container;
+}
+
+size_t BinaryWriter::getSymbolTableOffset(const ir::Argument* a)
+{
+	assertM(false, "not implemented");
+}
+
+size_t BinaryWriter::getSymbolTableOffset(const ir::Variable* g)
+{
+	assertM(false, "Not implemented.");
 }
 
 }
