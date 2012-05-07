@@ -1,4 +1,4 @@
-/*! \file   ptx-to-vir-translator.cpp
+/*! 	\file   ptx-to-vir-translator.cpp
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\date   Monday February 13, 2012
 	\brief  The source file for the ptx-to-vir-translator tool.
