@@ -43,9 +43,11 @@ public:
 	/*! \brief A symbol type */
 	enum SymbolType
 	{
-		VariableSymbolType = 0x1,
-		FunctionSymbolType = 0x2,
-		InvalidSymbolType  = 0x0
+		VariableSymbolType   = 0x1,
+		FunctionSymbolType   = 0x2,
+		ArgumentSymbolType   = 0x3,
+		BasicBlockSymbolType = 0x4,
+		InvalidSymbolType    = 0x0
 	};
 
 	/*! \brief A symbol attribute */

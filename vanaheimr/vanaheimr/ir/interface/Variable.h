@@ -1,4 +1,4 @@
-/*! \file   Variable.h
+/*! 	\file   Variable.h
 	\date   Friday February 3, 2012
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\brief  The header file for the Variable class.

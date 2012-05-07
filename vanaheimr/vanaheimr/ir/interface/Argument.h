@@ -28,6 +28,7 @@ public:
 
 public:
 	const std::string& name() const;
+	      std::string  mangledName() const;
 	const Type& type() const;
 
 public:
