@@ -38,6 +38,8 @@ void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 {
 	m_module = &m;
 
+	report("Serializing module " << m.name << " to binary bytecode...");
+
 	populateData();
 	populateInstructions();
 	linkSymbols();
@@ -49,25 +51,22 @@ void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 	binary.write((const char*)m_instructions.data(), getInstructionStreamSize());
 	binary.write((const char*)m_data.data(), getDataSize());
 	binary.write((const char*)m_stringTable.data(), getStringTableSize());
+
 }
 
 void BinaryWriter::populateData()
 {
+	report(" Adding global variables...");
+
 	for (ir::Module::const_global_iterator i = m_module->global_begin(); i != m_module->global_end(); ++i)
 	{
 		ir::Constant::DataVector blob;
 		
+		report("  " << i->name());
+
 		if (i->hasInitializer())
 		{
 			const ir::Constant* initializer = i->initializer();
-			SymbolTableEntry temp;
-			temp.type = 0x1;
-			temp.attributes = 0x0;
-			temp.stringOffset = m_stringTable.size();
-			std::copy(i->name().begin(), i->name().end(), std::back_inserter(m_stringTable));
-			m_stringTable.push_back('\0');
-			temp.offset = m_data.size();
-			m_symbolTable.push_back(temp);
 			blob = initializer->data();
 		}
 		else
@@ -75,30 +74,47 @@ void BinaryWriter::populateData()
 			blob.resize(i->bytes());
 		}
 
+		addSymbol(0x1, 0x0, i->name(), m_data.size());
+
 		std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
 	}
 }
 
 void BinaryWriter::populateInstructions()
 {
-	for (ir::Module::const_iterator function = m_module->begin(); function != m_module->end(); ++function)
+	report(" Adding functions.");
+	for(ir::Module::const_iterator function = m_module->begin(); function != m_module->end(); ++function)
 	{
-		SymbolTableEntry temp;
-		temp.type = 0x2;
-		temp.attributes = 0x0;
-		temp.stringOffset = m_stringTable.size();
-		std::copy(function->name().begin(), function->name().end(), std::back_inserter(m_stringTable));
-		m_stringTable.push_back('\0');
-		temp.offset = m_instructions.size() * sizeof(InstructionContainer);
-		m_symbolTable.push_back(temp);
-		
-		for (ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
+		report("  " << function->name());
+		addSymbol(0x2, 0x0, function->name(), m_instructions.size() * sizeof(InstructionContainer));
+
+		for(ir::Function::const_argument_iterator argument = function->argument_begin();
+			argument != function->argument_end(); ++argument)
 		{
-			for (ir::BasicBlock::const_iterator inst = bb->begin(); inst != bb->end(); ++inst)
+			addSymbol(0x3, 0x0, argument->mangledName(), m_data.size());
+			m_data.resize(m_data.size() + argument->type().bytes());
+		}
+
+		unsigned int instructionOffset = m_instructions.size();	
+		for(ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
+		{
+			m_basicBlockOffsets.insert(std::make_pair(bb->name(),
+				instructionOffset * sizeof(InstructionContainer)));
+
+			instructionOffset += bb->size();
+		}
+	
+		for(ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
+		{
+			report("   Basic Block " << bb->name());
+			for(ir::BasicBlock::const_iterator inst = bb->begin(); inst != bb->end(); ++inst)
 			{
 				m_instructions.push_back(convertToContainer(**inst));
 			}
-		} 
+		}
+
+		m_basicBlockOffsets.clear();
+		m_basicBlockSymbols.clear();
 	}
 }
 
@@ -174,21 +190,10 @@ size_t BinaryWriter::getStringTableSize() const
 	return m_stringTable.size();
 }
 
-static bool isComplexInstruction(const ir::Instruction& instruction)
-{
-	return false;
-}
-
-static void convertComplexInstruction(archaeopteryx::ir::InstructionContainer& container,
-	const ir::Instruction& instruction)
-{
-	assertM(false, "Not implemented.");
-}
-
 static archaeopteryx::ir::Instruction::Opcode convertOpcode(ir::Instruction::Opcode opcode)
 {
 	typedef archaeopteryx::ir::Instruction AInstruction;
-
+	
 	switch(opcode)
 	{
 	case ir::Instruction::Add:           return AInstruction::Add;
@@ -341,8 +346,17 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	{
 		const ir::PredicateOperand& predicate = static_cast<const ir::PredicateOperand&>(operand);
 		
-		result.asPredicate.reg      = predicate.virtualRegister->id;
 		result.asPredicate.modifier = convertPredicate(predicate.modifier);
+		
+		if(predicate.modifier == ir::PredicateOperand::StraightPredicate ||
+			predicate.modifier == ir::PredicateOperand::InversePredicate)
+		{
+			result.asPredicate.reg = predicate.virtualRegister->id;
+		}
+		else
+		{
+			result.asPredicate.reg = 0;
+		}
 		
 		result.asOperand.mode = archaeopteryx::ir::Operand::Predicate;
 
@@ -363,10 +377,17 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	case ir::Operand::Address:
 	{
 		const ir::AddressOperand& address = static_cast<const ir::AddressOperand&>(operand);
-
-		result.asSymbol.symbolTableOffset = getSymbolTableOffset(address.globalValue);
 		
 		result.asOperand.mode = archaeopteryx::ir::Operand::Symbol;
+
+		if(address.globalValue->type().isBasicBlock())
+		{
+			result.asSymbol.symbolTableOffset = getBasicBlockSymbolTableOffset(address.globalValue);
+		}
+		else
+		{
+			result.asSymbol.symbolTableOffset = getSymbolTableOffset(address.globalValue);
+		}
 
 		break;
 	}
@@ -383,6 +404,46 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	}
 
 	return result;
+}
+
+static bool isComplexInstruction(const ir::Instruction& instruction)
+{
+	switch(instruction.opcode)
+	{
+	case ir::Instruction::St:
+	case ir::Instruction::Bra:
+	case ir::Instruction::Ret:
+	{
+		return true;
+	}
+	default: break;;
+	}
+	
+	return false;
+}
+
+void BinaryWriter::convertComplexInstruction(archaeopteryx::ir::InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	switch(instruction.opcode)
+	{
+	case ir::Instruction::Bra:
+	{
+		convertBraInstruction(container, instruction);
+		break;
+	}
+	case ir::Instruction::St:
+	{
+		convertStInstruction(container, instruction);
+		break;
+	}
+	case ir::Instruction::Ret:
+	{
+		convertRetInstruction(container, instruction);
+		break;
+	}
+	default: assertM(false, "Translation for " << instruction.toString() << " not implemented.");
+	}
 }
 
 void BinaryWriter::convertUnaryInstruction(archaeopteryx::ir::InstructionContainer& container,
@@ -408,6 +469,8 @@ void BinaryWriter::convertBinaryInstruction(archaeopteryx::ir::InstructionContai
 
 BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(const Instruction& instruction)
 {
+	report("    " << instruction.toString());
+
 	InstructionContainer container;
 
 	container.asInstruction.opcode = convertOpcode(instruction.opcode);
@@ -435,12 +498,107 @@ BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(const Instru
 
 size_t BinaryWriter::getSymbolTableOffset(const ir::Argument* a)
 {
-	assertM(false, "not implemented");
+	return getSymbolTableOffset(a->mangledName());
 }
 
 size_t BinaryWriter::getSymbolTableOffset(const ir::Variable* g)
 {
-	assertM(false, "Not implemented.");
+	return getSymbolTableOffset(g->name());
+}
+
+size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
+{
+	auto offset = m_basicBlockOffsets.find(g->name());
+	assert(offset != m_basicBlockOffsets.end());
+
+	auto symbol = m_basicBlockSymbols.find(offset->second);
+	
+	if(symbol == m_basicBlockSymbols.end())
+	{
+		symbol = m_basicBlockSymbols.insert(std::make_pair(
+			offset->second, m_symbolTable.size())).first;
+	
+		addSymbol(0x4, 0x0, g->name(), offset->second);
+	}
+
+	return symbol->second;
+}
+
+size_t BinaryWriter::getSymbolTableOffset(const std::string& name)
+{
+	for(SymbolVector::iterator symbol = m_symbolTable.begin();
+		symbol != m_symbolTable.end(); ++symbol)
+	{
+		std::string symbolName(&m_stringTable[symbol->stringOffset]);
+
+		if(symbolName == name)
+		{
+			return getSymbolTableOffset() +
+				std::distance(m_symbolTable.begin(), symbol) * sizeof(SymbolTableEntry);
+		}
+	}
+
+	assertM(false, "Invalid symbol name " << name << "");
+
+	return -1;
+}
+
+void BinaryWriter::addSymbol(unsigned int type, unsigned int attribute,
+	const std::string& name, uint64_t offset)
+{
+	SymbolTableEntry symbol;
+
+	symbol.type         = type;
+	symbol.attributes   = attribute;
+	symbol.stringOffset = m_stringTable.size();
+	symbol.offset       = offset;
+
+	m_symbolTable.push_back(symbol);
+	
+	std::copy(name.begin(), name.end(), std::back_inserter(m_stringTable));
+	m_stringTable.push_back('\0');
+}
+
+void BinaryWriter::convertStInstruction(archaeopteryx::ir::InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	const ir::St& st = static_cast<const ir::St&>(instruction);
+
+	container.asSt.d = convertOperand(*st.d);
+	container.asSt.a = convertOperand(*st.a);
+}
+
+void BinaryWriter::convertRetInstruction(archaeopteryx::ir::InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	// Currently a NOP
+}
+
+void BinaryWriter::convertBraInstruction(archaeopteryx::ir::InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	const ir::Bra& bra = static_cast<const ir::Bra&>(instruction);
+
+	container.asBra.target = convertOperand(*bra.target);
+	
+	switch(bra.modifier)
+	{
+	case ir::Bra::UniformBranch:
+	{
+		container.asBra.modifier = archaeopteryx::ir::Bra::UniformBranch;
+		break;
+	}
+	case ir::Bra::MultitargetBranch:
+	{
+		container.asBra.modifier = archaeopteryx::ir::Bra::MultitargetBranch;
+		break;
+	}
+	case ir::Bra::InvalidModifier:
+	{
+		container.asBra.modifier = archaeopteryx::ir::Bra::InvalidModifier;
+		break;
+	}
+	}
 }
 
 }

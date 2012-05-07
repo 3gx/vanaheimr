@@ -160,8 +160,8 @@ public:
 	};
 
 public:
-	Operation operation;
-	Operand   c;
+	Operation        operation;
+	OperandContainer c;
 };
 
 /*! \brief Perform a thread group barrier */
@@ -189,8 +189,8 @@ public:
 	};
 
 public:
-	Operand target;
-	BranchModifier modifier;
+	OperandContainer target;
+	BranchModifier   modifier;
 };
 
 /*! \brief A floating point precision extension instruction */

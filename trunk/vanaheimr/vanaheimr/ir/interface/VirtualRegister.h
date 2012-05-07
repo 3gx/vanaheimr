@@ -1,7 +1,7 @@
 /*	\file   VirtualRegister.h
 	\date   Thursday March 1, 2011
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
-	\brief  The header file for the Operand class.
+	\brief  The header file for the VirtualRegister class.
 */
 
 #pragma once

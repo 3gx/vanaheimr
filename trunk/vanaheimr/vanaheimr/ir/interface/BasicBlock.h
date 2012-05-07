@@ -72,7 +72,7 @@ public:
 	
 public:
 	/*! \brief Pushes an instruction copy to the back of the block */
-	void push_back( Instruction* i);
+	void push_back(Instruction* i);
 	/*! \brief Pushes an instruction copy to the front of the block */
 	void push_front(Instruction* i);
 
@@ -81,7 +81,9 @@ public:
 	iterator insert(iterator position, Instruction* i);
 
 public:
+	/*! \brief Delete all instructions within the block */
 	void clear();
+	/*! \brief Set the owning function */
 	void setFunction(Function*);
 
 private:

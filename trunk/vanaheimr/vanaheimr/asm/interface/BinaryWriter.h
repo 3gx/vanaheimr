@@ -16,6 +16,7 @@
 
 // Standard Library Includes
 #include <vector>
+#include <unordered_map>
 #include <ostream>
 
 // Forward Declarations
@@ -68,6 +69,8 @@ private:
 	size_t getDataSize() const;
 	size_t getStringTableSize() const;
 	
+	void convertComplexInstruction(InstructionContainer& container,
+		const Instruction& instruction);
 	void convertBinaryInstruction(InstructionContainer& container,
 		const Instruction& instruction);
 	void convertUnaryInstruction(InstructionContainer& container,
@@ -78,11 +81,28 @@ private:
 
 	size_t getSymbolTableOffset(const ir::Argument* a);
 	size_t getSymbolTableOffset(const ir::Variable* g);
+	size_t getSymbolTableOffset(const std::string& name);
+	size_t getBasicBlockSymbolTableOffset(const ir::Variable* g);
+
+	void addSymbol(unsigned int type, unsigned int attribute,
+		const std::string& name, uint64_t offset);
+
+private:
+	void convertStInstruction(InstructionContainer& container,
+		const Instruction& instruction);
+	void convertBraInstruction(InstructionContainer& container,
+		const Instruction& instruction);
+	void convertRetInstruction(InstructionContainer& container,
+		const Instruction& instruction);
 
 private:
 	typedef std::vector<InstructionContainer> InstructionVector;
 	typedef std::vector<char>                 DataVector;
 	typedef std::vector<SymbolTableEntry>     SymbolVector;
+	typedef std::unordered_map<std::string,
+		uint64_t> OffsetMap;
+	typedef std::unordered_map<uint64_t,
+		uint64_t> OffsetToSymbolMap;
 
 private:
 	const ir::Module*  m_module;
@@ -92,6 +112,10 @@ private:
 	DataVector        m_data;
 	SymbolVector      m_symbolTable;
 	DataVector        m_stringTable;
+
+private:
+	OffsetMap         m_basicBlockOffsets;
+	OffsetToSymbolMap m_basicBlockSymbols;
 };
 
 }

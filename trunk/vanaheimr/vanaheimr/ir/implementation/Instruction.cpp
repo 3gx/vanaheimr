@@ -127,12 +127,12 @@ bool Instruction::isCall() const
 
 bool Instruction::isUnary() const
 {
-	return typeid(*this) == typeid(UnaryInstruction);
+	return dynamic_cast<const UnaryInstruction*>(this) != nullptr;
 }
 
 bool Instruction::isBinary() const
 {
-	return typeid(*this) == typeid(BinaryInstruction);
+	return dynamic_cast<const BinaryInstruction*>(this) != nullptr;
 }
 
 std::string Instruction::toString() const
