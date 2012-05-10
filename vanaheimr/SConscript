@@ -49,8 +49,12 @@ vanaheimr_dep_libs.insert(0, '-lvanaheimr')
 PTXToVIRTranslator = env.Program('ptx-to-vir-translator',
 	['vanaheimr/tools/ptx-to-vir-translator.cpp'], LIBS=vanaheimr_dep_libs)
 env.Depends(PTXToVIRTranslator, libvanaheimr)
+VanaheimrObjDump = env.Program('vir-objdump',
+	['vanaheimr/tools/vir-objdump.cpp'], LIBS=vanaheimr_dep_libs)
+env.Depends(VanaheimrObjDump, libvanaheimr)
 
 Default(PTXToVIRTranslator)
+Default(VanaheimrObjDump)
 
 # Install rules
 if 'install' in COMMAND_LINE_TARGETS:
@@ -60,6 +64,8 @@ if 'install' in COMMAND_LINE_TARGETS:
 	installed.append(libvanaheimr)
 	installed.append(env.Install(os.path.join( \
 		env['install_path'], "bin"), PTXToVIRTranslator))
+	installed.append(env.Install(os.path.join( \
+		env['install_path'], "bin"), VanaheimrObjDump))
 
 	# find all header files in the source tree
 	headers = []
