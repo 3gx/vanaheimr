@@ -16,16 +16,20 @@ namespace as
 class BinaryHeader
 {
 public:
-    uint32_t dataPages     : 32;
-    uint32_t codePages     : 32;
-    uint32_t symbols       : 32;
-    uint32_t stringPages   : 32;
-    uint64_t dataOffset    : 64;
-    uint64_t codeOffset    : 64;
-    uint64_t symbolOffset  : 64;
-    uint64_t stringsOffset : 64;
+	static const unsigned int PageSize = (1 << 15); // 32 KB
+
+public:
+	uint32_t dataPages     : 32;
+	uint32_t codePages     : 32;
+	uint32_t symbols       : 32;
+	uint32_t stringPages   : 32;
+	uint64_t dataOffset    : 64;
+	uint64_t codeOffset    : 64;
+	uint64_t symbolOffset  : 64;
+	uint64_t stringsOffset : 64;
 };
 
 }
 
 }
+
