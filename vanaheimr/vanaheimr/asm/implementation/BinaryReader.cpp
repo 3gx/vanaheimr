@@ -7,6 +7,10 @@
 // Vanaheimr Includes
 #include <vanaheimr/asm/interface/BinaryReader.h>
 
+#include <vanaheimr/compiler/interface/Compiler.h>
+
+#include <vanaheimr/ir/interface/Module.h>
+
 namespace vanaheimr
 {
 
@@ -16,7 +20,15 @@ namespace as
 ir::Module* BinaryReader::read(std::istream& stream)
 {
 	_readHeader(stream);
-	_read
+	_readDataSection(stream);
+	_readStringTable(stream);
+	_readSymbolTable(stream);
+	_readInstructions(stream);
+
+	ir::Module* module = new ir::Module(_getName(),
+		compiler::Compiler::getSingleton());
+	
+	return module;
 }
 
 }
