@@ -1,4 +1,4 @@
-/*! 	\file   BinaryReader.h
+/*! \file   BinaryReader.h
 	\date   Monday May 7, 2012
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\brief  The header file for the BinaryReader class.
@@ -46,9 +46,17 @@ private:
 	void _readInstructions(std::istream& stream);
 
 private:
+	void _initializeModule(ir::Module& m) const;
+
+	void _loadGlobals(ir::Module& m)   const;
+	void _loadFunctions(ir::Module& m) const;
+
+private:
 	std::string _getName() const;
 
 private:
+	BinaryHeader _header;
+
 	InstructionVector _instructions;
 	DataVector        _dataSection;
 	DataVector        _stringTable;
