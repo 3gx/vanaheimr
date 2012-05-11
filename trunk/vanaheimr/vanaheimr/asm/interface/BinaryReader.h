@@ -15,6 +15,7 @@
 
 // Standard Library Includes
 #include <istream>
+#include <vector>
 
 namespace vanaheimr { namespace ir { class Module; } }
 
@@ -30,17 +31,22 @@ class BinaryReader
 public:
 	/*! \brief Attempts to read from a binary stream, returns a module */
 	ir::Module* read(std::istream& stream);
-private:
-	typedef std::vector<InstructionContainer> InstructionVector;
-	typedef std::vector<char>                 DataVector;
-	typedef std::vector<SymbolTableEntry>     SymbolVector;
 
 private:
-	void _readHeader();
-	void _readDataSection();
-	void _readStringTable();
-	void _readSymbolTable();
-	void _readInstructions();
+	typedef archaeopteryx::ir::InstructionContainer InstructionContainer;
+	typedef std::vector<InstructionContainer>       InstructionVector;
+	typedef std::vector<char>                       DataVector;
+	typedef std::vector<SymbolTableEntry>           SymbolVector;
+
+private:
+	void _readHeader(std::istream& stream);
+	void _readDataSection(std::istream& stream);
+	void _readStringTable(std::istream& stream);
+	void _readSymbolTable(std::istream& stream);
+	void _readInstructions(std::istream& stream);
+
+private:
+	std::string _getName() const;
 
 private:
 	InstructionVector _instructions;
