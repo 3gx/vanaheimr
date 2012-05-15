@@ -30,13 +30,26 @@ class BinaryReader
 {
 public:
 	/*! \brief Attempts to read from a binary stream, returns a module */
-	ir::Module* read(std::istream& stream);
+	ir::Module* read(std::istream& stream, const std::string& name);
 
 private:
 	typedef archaeopteryx::ir::InstructionContainer InstructionContainer;
 	typedef std::vector<InstructionContainer>       InstructionVector;
 	typedef std::vector<char>                       DataVector;
 	typedef std::vector<SymbolTableEntry>           SymbolVector;
+	typedef std::vector<uint32_t>                   BasicBlockOffsetVector;
+
+	typedef SymbolVector::iterator symbol_iterator;
+
+	class BasicBlockDescriptor
+	{
+	public:
+		std::string name;;
+		uint64_t    begin; // first instruction
+		uint64_t    end; // last instruction + 1
+	};
+
+	typedef std::vector<BasicBlockDescriptor> BasicBlockDescriptorVector;
 
 private:
 	void _readHeader(std::istream& stream);
@@ -52,7 +65,19 @@ private:
 	void _loadFunctions(ir::Module& m) const;
 
 private:
-	std::string _getName() const;
+	std::string           _getSymbolName(symbol_iterator symbol)    const;
+	ir::Type*             _getSymbolType(symbol_iterator symbol)    const;
+	ir::Variable::Linkage _getSymbolLinkage(symbol_iterator symbol) const;
+
+	bool          _hasInitializer(symbol_iterator symbol) const;
+	ir::Constant* _getInitializer(symbol_iterator symbol) const;
+
+	void _findBasicBlocks(ir::Module& m);
+	BasicBlockDescriptorVector _getBasicBlocksInFunction(
+		const std::string& name);
+
+	void _addInstruction(ir::Function::iterator block,
+		const InstructionContainer& container);
 
 private:
 	BinaryHeader _header;
