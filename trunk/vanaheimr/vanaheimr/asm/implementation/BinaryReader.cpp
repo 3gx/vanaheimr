@@ -17,7 +17,7 @@ namespace vanaheimr
 namespace as
 {
 
-ir::Module* BinaryReader::read(std::istream& stream)
+ir::Module* BinaryReader::read(std::istream& stream, const std::string& name)
 {
 	_readHeader(stream);
 	_readDataSection(stream);
@@ -25,7 +25,7 @@ ir::Module* BinaryReader::read(std::istream& stream)
 	_readSymbolTable(stream);
 	_readInstructions(stream);
 
-	ir::Module* module = new ir::Module(_getName(),
+	ir::Module* module = new ir::Module(name,
 		compiler::Compiler::getSingleton());
 
 	_initializeModule(*module);
@@ -33,7 +33,7 @@ ir::Module* BinaryReader::read(std::istream& stream)
 	return module;
 }
 
-void ir::BinaryReader::_readHeader(std::istream& stream)
+void BinaryReader::_readHeader(std::istream& stream)
 {
 	stream.read((char*)&_header, sizeof(BinaryHeader));
 
@@ -44,7 +44,7 @@ void ir::BinaryReader::_readHeader(std::istream& stream)
 	}
 }
 
-void ir::BinaryReader::_readDataSection(std::istream& stream)
+void BinaryReader::_readDataSection(std::istream& stream)
 {
 	size_t dataSize = BinaryHeader::PageSize * _header.dataPages;
 
@@ -61,7 +61,7 @@ void ir::BinaryReader::_readDataSection(std::istream& stream)
 	}
 }
 
-void ir::BinaryReader::_readStringTable(std::istream& stream)
+void BinaryReader::_readStringTable(std::istream& stream)
 {
 	size_t stringTableSize = BinaryHeader::PageSize * _header.stringPages;
 
@@ -77,7 +77,7 @@ void ir::BinaryReader::_readStringTable(std::istream& stream)
 	}
 }
 
-void ir::BinaryReader::_readSymbolTable(std::istream& stream)
+void BinaryReader::_readSymbolTable(std::istream& stream)
 {
 	size_t symbolTableSize = sizeof(SymbolTableEntry) * _header.symbols;
 
@@ -93,22 +93,105 @@ void ir::BinaryReader::_readSymbolTable(std::istream& stream)
 	}
 }
 
-void ir::BinaryReader::_readInstructions(std::istream& stream)
+void BinaryReader::_readInstructions(std::istream& stream)
 {
 	size_t dataSize = BinaryHeader::PageSize * _header.codePages;
+	size_t sizeInInstructions = (dataSize + sizeof(InstructionContainer) - 1) /
+		sizeof(InstructionContainer);
 
-	// TODO
+	_instructions.resize(sizeInInstructions);
+
+	// TODO obey page alignment
+	stream.read((char*) _instructions.data(), dataSize);
+
+	if(stream.gcount() != dataSize)
+	{
+		throw std::runtime_error("Failed to read code section, hit EOF.");
+	}
 }
 
-void ir::BinaryReader::_initializeModule(ir::Module& m) const;
+void BinaryReader::_initializeModule(ir::Module& m) const
+{
+	_loadGlobals(m);
+	_loadFunctions(m);
+}
 
-void ir::BinaryReader::_loadGlobals(ir::Module& m)   const;
-void ir::BinaryReader::_loadFunctions(ir::Module& m) const;
+void BinaryReader::_loadGlobals(ir::Module& m) const
+{
+	for(auto symbol : _symbolTable)
+	{
+		if(symbol.type != archaeopteryx::ir::Binary::VariableSymbolType)
+		{
+			continue;
+		}
 
-std::string ir::BinaryReader::_getName() const;
+		auto global = m.newGlobal(_getSymbolName(symbol), _getSymbolType(symbol),
+			_getSymbolLinkage(symbol));
+
+		if(_hasInitializer(symbol))
+		{
+			global->setInitializer(_createConstant(symbol));
+		}
+	}
+}
+
+void BinaryReader::_loadFunctions(ir::Module& m)
+{
+	_findBasicBlocks(m);
+	
+	for(auto symbol : _symbolTable)
+	{
+		if(symbol.type != archaeopteryx::ir::Binary::FunctionSymbolType)
+		{
+			continue;
+		}
+
+		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
+			_getSymbolLinkage(symbol));
+		
+		BasicBlockOffsetVector blocks =
+			_getBasicBlocksInFunction(function->name());
+		
+		for(auto blockOffset : blocks)
+		{
+			ir::Function::iterator block = function->newBlock(
+				function->end(), blockOffset.name);
+			
+			for(unsigned int i = blockOffset.begin; i != blockOffset.end; ++i)
+			{
+				_addInstruction(block, _instructions[i]);
+			}
+		}
+	}
+}
+
+std::string BinaryReader::_getSymbolName(symbol_iterator symbol) const
+{
+	return std::string((char*)_stringTable.data() + symbol->stringOffset);
+}
+
+ir::Type* BinaryReader::_getSymbolType(symbol_iterator symbol) const
+{
+
+}
+
+ir::Variable::Linkage BinaryReader::_getSymbolLinkage(symbol_iterator symbol) const
+{
+	
+}
+
+bool BinaryReader::_hasInitializer(symbol_iterator symbol) const;
+ir::Constant* BinaryReader::_getInitializer(symbol_iterator symbol) const;
+
+void BinaryReader::_findBasicBlocks(ir::Module& m);
+BinaryReader::BasicBlockDescriptorVector
+	BinaryReader::_getBasicBlocksInFunction(const std::string& name);
+
+void BinaryReader::_addInstruction(ir::Function::iterator block,
+	const InstructionContainer& container);
+
 
 }
 
 }
-
 

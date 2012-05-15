@@ -37,7 +37,7 @@ void dump(const std::string& name)
 	{
 		as::BinaryReader reader;
 
-		module = reader.read(virFile);
+		module = reader.read(virFile, name);
 	
 		module->writeAssembly(std::cout);
 	}
