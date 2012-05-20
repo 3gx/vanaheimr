@@ -137,8 +137,6 @@ void BinaryReader::_loadGlobals(ir::Module& m) const
 
 void BinaryReader::_loadFunctions(ir::Module& m)
 {
-	_findBasicBlocks(m);
-	
 	for(auto symbol : _symbolTable)
 	{
 		if(symbol.type != archaeopteryx::ir::Binary::FunctionSymbolType)
@@ -149,8 +147,7 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
 			_getSymbolLinkage(symbol));
 		
-		BasicBlockOffsetVector blocks =
-			_getBasicBlocksInFunction(function->name());
+		BasicBlockOffsetVector blocks = _getBasicBlocksInFunction(symbol);
 		
 		for(auto blockOffset : blocks)
 		{
@@ -170,26 +167,116 @@ std::string BinaryReader::_getSymbolName(symbol_iterator symbol) const
 	return std::string((char*)_stringTable.data() + symbol->stringOffset);
 }
 
+std::string BinaryReader::_getSymbolTypeName(symbol_iterator symbol) const
+{
+	return std::string((char*)_stringTable.data() + symbol->typeOffset);
+}
+
 ir::Type* BinaryReader::_getSymbolType(symbol_iterator symbol) const
 {
-
+	ir::Type* type = compiler::Compiler::getSingleton()->getType(
+		_getSymbolTypeName(symbol));
 }
 
 ir::Variable::Linkage BinaryReader::_getSymbolLinkage(symbol_iterator symbol) const
 {
-	
+	return (ir::Variable::Linkage)(symbol->attribute & 0x7);
 }
 
-bool BinaryReader::_hasInitializer(symbol_iterator symbol) const;
-ir::Constant* BinaryReader::_getInitializer(symbol_iterator symbol) const;
+bool BinaryReader::_hasInitializer(symbol_iterator symbol) const
+{
+	assertM(false, "Not implemented.");
+	return false;
+}
 
-void BinaryReader::_findBasicBlocks(ir::Module& m);
+ir::Constant* BinaryReader::_getInitializer(symbol_iterator symbol) const
+{
+	assertM(false, "Not imeplemented.");
+}
+
 BinaryReader::BasicBlockDescriptorVector
-	BinaryReader::_getBasicBlocksInFunction(const std::string& name);
+	BinaryReader::_getBasicBlocksInFunction(symbol_iterator symbol)
+{
+	typedef std::unordered_set<uint64_t> TargetSet;
+
+	BasicBlockDescriptorVector blocks;
+	
+	// Get the first and last instruction in the function
+	uint64_t begin = (symbol->offset - _header->codeOffset) /
+		sizeof(InstructionContainer);
+	
+	uint64_t end = begin + symbol->size / sizeof(InstructionContainer);
+
+	TargetSet targets;
+
+	for(uint64_t i = begin; i != end; ++i)
+	{
+		archaeopteryx::ir::InstructionContainer& instruction = _instructions[i];
+
+		if(instruction.asInstruction.opcode == ir::Instruction::Bra)
+		{
+			if(instruction.asBra.target.asOperand.mode ==
+				archaeopteryx::ir::Operand::Immediate)
+			{
+				targets.insert(instruction.asBra.target.asImmediate.uint);
+			}
+			else
+			{
+				assertM(false, "not implemented");
+			}
+		}
+	}
+
+	BasicBlockDescriptor block("BB_0", begin);
+
+	for(uint64_t i = begin; i != end; ++i)
+	{
+		bool isTerminator = false;
+		uint64_t blockEnd = i;
+
+		archaeopteryx::ir::InstructionContainer& instruction = _instructions[i];
+
+		if(targets.find(i * sizeof(InstructionContainer)))
+		{
+			isTerminator = true;
+		}
+		else if(instruction.asInstruction.opcode == ir::Instruction::Bra)
+		{
+			isTerminator = true;
+			blockEnd = i + 1;
+		}
+
+		if(isTerminator)
+		{
+			block.end = blockEnd;
+			blocks.push_back(block);
+
+			std::stringstream name;
+
+			name << "BB_" << blocks.size();
+
+			block = BasicBlockDescriptor(name.str(), blockEnd);
+		}
+	}
+
+	if(block.begin != end)
+	{
+		block.end = end;
+		blocks.push_back(block);
+	}
+
+	return blocks;
+}
 
 void BinaryReader::_addInstruction(ir::Function::iterator block,
-	const InstructionContainer& container);
+	const InstructionContainer& container)
+{
+	if(_addSimpleBinaryInstruction(block, container)) return;
+	if(_addSimpleUnaryInstruction(block, container))  return;
+	if(_addComplexInstruction(block, container))      return;
 
+	assertM(false, "Translation for instruction not implemented.");
+}
 
 }
 

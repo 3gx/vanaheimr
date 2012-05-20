@@ -36,7 +36,7 @@ public:
 	~Compiler();
 	
 public:
-	          Compiler( const Compiler&) = delete;
+	Compiler( const Compiler&) = delete;
 	Compiler& operator=(const Compiler&) = delete;	
 	
 public:

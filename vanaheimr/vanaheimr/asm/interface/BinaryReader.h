@@ -44,7 +44,7 @@ private:
 	class BasicBlockDescriptor
 	{
 	public:
-		std::string name;;
+		std::string name;
 		uint64_t    begin; // first instruction
 		uint64_t    end; // last instruction + 1
 	};
@@ -72,7 +72,6 @@ private:
 	bool          _hasInitializer(symbol_iterator symbol) const;
 	ir::Constant* _getInitializer(symbol_iterator symbol) const;
 
-	void _findBasicBlocks(ir::Module& m);
 	BasicBlockDescriptorVector _getBasicBlocksInFunction(
 		const std::string& name);
 
@@ -86,6 +85,9 @@ private:
 	DataVector        _dataSection;
 	DataVector        _stringTable;
 	SymbolVector      _symbolTable;
+
+private:
+	
 
 };
 
