@@ -13,6 +13,7 @@ namespace vanaheimr
 /*! \brief A namespace for the internal representation */
 namespace as
 {
+
 class BinaryHeader
 {
 public:
@@ -27,6 +28,7 @@ public:
 	uint64_t codeOffset    : 64;
 	uint64_t symbolOffset  : 64;
 	uint64_t stringsOffset : 64;
+	uint64_t nameOffset    : 64;
 };
 
 }
