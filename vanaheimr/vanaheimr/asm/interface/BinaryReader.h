@@ -10,6 +10,8 @@
 #include <vanaheimr/asm/interface/BinaryHeader.h>
 #include <vanaheimr/asm/interface/SymbolTableEntry.h>
 
+#include <vanaheimr/ir/interface/Function.h>
+
 // Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Instruction.h>
 
@@ -17,7 +19,7 @@
 #include <istream>
 #include <vector>
 
-namespace vanaheimr { namespace ir { class Module; } }
+namespace vanaheimr { namespace ir { class Constant; } }
 
 namespace vanaheimr
 {
@@ -37,12 +39,15 @@ private:
 	typedef std::vector<InstructionContainer>       InstructionVector;
 	typedef std::vector<char>                       DataVector;
 	typedef std::vector<SymbolTableEntry>           SymbolVector;
-	typedef std::vector<uint32_t>                   BasicBlockOffsetVector;
 
 	typedef SymbolVector::iterator symbol_iterator;
 
 	class BasicBlockDescriptor
 	{
+	public:
+		BasicBlockDescriptor(const std::string& name = "", uint64_t b = 0,
+			uint64_t e = 0);
+
 	public:
 		std::string name;
 		uint64_t    begin; // first instruction
@@ -61,22 +66,30 @@ private:
 private:
 	void _initializeModule(ir::Module& m) const;
 
-	void _loadGlobals(ir::Module& m)   const;
+	void _loadGlobals(ir::Module& m) const;
 	void _loadFunctions(ir::Module& m) const;
 
 private:
-	std::string           _getSymbolName(symbol_iterator symbol)    const;
-	ir::Type*             _getSymbolType(symbol_iterator symbol)    const;
-	ir::Variable::Linkage _getSymbolLinkage(symbol_iterator symbol) const;
+	std::string           _getSymbolName(const SymbolTableEntry& symbol)     const;
+	std::string           _getSymbolTypeName(const SymbolTableEntry& symbol) const;
+	ir::Type*             _getSymbolType(const SymbolTableEntry& symbol)     const;
+	ir::Variable::Linkage _getSymbolLinkage(const SymbolTableEntry& symbol)  const;
 
-	bool          _hasInitializer(symbol_iterator symbol) const;
-	ir::Constant* _getInitializer(symbol_iterator symbol) const;
+	bool          _hasInitializer(const SymbolTableEntry& symbol) const;
+	ir::Constant* _getInitializer(const SymbolTableEntry& symbol) const;
 
 	BasicBlockDescriptorVector _getBasicBlocksInFunction(
-		const std::string& name);
+		const SymbolTableEntry& name) const;
 
 	void _addInstruction(ir::Function::iterator block,
-		const InstructionContainer& container);
+		const InstructionContainer& container) const;
+
+	bool _addSimpleBinaryInstruction(ir::Function::iterator block,
+		const InstructionContainer& container) const;
+	bool _addSimpleUnaryInstruction(ir::Function::iterator block,
+		const InstructionContainer& container) const;
+	bool _addComplexInstruction(ir::Function::iterator block,
+		const InstructionContainer& container) const;
 
 private:
 	BinaryHeader _header;
