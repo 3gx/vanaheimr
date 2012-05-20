@@ -15,9 +15,33 @@ namespace as
 class SymbolTableEntry
 {
 public:
+	enum Type
+	{
+		VariableType   = 0x1,
+		FunctionType   = 0x2,
+		ArgumentType   = 0x3,
+		BasicBlockType = 0x4,
+		InvalidType    = 0x0
+	};
+	
+	class Attributes
+	{
+	public:
+		uint32_t linkage    : 3;
+		uint32_t visibility : 2;
+		uint32_t unused     : 27;
+	};
+
+public:
     uint32_t type         : 32;
-    uint32_t attributes   : 32;
-    uint64_t stringOffset : 64;
+    
+	union
+	{
+		uint32_t   attributeData : 32;
+		Attributes attributes;
+	};
+
+	uint64_t stringOffset : 64;
     uint64_t offset       : 64;
 	uint64_t typeOffset   : 64;
 	uint64_t size         : 64;

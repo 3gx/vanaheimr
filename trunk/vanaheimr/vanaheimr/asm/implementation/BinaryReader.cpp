@@ -11,6 +11,14 @@
 
 #include <vanaheimr/ir/interface/Module.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Standard Library Includes
+#include <stdexcept>
+#include <unordered_set>
+
+
 namespace vanaheimr
 {
 
@@ -54,10 +62,10 @@ void BinaryReader::_readDataSection(std::istream& stream)
 
 	stream.read((char*) _dataSection.data(), dataSize);
 
-	if(stream.gcount() != dataSize)
+	if((size_t)stream.gcount() != dataSize)
 	{
-		throw std::runtime_error("Failed to read binary data section, hit
-			EOF."); 
+		throw std::runtime_error("Failed to read binary data section, hit"
+			" EOF."); 
 	}
 }
 
@@ -65,13 +73,13 @@ void BinaryReader::_readStringTable(std::istream& stream)
 {
 	size_t stringTableSize = BinaryHeader::PageSize * _header.stringPages;
 
-	stream.seeekg(_header.stringOffset, std::ios::beg);
+	stream.seekg(_header.stringsOffset, std::ios::beg);
 
 	_stringTable.resize(stringTableSize);
 
 	stream.read((char*) _stringTable.data(), stringTableSize);
 
-	if(stream.gcount() != stringTableSize)
+	if((size_t)stream.gcount() != stringTableSize)
 	{
 		throw std::runtime_error("Failed to read string table, hit EOF");
 	}
@@ -87,7 +95,7 @@ void BinaryReader::_readSymbolTable(std::istream& stream)
 
 	stream.read((char*) _symbolTable.data(), symbolTableSize);
 
-	if(stream.gcount() != symbolTableSize)
+	if((size_t)stream.gcount() != symbolTableSize)
 	{
 		throw std::runtime_error("Failed to read symbol table, hit EOF");
 	}
@@ -104,7 +112,7 @@ void BinaryReader::_readInstructions(std::istream& stream)
 	// TODO obey page alignment
 	stream.read((char*) _instructions.data(), dataSize);
 
-	if(stream.gcount() != dataSize)
+	if((size_t)stream.gcount() != dataSize)
 	{
 		throw std::runtime_error("Failed to read code section, hit EOF.");
 	}
@@ -120,7 +128,7 @@ void BinaryReader::_loadGlobals(ir::Module& m) const
 {
 	for(auto symbol : _symbolTable)
 	{
-		if(symbol.type != archaeopteryx::ir::Binary::VariableSymbolType)
+		if(symbol.type != SymbolTableEntry::VariableType)
 		{
 			continue;
 		}
@@ -130,16 +138,16 @@ void BinaryReader::_loadGlobals(ir::Module& m) const
 
 		if(_hasInitializer(symbol))
 		{
-			global->setInitializer(_createConstant(symbol));
+			global->setInitializer(_getInitializer(symbol));
 		}
 	}
 }
 
-void BinaryReader::_loadFunctions(ir::Module& m)
+void BinaryReader::_loadFunctions(ir::Module& m) const
 {
 	for(auto symbol : _symbolTable)
 	{
-		if(symbol.type != archaeopteryx::ir::Binary::FunctionSymbolType)
+		if(symbol.type != SymbolTableEntry::FunctionType)
 		{
 			continue;
 		}
@@ -147,11 +155,11 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
 			_getSymbolLinkage(symbol));
 		
-		BasicBlockOffsetVector blocks = _getBasicBlocksInFunction(symbol);
+		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(symbol);
 		
 		for(auto blockOffset : blocks)
 		{
-			ir::Function::iterator block = function->newBlock(
+			ir::Function::iterator block = function->newBasicBlock(
 				function->end(), blockOffset.name);
 			
 			for(unsigned int i = blockOffset.begin; i != blockOffset.end; ++i)
@@ -162,58 +170,59 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 	}
 }
 
-std::string BinaryReader::_getSymbolName(symbol_iterator symbol) const
+std::string BinaryReader::_getSymbolName(const SymbolTableEntry& symbol) const
 {
-	return std::string((char*)_stringTable.data() + symbol->stringOffset);
+	return std::string((char*)_stringTable.data() + symbol.stringOffset);
 }
 
-std::string BinaryReader::_getSymbolTypeName(symbol_iterator symbol) const
+std::string BinaryReader::_getSymbolTypeName(const SymbolTableEntry& symbol) const
 {
-	return std::string((char*)_stringTable.data() + symbol->typeOffset);
+	return std::string((char*)_stringTable.data() + symbol.typeOffset);
 }
 
-ir::Type* BinaryReader::_getSymbolType(symbol_iterator symbol) const
+ir::Type* BinaryReader::_getSymbolType(const SymbolTableEntry& symbol) const
 {
-	ir::Type* type = compiler::Compiler::getSingleton()->getType(
+	return compiler::Compiler::getSingleton()->getType(
 		_getSymbolTypeName(symbol));
 }
 
-ir::Variable::Linkage BinaryReader::_getSymbolLinkage(symbol_iterator symbol) const
+ir::Variable::Linkage BinaryReader::_getSymbolLinkage(const SymbolTableEntry& symbol) const
 {
-	return (ir::Variable::Linkage)(symbol->attribute & 0x7);
+	return (ir::Variable::Linkage)(symbol.attributes.linkage);
 }
 
-bool BinaryReader::_hasInitializer(symbol_iterator symbol) const
+bool BinaryReader::_hasInitializer(const SymbolTableEntry& symbol) const
 {
 	assertM(false, "Not implemented.");
 	return false;
 }
 
-ir::Constant* BinaryReader::_getInitializer(symbol_iterator symbol) const
+ir::Constant* BinaryReader::_getInitializer(const SymbolTableEntry& symbol) const
 {
 	assertM(false, "Not imeplemented.");
 }
 
 BinaryReader::BasicBlockDescriptorVector
-	BinaryReader::_getBasicBlocksInFunction(symbol_iterator symbol)
+	BinaryReader::_getBasicBlocksInFunction(const SymbolTableEntry& symbol) const
 {
 	typedef std::unordered_set<uint64_t> TargetSet;
 
 	BasicBlockDescriptorVector blocks;
 	
 	// Get the first and last instruction in the function
-	uint64_t begin = (symbol->offset - _header->codeOffset) /
+	uint64_t begin = (symbol.offset - _header.codeOffset) /
 		sizeof(InstructionContainer);
 	
-	uint64_t end = begin + symbol->size / sizeof(InstructionContainer);
+	uint64_t end = begin + symbol.size / sizeof(InstructionContainer);
 
 	TargetSet targets;
 
 	for(uint64_t i = begin; i != end; ++i)
 	{
-		archaeopteryx::ir::InstructionContainer& instruction = _instructions[i];
+		const archaeopteryx::ir::InstructionContainer&
+			instruction = _instructions[i];
 
-		if(instruction.asInstruction.opcode == ir::Instruction::Bra)
+		if(instruction.asInstruction.opcode == archaeopteryx::ir::Instruction::Bra)
 		{
 			if(instruction.asBra.target.asOperand.mode ==
 				archaeopteryx::ir::Operand::Immediate)
@@ -234,13 +243,14 @@ BinaryReader::BasicBlockDescriptorVector
 		bool isTerminator = false;
 		uint64_t blockEnd = i;
 
-		archaeopteryx::ir::InstructionContainer& instruction = _instructions[i];
+		const archaeopteryx::ir::InstructionContainer&
+			instruction = _instructions[i];
 
-		if(targets.find(i * sizeof(InstructionContainer)))
+		if(targets.count(i * sizeof(InstructionContainer)) != 0)
 		{
 			isTerminator = true;
 		}
-		else if(instruction.asInstruction.opcode == ir::Instruction::Bra)
+		else if(instruction.asInstruction.opcode == archaeopteryx::ir::Instruction::Bra)
 		{
 			isTerminator = true;
 			blockEnd = i + 1;
@@ -269,13 +279,38 @@ BinaryReader::BasicBlockDescriptorVector
 }
 
 void BinaryReader::_addInstruction(ir::Function::iterator block,
-	const InstructionContainer& container)
+	const InstructionContainer& container) const
 {
 	if(_addSimpleBinaryInstruction(block, container)) return;
 	if(_addSimpleUnaryInstruction(block, container))  return;
 	if(_addComplexInstruction(block, container))      return;
 
 	assertM(false, "Translation for instruction not implemented.");
+}
+
+bool BinaryReader::_addSimpleBinaryInstruction(ir::Function::iterator block,
+	const InstructionContainer& container) const
+{
+	return false;
+}
+
+bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
+	const InstructionContainer& container) const
+{
+	return false;
+}
+
+bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
+	const InstructionContainer& container) const
+{
+	return false;
+}
+
+BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(const std::string& n, uint64_t b,
+	uint64_t e)
+: name(n), begin(b), end(e)
+{
+
 }
 
 }

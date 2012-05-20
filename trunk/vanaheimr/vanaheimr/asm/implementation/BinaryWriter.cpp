@@ -548,10 +548,10 @@ void BinaryWriter::addSymbol(unsigned int type, unsigned int attribute,
 {
 	SymbolTableEntry symbol;
 
-	symbol.type         = type;
-	symbol.attributes   = attribute;
-	symbol.stringOffset = m_stringTable.size();
-	symbol.offset       = offset;
+	symbol.type          = type;
+	symbol.attributeData = attribute;
+	symbol.stringOffset  = m_stringTable.size();
+	symbol.offset        = offset;
 
 	m_symbolTable.push_back(symbol);
 	
