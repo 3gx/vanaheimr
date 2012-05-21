@@ -18,6 +18,12 @@
 #include <stdexcept>
 #include <unordered_set>
 
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -43,6 +49,7 @@ ir::Module* BinaryReader::read(std::istream& stream, const std::string& name)
 
 void BinaryReader::_readHeader(std::istream& stream)
 {
+	report("Reading header...");
 	stream.read((char*)&_header, sizeof(BinaryHeader));
 
 	if(stream.gcount() != sizeof(BinaryHeader))
@@ -50,6 +57,16 @@ void BinaryReader::_readHeader(std::istream& stream)
 		throw std::runtime_error("Failed to read binary "
 			"header, hit EOF.");
 	}
+
+	report(" data pages:    " << _header.dataPages);
+	report(" code pages:    " << _header.codePages);
+	report(" symbols:       " << _header.symbols);
+	report(" string pages:  " << _header.stringPages);
+	report(" data offset:   " << _header.dataOffset);
+	report(" code offset:   " << _header.codeOffset);
+	report(" symbol offset: " << _header.symbolOffset);
+	report(" string offset: " << _header.stringsOffset);
+	report(" name offset:   " << _header.nameOffset);
 }
 
 void BinaryReader::_readDataSection(std::istream& stream)
