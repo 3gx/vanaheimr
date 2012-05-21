@@ -74,7 +74,7 @@ void BinaryWriter::populateData()
 			blob.resize(i->bytes());
 		}
 
-		addSymbol(0x1, 0x0, i->name(), m_data.size());
+		addSymbol(0x1, i->linkage(), i->visibility(), i->name(), m_data.size(), i->bytes());
 
 		std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
 	}
@@ -86,15 +86,16 @@ void BinaryWriter::populateInstructions()
 	for(ir::Module::const_iterator function = m_module->begin(); function != m_module->end(); ++function)
 	{
 		report("  " << function->name());
-		addSymbol(0x2, 0x0, function->name(), m_instructions.size() * sizeof(InstructionContainer));
 
 		for(ir::Function::const_argument_iterator argument = function->argument_begin();
 			argument != function->argument_end(); ++argument)
 		{
-			addSymbol(0x3, 0x0, argument->mangledName(), m_data.size());
+			addSymbol(0x3, 0x0, 0x0, argument->mangledName(), m_data.size(), 0x0);
 			m_data.resize(m_data.size() + argument->type().bytes());
 		}
 
+		unsigned int instructionsBegin =
+			m_instructions.size() * sizeof(InstructionContainer);
 		unsigned int instructionOffset = m_instructions.size();	
 		for(ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
 		{
@@ -103,6 +104,9 @@ void BinaryWriter::populateInstructions()
 
 			instructionOffset += bb->size();
 		}
+
+		unsigned int instructionsSize =
+			instructionOffset * sizeof(InstructionContainer) - instructionsBegin;
 	
 		for(ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
 		{
@@ -113,6 +117,9 @@ void BinaryWriter::populateInstructions()
 			}
 		}
 
+		addSymbol(0x2, function->linkage(), function->visibility(),
+			function->name(), instructionsBegin, instructionsSize);
+		
 		m_basicBlockOffsets.clear();
 		m_basicBlockSymbols.clear();
 	}
@@ -518,7 +525,7 @@ size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
 		symbol = m_basicBlockSymbols.insert(std::make_pair(
 			offset->second, m_symbolTable.size())).first;
 	
-		addSymbol(0x4, 0x0, g->name(), offset->second);
+		addSymbol(0x4, 0, 0, g->name(), offset->second, 0);
 	}
 
 	return symbol->second;
@@ -543,15 +550,18 @@ size_t BinaryWriter::getSymbolTableOffset(const std::string& name)
 	return -1;
 }
 
-void BinaryWriter::addSymbol(unsigned int type, unsigned int attribute,
-	const std::string& name, uint64_t offset)
+void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
+	unsigned int visibility, const std::string& name, uint64_t offset,
+	uint64_t size)
 {
 	SymbolTableEntry symbol;
 
-	symbol.type          = type;
-	symbol.attributeData = attribute;
-	symbol.stringOffset  = m_stringTable.size();
-	symbol.offset        = offset;
+	symbol.type                  = type;
+	symbol.attributes.linkage    = linkage;
+	symbol.attributes.visibility = visibility;
+	symbol.stringOffset          = m_stringTable.size();
+	symbol.offset                = offset;
+	symbol.size                  = size;
 
 	m_symbolTable.push_back(symbol);
 	

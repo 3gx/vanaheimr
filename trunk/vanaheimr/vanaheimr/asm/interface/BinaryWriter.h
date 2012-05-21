@@ -84,8 +84,9 @@ private:
 	size_t getSymbolTableOffset(const std::string& name);
 	size_t getBasicBlockSymbolTableOffset(const ir::Variable* g);
 
-	void addSymbol(unsigned int type, unsigned int attribute,
-		const std::string& name, uint64_t offset);
+	void addSymbol(unsigned int type, unsigned int linkage,
+		unsigned int visibility, const std::string& name,
+		uint64_t offset, uint64_t size);
 
 private:
 	void convertStInstruction(InstructionContainer& container,
