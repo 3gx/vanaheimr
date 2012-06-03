@@ -4,7 +4,7 @@
         \brief  The header file for the Sphere class 
         
 */
-
+#pragma once
 // Standard Library Includes
 
 //other includes
