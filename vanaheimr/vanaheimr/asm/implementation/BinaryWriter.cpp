@@ -46,12 +46,39 @@ void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 	
 	populateHeader();
 
-	binary.write((const char*)&m_header, sizeof(BinaryHeader));
-	binary.write((const char*)m_symbolTable.data(), getSymbolTableSize());
-	binary.write((const char*)m_instructions.data(), getInstructionStreamSize());
-	binary.write((const char*)m_data.data(), getDataSize());
-	binary.write((const char*)m_stringTable.data(), getStringTableSize());
+	writePage(binary, (const char*)&m_header, sizeof(BinaryHeader));
+	writePage(binary, (const char*)m_instructions.data(), getInstructionStreamSize());
+	writePage(binary, (const char*)m_data.data(), getDataSize());
+	writePage(binary, (const char*)m_symbolTable.data(), getSymbolTableSize());
+	writePage(binary, (const char*)m_stringTable.data(), getStringTableSize());
+}
 
+void BinaryWriter::writePage(std::ostream& binary, const void* data,
+	uint64_t size)
+{
+	uint64_t currentPosition = pageAlign(binary.tellp());
+	
+	report("Page aligning " << binary.tellp() << " to " << currentPosition 
+		<< " before writing.");
+
+	while((uint64_t)binary.tellp() != currentPosition)
+	{
+		char temp = 0;
+		binary.write(&temp, 1);
+	}
+
+	binary.write((const char*)data, size);
+	
+	currentPosition = pageAlign(binary.tellp());
+	
+	report("Page aligning " << binary.tellp() << " to " << currentPosition 
+		<< " after writing.");
+	
+	while((uint64_t)binary.tellp() != currentPosition)
+	{
+		char temp = 0;
+		binary.write(&temp, 1);
+	}
 }
 
 void BinaryWriter::populateData()
@@ -74,8 +101,9 @@ void BinaryWriter::populateData()
 			blob.resize(i->bytes());
 		}
 
-		addSymbol(0x1, i->linkage(), i->visibility(), i->name(), m_data.size(), i->bytes());
-
+		addSymbol(SymbolTableEntry::VariableType, i->linkage(), i->visibility(),
+			i->level(), i->name(), m_data.size(), i->bytes());
+		
 		std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
 	}
 }
@@ -90,7 +118,8 @@ void BinaryWriter::populateInstructions()
 		for(ir::Function::const_argument_iterator argument = function->argument_begin();
 			argument != function->argument_end(); ++argument)
 		{
-			addSymbol(0x3, 0x0, 0x0, argument->mangledName(), m_data.size(), 0x0);
+			addSymbol(SymbolTableEntry::ArgumentType, 0x0, 0x0,
+				ir::Global::InvalidLevel, argument->mangledName(), m_data.size(), 0x0);
 			m_data.resize(m_data.size() + argument->type().bytes());
 		}
 
@@ -117,8 +146,8 @@ void BinaryWriter::populateInstructions()
 			}
 		}
 
-		addSymbol(0x2, function->linkage(), function->visibility(),
-			function->name(), instructionsBegin, instructionsSize);
+		addSymbol(SymbolTableEntry::FunctionType, function->linkage(), function->visibility(),
+			ir::Global::InvalidLevel, function->name(), instructionsBegin, instructionsSize);
 		
 		m_basicBlockOffsets.clear();
 		m_basicBlockSymbols.clear();
@@ -154,27 +183,27 @@ void BinaryWriter::populateHeader()
 
 size_t BinaryWriter::getHeaderOffset() const
 {
-	return 0;
+	return pageAlign(0);
 }
 
 size_t BinaryWriter::getInstructionOffset() const
 {
-	return sizeof(m_header);
+	return pageAlign(sizeof(m_header));
 }
 
 size_t BinaryWriter::getDataOffset() const
 {
-	return getInstructionStreamSize() + getInstructionOffset();
+	return pageAlign(getInstructionStreamSize() + getInstructionOffset());
 }
 
 size_t BinaryWriter::getSymbolTableOffset() const
 {
-	return getDataSize() + getDataOffset();
+	return pageAlign(getDataSize() + getDataOffset());
 }
 
 size_t BinaryWriter::getStringTableOffset() const
 {
-	 return getSymbolTableSize() + getSymbolTableOffset();
+	 return pageAlign(getSymbolTableSize() + getSymbolTableOffset());
 }
 
 size_t BinaryWriter::getSymbolTableSize() const
@@ -525,7 +554,8 @@ size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
 		symbol = m_basicBlockSymbols.insert(std::make_pair(
 			offset->second, m_symbolTable.size())).first;
 	
-		addSymbol(0x4, 0, 0, g->name(), offset->second, 0);
+		addSymbol(SymbolTableEntry::BasicBlockType, 0x0, 0x0,
+			ir::Global::InvalidLevel, g->name(), offset->second, 0);
 	}
 
 	return symbol->second;
@@ -551,14 +581,15 @@ size_t BinaryWriter::getSymbolTableOffset(const std::string& name)
 }
 
 void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
-	unsigned int visibility, const std::string& name, uint64_t offset,
-	uint64_t size)
+	unsigned int visibility, unsigned int level, const std::string& name,
+	uint64_t offset, uint64_t size)
 {
 	SymbolTableEntry symbol;
 
 	symbol.type                  = type;
 	symbol.attributes.linkage    = linkage;
 	symbol.attributes.visibility = visibility;
+	symbol.attributes.level      = level;
 	symbol.stringOffset          = m_stringTable.size();
 	symbol.offset                = offset;
 	symbol.size                  = size;
@@ -609,6 +640,14 @@ void BinaryWriter::convertBraInstruction(archaeopteryx::ir::InstructionContainer
 		break;
 	}
 	}
+}
+
+uint64_t BinaryWriter::pageAlign(uint64_t address)
+{
+	uint64_t remainder  = address % PageSize;
+	uint64_t difference = PageSize - remainder;
+
+	return remainder == 0 ? address : address + difference;
 }
 
 }

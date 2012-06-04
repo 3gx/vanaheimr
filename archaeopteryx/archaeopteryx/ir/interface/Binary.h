@@ -53,7 +53,7 @@ public:
 	/*! \brief A symbol attribute */
 	enum SymbolAttribute
 	{
-		InvalidAttribute = 0x0	
+		InvalidAttribute = 0x0,
 	};
 
 	/*! \brief A table mapping symbols to pages and offsets */

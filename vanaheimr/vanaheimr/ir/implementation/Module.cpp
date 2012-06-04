@@ -136,9 +136,10 @@ Module::global_iterator Module::insertGlobal(global_iterator position,
 }
 
 Module::global_iterator Module::newGlobal(const std::string& name,
-	const Type* t, Variable::Linkage l)
+	const Type* t, Variable::Linkage l, ir::Global::Level le)
 {
-	return _globals.insert(_globals.end(), Global(name, this, t, l));
+	return _globals.insert(_globals.end(), Global(name, this, t, l,
+		Variable::HiddenVisibility, 0, le));
 }
 
 Module::global_iterator Module::removeGlobal(global_iterator g)

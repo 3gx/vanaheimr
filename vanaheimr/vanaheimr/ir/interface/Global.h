@@ -24,9 +24,20 @@ namespace ir
 class Global : public Variable
 {
 public:
+	enum Level
+	{
+		Shared       = 0x10,
+		Thread       = 0x1,
+		Warp         = 0x2,
+		CTA          = 0x3,
+		InvalidLevel = 0x0
+	};
+
+public:
 	Global(const std::string& name = "", Module* m = 0,
 		const Type* t = 0, Linkage l = InternalLinkage,
-		Visibility v = HiddenVisibility, Constant* c = 0);
+		Visibility v = HiddenVisibility, Constant* c = 0,
+		unsigned int level = Shared);
 	~Global();
 
 public:
@@ -40,14 +51,16 @@ public:
 	const Constant* initializer() const;
 
 public:
-	size_t bytes() const;
+	size_t       bytes() const;
+	unsigned int level() const;
 
 public:
 	void setInitializer(Constant* c);
-	
-private:
-	Constant* _initializer; // owned by the global
+	void setLevel(unsigned int level);
 
+private:
+	Constant*    _initializer; // owned by the global
+	unsigned int _level;
 };
 
 }

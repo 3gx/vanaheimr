@@ -82,7 +82,8 @@ void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 	
 	ir::Module::global_iterator virGlobal = _module->newGlobal(
 		global.statement.name, _getType(global.statement.type),
-		_translateLinkage(global.statement.attribute));
+		_translateLinkage(global.statement.attribute),
+		(ir::Global::Level)_translateAddressSpace(global.space()));
 		
 	if(global.statement.initializedBytes() != 0)
 	{
@@ -949,6 +950,43 @@ ir::Variable::Linkage PTXToVIRTranslator::_translateLinkingDirective(
 	{
 		return ir::Variable::PrivateLinkage;
 	}
+}
+
+unsigned int PTXToVIRTranslator::_translateAddressSpace(unsigned int space)
+{
+	typedef ::ir::PTXInstruction PTXInstruction;
+	
+	unsigned int level = ir::Global::InvalidLevel;
+
+	switch(space)
+	{
+	case PTXInstruction::Const:   // fall through
+	case PTXInstruction::Global:  // fall through
+	case PTXInstruction::Texture: // fall through
+	case PTXInstruction::Generic:
+	{
+		level = ir::Global::Shared;
+		break;
+	}
+	case PTXInstruction::Local:
+	{
+		level = ir::Global::Thread;
+		break;
+	}
+	case PTXInstruction::Param:
+	{
+		// Parameters are invalid for globals
+		break;
+	}
+	case PTXInstruction::Shared:
+	{
+		level = ir::Global::CTA;
+		break;
+	}
+	default: break;
+	}
+	
+	return level;
 }
 
 ir::Constant* PTXToVIRTranslator::_translateInitializer(const PTXGlobal& g)
