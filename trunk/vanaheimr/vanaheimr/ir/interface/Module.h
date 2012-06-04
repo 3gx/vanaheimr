@@ -77,7 +77,7 @@ public:
 	
 	/*! \brief Create a new global, the module owns it */
 	global_iterator newGlobal(const std::string& name,
-		const Type* t, Variable::Linkage l);
+		const Type* t, Variable::Linkage l, ir::Global::Level le);
 
 	/*! \brief Remove a global from the module, it is deleted */
 	global_iterator removeGlobal(global_iterator g);

@@ -1,4 +1,4 @@
-/*! 	\file   BinaryWriter.h
+/*! \file   BinaryWriter.h
 	\date   Saturday February 25, 2012
 	\author Sudnya Diamos <mailsudnya@gmail.com>
 	\brief  The header file for the helper class that traslates compiler IR to a binary.
@@ -52,6 +52,9 @@ public:
 	void write(std::ostream& binary, const ir::Module& inputModule);
 
 private:
+	void writePage(std::ostream& binary, const void* data,
+		uint64_t size);
+
 	void populateHeader();
 	void populateInstructions();
 	void populateData();
@@ -85,8 +88,8 @@ private:
 	size_t getBasicBlockSymbolTableOffset(const ir::Variable* g);
 
 	void addSymbol(unsigned int type, unsigned int linkage,
-		unsigned int visibility, const std::string& name,
-		uint64_t offset, uint64_t size);
+		unsigned int visibility, unsigned int level,
+		const std::string& name, uint64_t offset, uint64_t size);
 
 private:
 	void convertStInstruction(InstructionContainer& container,
@@ -95,6 +98,9 @@ private:
 		const Instruction& instruction);
 	void convertRetInstruction(InstructionContainer& container,
 		const Instruction& instruction);
+
+private:
+	static uint64_t pageAlign(uint64_t address);
 
 private:
 	typedef std::vector<InstructionContainer> InstructionVector;

@@ -11,6 +11,7 @@
 #include <vanaheimr/asm/interface/SymbolTableEntry.h>
 
 #include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/Global.h>
 
 // Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Instruction.h>
@@ -36,6 +37,8 @@ public:
 
 private:
 	typedef archaeopteryx::ir::InstructionContainer InstructionContainer;
+	typedef archaeopteryx::ir::OperandContainer     OperandContainer;
+	typedef archaeopteryx::ir::PredicateOperand     PredicateOperand;
 	typedef std::vector<InstructionContainer>       InstructionVector;
 	typedef std::vector<char>                       DataVector;
 	typedef std::vector<SymbolTableEntry>           SymbolVector;
@@ -74,6 +77,7 @@ private:
 	std::string           _getSymbolTypeName(const SymbolTableEntry& symbol) const;
 	ir::Type*             _getSymbolType(const SymbolTableEntry& symbol)     const;
 	ir::Variable::Linkage _getSymbolLinkage(const SymbolTableEntry& symbol)  const;
+	ir::Global::Level     _getSymbolLevel(const SymbolTableEntry& symbol)    const;
 
 	bool          _hasInitializer(const SymbolTableEntry& symbol) const;
 	ir::Constant* _getInitializer(const SymbolTableEntry& symbol) const;
@@ -91,6 +95,17 @@ private:
 	bool _addComplexInstruction(ir::Function::iterator block,
 		const InstructionContainer& container) const;
 
+	ir::Operand* _translateOperand(const OperandContainer& container,
+		ir::Instruction* instruction) const;
+	ir::PredicateOperand* _translateOperand(
+		const PredicateOperand& predicate, ir::Instruction* instruction) const;
+
+	const ir::Type* _getType(archaeopteryx::ir::DataType type) const;
+	ir::VirtualRegister* _getVirtualRegister(
+		archaeopteryx::ir::RegisterType reg,
+		archaeopteryx::ir::DataType type) const;	
+	ir::Variable* _getVariableAtSymbolOffset(uint64_t offset) const;
+
 private:
 	BinaryHeader _header;
 
@@ -98,9 +113,6 @@ private:
 	DataVector        _dataSection;
 	DataVector        _stringTable;
 	SymbolVector      _symbolTable;
-
-private:
-	
 
 };
 

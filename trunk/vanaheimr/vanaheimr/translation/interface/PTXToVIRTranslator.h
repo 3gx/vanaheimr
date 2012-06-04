@@ -102,6 +102,7 @@ private:
 	const ir::Type*       _getType(const std::string& name);
 	ir::Variable::Linkage _translateLinkage(PTXAttribute linkage);
 	ir::Variable::Linkage _translateLinkingDirective(PTXLinkingDirective d);
+	unsigned int          _translateAddressSpace(unsigned int space);
 	ir::Constant*         _translateInitializer(const PTXGlobal& g);
 	bool                  _isArgument(const std::string& name);
 	

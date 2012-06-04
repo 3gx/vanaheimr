@@ -143,6 +143,8 @@ void BinaryReader::_initializeModule(ir::Module& m) const
 
 void BinaryReader::_loadGlobals(ir::Module& m) const
 {
+	report(" Loading global variables from symbol table...");
+
 	for(auto symbol : _symbolTable)
 	{
 		if(symbol.type != SymbolTableEntry::VariableType)
@@ -150,8 +152,10 @@ void BinaryReader::_loadGlobals(ir::Module& m) const
 			continue;
 		}
 
+		report("  " << _getSymbolName(symbol));
+
 		auto global = m.newGlobal(_getSymbolName(symbol), _getSymbolType(symbol),
-			_getSymbolLinkage(symbol));
+			_getSymbolLinkage(symbol), _getSymbolLevel(symbol));
 
 		if(_hasInitializer(symbol))
 		{
@@ -162,12 +166,16 @@ void BinaryReader::_loadGlobals(ir::Module& m) const
 
 void BinaryReader::_loadFunctions(ir::Module& m) const
 {
+	report(" Loading functions from symbol table...");
+
 	for(auto symbol : _symbolTable)
 	{
 		if(symbol.type != SymbolTableEntry::FunctionType)
 		{
 			continue;
 		}
+
+		report("  " << _getSymbolName(symbol));
 
 		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
 			_getSymbolLinkage(symbol));
@@ -208,9 +216,14 @@ ir::Variable::Linkage BinaryReader::_getSymbolLinkage(const SymbolTableEntry& sy
 	return (ir::Variable::Linkage)(symbol.attributes.linkage);
 }
 
+ir::Global::Level BinaryReader::_getSymbolLevel(const SymbolTableEntry& symbol) const
+{
+	return (ir::Global::Level)symbol.attributes.level;
+}
+
 bool BinaryReader::_hasInitializer(const SymbolTableEntry& symbol) const
 {
-	assertM(false, "Not implemented.");
+	// currently binaries never have initializers
 	return false;
 }
 
@@ -307,13 +320,85 @@ void BinaryReader::_addInstruction(ir::Function::iterator block,
 
 bool BinaryReader::_addSimpleBinaryInstruction(ir::Function::iterator block,
 	const InstructionContainer& container) const
-{
+{	
+	switch(container.asInstruction.opcode)
+	{
+	case archaeopteryx::ir::Instruction::Add:
+	case archaeopteryx::ir::Instruction::And:
+	case archaeopteryx::ir::Instruction::Ashr:
+	case archaeopteryx::ir::Instruction::Fdiv:
+	case archaeopteryx::ir::Instruction::Fmul:
+	case archaeopteryx::ir::Instruction::Frem:
+	case archaeopteryx::ir::Instruction::Lshr:
+	case archaeopteryx::ir::Instruction::Mul:
+	case archaeopteryx::ir::Instruction::Or:
+	case archaeopteryx::ir::Instruction::Sdiv:
+	case archaeopteryx::ir::Instruction::Shl:
+	case archaeopteryx::ir::Instruction::Srem:
+	case archaeopteryx::ir::Instruction::Sub:
+	case archaeopteryx::ir::Instruction::Udiv:
+	case archaeopteryx::ir::Instruction::Urem:
+	case archaeopteryx::ir::Instruction::Xor:
+	{
+		auto instruction = static_cast<ir::BinaryInstruction*>(
+			ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode));
+
+		instruction->setGuard(_translateOperand(
+			container.asBinaryInstruction.guard, instruction));
+
+		instruction->setD(_translateOperand(container.asBinaryInstruction.d,
+			instruction));
+		instruction->setA(_translateOperand(container.asBinaryInstruction.a,
+			instruction));
+		instruction->setB(_translateOperand(container.asBinaryInstruction.b,
+			instruction));
+
+		block->push_back(instruction);
+		
+		return true;
+	}
+	default: break;
+	}
+
 	return false;
 }
 
 bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
 	const InstructionContainer& container) const
 {
+	switch(container.asInstruction.opcode)
+	{
+	case archaeopteryx::ir::Instruction::Bitcast:
+	case archaeopteryx::ir::Instruction::Fpext:
+	case archaeopteryx::ir::Instruction::Fptosi:
+	case archaeopteryx::ir::Instruction::Fptoui:
+	case archaeopteryx::ir::Instruction::Fptrunc:
+	case archaeopteryx::ir::Instruction::Sext:
+	case archaeopteryx::ir::Instruction::Sitofp:
+	case archaeopteryx::ir::Instruction::Trunc:
+	case archaeopteryx::ir::Instruction::Uitofp:
+	case archaeopteryx::ir::Instruction::Zext:
+	{
+		auto instruction = static_cast<ir::UnaryInstruction*>(
+			ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode));
+
+		instruction->setGuard(_translateOperand(
+			container.asUnaryInstruction.guard, instruction));
+
+		instruction->setD(_translateOperand(container.asUnaryInstruction.d,
+			instruction));
+		instruction->setA(_translateOperand(container.asUnaryInstruction.a,
+			instruction));
+
+		block->push_back(instruction);
+		
+		return true;
+	}
+	default: break;
+	}
+
 	return false;
 }
 
@@ -321,6 +406,107 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 	const InstructionContainer& container) const
 {
 	return false;
+}
+
+ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
+	ir::Instruction* instruction) const
+{
+	typedef archaeopteryx::ir::Operand Operand;
+
+	switch(container.asOperand.mode)
+	{
+	case Operand::Predicate:
+	{
+		return _translateOperand(container.asPredicate, instruction);
+	}
+	case Operand::Register:
+	{
+		ir::RegisterOperand* operand = new ir::RegisterOperand(
+			_getVirtualRegister(container.asRegister.reg,
+			container.asRegister.type), instruction);
+		
+		return operand;
+	}
+	case Operand::Immediate:
+	{
+		ir::ImmediateOperand* operand = new ir::ImmediateOperand(
+			container.asImmediate.uint, instruction,
+			_getType(container.asImmediate.type));
+
+		return operand;
+	}
+	case Operand::Indirect:
+	{
+		ir::IndirectOperand* operand = new ir::IndirectOperand(
+			_getVirtualRegister(container.asIndirect.reg,
+			container.asIndirect.type), container.asIndirect.offset,
+			instruction);
+		
+		return operand;
+	}
+	case Operand::Symbol:
+	{
+		ir::AddressOperand* operand = new ir::AddressOperand(
+			_getVariableAtSymbolOffset(
+			container.asSymbol.symbolTableOffset), instruction);
+		
+		return operand;
+	}
+	case Operand::InvalidOperand: break;
+	}	
+
+	assertM(false, "Invalid operand type.");
+
+	return 0;
+}
+
+ir::PredicateOperand* BinaryReader::_translateOperand(
+	const PredicateOperand& operand, ir::Instruction* instruction) const
+{
+	return new ir::PredicateOperand(
+		_getVirtualRegister(operand.reg, archaeopteryx::ir::i1), 
+		(ir::PredicateOperand::PredicateModifier)operand.mode,
+		instruction);
+}
+
+const ir::Type* BinaryReader::_getType(archaeopteryx::ir::DataType type) const
+{
+	switch(type)
+	{
+	case archaeopteryx::ir::i1:
+	{
+		return compiler::Compiler::getSingleton()->getType("i1");
+	}
+	case archaeopteryx::ir::i8:
+	{
+		return compiler::Compiler::getSingleton()->getType("i8");
+	}
+	case archaeopteryx::ir::i16:
+	{
+		return compiler::Compiler::getSingleton()->getType("i16");
+	}
+	case archaeopteryx::ir::i32:
+	{
+		return compiler::Compiler::getSingleton()->getType("i32");
+	}
+	case archaeopteryx::ir::i64:
+	{
+		return compiler::Compiler::getSingleton()->getType("i64");
+	}
+	case archaeopteryx::ir::f32:
+	{
+		return compiler::Compiler::getSingleton()->getType("f32");
+	}
+	case archaeopteryx::ir::f64:
+	{
+		return compiler::Compiler::getSingleton()->getType("f64");
+	}
+	default: break;
+	}
+
+	assertM(false, "Invalid data type.");
+
+	return 0;
 }
 
 BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(const std::string& n, uint64_t b,

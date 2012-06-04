@@ -29,7 +29,8 @@ public:
 	public:
 		uint32_t linkage    : 3;
 		uint32_t visibility : 2;
-		uint32_t unused     : 27;
+		uint32_t level      : 4;
+		uint32_t unused     : 23;
 	};
 
 public:

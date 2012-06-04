@@ -103,6 +103,7 @@ public:
 
 public:
 	static std::string toString(Opcode o);
+	static Instruction* create(Opcode o);
 	
 public:
 	/*! \brief The instruction opcode */

@@ -235,6 +235,52 @@ std::string Instruction::toString(Opcode o)
 	return "InvalidOpcode";
 }
 
+Instruction* Instruction::create(Opcode o)
+{
+	switch(o)
+	{
+	case Add:     return new ir::Add;
+	case And:     return new ir::And;
+	case Ashr:    return new ir::Ashr;
+	case Atom:    return new ir::Atom;
+	case Bar:     return new ir::Bar;
+	case Bitcast: return new ir::Bitcast;
+	case Bra:     return new ir::Bra;
+	case Call:    return new ir::Call;
+	case Fdiv:    return new ir::Fdiv;
+	case Fmul:    return new ir::Fmul;
+	case Fpext:   return new ir::Fpext;
+	case Fptosi:  return new ir::Fptosi;
+	case Fptoui:  return new ir::Fptoui;
+	case Fptrunc: return new ir::Fptrunc;
+	case Frem:    return new ir::Frem;
+	case Launch:  return new ir::Launch;
+	case Ld:      return new ir::Ld;
+	case Lshr:    return new ir::Lshr;
+	case Membar:  return new ir::Membar;
+	case Mul:     return new ir::Mul;
+	case Or:      return new ir::Or;
+	case Ret:     return new ir::Ret;
+	case Setp:    return new ir::Setp;
+	case Sext:    return new ir::Sext;
+	case Sdiv:    return new ir::Sdiv;
+	case Shl:     return new ir::Shl;
+	case Sitofp:  return new ir::Sitofp;
+	case Srem:    return new ir::Srem;
+	case St:      return new ir::St;
+	case Sub:     return new ir::Sub;
+	case Trunc:   return new ir::Trunc;
+	case Udiv:    return new ir::Udiv;
+	case Uitofp:  return new ir::Uitofp;
+	case Urem:    return new ir::Urem;
+	case Xor:     return new ir::Xor;
+	case Zext:    return new ir::Zext;
+	default:      break;
+	}
+	
+	return 0;
+}
+
 UnaryInstruction::UnaryInstruction(Opcode o, BasicBlock* b)
 : Instruction(o, b), d(0), a(0)
 {
