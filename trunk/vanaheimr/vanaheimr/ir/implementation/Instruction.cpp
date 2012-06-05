@@ -235,50 +235,54 @@ std::string Instruction::toString(Opcode o)
 	return "InvalidOpcode";
 }
 
-Instruction* Instruction::create(Opcode o)
+Instruction* Instruction::create(Opcode o, BasicBlock* b)
 {
+	ir::Instruction* instruction = 0;
+
 	switch(o)
 	{
-	case Add:     return new ir::Add;
-	case And:     return new ir::And;
-	case Ashr:    return new ir::Ashr;
-	case Atom:    return new ir::Atom;
-	case Bar:     return new ir::Bar;
-	case Bitcast: return new ir::Bitcast;
-	case Bra:     return new ir::Bra;
-	case Call:    return new ir::Call;
-	case Fdiv:    return new ir::Fdiv;
-	case Fmul:    return new ir::Fmul;
-	case Fpext:   return new ir::Fpext;
-	case Fptosi:  return new ir::Fptosi;
-	case Fptoui:  return new ir::Fptoui;
-	case Fptrunc: return new ir::Fptrunc;
-	case Frem:    return new ir::Frem;
-	case Launch:  return new ir::Launch;
-	case Ld:      return new ir::Ld;
-	case Lshr:    return new ir::Lshr;
-	case Membar:  return new ir::Membar;
-	case Mul:     return new ir::Mul;
-	case Or:      return new ir::Or;
-	case Ret:     return new ir::Ret;
-	case Setp:    return new ir::Setp;
-	case Sext:    return new ir::Sext;
-	case Sdiv:    return new ir::Sdiv;
-	case Shl:     return new ir::Shl;
-	case Sitofp:  return new ir::Sitofp;
-	case Srem:    return new ir::Srem;
-	case St:      return new ir::St;
-	case Sub:     return new ir::Sub;
-	case Trunc:   return new ir::Trunc;
-	case Udiv:    return new ir::Udiv;
-	case Uitofp:  return new ir::Uitofp;
-	case Urem:    return new ir::Urem;
-	case Xor:     return new ir::Xor;
-	case Zext:    return new ir::Zext;
+	case Add:     instruction = new ir::Add;     break;
+	case And:     instruction = new ir::And;     break;
+	case Ashr:    instruction = new ir::Ashr;    break;
+	case Atom:    instruction = new ir::Atom;    break;
+	case Bar:     instruction = new ir::Bar;     break;
+	case Bitcast: instruction = new ir::Bitcast; break;
+	case Bra:     instruction = new ir::Bra;     break;
+	case Call:    instruction = new ir::Call;    break;
+	case Fdiv:    instruction = new ir::Fdiv;    break;
+	case Fmul:    instruction = new ir::Fmul;    break;
+	case Fpext:   instruction = new ir::Fpext;   break;
+	case Fptosi:  instruction = new ir::Fptosi;  break;
+	case Fptoui:  instruction = new ir::Fptoui;  break;
+	case Fptrunc: instruction = new ir::Fptrunc; break;
+	case Frem:    instruction = new ir::Frem;    break;
+	case Launch:  instruction = new ir::Launch;  break;
+	case Ld:      instruction = new ir::Ld;      break;
+	case Lshr:    instruction = new ir::Lshr;    break;
+	case Membar:  instruction = new ir::Membar;  break;
+	case Mul:     instruction = new ir::Mul;     break;
+	case Or:      instruction = new ir::Or;      break;
+	case Ret:     instruction = new ir::Ret;     break;
+	case Setp:    instruction = new ir::Setp;    break;
+	case Sext:    instruction = new ir::Sext;    break;
+	case Sdiv:    instruction = new ir::Sdiv;    break;
+	case Shl:     instruction = new ir::Shl;     break;
+	case Sitofp:  instruction = new ir::Sitofp;  break;
+	case Srem:    instruction = new ir::Srem;    break;
+	case St:      instruction = new ir::St;      break;
+	case Sub:     instruction = new ir::Sub;     break;
+	case Trunc:   instruction = new ir::Trunc;   break;
+	case Udiv:    instruction = new ir::Udiv;    break;
+	case Uitofp:  instruction = new ir::Uitofp;  break;
+	case Urem:    instruction = new ir::Urem;    break;
+	case Xor:     instruction = new ir::Xor;     break;
+	case Zext:    instruction = new ir::Zext;    break;
 	default:      break;
 	}
 	
-	return 0;
+	instruction->block = b;
+
+	return instruction;
 }
 
 UnaryInstruction::UnaryInstruction(Opcode o, BasicBlock* b)
