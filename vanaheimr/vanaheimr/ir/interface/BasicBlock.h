@@ -68,7 +68,8 @@ public:
 	size_t size()  const;
 
 public:
-	Id id() const;
+	Id        id()       const;
+	Function* function() const;
 	
 public:
 	/*! \brief Pushes an instruction copy to the back of the block */

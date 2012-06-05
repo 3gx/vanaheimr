@@ -19,6 +19,7 @@
 // Standard Library Includes
 #include <istream>
 #include <vector>
+#include <unordered_map>
 
 namespace vanaheimr { namespace ir { class Constant; } }
 
@@ -67,11 +68,10 @@ private:
 	void _readInstructions(std::istream& stream);
 
 private:
-	void _initializeModule(ir::Module& m) const;
-
-	void _loadGlobals(ir::Module& m) const;
-	void _loadFunctions(ir::Module& m) const;
-
+	void _initializeModule(ir::Module& m);
+	void _loadGlobals(ir::Module& m);
+	void _loadFunctions(ir::Module& m);
+	
 private:
 	std::string           _getSymbolName(const SymbolTableEntry& symbol)     const;
 	std::string           _getSymbolTypeName(const SymbolTableEntry& symbol) const;
@@ -86,24 +86,24 @@ private:
 		const SymbolTableEntry& name) const;
 
 	void _addInstruction(ir::Function::iterator block,
-		const InstructionContainer& container) const;
+		const InstructionContainer& container);
 
 	bool _addSimpleBinaryInstruction(ir::Function::iterator block,
-		const InstructionContainer& container) const;
+		const InstructionContainer& container);
 	bool _addSimpleUnaryInstruction(ir::Function::iterator block,
-		const InstructionContainer& container) const;
+		const InstructionContainer& container);
 	bool _addComplexInstruction(ir::Function::iterator block,
-		const InstructionContainer& container) const;
+		const InstructionContainer& container);
 
 	ir::Operand* _translateOperand(const OperandContainer& container,
-		ir::Instruction* instruction) const;
+		ir::Instruction* instruction);
 	ir::PredicateOperand* _translateOperand(
-		const PredicateOperand& predicate, ir::Instruction* instruction) const;
+		const PredicateOperand& predicate, ir::Instruction* instruction);
 
 	const ir::Type* _getType(archaeopteryx::ir::DataType type) const;
 	ir::VirtualRegister* _getVirtualRegister(
 		archaeopteryx::ir::RegisterType reg,
-		archaeopteryx::ir::DataType type) const;	
+		archaeopteryx::ir::DataType type, ir::Function*);	
 	ir::Variable* _getVariableAtSymbolOffset(uint64_t offset) const;
 
 private:
@@ -114,6 +114,15 @@ private:
 	DataVector        _stringTable;
 	SymbolVector      _symbolTable;
 
+private:
+	typedef std::unordered_map<archaeopteryx::ir::RegisterType,
+		ir::VirtualRegister*> VirtualRegisterMap;
+	typedef std::unordered_map<uint64_t, ir::Variable*>
+		SymbolToVariableMap;
+
+private:
+	VirtualRegisterMap  _virtualRegisters;
+	SymbolToVariableMap _variables;
 };
 
 }

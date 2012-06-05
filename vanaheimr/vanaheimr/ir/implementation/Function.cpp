@@ -53,7 +53,7 @@ Function& Function::operator=(const Function& f)
 	
 	clear();
 	
-	_nextBlockId    = f._nextBlockId;
+	_nextBlockId = f._nextBlockId;
 
 	BasicBlockMap basicBlockMapping;
 

@@ -19,7 +19,7 @@ namespace ir
 BasicBlock::BasicBlock(Function* f, Id i, const std::string& name)
 : Variable(name, f->module(),
 	compiler::Compiler::getSingleton()->getBasicBlockType(),
-	InternalLinkage, HiddenVisibility), _id(i)
+	InternalLinkage, HiddenVisibility), _function(f), _id(i)
 {
 
 }
@@ -30,7 +30,7 @@ BasicBlock::~BasicBlock()
 }
 
 BasicBlock::BasicBlock(const BasicBlock& bb)
-: Variable(bb), _id(bb.id())
+: Variable(bb), _function(bb.function()), _id(bb.id())
 {
 	for(auto instruction : bb)
 	{
@@ -46,7 +46,8 @@ BasicBlock& BasicBlock::operator=(const BasicBlock& bb)
 
 	Variable::operator=(bb);
 
-	_id = bb.id();
+	_id       = bb.id();
+	_function = bb.function();
 	
 	for(auto instruction : bb)
 	{
@@ -142,7 +143,12 @@ BasicBlock::Id BasicBlock::id() const
 	return _id;
 }
 
-void BasicBlock::push_back( Instruction* i)
+Function* BasicBlock::function() const
+{
+	return _function;
+}
+
+void BasicBlock::push_back(Instruction* i)
 {
 	_instructions.push_back(i->clone());
 }

@@ -135,13 +135,15 @@ void BinaryReader::_readInstructions(std::istream& stream)
 	}
 }
 
-void BinaryReader::_initializeModule(ir::Module& m) const
+void BinaryReader::_initializeModule(ir::Module& m)
 {
 	_loadGlobals(m);
 	_loadFunctions(m);
+
+	_variables.clear();
 }
 
-void BinaryReader::_loadGlobals(ir::Module& m) const
+void BinaryReader::_loadGlobals(ir::Module& m)
 {
 	report(" Loading global variables from symbol table...");
 
@@ -161,10 +163,12 @@ void BinaryReader::_loadGlobals(ir::Module& m) const
 		{
 			global->setInitializer(_getInitializer(symbol));
 		}
+
+		_variables.insert(std::make_pair((uint64_t)symbol.offset, &*global));
 	}
 }
 
-void BinaryReader::_loadFunctions(ir::Module& m) const
+void BinaryReader::_loadFunctions(ir::Module& m)
 {
 	report(" Loading functions from symbol table...");
 
@@ -192,6 +196,8 @@ void BinaryReader::_loadFunctions(ir::Module& m) const
 				_addInstruction(block, _instructions[i]);
 			}
 		}
+
+		_virtualRegisters.clear();
 	}
 }
 
@@ -309,7 +315,7 @@ BinaryReader::BasicBlockDescriptorVector
 }
 
 void BinaryReader::_addInstruction(ir::Function::iterator block,
-	const InstructionContainer& container) const
+	const InstructionContainer& container)
 {
 	if(_addSimpleBinaryInstruction(block, container)) return;
 	if(_addSimpleUnaryInstruction(block, container))  return;
@@ -319,7 +325,7 @@ void BinaryReader::_addInstruction(ir::Function::iterator block,
 }
 
 bool BinaryReader::_addSimpleBinaryInstruction(ir::Function::iterator block,
-	const InstructionContainer& container) const
+	const InstructionContainer& container)
 {	
 	switch(container.asInstruction.opcode)
 	{
@@ -342,7 +348,7 @@ bool BinaryReader::_addSimpleBinaryInstruction(ir::Function::iterator block,
 	{
 		auto instruction = static_cast<ir::BinaryInstruction*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
-			container.asInstruction.opcode));
+			container.asInstruction.opcode, &*block));
 
 		instruction->setGuard(_translateOperand(
 			container.asBinaryInstruction.guard, instruction));
@@ -365,7 +371,7 @@ bool BinaryReader::_addSimpleBinaryInstruction(ir::Function::iterator block,
 }
 
 bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
-	const InstructionContainer& container) const
+	const InstructionContainer& container)
 {
 	switch(container.asInstruction.opcode)
 	{
@@ -382,7 +388,7 @@ bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
 	{
 		auto instruction = static_cast<ir::UnaryInstruction*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
-			container.asInstruction.opcode));
+			container.asInstruction.opcode, &*block));
 
 		instruction->setGuard(_translateOperand(
 			container.asUnaryInstruction.guard, instruction));
@@ -403,13 +409,13 @@ bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
 }
 
 bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
-	const InstructionContainer& container) const
+	const InstructionContainer& container)
 {
 	return false;
 }
 
 ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
-	ir::Instruction* instruction) const
+	ir::Instruction* instruction)
 {
 	typedef archaeopteryx::ir::Operand Operand;
 
@@ -423,7 +429,8 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 	{
 		ir::RegisterOperand* operand = new ir::RegisterOperand(
 			_getVirtualRegister(container.asRegister.reg,
-			container.asRegister.type), instruction);
+			container.asRegister.type, instruction->block->function()),
+			instruction);
 		
 		return operand;
 	}
@@ -439,8 +446,8 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 	{
 		ir::IndirectOperand* operand = new ir::IndirectOperand(
 			_getVirtualRegister(container.asIndirect.reg,
-			container.asIndirect.type), container.asIndirect.offset,
-			instruction);
+			container.asIndirect.type, instruction->block->function()),
+			container.asIndirect.offset, instruction);
 		
 		return operand;
 	}
@@ -461,10 +468,11 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 }
 
 ir::PredicateOperand* BinaryReader::_translateOperand(
-	const PredicateOperand& operand, ir::Instruction* instruction) const
+	const PredicateOperand& operand, ir::Instruction* instruction)
 {
 	return new ir::PredicateOperand(
-		_getVirtualRegister(operand.reg, archaeopteryx::ir::i1), 
+		_getVirtualRegister(operand.reg, archaeopteryx::ir::i1,
+		instruction->block->function()), 
 		(ir::PredicateOperand::PredicateModifier)operand.mode,
 		instruction);
 }
@@ -507,6 +515,40 @@ const ir::Type* BinaryReader::_getType(archaeopteryx::ir::DataType type) const
 	assertM(false, "Invalid data type.");
 
 	return 0;
+}
+	
+ir::VirtualRegister* BinaryReader::_getVirtualRegister(
+	archaeopteryx::ir::RegisterType reg,
+	archaeopteryx::ir::DataType type, ir::Function* function)
+{
+	auto virtualRegister = _virtualRegisters.find(reg);
+
+	if(_virtualRegisters.end() == virtualRegister)
+	{
+		std::stringstream name;
+
+		name << "r" << reg;
+
+		auto insertedRegister = function->newVirtualRegister(
+			_getType(type), name.str());
+	
+		virtualRegister = _virtualRegisters.insert(std::make_pair(reg,
+			&*insertedRegister)).first;
+	}
+
+	return virtualRegister->second;
+}
+
+ir::Variable* BinaryReader::_getVariableAtSymbolOffset(uint64_t offset) const
+{
+	auto variable = _variables.find(offset);
+
+	if(variable == _variables.end())
+	{
+		throw std::runtime_error("No symbol declared at offset.");
+	}
+
+	return variable->second;
 }
 
 BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(const std::string& n, uint64_t b,
