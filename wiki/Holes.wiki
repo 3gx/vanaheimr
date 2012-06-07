@@ -1,0 +1,7 @@
+#summary Important problems in computing that are unsolved by the Vanaheimr design
+
+= Topics =
+
+ * Compression
+ * String sorting, compaction, searching (suffix structures)
+ * NP Complete/Hard optimization
