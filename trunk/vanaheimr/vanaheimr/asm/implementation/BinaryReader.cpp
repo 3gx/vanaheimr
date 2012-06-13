@@ -156,7 +156,16 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 
 		report("  " << _getSymbolName(symbol));
 
-		auto global = m.newGlobal(_getSymbolName(symbol), _getSymbolType(symbol),
+		auto type = _getSymbolType(symbol);
+
+		if(type == nullptr)
+		{
+			throw std::runtime_error("Could not find type with name '" +
+				_getSymbolTypeName(symbol) + "' for symbol '" +
+				_getSymbolName(symbol) + "'");
+		}
+
+		auto global = m.newGlobal(_getSymbolName(symbol), type,
 			_getSymbolLinkage(symbol), _getSymbolLevel(symbol));
 
 		if(_hasInitializer(symbol))
@@ -182,17 +191,24 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 		report("  " << _getSymbolName(symbol));
 
 		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
-			_getSymbolLinkage(symbol));
+			_getSymbolLinkage(symbol), _getSymbolVisibility(symbol));
 		
+		// TODO Get the function arguments
+		
+
 		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(symbol);
-		
+	
 		for(auto blockOffset : blocks)
 		{
 			ir::Function::iterator block = function->newBasicBlock(
 				function->end(), blockOffset.name);
-			
+
+			report("   adding basic block using instructions [" 
+				<< blockOffset.begin << ", " << blockOffset.end << "]");
+		
 			for(unsigned int i = blockOffset.begin; i != blockOffset.end; ++i)
 			{
+				assert(i < _instructions.size());
 				_addInstruction(block, _instructions[i]);
 			}
 		}
@@ -222,6 +238,11 @@ ir::Variable::Linkage BinaryReader::_getSymbolLinkage(const SymbolTableEntry& sy
 	return (ir::Variable::Linkage)(symbol.attributes.linkage);
 }
 
+ir::Variable::Visibility BinaryReader::_getSymbolVisibility(const SymbolTableEntry& symbol) const
+{
+	return (ir::Variable::Visibility)(symbol.attributes.visibility);
+}
+
 ir::Global::Level BinaryReader::_getSymbolLevel(const SymbolTableEntry& symbol) const
 {
 	return (ir::Global::Level)symbol.attributes.level;
@@ -245,6 +266,10 @@ BinaryReader::BasicBlockDescriptorVector
 
 	BasicBlockDescriptorVector blocks;
 	
+	report("   getting basic block for symbol '" << _getSymbolName(symbol)
+		<< "' (offset " << symbol.offset
+		<< ", size " << symbol.size << ")");
+
 	// Get the first and last instruction in the function
 	uint64_t begin = (symbol.offset - _header.codeOffset) /
 		sizeof(InstructionContainer);

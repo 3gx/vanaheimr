@@ -96,7 +96,8 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	report(" Translating PTX kernel '" << kernel.getPrototype().toString());
 
 	ir::Module::iterator function = _module->newFunction(kernel.name,
-		_translateLinkingDirective(kernel.getPrototype().linkingDirective));
+		_translateLinkingDirective(kernel.getPrototype().linkingDirective),
+		_translateVisibility(kernel.getPrototype().linkingDirective));
 	
 	_function = &*function;
 
@@ -108,6 +109,8 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 		_translateParameter(*argument);
 	}
 	
+	_function->interpretType();
+
 	// Translate Values
 	PTXKernel::RegisterVector registers = kernel.getReferencedRegisters();
 	
@@ -936,6 +939,18 @@ ir::Variable::Linkage PTXToVIRTranslator::_translateLinkage(PTXAttribute attr)
 	else
 	{
 		return ir::Variable::PrivateLinkage;
+	}
+}
+
+ir::Variable::Visibility PTXToVIRTranslator::_translateVisibility(PTXAttribute attr)
+{
+	if(attr == ::ir::PTXStatement::Visible)
+	{
+		return ir::Variable::VisibleVisibility;
+	}
+	else
+	{
+		return ir::Variable::HiddenVisibility;
 	}
 }
 

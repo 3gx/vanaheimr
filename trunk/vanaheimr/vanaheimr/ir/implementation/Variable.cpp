@@ -50,6 +50,11 @@ const Type& Variable::type() const
 	return *_type;
 }
 
+void Variable::_setType(const Type* t)
+{
+	_type = t;
+}
+
 }
 
 }

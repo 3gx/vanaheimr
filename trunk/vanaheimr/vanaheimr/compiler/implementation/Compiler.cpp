@@ -5,9 +5,12 @@
 	
 */
 
-// Standard Library Includes
+// Vanaheimr Includes
 #include <vanaheimr/compiler/interface/Compiler.h>
 #include <vanaheimr/ir/interface/Type.h>
+
+// Standard Library Includes
+#include <cassert>
 
 namespace vanaheimr
 {
@@ -91,10 +94,28 @@ Compiler::module_iterator Compiler::newModule(const std::string& name)
 {
 	return _modules.insert(_modules.end(), ir::Module(name, this));
 }
+	
+Compiler::iterator Compiler::newType(const ir::Type& type)
+{
+	assert(getType(type.name()) == nullptr);
+
+	return _types.insert(_types.end(), type.clone());
+}
+
+Compiler::iterator Compiler::getOrInsertType(const ir::Type& type)
+{
+	for(iterator t = begin(); t != end(); ++t)
+	{
+		if(type.name() == (*t)->name()) return t;
+	}
+
+	return newType(type);
+}
 
 Compiler::module_iterator Compiler::getModule(const std::string& name)
 {
-	for(module_iterator module = module_begin(); module != module_end(); ++module)
+	for(module_iterator module = module_begin();
+		module != module_end(); ++module)
 	{
 		if(module->name == name) return module;
 	}

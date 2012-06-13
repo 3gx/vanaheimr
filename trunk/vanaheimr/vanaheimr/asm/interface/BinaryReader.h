@@ -73,11 +73,12 @@ private:
 	void _loadFunctions(ir::Module& m);
 	
 private:
-	std::string           _getSymbolName(const SymbolTableEntry& symbol)     const;
-	std::string           _getSymbolTypeName(const SymbolTableEntry& symbol) const;
-	ir::Type*             _getSymbolType(const SymbolTableEntry& symbol)     const;
-	ir::Variable::Linkage _getSymbolLinkage(const SymbolTableEntry& symbol)  const;
-	ir::Global::Level     _getSymbolLevel(const SymbolTableEntry& symbol)    const;
+	std::string              _getSymbolName(const SymbolTableEntry& symbol)       const;
+	std::string              _getSymbolTypeName(const SymbolTableEntry& symbol)   const;
+	ir::Type*                _getSymbolType(const SymbolTableEntry& symbol)       const;
+	ir::Variable::Linkage    _getSymbolLinkage(const SymbolTableEntry& symbol)    const;
+	ir::Variable::Visibility _getSymbolVisibility(const SymbolTableEntry& symbol) const;
+	ir::Global::Level        _getSymbolLevel(const SymbolTableEntry& symbol)      const;
 
 	bool          _hasInitializer(const SymbolTableEntry& symbol) const;
 	ir::Constant* _getInitializer(const SymbolTableEntry& symbol) const;

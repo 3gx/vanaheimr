@@ -109,6 +109,10 @@ public:
 public:
 	void clear();
 
+public:
+	/*! \brief Set the type of the function by examining the arguments. */
+	void interpretType();
+
 private:
 	BasicBlockList      _blocks;
 	ArgumentList        _returnValues;
