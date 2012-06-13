@@ -29,6 +29,7 @@ public:
 	
 public:
 	Type(const std::string& name, Compiler* compiler);
+	virtual ~Type();
 
 public:
 	virtual const std::string& name() const;
@@ -43,6 +44,7 @@ public:
 
 public:
 	virtual size_t bytes() const = 0;
+	virtual Type*  clone() const = 0;
 
 private:
 	std::string _name;
@@ -60,6 +62,7 @@ public:
 	bool isBitWidthAPowerOfTwo() const;
 	unsigned int bits() const;
 	size_t bytes() const;
+	Type*  clone() const;
 
 public:
 	static std::string integerName(unsigned int bits);
@@ -76,6 +79,7 @@ public:
 
 public:
 	size_t bytes() const;
+	Type*  clone() const;
 };
 
 /*! \brief A type for an IEEE compliant 64-bit floating point type */
@@ -86,6 +90,7 @@ public:
 
 public:
 	size_t bytes() const;
+	Type*  clone() const;
 };
 
 /*! \brief Common functionality for aggregates (structures and arrays) */
@@ -131,6 +136,10 @@ public:
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
 
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+
 private:
 	TypeVector _types;
 
@@ -166,6 +175,10 @@ public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
+
+public:
+	size_t bytes() const;
+	Type*  clone() const;
 	
 public:
 	iterator begin() const;
@@ -188,6 +201,7 @@ public:
 
 public:
 	size_t bytes() const;
+	Type*  clone() const;
 };
 
 }

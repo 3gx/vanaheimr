@@ -102,7 +102,7 @@ void BinaryWriter::populateData()
 		}
 
 		addSymbol(SymbolTableEntry::VariableType, i->linkage(), i->visibility(),
-			i->level(), i->name(), m_data.size(), i->bytes());
+			i->level(), i->name(), m_data.size(), i->bytes(), i->type().name());
 		
 		std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
 	}
@@ -119,7 +119,8 @@ void BinaryWriter::populateInstructions()
 			argument != function->argument_end(); ++argument)
 		{
 			addSymbol(SymbolTableEntry::ArgumentType, 0x0, 0x0,
-				ir::Global::InvalidLevel, argument->mangledName(), m_data.size(), 0x0);
+				ir::Global::InvalidLevel, argument->mangledName(),
+				m_data.size(), 0x0, argument->type().name());
 			m_data.resize(m_data.size() + argument->type().bytes());
 		}
 
@@ -147,7 +148,8 @@ void BinaryWriter::populateInstructions()
 		}
 
 		addSymbol(SymbolTableEntry::FunctionType, function->linkage(), function->visibility(),
-			ir::Global::InvalidLevel, function->name(), instructionsBegin, instructionsSize);
+			ir::Global::InvalidLevel, function->name(), instructionsBegin,
+			instructionsSize, function->type().name());
 		
 		m_basicBlockOffsets.clear();
 		m_basicBlockSymbols.clear();
@@ -158,11 +160,12 @@ void BinaryWriter::linkSymbols()
 {
 	for (symbol_iterator symb = m_symbolTable.begin(); symb != m_symbolTable.end(); ++symb)
 	{
-		if (symb->type == 1)
+		if(symb->type == SymbolTableEntry::FunctionType)
 		{
 			symb->offset += getInstructionOffset();
 		}
-		else if (symb->type == 2)
+		else if(symb->type == SymbolTableEntry::VariableType ||
+			symb->type == SymbolTableEntry::ArgumentType)
 		{
 			symb->offset += getDataOffset();
 		}
@@ -555,7 +558,8 @@ size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
 			offset->second, m_symbolTable.size())).first;
 	
 		addSymbol(SymbolTableEntry::BasicBlockType, 0x0, 0x0,
-			ir::Global::InvalidLevel, g->name(), offset->second, 0);
+			ir::Global::InvalidLevel, g->name(), offset->second, 0,
+			g->type().name());
 	}
 
 	return symbol->second;
@@ -582,7 +586,7 @@ size_t BinaryWriter::getSymbolTableOffset(const std::string& name)
 
 void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	unsigned int visibility, unsigned int level, const std::string& name,
-	uint64_t offset, uint64_t size)
+	uint64_t offset, uint64_t size, const std::string& typeName)
 {
 	SymbolTableEntry symbol;
 
@@ -594,10 +598,17 @@ void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	symbol.offset                = offset;
 	symbol.size                  = size;
 
-	m_symbolTable.push_back(symbol);
-	
 	std::copy(name.begin(), name.end(), std::back_inserter(m_stringTable));
 	m_stringTable.push_back('\0');
+	
+	//	Add the type name string
+	symbol.typeOffset = m_stringTable.size();
+		
+	std::copy(typeName.begin(), typeName.end(), std::back_inserter(m_stringTable));
+	m_stringTable.push_back('\0');
+
+	m_symbolTable.push_back(symbol);
+	
 }
 
 void BinaryWriter::convertStInstruction(archaeopteryx::ir::InstructionContainer& container,

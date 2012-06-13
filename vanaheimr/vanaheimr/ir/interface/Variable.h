@@ -54,6 +54,9 @@ public:
 	Visibility         visibility() const;
 	const Type&        type() const;
 
+protected:
+	void _setType(const Type*);
+
 private:
 	std::string _name;
 	Module*     _module;

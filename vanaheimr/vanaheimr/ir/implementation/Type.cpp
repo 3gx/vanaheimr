@@ -27,6 +27,11 @@ Type::Type(const std::string& n, Compiler* c)
 
 }
 
+Type::~Type()
+{
+
+}
+
 const std::string& Type::name() const
 {
 	return _name;
@@ -83,6 +88,11 @@ size_t IntegerType::bytes() const
 	return (bits() + 7) / 8;
 }
 
+Type* IntegerType::clone() const
+{
+	return new IntegerType(*this);
+}
+
 std::string IntegerType::integerName(unsigned int bits)
 {
 	std::stringstream stream;
@@ -103,6 +113,12 @@ size_t FloatType::bytes() const
 	return 4;
 }
 
+
+Type* FloatType::clone() const
+{
+	return new FloatType(*this);
+}
+
 DoubleType::DoubleType(Compiler* c)
 : Type("double", c)
 {
@@ -112,6 +128,11 @@ DoubleType::DoubleType(Compiler* c)
 size_t DoubleType::bytes() const
 {
 	return 8;
+}
+
+Type* DoubleType::clone() const
+{
+	return new DoubleType(*this);
 }
 
 AggregateType::AggregateType(Compiler* c)
@@ -169,6 +190,23 @@ bool StructureType::isIndexValid(unsigned int index) const
 unsigned int StructureType::numberOfSubTypes() const
 {
 	return _types.size();
+}
+
+size_t StructureType::bytes() const
+{
+	size_t count = 0;
+
+	for(auto type : _types)
+	{
+		count += type->bytes();
+	}
+
+	return count;
+}
+
+Type* StructureType::clone() const
+{
+	return new StructureType(*this);
 }
 
 PointerType::PointerType(Compiler* c, const Type* t)
@@ -268,6 +306,16 @@ std::string FunctionType::functionPrototypeName(const Type* returnType,
 	return stream.str();
 }
 
+size_t FunctionType::bytes() const
+{
+	return 0;
+}
+
+Type* FunctionType::clone() const
+{
+	return new FunctionType(*this);
+}
+
 BasicBlockType::BasicBlockType(Compiler* c)
 : Type("_ZTBasicBlock", c)
 {
@@ -277,6 +325,11 @@ BasicBlockType::BasicBlockType(Compiler* c)
 size_t BasicBlockType::bytes() const
 {
 	return 0;
+}
+
+Type* BasicBlockType::clone() const
+{
+	return new BasicBlockType(*this);
 }
 
 }

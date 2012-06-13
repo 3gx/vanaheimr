@@ -6,6 +6,9 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/Type.h>
+
+#include <vanaheimr/compiler/interface/Compiler.h>
 
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
@@ -365,6 +368,45 @@ void Function::clear()
 
 	_entry = newBasicBlock(end(), "__Entry");
 	_exit  = newBasicBlock(end(), "__Exit");
+}
+
+void Function::interpretType()
+{
+	Type::TypeVector argumentTypes;
+
+	for(auto argument = argument_begin();
+		argument != argument_end(); ++argument)
+	{
+		argumentTypes.push_back(&argument->type());
+	}
+	
+	const Type* returnType = 0;
+
+	if(returned_size() == 1)
+	{
+		returnType = &returned_begin()->type();
+	}
+	else if(!returned_empty())
+	{
+		Type::TypeVector returnTypes;
+		
+		for(auto returned = returned_begin(); returned != returned_end();
+			++returned)
+		{
+			returnTypes.push_back(&returned->type());
+		}
+		
+		StructureType structure(compiler::Compiler::getSingleton(),
+			returnTypes);
+
+		returnType =
+			*compiler::Compiler::getSingleton()->getOrInsertType(structure);
+	}
+	
+	FunctionType type(compiler::Compiler::getSingleton(), returnType,
+		argumentTypes);
+	
+	_setType(*compiler::Compiler::getSingleton()->getOrInsertType(type));
 }
 
 }

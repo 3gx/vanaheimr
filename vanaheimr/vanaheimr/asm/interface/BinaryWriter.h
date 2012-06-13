@@ -89,7 +89,8 @@ private:
 
 	void addSymbol(unsigned int type, unsigned int linkage,
 		unsigned int visibility, unsigned int level,
-		const std::string& name, uint64_t offset, uint64_t size);
+		const std::string& name, uint64_t offset, uint64_t size,
+		const std::string& typeName);
 
 private:
 	void convertStInstruction(InstructionContainer& container,

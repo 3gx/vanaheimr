@@ -59,6 +59,8 @@ public:
 
 public:
 	module_iterator newModule(const std::string& name);
+	iterator newType(const ir::Type& type);
+	iterator getOrInsertType(const ir::Type& type);
 	
 public:
 	module_iterator getModule(const std::string& name);

@@ -97,9 +97,9 @@ Module::iterator Module::insertFunction(iterator position, const Function& f)
 }
 
 Module::iterator Module::newFunction(const std::string& name,
-	Variable::Linkage l)
+	Variable::Linkage l, Variable::Visibility v)
 {
-	return _functions.insert(end(), Function(name, this, l));
+	return _functions.insert(end(), Function(name, this, l, v));
 }
 
 Module::iterator Module::removeFunction(iterator f)

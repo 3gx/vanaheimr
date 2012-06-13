@@ -60,7 +60,8 @@ public:
 	iterator insertFunction(iterator position, const Function& f);
 
 	/*! \brief Add a new function */
-	iterator newFunction(const std::string& name, Variable::Linkage l);
+	iterator newFunction(const std::string& name, Variable::Linkage l,
+		Variable::Visibility v);
 
 	/*! \brief Remove a function from the module, it is deleted */
 	iterator removeFunction(iterator f);
