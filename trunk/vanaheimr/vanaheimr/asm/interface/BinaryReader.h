@@ -106,6 +106,7 @@ private:
 		archaeopteryx::ir::RegisterType reg,
 		archaeopteryx::ir::DataType type, ir::Function*);	
 	ir::Variable* _getVariableAtSymbolOffset(uint64_t offset) const;
+	ir::Argument* _getArgumentAtSymbolOffset(uint64_t offset) const;
 
 private:
 	BinaryHeader _header;
@@ -120,10 +121,13 @@ private:
 		ir::VirtualRegister*> VirtualRegisterMap;
 	typedef std::unordered_map<uint64_t, ir::Variable*>
 		SymbolToVariableMap;
+	typedef std::unordered_map<uint64_t, ir::Argument*>
+		SymbolToArgumentMap;
 
 private:
 	VirtualRegisterMap  _virtualRegisters;
 	SymbolToVariableMap _variables;
+	SymbolToArgumentMap _arguments;
 };
 
 }

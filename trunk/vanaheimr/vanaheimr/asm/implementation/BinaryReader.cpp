@@ -197,13 +197,47 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 			continue;
 		}
 
-		report("  " << _getSymbolName(symbol));
+		report("  loaded function " << _getSymbolName(symbol));
 
 		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
 			_getSymbolLinkage(symbol), _getSymbolVisibility(symbol));
+
+		report("   loading arguments...");
+
+		for(auto argumentSymbol = _symbolTable.begin();
+			argumentSymbol != _symbolTable.end(); ++argumentSymbol)
+		{
+			if(argumentSymbol->type != SymbolTableEntry::ArgumentType) continue;
+
+			std::string functionName = _getSymbolName(*argumentSymbol).substr(2,
+				function->name().size());
+			
+			if(functionName != function->name()) continue;
+
+			uint64_t symbolTableOffset = _header.symbolOffset +
+				sizeof(SymbolTableEntry) *
+				std::distance(_symbolTable.begin(), argumentSymbol);
+
+			std::string name = _getSymbolName(*argumentSymbol).substr(
+				2+function->name().size());
+
+			report("    loaded argument " << name
+				<< " at offset " << argumentSymbol->offset
+				<< ", symbol offset is " << symbolTableOffset);
+
+			auto type = _getSymbolType(*argumentSymbol);
+
+			if(type == nullptr)
+			{
+				throw std::runtime_error("Could not find type with name '" +
+					_getSymbolTypeName(*argumentSymbol) + "' for symbol '" +
+					name + "'");
+			}
 		
-		// TODO Get the function arguments
-		
+			auto argument = function->newArgument(type, name);
+
+			_arguments.insert(std::make_pair(symbolTableOffset, &*argument));
+		}
 
 		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(symbol);
 	
@@ -225,6 +259,7 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 		}
 
 		_virtualRegisters.clear();
+		_arguments.clear();
 	}
 }
 
@@ -488,6 +523,32 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		return true;
 		
 	}
+	else if(container.asInstruction.opcode
+		== archaeopteryx::ir::Instruction::Setp)
+	{
+		auto instruction = static_cast<ir::Setp*>(
+			ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode, &*block));
+
+		instruction->setGuard(_translateOperand(
+			container.asSetP.guard, instruction));
+
+		instruction->setD(_translateOperand(container.asSetP.d,
+			instruction));
+		instruction->setA(_translateOperand(container.asSetP.a,
+			instruction));
+		instruction->setB(_translateOperand(container.asSetP.b,
+			instruction));
+
+		instruction->comparison =
+			(ir::ComparisonInstruction::Comparison)
+			container.asSetP.comparison;
+
+		block->push_back(instruction);
+		
+		return true;
+		
+	}
 
 	return false;
 }
@@ -531,6 +592,17 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 	}
 	case Operand::Symbol:
 	{
+		ir::Argument* argument = _getArgumentAtSymbolOffset(
+			container.asSymbol.symbolTableOffset);
+
+		if(argument != nullptr)
+		{
+			ir::ArgumentOperand* operand = new ir::ArgumentOperand(argument,
+				instruction);
+			
+			return operand;
+		}
+
 		ir::AddressOperand* operand = new ir::AddressOperand(
 			_getVariableAtSymbolOffset(
 			container.asSymbol.symbolTableOffset), instruction);
@@ -631,6 +703,18 @@ ir::Variable* BinaryReader::_getVariableAtSymbolOffset(uint64_t offset) const
 	}
 
 	return variable->second;
+}
+
+ir::Argument* BinaryReader::_getArgumentAtSymbolOffset(uint64_t offset) const
+{
+	auto argument = _arguments.find(offset);
+
+	if(argument == _arguments.end())
+	{
+		return nullptr;
+	}
+
+	return argument->second;
 }
 
 BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(const std::string& n, uint64_t b,
