@@ -46,10 +46,15 @@ void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 	
 	populateHeader();
 
+	report(" writing header");
 	writePage(binary, (const char*)&m_header, sizeof(BinaryHeader));
+	report(" writing instructions");
 	writePage(binary, (const char*)m_instructions.data(), getInstructionStreamSize());
+	report(" writing data");
 	writePage(binary, (const char*)m_data.data(), getDataSize());
+	report(" writing symbols");
 	writePage(binary, (const char*)m_symbolTable.data(), getSymbolTableSize());
+	report(" writing string table");
 	writePage(binary, (const char*)m_stringTable.data(), getStringTableSize());
 }
 
@@ -58,7 +63,7 @@ void BinaryWriter::writePage(std::ostream& binary, const void* data,
 {
 	uint64_t currentPosition = pageAlign(binary.tellp());
 	
-	report("Page aligning " << binary.tellp() << " to " << currentPosition 
+	report("  page aligning " << binary.tellp() << " to " << currentPosition 
 		<< " before writing.");
 
 	while((uint64_t)binary.tellp() != currentPosition)
@@ -71,7 +76,7 @@ void BinaryWriter::writePage(std::ostream& binary, const void* data,
 	
 	currentPosition = pageAlign(binary.tellp());
 	
-	report("Page aligning " << binary.tellp() << " to " << currentPosition 
+	report("  page aligning " << binary.tellp() << " to " << currentPosition 
 		<< " after writing.");
 	
 	while((uint64_t)binary.tellp() != currentPosition)
@@ -160,7 +165,8 @@ void BinaryWriter::linkSymbols()
 {
 	for (symbol_iterator symb = m_symbolTable.begin(); symb != m_symbolTable.end(); ++symb)
 	{
-		if(symb->type == SymbolTableEntry::FunctionType)
+		if(symb->type == SymbolTableEntry::FunctionType
+			|| symb->type == SymbolTableEntry::BasicBlockType)
 		{
 			symb->offset += getInstructionOffset();
 		}

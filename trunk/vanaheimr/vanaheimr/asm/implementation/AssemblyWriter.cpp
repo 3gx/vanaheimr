@@ -98,6 +98,8 @@ void AssemblyWriter::writeGlobal(std::ostream& stream, const ir::Global& global)
 		stream << " = ";
 		writeInitializer(stream, *global.initializer());
 	}
+
+	stream << "\n";
 }
 
 void AssemblyWriter::writeLinkage(std::ostream& stream,
