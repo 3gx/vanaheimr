@@ -123,11 +123,14 @@ private:
 		SymbolToVariableMap;
 	typedef std::unordered_map<uint64_t, ir::Argument*>
 		SymbolToArgumentMap;
+	typedef std::unordered_multimap<uint64_t, ir::Instruction*>
+		TargetToBranchMap;
 
 private:
 	VirtualRegisterMap  _virtualRegisters;
 	SymbolToVariableMap _variables;
 	SymbolToArgumentMap _arguments;
+	TargetToBranchMap   _unresolvedTargets;
 };
 
 }

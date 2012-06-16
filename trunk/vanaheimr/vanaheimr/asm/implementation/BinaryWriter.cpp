@@ -560,9 +560,12 @@ size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
 	
 	if(symbol == m_basicBlockSymbols.end())
 	{
+		uint64_t symbolOffset = m_symbolTable.size() *
+			sizeof(SymbolTableEntry) + getSymbolTableOffset();
+
 		symbol = m_basicBlockSymbols.insert(std::make_pair(
-			offset->second, m_symbolTable.size())).first;
-	
+			offset->second, symbolOffset)).first;
+
 		addSymbol(SymbolTableEntry::BasicBlockType, 0x0, 0x0,
 			ir::Global::InvalidLevel, g->name(), offset->second, 0,
 			g->type().name());
