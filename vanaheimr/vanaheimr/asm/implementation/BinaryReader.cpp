@@ -188,6 +188,8 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 
 void BinaryReader::_loadFunctions(ir::Module& m)
 {
+	typedef std::unordered_map<uint64_t, ir::BasicBlock*> PCToBasicBlockMap;
+
 	report(" Loading functions from symbol table...");
 
 	for(auto symbol : _symbolTable)
@@ -241,10 +243,14 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 
 		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(symbol);
 	
+		PCToBasicBlockMap blockPCs;
+
 		for(auto blockOffset : blocks)
 		{
 			ir::Function::iterator block = function->newBasicBlock(
 				function->end(), blockOffset.name);
+
+			blockPCs.insert(std::make_pair(blockOffset.begin, &*block));
 
 			report("   adding basic block using instructions [" 
 				<< blockOffset.begin << ", " << blockOffset.end << "]");
@@ -258,6 +264,43 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 			}
 		}
 
+		report("  resolving branch targets...");
+
+		for(auto unresolved : _unresolvedTargets)
+		{
+			// find the symbol with the specified offset
+			uint64_t symbolOffset = (unresolved.first -
+				_header.symbolOffset) / sizeof(SymbolTableEntry);
+
+			assert(symbolOffset < _symbolTable.size());
+
+			const SymbolTableEntry& targetSymbol = _symbolTable[symbolOffset];
+
+			uint64_t pc = (targetSymbol.offset - _header.codeOffset) /
+				sizeof(InstructionContainer);
+		
+			report("   for branch to pc " << pc);
+
+			auto block = blockPCs.find(pc);
+
+			if(block == blockPCs.end())
+			{
+				std::stringstream message;
+
+				message << "Could not find basic block starting at pc " << pc;
+
+				throw std::runtime_error(message.str());
+			}
+			
+			auto branch = static_cast<ir::Bra*>(unresolved.second);
+			
+			report("    setting target to " << block->second->name());
+
+			static_cast<ir::AddressOperand*>(branch->target)->globalValue =
+				block->second;
+		}
+
+		_unresolvedTargets.clear();
 		_virtualRegisters.clear();
 		_arguments.clear();
 	}
@@ -312,15 +355,16 @@ BinaryReader::BasicBlockDescriptorVector
 
 	BasicBlockDescriptorVector blocks;
 	
-	report("   getting basic block for symbol '" << _getSymbolName(symbol)
-		<< "' (offset " << symbol.offset
-		<< ", size " << symbol.size << ")");
-
 	// Get the first and last instruction in the function
 	uint64_t begin = (symbol.offset - _header.codeOffset) /
 		sizeof(InstructionContainer);
 	
 	uint64_t end = begin + symbol.size / sizeof(InstructionContainer);
+
+	report("   getting basic block for symbol '" << _getSymbolName(symbol)
+		<< "' (offset " << symbol.offset
+		<< ", size " << symbol.size << ", range ["
+		<< begin << ", " << end <<"])");
 
 	TargetSet targets;
 
@@ -342,10 +386,12 @@ BinaryReader::BasicBlockDescriptorVector
 			}
 			else if(operand.asOperand.mode == archaeopteryx::ir::Operand::Symbol)
 			{
-				assert(operand.asSymbol.symbolTableOffset < _symbolTable.size());
+				uint64_t symbolOffset = (operand.asSymbol.symbolTableOffset -
+					_header.symbolOffset) / sizeof(SymbolTableEntry);
 
-				const SymbolTableEntry& targetSymbol =
-					_symbolTable[operand.asSymbol.symbolTableOffset];
+				assert(symbolOffset < _symbolTable.size());
+
+				const SymbolTableEntry& targetSymbol = _symbolTable[symbolOffset];
 				
 				uint64_t targetPC = (targetSymbol.offset - _header.codeOffset) /
 					sizeof(InstructionContainer);
@@ -372,7 +418,7 @@ BinaryReader::BasicBlockDescriptorVector
 		const archaeopteryx::ir::InstructionContainer&
 			instruction = _instructions[i];
 
-		if(targets.count(i * sizeof(InstructionContainer)) != 0)
+		if(targets.count(i) != 0)
 		{
 			isTerminator = true;
 		}
@@ -549,7 +595,42 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		return true;
 		
 	}
+	else if(container.asInstruction.opcode
+		== archaeopteryx::ir::Instruction::Bra)
+	{
+		auto instruction = static_cast<ir::Bra*>(
+			ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode, &*block));
 
+		instruction->setGuard(_translateOperand(
+			container.asBra.guard, instruction));
+
+		instruction->setTarget(_translateOperand(container.asBra.target,
+			instruction));
+		
+		instruction->modifier = (ir::Bra::BranchModifier)
+			container.asBra.modifier;
+
+		block->push_back(instruction);
+		
+		return true;
+		
+	}
+	else if(container.asInstruction.opcode
+		== archaeopteryx::ir::Instruction::Ret)
+	{
+		auto instruction = static_cast<ir::Ret*>(
+			ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode, &*block));
+
+		instruction->setGuard(_translateOperand(
+			container.asRet.guard, instruction));
+
+		block->push_back(instruction);
+		
+		return true;
+	}
+	
 	return false;
 }
 
@@ -603,10 +684,18 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 			return operand;
 		}
 
+		ir::Variable* variable = _getVariableAtSymbolOffset(
+			container.asSymbol.symbolTableOffset);
+
 		ir::AddressOperand* operand = new ir::AddressOperand(
-			_getVariableAtSymbolOffset(
-			container.asSymbol.symbolTableOffset), instruction);
-		
+			variable, instruction);
+	
+		if(variable == nullptr)
+		{
+			_unresolvedTargets.insert(std::make_pair(
+				container.asSymbol.symbolTableOffset,instruction));
+		}
+
 		return operand;
 	}
 	case Operand::InvalidOperand: break;
@@ -695,11 +784,7 @@ ir::Variable* BinaryReader::_getVariableAtSymbolOffset(uint64_t offset) const
 
 	if(variable == _variables.end())
 	{
-		std::stringstream error;
-
-		error << "No symbol declared at offset " << offset << ".";
-
-		throw std::runtime_error(error.str());
+		return nullptr;
 	}
 
 	return variable->second;

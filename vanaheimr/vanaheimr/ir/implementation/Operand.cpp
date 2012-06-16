@@ -209,6 +209,8 @@ Operand* AddressOperand::clone() const
 
 std::string AddressOperand::toString() const
 {
+	if(globalValue == nullptr) return "nullptr";
+
 	std::stringstream stream;
 		
 	if(!globalValue->type().isBasicBlock())

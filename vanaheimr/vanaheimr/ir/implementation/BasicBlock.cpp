@@ -150,17 +150,17 @@ Function* BasicBlock::function() const
 
 void BasicBlock::push_back(Instruction* i)
 {
-	_instructions.push_back(i->clone());
+	_instructions.push_back(i);
 }
 
 void BasicBlock::push_front(Instruction* i)
 {
-	_instructions.push_front(i->clone());
+	_instructions.push_front(i);
 }
 
 BasicBlock::iterator BasicBlock::insert(iterator position, Instruction* i)
 {
-	return _instructions.insert(position, i->clone());
+	return _instructions.insert(position, i);
 }
 
 void BasicBlock::clear()
