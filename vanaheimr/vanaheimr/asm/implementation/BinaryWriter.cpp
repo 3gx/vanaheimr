@@ -371,6 +371,9 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	{
 		const ir::RegisterOperand& reg = static_cast<const ir::RegisterOperand&>(operand);
 
+		report("     converting virtual register " << reg.virtualRegister->id
+			<< " (" << reg.virtualRegister->type->name() << ")");
+
 		result.asRegister.reg  = reg.virtualRegister->id;
 		result.asRegister.type = convertType(reg.virtualRegister->type);
 		
