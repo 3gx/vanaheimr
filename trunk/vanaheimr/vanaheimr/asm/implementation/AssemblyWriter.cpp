@@ -58,7 +58,17 @@ void AssemblyWriter::writeFunction(std::ostream& stream,
 	
 	writeLinkage(stream, function); 
 	
-	stream << " " << function.name() << "(";
+	stream << " (";
+	
+	for(auto argument = function.returned_begin();
+		argument != function.returned_end(); ++argument)
+	{
+		if(argument != function.returned_begin()) stream << ", ";
+
+		writeArgument(stream, *argument);
+	}
+
+	stream << ") " << function.name() << "(";
 	
 	for(ir::Function::const_argument_iterator
 		argument = function.argument_begin();
@@ -99,7 +109,7 @@ void AssemblyWriter::writeGlobal(std::ostream& stream, const ir::Global& global)
 		writeInitializer(stream, *global.initializer());
 	}
 
-	stream << "\n";
+	stream << ";\n";
 }
 
 void AssemblyWriter::writeLinkage(std::ostream& stream,

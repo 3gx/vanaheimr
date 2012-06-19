@@ -709,9 +709,16 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 ir::PredicateOperand* BinaryReader::_translateOperand(
 	const PredicateOperand& operand, ir::Instruction* instruction)
 {
-	return new ir::PredicateOperand(
-		_getVirtualRegister(operand.reg, archaeopteryx::ir::i1,
-		instruction->block->function()), 
+	ir::VirtualRegister* virtualRegister = nullptr;
+
+	if(operand.modifier != archaeopteryx::ir::PredicateOperand::PredicateTrue &&
+		operand.modifier != archaeopteryx::ir::PredicateOperand::PredicateFalse)
+	{
+		virtualRegister = _getVirtualRegister(operand.reg, archaeopteryx::ir::i1,
+			instruction->block->function());
+	}
+
+	return new ir::PredicateOperand(virtualRegister, 
 		(ir::PredicateOperand::PredicateModifier)operand.mode,
 		instruction);
 }
