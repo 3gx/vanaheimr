@@ -24,6 +24,9 @@
 
   * Merrill, D., Garland, M., and Grimshaw, A. High Performance and Scalable GPU Graph Traversal. Technical Report CS2011-05, Department of Computer Science, University of Virginia. Aug. 2011. [https://sites.google.com/site/duanemerrill/BFS_TR.pdf?attredirects=0 paper]
 
+= Optimization =
+ * Hongbing Zhu,Yongmei Guo,Jianguo Wu,Jinguang Gu,and Kei Eguchi. 2011. Paralleling Euclidean Particle Swarm Optimization in CUDA. In Proceedings of the 2011 4th International Conference on Intelligent Networks and Intelligent Systems (ICINIS '11). IEEE Computer Society,Washington,DC,USA. 
+
 = Graph Coloring =
 
   * A.V. Pascal Grosset, Peihong Zhu, Shusen Liu, Suresh Venkatasubramanian, Mary Hall. Evaluating Graph Coloring on GPUs. PPoPP'11. [http://www.cs.utah.edu/~suresh/papers/ppopp/ppopp.pdf paper]
