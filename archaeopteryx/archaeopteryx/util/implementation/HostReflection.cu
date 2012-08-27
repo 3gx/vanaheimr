@@ -4,8 +4,6 @@
 	\brief  The source file for the HostReflection set of functions.
 */
 
-#pragma once
-
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/HostReflection.h>
 #include <archaeopteryx/util/interface/ThreadId.h>

@@ -4,8 +4,6 @@
 	\brief  The source file for global thread id utility functions.
 */
 
-#pragma once
-
 namespace util
 {
 
