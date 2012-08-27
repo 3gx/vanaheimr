@@ -19,7 +19,8 @@ __device__ void CoreSimBlock::setupCoreSimBlock(unsigned int blockId,
     m_blockState.registersPerThread = registers;
     m_kernel = kernel;
     
-    printf("Setting up core sim block %p, %d threads, %d registers\n", this, m_blockState.threadsPerBlock, m_blockState.registersPerThread);
+    printf("Setting up core sim block %p, %d threads, %d registers\n", this,
+		m_blockState.threadsPerBlock, m_blockState.registersPerThread);
 
     m_registerFiles  = new Register[m_blockState.registersPerThread *
     	m_blockState.threadsPerBlock];
@@ -109,7 +110,8 @@ __device__ unsigned int CoreSimBlock::findNextPC(unsigned int& returnPriority)
         priority[getThreadIdInWarp()].y = localThreadPC;
     }
  
-    device_report("FindNextPC for threadId %d, input priority %d, threadIdInWarp: %d \n", threadIdx.x, localThreadPriority, getThreadIdInWarp());
+    device_report("FindNextPC for threadId %d, input priority %d, threadIdInWarp: %d \n",
+		threadIdx.x, localThreadPriority, getThreadIdInWarp());
     
     // warp_barrier
 
@@ -125,7 +127,8 @@ __device__ unsigned int CoreSimBlock::findNextPC(unsigned int& returnPriority)
 
             localThreadPriority = local ? localThreadPriority : neighborsPriority;
             localThreadPC       = local ? localThreadPC       : neighborsPC;
-            device_report("\tThread [%d]: LocalThreadPriority: %d, neighborsPriority[%d]: %d \n", threadIdx.x, localThreadPriority, neighborsThreadId, neighborsPriority);
+            device_report("\tThread [%d]: LocalThreadPriority: %d, neighborsPriority[%d]: %d \n",
+				threadIdx.x, localThreadPriority, neighborsThreadId, neighborsPriority);
         }
         // warp_barrier
         if (getThreadIdInWarp() % i == 0)

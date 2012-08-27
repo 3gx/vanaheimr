@@ -13,6 +13,3 @@ __device__ unsigned int threadId();
 
 }
 
-// TODO remove this when we get a linker
-#include <archaeopteryx/util/implementation/ThreadId.cpp>
-

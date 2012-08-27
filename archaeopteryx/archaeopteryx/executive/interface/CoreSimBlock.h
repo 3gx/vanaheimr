@@ -107,8 +107,3 @@ class CoreSimBlock
 
 }
 
-// TODO remove when cuda has a linker
-#include <archaeopteryx/executive/implementation/CoreSimThread.cpp>
-#include <archaeopteryx/executive/implementation/CoreSimBlock.cpp>
-
-

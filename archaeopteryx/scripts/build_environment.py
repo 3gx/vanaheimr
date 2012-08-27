@@ -139,13 +139,17 @@ def getCXXFLAGS(mode, warn, warnings_as_errors, CXX):
 	return result
 
 def getNVCCFLAGS(mode, arch):
-  result = ['-arch=' + arch]
-  if mode == 'debug':
-    # turn on debug mode
-    # XXX make this work when we've debugged nvcc -G
-    #result.append('-G')
-    pass
-  return result
+	result = ['-arch=' + arch]
+
+	if arch == 'sm_35':
+		result.append('-rdc=true')
+
+	if mode == 'debug':
+		# turn on debug mode
+		# XXX make this work when we've debugged nvcc -G
+		#result.append('-G')
+		pass
+	return result
 
 def getLINKFLAGS(mode, LINK):
 	result = []
@@ -192,9 +196,9 @@ def Environment():
 	vars.Add(BoolVariable('Werror', 'Treat warnings as errors', 1))
 
 	# add a variable to handle compute capability
-	vars.Add(EnumVariable('arch', 'Compute capability code generation', 'sm_23',
+	vars.Add(EnumVariable('arch', 'Compute capability code generation', 'sm_35',
 		allowed_values = ('sm_10', 'sm_11', 'sm_12', 'sm_13', 'sm_20', 'sm_21',
-		'sm_22', 'sm_23')))
+		'sm_22', 'sm_23', 'sm_30', 'sm_35')))
 	
 	# add a variable to compile the unit tests
 	vars.Add(EnumVariable('test_level',
