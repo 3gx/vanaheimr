@@ -57,6 +57,4 @@ __device__ void _assert(bool condition, const char* expression,
 
 }
 
-// TODO remove this when we get a linker
-#include <archaeopteryx/util/implementation/debug.cpp>
 

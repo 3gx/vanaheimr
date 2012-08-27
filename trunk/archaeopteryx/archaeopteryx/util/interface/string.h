@@ -28,6 +28,3 @@ __device__ int strcmp(const char* left, const char* right);
 
 }
 
-// TODO remove when NVCC has a linker
-#include <archaeopteryx/util/implementation/string.cpp>
-

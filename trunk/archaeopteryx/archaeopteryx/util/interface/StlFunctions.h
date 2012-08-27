@@ -19,6 +19,3 @@ __host__ __device__ size_t strlen(const char* str);
 
 }
 
-// TODO remove this when we get a linker
-#include <archaeopteryx/util/implementation/StlFunctions.cpp>
-

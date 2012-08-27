@@ -289,6 +289,3 @@ private:
 
 }
 
-// TODO remove this when we get a real linker
-#include <archaeopteryx/util/implementation/HostReflection.cpp>
-

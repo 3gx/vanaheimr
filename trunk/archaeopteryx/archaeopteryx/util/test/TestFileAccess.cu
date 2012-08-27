@@ -89,7 +89,7 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 int main(int argc, char** argv)
 {
-	util::HostReflection::create();
+	util::HostReflection::create(__FILE__);
 
 	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1000))
 	{

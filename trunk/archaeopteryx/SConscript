@@ -24,10 +24,13 @@ except:
 	exec open(prefix + "scripts/build_environment.py")
 	env = Environment()
   
+libs = env['EXTRA_LIBS']
+
 # find all source files in the source tree
 sources = []
 intermediate_headers = []
-directories = [ ]
+directories = ['archaeopteryx/executive/implementation',
+	'archaeopteryx/util/implementation']
 extensions = ['*.cu']
 
 for dir in directories:
@@ -35,9 +38,12 @@ for dir in directories:
 		regexp = os.path.join(dir, ext)
 		sources.extend(env.Glob(regexp))
 
+# Create the archaeopteryx library
+libvanaheimr = env.SharedLibrary('archaeopteryx', sources, LIBS=libs)
+libs.append(libvanaheimr)
+
 # Create the archaeopteryx unit tests
 tests = []
-libs  = env['EXTRA_LIBS']
 
 tests.append(('TestFileAccesses',
 	'archaeopteryx/util/test/TestFileAccess.cu', 'basic'))
