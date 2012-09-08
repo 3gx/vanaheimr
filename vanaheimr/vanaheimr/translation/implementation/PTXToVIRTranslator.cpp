@@ -170,29 +170,29 @@ void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
 
 void PTXToVIRTranslator::_recordBasicBlock(const PTXBasicBlock& basicBlock)
 {
-	report("  Record PTX basic block " << basicBlock.label);
+	report("  Record PTX basic block " << basicBlock.label());
 	
 	ir::Function::iterator block = _function->newBasicBlock(
-		_function->exit_block(), basicBlock.label);	
+		_function->exit_block(), basicBlock.label());	
 
-	if(_blocks.count(basicBlock.label) != 0)
+	if(_blocks.count(basicBlock.label()) != 0)
 	{
 		throw std::runtime_error("Added duplicate basic block '"
-			+ basicBlock.label + "'");
+			+ basicBlock.label() + "'");
 	}
 	
-	_blocks.insert(std::make_pair(basicBlock.label, block));
+	_blocks.insert(std::make_pair(basicBlock.label(), block));
 }
 
 void PTXToVIRTranslator::_translateBasicBlock(const PTXBasicBlock& basicBlock)
 {
-	report("  Translating PTX basic block " << basicBlock.label);
+	report("  Translating PTX basic block " << basicBlock.label());
 	
-	BasicBlockMap::iterator block = _blocks.find(basicBlock.label);
+	BasicBlockMap::iterator block = _blocks.find(basicBlock.label());
 	
 	if(block == _blocks.end())
 	{
-		throw std::runtime_error("Basic block " + basicBlock.label
+		throw std::runtime_error("Basic block " + basicBlock.label()
 			+ " was not declared in this function.");
 	}
 

@@ -22,9 +22,11 @@ except:
 # find all source files in the source tree
 sources = []
 directories = ['vanaheimr/asm/implementation', 
+	'vanaheimr/analysis/implementation',
 	'vanaheimr/ir/implementation',
 	'vanaheimr/compiler/implementation',
-	'vanaheimr/translation/implementation']
+	'vanaheimr/translation/implementation',
+	'vanaheimr/transforms/implementation']
 extensions = ['*.cpp']
 
 for dir in directories:
