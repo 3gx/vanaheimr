@@ -5,9 +5,12 @@
 	\brief  The implementation file for the Core simulator of the thread block class.
 */
 
+// Archaeopteryx Includes
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/ir/interface/Instruction.h>
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
+
+#include <archaeopteryx/util/interface/debug.h>
 
 namespace executive
 {

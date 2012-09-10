@@ -153,6 +153,3 @@ private:
 
 }
 
-#include <archaeopteryx/ir/implementation/Binary.cpp>
-
-

@@ -12,6 +12,7 @@
 #include <archaeopteryx/util/interface/StlFunctions.h>
 
 #include <archaeopteryx/util/interface/debug.h>
+#include <archaeopteryx/util/interface/string.h>
 
 #ifdef REPORT_BASE
 #undef REPORT_BASE

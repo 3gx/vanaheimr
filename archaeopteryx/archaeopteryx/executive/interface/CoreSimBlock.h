@@ -6,16 +6,20 @@
 */
 
 #pragma once
-#define WARP_SIZE     32
-#define LOG_WARP_SIZE 5
 
+// Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Binary.h>
 #include <archaeopteryx/executive/interface/CoreSimThread.h>
 
-//Forward declarations
-namespace ir        { class Binary;        }
-namespace executive { class CoreSimKernel; }
+// Forward declarations
+namespace archaeopteryx { namespace executive { class CoreSimKernel; } }
 
+// Preprocessor Macros
+#define WARP_SIZE     32
+#define LOG_WARP_SIZE 5
+
+namespace archaeopteryx
+{
 
 /*! \brief A namespace for program execution */
 namespace executive
@@ -104,6 +108,8 @@ class CoreSimBlock
         //Interface to CoreSimKernel
         __device__ void setBlockState(const BlockState&);
 };
+
+}
 
 }
 

@@ -11,9 +11,11 @@
 
 // Forward Declarations
 namespace executive { class CoreSimBlock; }
-namespace ir        { class Instruction;}
+namespace ir        { class Instruction;  }
 
-/*! \brief A namespace for program execution */
+namespace archaeopteryx
+{
+
 namespace executive
 {
 class CoreSimThread
@@ -45,4 +47,6 @@ class CoreSimThread
 
 }
 
+
+}
 
