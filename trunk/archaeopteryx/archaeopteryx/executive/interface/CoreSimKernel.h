@@ -30,6 +30,3 @@ class CoreSimKernel
 
 }
 
-// TODO Remove when we get a real linker
-#include <archaeopteryx/executive/implementation/CoreSimKernel.cpp>
-

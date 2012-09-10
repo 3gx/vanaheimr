@@ -70,6 +70,7 @@ public:
 	};
 
 	typedef std::vector<Operand*> OperandVector;
+	typedef unsigned int Id;
 
 public:
 	Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
@@ -96,6 +97,7 @@ public:
 	std::string toString() const;
 	
 public:
+	/*! \brief Clear the reader/writer sets. */
 	void clear();
 
 public:
@@ -109,14 +111,19 @@ public:
 	/*! \brief The instruction opcode */
 	Opcode opcode;
 
+	/*! \brief The instruction Id, unique within the function */
+	const Id id;
+
 	/*! \brief The guard predicate */
 	PredicateOperand* guard;
 
+public:
 	/*! \brief The set of all operands read by the instruction */
 	OperandVector reads;
 	/*! \brief The set of all operands written by the instruction */
 	OperandVector writes;
 
+public:
 	/*!  \brief The basic block that the instruction is contained in */
 	BasicBlock* block;
 

@@ -9,6 +9,12 @@
 // Standard Library Includes
 #include <iostream>
 
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif 
+
+#define REPORT_BASE 0
+
 // Preprocessor macros
 #ifdef device_assert
 #undef device_assert

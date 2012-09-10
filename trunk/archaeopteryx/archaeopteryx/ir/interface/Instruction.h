@@ -349,42 +349,47 @@ class Zext : public UnaryInstruction
 };
 
 /*! \brief A container of any possible instruction */
-union InstructionContainer
+
+class InstructionContainer
 {
-	Add               asAdd;
-	And               asAnd;
-	Ashr              asAshr;
-	Atom              asAtom;
-	Bar               asBar;
-	BinaryInstruction asBinaryInstruction;
-	Bitcast           asBitcast;
-	Bra               asBra;
-	Fpext             asFpext;
-	Fptosi            asFptosi;
-	Fptoui            asFptoui;
-	Fptrunc           asFptrunc;
-	Instruction       asInstruction;
-	Ld                asLd;
-	Lshr              asLshr;
-	Membar            asMembar;
-	Mul               asMul;
-	Or                asOr;
-	Ret               asRet;
-	SetP              asSetP;
-	Sext              asSext;
-	Sdiv              asSdiv;
-	Shl               asShl;
-	Sitofp            asSitofp;
-	Srem              asSrem;
-	St                asSt;
-	Sub               asSub;
-	Trunc             asTrunc;
-	Udiv              asUdiv;
-	Uitofp            asUitofp;
-	UnaryInstruction  asUnaryInstruction;
-	Urem              asUrem;
-	Xor               asXor;
-	Zext              asZext;
+public:
+	union
+	{
+		Add               asAdd;
+		And               asAnd;
+		Ashr              asAshr;
+		Atom              asAtom;
+		Bar               asBar;
+		BinaryInstruction asBinaryInstruction;
+		Bitcast           asBitcast;
+		Bra               asBra;
+		Fpext             asFpext;
+		Fptosi            asFptosi;
+		Fptoui            asFptoui;
+		Fptrunc           asFptrunc;
+		Instruction       asInstruction;
+		Ld                asLd;
+		Lshr              asLshr;
+		Membar            asMembar;
+		Mul               asMul;
+		Or                asOr;
+		Ret               asRet;
+		SetP              asSetP;
+		Sext              asSext;
+		Sdiv              asSdiv;
+		Shl               asShl;
+		Sitofp            asSitofp;
+		Srem              asSrem;
+		St                asSt;
+		Sub               asSub;
+		Trunc             asTrunc;
+		Udiv              asUdiv;
+		Uitofp            asUitofp;
+		UnaryInstruction  asUnaryInstruction;
+		Urem              asUrem;
+		Xor               asXor;
+		Zext              asZext;
+	};
 };
 
 }

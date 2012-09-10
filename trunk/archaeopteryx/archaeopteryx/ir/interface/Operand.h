@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Archaeopteryx Includes
+#include <archaeopteryx/util/interface/IntTypes.h>
+
 namespace archaeopteryx
 {
 
