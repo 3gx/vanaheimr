@@ -483,10 +483,11 @@ class Membar : public Instruction
 public:
 	enum Level
 	{
-		Thread,
-		Cta,
-		Kernel,
-		InvalidLevel
+		Thread = 1,
+		Warp   = 2,
+		Cta    = 3,
+		Kernel = (uint32_t)-1,
+		InvalidLevel = 0
 	};
 
 public:

@@ -10,7 +10,8 @@
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
 {
-/*! \brief A namespace for the internal representation */
+
+/*! \brief A namespace for the assembly representation */
 namespace as
 {
 

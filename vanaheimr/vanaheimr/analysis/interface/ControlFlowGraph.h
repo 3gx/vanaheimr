@@ -23,6 +23,9 @@ public:
 	typedef util::SmallSet<BasicBlock*> BasicBlockSet;
 
 public:
+	ControlFlowGraph();
+
+public:
 	BasicBlock* getEntryBlock();
 	BasicBlock* getExitBlock();
 	
