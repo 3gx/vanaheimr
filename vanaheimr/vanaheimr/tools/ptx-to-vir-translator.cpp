@@ -15,7 +15,7 @@
 #include <ocelot/ir/interface/Module.h>
 
 // Hydrazine Includes
-#include <hydrazine/implementation/ArgumentParser.h>
+#include <hydrazine/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <fstream>
@@ -104,7 +104,8 @@ int main(int argc, char** argv)
 	parser.parse("-i", "--input",  ptxFileName, "", "The input PTX file path.");
 	parser.parse("-o", "--output", virFileName,
 		"", "The output VIR file path.");
-	parser.parse("-b", "--use-binary-format", writeBinary, false, "Output a VIR binary "
+	parser.parse("-b", "--use-binary-format", writeBinary,
+		false, "Output a VIR binary "
 		"bytecode file rather than an assembly file.");
 	parser.parse();
 	

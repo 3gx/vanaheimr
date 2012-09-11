@@ -90,10 +90,11 @@ public:
 	void setGuard(PredicateOperand* g);
 
 public:
-	bool isLoad()   const;
-	bool isStore()  const;
-	bool isBranch() const;
-	bool isCall()   const;
+	bool isLoad()       const;
+	bool isStore()      const;
+	bool isBranch()     const;
+	bool isCall()       const;
+	bool isInstrinsic() const;
 
 public:
 	bool isUnary()  const;
@@ -340,6 +341,16 @@ public:
 	void setTarget(Operand* o);
 
 public:
+	/*! \brief Get the target basic block */
+	BasicBlock*       targetBasicBlock();
+	/*! \brief Get the target basic block */
+	const BasicBlock* targetBasicBlock() const;
+
+public:
+	/*! \brief Is the branch unconditional? */
+	bool isUnconditional() const;
+
+public:
 	virtual Instruction* clone() const;
 
 public:
@@ -351,6 +362,9 @@ public:
 class Call : public Bra
 {
 public:
+	typedef std::vector<Operand*> OperandVector;
+
+public:
 	Call(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
 	Call(const Call& i);
 
@@ -359,11 +373,19 @@ public:
 public:
 	/*! \brief Set the link operand, the instruction takes onwership */
 	void setLink(Operand* o);
+	/*! \brief Add a return operand, the instruction takes ownership  */
+	void addReturn(Operand* o);
+	/*! \brief Add an argument operand, the instruction takes ownership  */
+	void addArgument(Operand* o);
+
 public:
 	Instruction* clone() const;
 
 public:
 	Operand* link;
+	
+	OperandVector returned;
+	OperandVector arguments;
 
 };
 
