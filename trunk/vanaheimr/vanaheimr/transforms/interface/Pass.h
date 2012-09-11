@@ -148,11 +148,11 @@ public:
 	
 public:
 	/*! \brief Initialize the pass using a specific module */
-	virtual void initialize(const Module& m) = 0;
+	virtual void initialize(const Module& m);
 	/*! \brief Run the pass on a specific function in the module */
 	virtual void runOnFunction(Function& f) = 0;		
 	/*! \brief Finalize the pass */
-	virtual void finalize() = 0;
+	virtual void finalize();
 };
 
 /*! \brief An immutable pass over a single function in a module */
@@ -167,11 +167,11 @@ public:
 	
 public:
 	/*! \brief Initialize the pass using a specific module */
-	virtual void initialize(const Module& m) = 0;
+	virtual void initialize(const Module& m);
 	/*! \brief Run the pass on a specific function in the module */
 	virtual void runOnFunction(const Function& k) = 0;		
 	/*! \brief Finalize the pass */
-	virtual void finalize() = 0;
+	virtual void finalize();
 };
 
 /*! \brief A pass over a single basic block in a function */
@@ -186,15 +186,15 @@ public:
 	
 public:
 	/*! \brief Initialize the pass using a specific module */
-	virtual void initialize(const Module& m) = 0;
+	virtual void initialize(const Module& m);
 	/*! \brief Initialize the pass using a specific function */
-	virtual void initialize(const Function& m) = 0;
+	virtual void initialize(const Function& m);
 	/*! \brief Run the pass on a specific function in the module */
 	virtual void runOnBlock(BasicBlock& b) = 0;		
 	/*! \brief Finalize the pass on the function */
-	virtual void finalizeFunction() = 0;
+	virtual void finalizeFunction();
 	/*! \brief Finalize the pass on the module */
-	virtual void finalize() = 0;
+	virtual void finalize();
 };
 
 typedef std::list<Pass*> PassList;
