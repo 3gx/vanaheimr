@@ -66,6 +66,12 @@ public:
 		Urem,
 		Xor,
 		Zext,
+		
+		// IR Analysis
+		Phi,
+		Psi,
+		
+		// Invalid
 		InvalidOpcode
 	};
 
@@ -692,6 +698,70 @@ public:
 public:
 	Instruction* clone() const;
 	
+};
+
+/*! \brief A PHI node defines a new value from multiple source values that are
+	merged together from multiple control flow paths */
+class Phi : public Instruction
+{
+public:
+	typedef std::vector<RegisterOperand*> RegisterOperandVector;
+	typedef std::vector<BasicBlock*>      BasicBlockVector;
+
+public:
+	Phi(BasicBlock* b = 0);
+
+	Phi(const Phi&);
+	Phi& operator=(const Phi&);
+
+public:
+	/*! \brief Set the destination, the instruction takes ownership */
+	void setD(RegisterOperand* d);
+	/*! \brief Add a new source, the instruction takes ownership */
+	void addSource(RegisterOperand* source, BasicBlock* predecessor);
+	/*! \brief Remove a source from the specified basic block */
+	void removeSource(BasicBlock* predecessor);
+
+public:
+	Instruction* clone() const;
+
+public:
+	RegisterOperand* d;
+
+public:
+	RegisterOperandVector sources;
+	BasicBlockVector      blocks;
+};
+
+/*! \brief A PSI node defines a new value only if at least one of a set of
+	predicates are set. */
+class Psi : public Instruction
+{
+public:
+	typedef std::vector<RegisterOperand*>  RegisterOperandVector;
+	typedef std::vector<PredicateOperand*> PredicateOperandVector;
+	
+public:
+	Psi(BasicBlock* b = 0);
+
+	Psi(const Psi&);
+	Psi& operator=(const Psi&);
+
+public:
+	/*! \brief Set the destination, the instruction takes ownership */
+	void setD(RegisterOperand* d);
+	/*! \brief Add a new source, the instruction takes ownership */
+	void addSource(PredicateOperand* predicate, RegisterOperand* reg);
+	/*! \brief Remove a source associated with the specified predicate */
+	void removeSource(PredicateOperand* predicate);
+
+public:
+	RegisterOperand* d;
+	
+public:
+	RegisterOperandVector  sources;
+	PredicateOperandVector predicates;
+
 };
 
 }
