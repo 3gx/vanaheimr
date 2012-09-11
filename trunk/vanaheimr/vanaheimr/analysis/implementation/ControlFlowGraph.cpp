@@ -4,10 +4,12 @@
 	\brief  The source file for the control flow graph class.
 */
 
-#pragma once
-
 // Vanaheimr Includes
-#include <vanaheimr/analysis/includes/ControlFlowGraph.h>
+#include <vanaheimr/analysis/interface/ControlFlowGraph.h>
+
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/BasicBlock.h>
+#include <vanaheimr/ir/interface/Instruction.h>
 
 namespace vanaheimr
 {
@@ -21,50 +23,155 @@ ControlFlowGraph::ControlFlowGraph()
 
 }
 
-BasicBlock* ControlFlowGraph::getEntryBlock()
+ControlFlowGraph::BasicBlockSet
+	ControlFlowGraph::getSuccessors(const BasicBlock& b)
 {
-	return _entry;
+	return _successors[b.id()];
 }
 
-BasicBlock* ControlFlowGraph::getExitBlock()
+ControlFlowGraph::BasicBlockSet
+	ControlFlowGraph::getPredecessors(const BasicBlock& b)
 {
-	return _exit;
+	return _predecessors[b.id()];
 }
 
-const BasicBlock* ControlFlowGraph::getEntryBlock() const
+bool ControlFlowGraph::isEdge(const BasicBlock& head, const BasicBlock& tail)
 {
-	return _entry;
-}
-
-const BasicBlock* ControlFlowGraph::getExitBlock() const
-{
-	return _exit;
-}
-
-BasicBlockSet ControlFlowGraph::getSuccessors(const BasicBlock& b)
-{
-	return _successors[];
-}
-
-BasicBlockSet ControlFlowGraph::getPredecessors(const BasicBlock& b);
-
-bool ControlFlowGraph::isEdge(const BasicBlock& head, const BasicBlock& edge);
-bool ControlFlowGraph::isBranchEdge(const BasicBlock& head, const BasicBlock& edge);
-bool ControlFlowGraph::isFallthroughEdge(const BasicBlock& head, const BasicBlock& edge);
-
-Function* ControlFlowGraph::function()
-{
+	BasicBlockSet successors = getSuccessors(head);
 	
+	return successors.count(const_cast<BasicBlock*>(&tail)) != 0;
 }
 
-const Function* ControlFlowGraph::function() const
+bool ControlFlowGraph::isBranchEdge(const BasicBlock& head,
+	const BasicBlock& tail)
 {
+	const ir::Instruction* terminator = head.terminator();
+	
+	if  (terminator == nullptr) return false;
+	if(!terminator->isBranch()) return false;
+	
+	const ir::Bra* branch = static_cast<const ir::Bra*>(terminator);
+	
+	return &tail == branch->targetBasicBlock();
+}
 
+bool ControlFlowGraph::isFallthroughEdge(const BasicBlock& head,
+	const BasicBlock& tail)
+{
+	if(isBranchEdge(head, tail)) return false;
+	
+	return isEdge(head, tail);
+}
+
+ir::Function* ControlFlowGraph::function()
+{
+	return _function;
+}
+
+const ir::Function* ControlFlowGraph::function() const
+{
+	return _function;
 }
 
 void ControlFlowGraph::analyze(Function& function)
 {
-	assertM(false, "Not implemented.");
+	// perform the analysis sequentially
+	  _successors.resize(function.size());
+	_predecessors.resize(function.size());
+		
+	// should be for-all
+	for(auto block = function.begin(); block != function.end(); ++block)
+	{
+		BasicBlock* nextBlock = nullptr;
+		
+		auto next = block; ++next;
+		
+		if(next != function.end())
+		{
+			nextBlock = &*next;
+		}
+			
+		_initializePredecessorsAndSuccessors(&*block, nextBlock);
+	}
+}
+
+void ControlFlowGraph::_initializePredecessorsAndSuccessors(BasicBlock* block,
+	BasicBlock* next)
+{
+	BasicBlock* fallthrough = nullptr;
+	BasicBlock* target      = nullptr;
+	
+	// find target and fallthrough
+	ir::Instruction* terminator = block->terminator();
+	
+	ir::Bra* branch = nullptr;
+	
+	if(terminator != nullptr)
+	{
+		if(terminator->isBranch())
+		{
+			branch = static_cast<ir::Bra*>(terminator);
+		}
+	}
+	
+	if(next != nullptr)
+	{
+		if(branch == nullptr)
+		{
+			fallthrough = next;
+		}
+		else if(!branch->isUnconditional())
+		{
+			fallthrough = next;
+		}
+	}
+	
+	if(branch != nullptr)
+	{
+		target = branch->targetBasicBlock();
+	}
+	
+	// populate successor set
+	BasicBlockSet& successors = _successors[block->id()];
+	
+	if(fallthrough != nullptr)
+	{
+		successors.insert(fallthrough);
+	}
+	
+	if(target != nullptr)
+	{
+		successors.insert(target);
+	}
+	
+	// populate predecessor sets, for a parallel algorithm, this 
+	//  would need to create lists of predecessors for each block and
+	//  then convert them into sets.
+	// 
+	// One of these algorithms would be possible:
+	// 1) add (head, tail) pairs to an array, sort them by tail,
+	//    then group by tail, each group becomes a set
+	// 2) atomically add pairs by tail
+	//
+	//
+	// For all of these, fallthroughs can go in parallel first since no
+	// collisions are possible
+	
+	// in parallel
+	if(fallthrough != nullptr)
+	{
+		BasicBlockSet& predecessors = _predecessors[fallthrough->id()];
+		
+		predecessors.insert(&*block);
+	}
+	
+	// TODO: handle conflicts
+	if(target != nullptr)
+	{
+		BasicBlockSet& predecessors = _predecessors[fallthrough->id()];
+		
+		predecessors.insert(&*block);
+	}
 }
 
 }
