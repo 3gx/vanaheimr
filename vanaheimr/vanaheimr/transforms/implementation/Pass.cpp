@@ -116,6 +116,16 @@ FunctionPass::~FunctionPass()
 
 }
 
+void FunctionPass::initialize(const Module& m)
+{
+
+}
+
+void FunctionPass::finalize()
+{
+
+}
+
 ImmutableFunctionPass::ImmutableFunctionPass(
 	const StringVector& a, const std::string& n)
  : Pass(Pass::ImmutableFunctionPass, a, n)
@@ -128,6 +138,16 @@ ImmutableFunctionPass::~ImmutableFunctionPass()
 
 }
 
+void ImmutableFunctionPass::initialize(const Module& m)
+{
+
+}
+
+void ImmutableFunctionPass::finalize()
+{
+
+}
+
 BasicBlockPass::BasicBlockPass(const StringVector& a, const std::string& n)
  : Pass(Pass::BasicBlockPass, a, n)
 {
@@ -135,6 +155,26 @@ BasicBlockPass::BasicBlockPass(const StringVector& a, const std::string& n)
 }
 
 BasicBlockPass::~BasicBlockPass()
+{
+
+}
+
+void BasicBlockPass::initialize(const Module& m)
+{
+
+}
+
+void BasicBlockPass::initialize(const Function& m)
+{
+
+}
+
+void BasicBlockPass::finalizeFunction()
+{
+
+}
+
+void BasicBlockPass::finalize()
 {
 
 }

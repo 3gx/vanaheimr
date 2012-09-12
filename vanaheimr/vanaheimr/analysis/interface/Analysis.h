@@ -34,7 +34,7 @@ public:
 public:
 	/*! \brief Initialize the analysis, register it with a pass manager */
 	Analysis(const std::string& name = "",
-		StringVector dependentAnalyses = StringVector());
+		const StringVector& dependentAnalyses = StringVector());
 
 	virtual ~Analysis();
 
@@ -71,7 +71,7 @@ class FunctionAnalysis : public Analysis
 public:
 	/*! \brief Initialize the analysis, register it with a pass manager */
 	FunctionAnalysis(const std::string& name = "",
-		StringVector dependentAnalyses = StringVector());
+		const StringVector& dependentAnalyses = StringVector());
 
 public:
 	virtual void analyze(Function& function) = 0;
@@ -85,7 +85,7 @@ class ModuleAnalysis : public Analysis
 public:
 	/*! \brief Initialize the analysis, register it with a pass manager */
 	ModuleAnalysis(const std::string& name = "",
-		StringVector dependentAnalyses = StringVector());
+		const StringVector& dependentAnalyses = StringVector());
 
 public:
 	virtual void analyze(Module& module) = 0;
