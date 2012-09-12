@@ -91,6 +91,7 @@ private:
 	Function*       _function;
 	InstructionList _instructions;
 	Id              _id;
+	Instruction::Id _nextInstructionId;
 };
 
 }

@@ -18,8 +18,8 @@ namespace vanaheimr
 namespace ir
 {
 
-Instruction::Instruction(Opcode o, BasicBlock* b)
-: opcode(o), guard(0), block(b)
+Instruction::Instruction(Opcode o, BasicBlock* b, Id id)
+: opcode(o), guard(0), block(b), _id(id)
 {
 	reads.push_back(guard);
 }
@@ -30,7 +30,7 @@ Instruction::~Instruction()
 }
 
 Instruction::Instruction(const Instruction& i)
-: opcode(i.opcode), block(i.block)
+: opcode(i.opcode), block(i.block), _id(i.id())
 {
 	for(auto operand : i.reads)
 	{
@@ -67,6 +67,8 @@ Instruction& Instruction::operator=(const Instruction& i)
 	
 	opcode = i.opcode;
 	block  = i.block;
+	
+	_id = i.id();
 	
 	for(auto operand : i.reads)
 	{
