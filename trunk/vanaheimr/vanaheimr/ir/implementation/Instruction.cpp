@@ -107,6 +107,11 @@ void Instruction::setGuard(PredicateOperand* p)
 	guard    = p;
 }
 
+Instruction::Id Instruction::id() const
+{
+	return _id;
+}
+
 bool Instruction::isLoad() const
 {
 	return opcode == Ld  || opcode == Atom;
