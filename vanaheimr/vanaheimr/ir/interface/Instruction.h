@@ -79,7 +79,7 @@ public:
 	typedef unsigned int Id;
 
 public:
-	Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
+	Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0, Id id = 0);
 	~Instruction();
 
 	Instruction(const Instruction&);
@@ -88,6 +88,10 @@ public:
 public:
 	/*! \brief Sets the predicate guard, the instruction now owns it */
 	void setGuard(PredicateOperand* g);
+
+public:
+	/*! \brief The instruction Id, unique within the function */
+	Id id() const;
 
 public:
 	bool isLoad()       const;
@@ -118,9 +122,6 @@ public:
 	/*! \brief The instruction opcode */
 	Opcode opcode;
 
-	/*! \brief The instruction Id, unique within the function */
-	const Id id;
-
 	/*! \brief The guard predicate */
 	PredicateOperand* guard;
 
@@ -133,6 +134,9 @@ public:
 public:
 	/*!  \brief The basic block that the instruction is contained in */
 	BasicBlock* block;
+	
+private:
+	Id _id;
 
 };
 
