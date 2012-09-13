@@ -7,7 +7,10 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/compiler/interface/Compiler.h>
+#include <vanaheimr/compiler/interface/TypeParser.h>
+
 #include <vanaheimr/ir/interface/Type.h>
+
 
 // Standard Library Includes
 #include <cassert>
@@ -110,6 +113,17 @@ Compiler::iterator Compiler::getOrInsertType(const ir::Type& type)
 	}
 
 	return newType(type);
+}
+
+Compiler::iterator Compiler::getOrInsertType(const std::string& signature)
+{
+	TypeParser parser;
+	
+	std::stringstream stream(signature);
+	
+	parser.parse(stream);
+	
+	return getOrInsertType(parser.parsedType);
 }
 
 Compiler::module_iterator Compiler::getModule(const std::string& name)
