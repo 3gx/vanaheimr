@@ -201,50 +201,8 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 		{
 			ir::Module::iterator function = m.newFunction(
 				_getSymbolName(*symbol), _getSymbolLinkage(*symbol),
-				_getSymbolVisibility(*symbol));
+				_getSymbolVisibility(*symbol), type);
 
-			report("   loading arguments...");
-
-			for(auto argumentSymbol = _symbolTable.begin();
-				argumentSymbol != _symbolTable.end(); ++argumentSymbol)
-			{
-				if(argumentSymbol->type != SymbolTableEntry::ArgumentType)
-				{
-					continue;
-				}
-				
-				std::string functionName =
-					_getSymbolName(*argumentSymbol).substr(2,
-					function->name().size());
-			
-				if(functionName != function->name()) continue;
-
-				uint64_t symbolTableOffset = _header.symbolOffset +
-					sizeof(SymbolTableEntry) *
-					std::distance(_symbolTable.begin(), argumentSymbol);
-
-				std::string name = _getSymbolName(*argumentSymbol).substr(
-					2 + function->name().size());
-
-				report("    loaded argument " << name
-					<< " at offset " << argumentSymbol->offset
-					<< ", symbol offset is " << symbolTableOffset);
-
-				auto type = _getSymbolType(*argumentSymbol);
-
-				if(type == nullptr)
-				{
-					throw std::runtime_error("Could not find type with name '" +
-						_getSymbolTypeName(*argumentSymbol) + "' for symbol '" +
-						name + "'");
-				}
-		
-				auto argument = function->newArgument(type, name);
-
-				_arguments.insert(std::make_pair(symbolTableOffset,
-				&*argument));
-			}
-			
 			variable = &*function;
 		}
 		
@@ -271,6 +229,48 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 
 		ir::Variable* variable = _getVariableAtSymbolOffset(symbolTableOffset);
 		ir::Function* function = static_cast<ir::Function*>(variable);
+
+		report("   loading arguments...");
+
+		for(auto argumentSymbol = _symbolTable.begin();
+			argumentSymbol != _symbolTable.end(); ++argumentSymbol)
+		{
+			if(argumentSymbol->type != SymbolTableEntry::ArgumentType)
+			{
+				continue;
+			}
+			
+			std::string functionName =
+				_getSymbolName(*argumentSymbol).substr(2,
+				function->name().size());
+		
+			if(functionName != function->name()) continue;
+
+			uint64_t symbolTableOffset = _header.symbolOffset +
+				sizeof(SymbolTableEntry) *
+				std::distance(_symbolTable.begin(), argumentSymbol);
+
+			std::string name = _getSymbolName(*argumentSymbol).substr(
+				2 + function->name().size());
+
+			report("    loaded argument " << name
+				<< " at offset " << argumentSymbol->offset
+				<< ", symbol offset is " << symbolTableOffset);
+
+			auto type = _getSymbolType(*argumentSymbol);
+
+			if(type == nullptr)
+			{
+				throw std::runtime_error("Could not find type with name '" +
+					_getSymbolTypeName(*argumentSymbol) + "' for symbol '" +
+					name + "'");
+			}
+	
+			auto argument = function->newArgument(type, name);
+
+			_arguments.insert(std::make_pair(symbolTableOffset,
+				&*argument));
+		}
 
 		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(*symbol);
 	
@@ -303,7 +303,8 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 			uint64_t symbolOffset = (unresolved.first -
 				_header.symbolOffset) / sizeof(SymbolTableEntry);
 
-			assert(symbolOffset < _symbolTable.size());
+			assertM(symbolOffset < _symbolTable.size(), "Invalid symbol "
+				<< symbolOffset << " out of " << _symbolTable.size());
 
 			const SymbolTableEntry& targetSymbol = _symbolTable[symbolOffset];
 
@@ -777,6 +778,8 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 	
 		if(variable == nullptr)
 		{
+			report("  adding unresolved branch target for symbol at offset "
+				<< container.asSymbol.symbolTableOffset);
 			_unresolvedTargets.insert(std::make_pair(
 				container.asSymbol.symbolTableOffset, instruction));
 		}
