@@ -49,7 +49,8 @@ void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 	report(" writing header");
 	writePage(binary, (const char*)&m_header, sizeof(BinaryHeader));
 	report(" writing instructions");
-	writePage(binary, (const char*)m_instructions.data(), getInstructionStreamSize());
+	writePage(binary, (const char*)m_instructions.data(),
+		getInstructionStreamSize());
 	report(" writing data");
 	writePage(binary, (const char*)m_data.data(), getDataSize());
 	report(" writing symbols");
@@ -90,7 +91,8 @@ void BinaryWriter::populateData()
 {
 	report(" Adding global variables...");
 
-	for (ir::Module::const_global_iterator i = m_module->global_begin(); i != m_module->global_end(); ++i)
+	for(ir::Module::const_global_iterator i = m_module->global_begin();
+		i != m_module->global_end(); ++i)
 	{
 		ir::Constant::DataVector blob;
 		
@@ -111,16 +113,29 @@ void BinaryWriter::populateData()
 		
 		std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
 	}
+	
+	
 }
 
 void BinaryWriter::populateInstructions()
 {
-	report(" Adding functions.");
-	for(ir::Module::const_iterator function = m_module->begin(); function != m_module->end(); ++function)
+	report(" Adding function symbols.");
+	for(ir::Module::const_iterator function = m_module->begin();
+		function != m_module->end(); ++function)
 	{
 		report("  " << function->name());
-
-		for(ir::Function::const_argument_iterator argument = function->argument_begin();
+		addSymbol(SymbolTableEntry::FunctionType, function->linkage(),
+			function->visibility(), ir::Global::InvalidLevel, function->name(),
+			0, 0, function->type().name());
+	}
+	
+	report(" Adding functions.");
+	for(ir::Module::const_iterator function = m_module->begin();
+		function != m_module->end(); ++function)
+	{
+		report("  " << function->name());
+	
+		for(auto argument = function->argument_begin();
 			argument != function->argument_end(); ++argument)
 		{
 			addSymbol(SymbolTableEntry::ArgumentType, 0x0, 0x0,
@@ -132,7 +147,7 @@ void BinaryWriter::populateInstructions()
 		unsigned int instructionsBegin =
 			m_instructions.size() * sizeof(InstructionContainer);
 		unsigned int instructionOffset = m_instructions.size();	
-		for(ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
+		for(auto bb = function->begin(); bb != function->end(); ++bb)
 		{
 			m_basicBlockOffsets.insert(std::make_pair(bb->name(),
 				instructionOffset * sizeof(InstructionContainer)));
@@ -141,21 +156,20 @@ void BinaryWriter::populateInstructions()
 		}
 
 		unsigned int instructionsSize =
-			instructionOffset * sizeof(InstructionContainer) - instructionsBegin;
+			instructionOffset * sizeof(InstructionContainer)
+			- instructionsBegin;
 	
-		for(ir::Function::const_iterator bb = function->begin(); bb != function->end(); ++bb)
+		for(auto bb = function->begin(); bb != function->end(); ++bb)
 		{
 			report("   Basic Block " << bb->name());
-			for(ir::BasicBlock::const_iterator inst = bb->begin(); inst != bb->end(); ++inst)
+			for(auto inst = bb->begin(); inst != bb->end(); ++inst)
 			{
 				m_instructions.push_back(convertToContainer(**inst));
 			}
 		}
 
-		addSymbol(SymbolTableEntry::FunctionType, function->linkage(), function->visibility(),
-			ir::Global::InvalidLevel, function->name(), instructionsBegin,
-			instructionsSize, function->type().name());
-		
+		patchSymbol(function->name(), instructionsBegin, instructionsSize);
+
 		m_basicBlockOffsets.clear();
 		m_basicBlockSymbols.clear();
 	}
@@ -163,7 +177,8 @@ void BinaryWriter::populateInstructions()
 
 void BinaryWriter::linkSymbols()
 {
-	for (symbol_iterator symb = m_symbolTable.begin(); symb != m_symbolTable.end(); ++symb)
+	for (symbol_iterator symb = m_symbolTable.begin();
+		symb != m_symbolTable.end(); ++symb)
 	{
 		if(symb->type == SymbolTableEntry::FunctionType
 			|| symb->type == SymbolTableEntry::BasicBlockType)
@@ -181,7 +196,9 @@ void BinaryWriter::linkSymbols()
 void BinaryWriter::populateHeader()
 {
 	m_header.dataPages     = (m_data.size() + PageSize - 1) / PageSize; 
-	m_header.codePages     = ((m_instructions.size()*sizeof(InstructionContainer)) + PageSize - 1) / PageSize;
+	m_header.codePages     =
+		((m_instructions.size() * sizeof(InstructionContainer)) + PageSize - 1)
+		/ PageSize;
 	m_header.symbols       = m_symbolTable.size(); 
 	m_header.stringPages   = (m_stringTable.size() + PageSize - 1) / PageSize;
 	m_header.dataOffset    = getDataOffset();
@@ -235,7 +252,8 @@ size_t BinaryWriter::getStringTableSize() const
 	return m_stringTable.size();
 }
 
-static archaeopteryx::ir::Instruction::Opcode convertOpcode(ir::Instruction::Opcode opcode)
+static archaeopteryx::ir::Instruction::Opcode convertOpcode(
+	ir::Instruction::Opcode opcode)
 {
 	typedef archaeopteryx::ir::Instruction AInstruction;
 	
@@ -361,7 +379,8 @@ static archaeopteryx::ir::PredicateOperand::PredicateModifier convertPredicate(
 	return archaeopteryx::ir::PredicateOperand::InvalidPredicate;
 }
 
-archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Operand& operand)
+archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
+	const ir::Operand& operand)
 {
 	archaeopteryx::ir::OperandContainer result;
 
@@ -369,7 +388,8 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	{
 	case ir::Operand::Register:
 	{
-		const ir::RegisterOperand& reg = static_cast<const ir::RegisterOperand&>(operand);
+		const ir::RegisterOperand& reg =
+			static_cast<const ir::RegisterOperand&>(operand);
 
 		report("     converting virtual register " << reg.virtualRegister->id
 			<< " (" << reg.virtualRegister->type->name() << ")");
@@ -382,7 +402,8 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	}
 	case ir::Operand::Immediate:
 	{
-		const ir::ImmediateOperand& immediate = static_cast<const ir::ImmediateOperand&>(operand);
+		const ir::ImmediateOperand& immediate =
+			static_cast<const ir::ImmediateOperand&>(operand);
 		
 		result.asImmediate.type = convertType(immediate.type);
 		result.asImmediate.uint = immediate.uint;
@@ -392,7 +413,8 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	}
 	case ir::Operand::Predicate:
 	{
-		const ir::PredicateOperand& predicate = static_cast<const ir::PredicateOperand&>(operand);
+		const ir::PredicateOperand& predicate =
+			static_cast<const ir::PredicateOperand&>(operand);
 		
 		result.asPredicate.modifier = convertPredicate(predicate.modifier);
 		
@@ -412,7 +434,8 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	}
 	case ir::Operand::Indirect:
 	{
-		const ir::IndirectOperand& indirect = static_cast<const ir::IndirectOperand&>(operand);
+		const ir::IndirectOperand& indirect =
+			static_cast<const ir::IndirectOperand&>(operand);
 
 		result.asIndirect.reg    = indirect.virtualRegister->id;
 		result.asIndirect.type   = convertType(indirect.virtualRegister->type);
@@ -424,26 +447,31 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(const ir::Opera
 	}
 	case ir::Operand::Address:
 	{
-		const ir::AddressOperand& address = static_cast<const ir::AddressOperand&>(operand);
+		const ir::AddressOperand& address =
+			static_cast<const ir::AddressOperand&>(operand);
 		
 		result.asOperand.mode = archaeopteryx::ir::Operand::Symbol;
 
 		if(address.globalValue->type().isBasicBlock())
 		{
-			result.asSymbol.symbolTableOffset = getBasicBlockSymbolTableOffset(address.globalValue);
+			result.asSymbol.symbolTableOffset =
+				getBasicBlockSymbolTableOffset(address.globalValue);
 		}
 		else
 		{
-			result.asSymbol.symbolTableOffset = getSymbolTableOffset(address.globalValue);
+			result.asSymbol.symbolTableOffset =
+				getSymbolTableOffset(address.globalValue);
 		}
 
 		break;
 	}
 	case ir::Operand::Argument:	
 	{
-		const ir::ArgumentOperand& argument = static_cast<const ir::ArgumentOperand&>(operand);
+		const ir::ArgumentOperand& argument =
+			static_cast<const ir::ArgumentOperand&>(operand);
 
-		result.asSymbol.symbolTableOffset = getSymbolTableOffset(argument.argument);
+		result.asSymbol.symbolTableOffset =
+			getSymbolTableOffset(argument.argument);
 		
 		result.asOperand.mode = archaeopteryx::ir::Operand::Symbol;
 
@@ -458,9 +486,10 @@ static bool isComplexInstruction(const ir::Instruction& instruction)
 {
 	switch(instruction.opcode)
 	{
-	case ir::Instruction::St:
-	case ir::Instruction::Bra:
-	case ir::Instruction::Ret:
+	case ir::Instruction::St:   // fall through
+	case ir::Instruction::Bra:  // fall through
+	case ir::Instruction::Ret:  // fall through
+	case ir::Instruction::Call: // fall through
 	{
 		return true;
 	}
@@ -470,7 +499,8 @@ static bool isComplexInstruction(const ir::Instruction& instruction)
 	return false;
 }
 
-void BinaryWriter::convertComplexInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::convertComplexInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	switch(instruction.opcode)
@@ -478,6 +508,11 @@ void BinaryWriter::convertComplexInstruction(archaeopteryx::ir::InstructionConta
 	case ir::Instruction::Bra:
 	{
 		convertBraInstruction(container, instruction);
+		break;
+	}
+	case ir::Instruction::Call:
+	{
+		convertCallInstruction(container, instruction);
 		break;
 	}
 	case ir::Instruction::St:
@@ -490,11 +525,13 @@ void BinaryWriter::convertComplexInstruction(archaeopteryx::ir::InstructionConta
 		convertRetInstruction(container, instruction);
 		break;
 	}
-	default: assertM(false, "Translation for " << instruction.toString() << " not implemented.");
+	default: assertM(false, "Translation for "
+		<< instruction.toString() << " not implemented.");
 	}
 }
 
-void BinaryWriter::convertUnaryInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::convertUnaryInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::UnaryInstruction& unary =
@@ -504,7 +541,8 @@ void BinaryWriter::convertUnaryInstruction(archaeopteryx::ir::InstructionContain
 	container.asUnaryInstruction.a = convertOperand(*unary.a);
 }
 
-void BinaryWriter::convertBinaryInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::convertBinaryInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::BinaryInstruction& binary =
@@ -515,14 +553,16 @@ void BinaryWriter::convertBinaryInstruction(archaeopteryx::ir::InstructionContai
 	container.asBinaryInstruction.b = convertOperand(*binary.b);
 }
 
-BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(const Instruction& instruction)
+BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(
+	const Instruction& instruction)
 {
 	report("    " << instruction.toString());
 
 	InstructionContainer container;
 
 	container.asInstruction.opcode = convertOpcode(instruction.opcode);
-	container.asInstruction.guard  = convertOperand(*instruction.guard).asPredicate;
+	container.asInstruction.guard  =
+		convertOperand(*instruction.guard).asPredicate;
 
 	if(isComplexInstruction(instruction))
 	{
@@ -538,7 +578,8 @@ BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(const Instru
 	}
 	else
 	{
-		assertM(false, "Translation for " << instruction.toString() << " not implemented.");
+		assertM(false, "Translation for " << instruction.toString()
+			<< " not implemented.");
 	}
 	
 	return container;
@@ -579,6 +620,19 @@ size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
 
 size_t BinaryWriter::getSymbolTableOffset(const std::string& name)
 {
+	auto symbol = getSymbol(name);
+	
+	assertM(symbol != m_symbolTable.end(),
+		"Invalid symbol name " << name << "");
+
+	return getSymbolTableOffset() +
+		std::distance(m_symbolTable.begin(), symbol) *
+		sizeof(SymbolTableEntry);
+}
+
+BinaryWriter::SymbolTableEntryVector::iterator
+	BinaryWriter::getSymbol(const std::string& name)
+{
 	for(SymbolVector::iterator symbol = m_symbolTable.begin();
 		symbol != m_symbolTable.end(); ++symbol)
 	{
@@ -586,14 +640,11 @@ size_t BinaryWriter::getSymbolTableOffset(const std::string& name)
 
 		if(symbolName == name)
 		{
-			return getSymbolTableOffset() +
-				std::distance(m_symbolTable.begin(), symbol) * sizeof(SymbolTableEntry);
+			return symbol;
 		}
 	}
 
-	assertM(false, "Invalid symbol name " << name << "");
-
-	return -1;
+	return m_symbolTable.end();
 }
 
 void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
@@ -616,14 +667,34 @@ void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	//	Add the type name string
 	symbol.typeOffset = m_stringTable.size();
 		
-	std::copy(typeName.begin(), typeName.end(), std::back_inserter(m_stringTable));
+	std::copy(typeName.begin(), typeName.end(),
+		std::back_inserter(m_stringTable));
 	m_stringTable.push_back('\0');
 
 	m_symbolTable.push_back(symbol);
-	
 }
 
-void BinaryWriter::convertStInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::patchSymbol(const std::string& name,
+	uint64_t offset, uint64_t size)
+{
+	auto symbol = getSymbol(name);
+	
+	assertM(symbol != m_symbolTable.end(),
+		"Invalid symbol name " << name << "");
+
+	symbol->offset = offset;
+	symbol->size   = size;
+}
+
+void BinaryWriter::alignData(uint64_t alignment)
+{
+	uint64_t newSize = align(m_data.size(), alignment);
+
+	m_data.resize(newSize);
+}
+
+void BinaryWriter::convertStInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::St& st = static_cast<const ir::St&>(instruction);
@@ -632,13 +703,8 @@ void BinaryWriter::convertStInstruction(archaeopteryx::ir::InstructionContainer&
 	container.asSt.a = convertOperand(*st.a);
 }
 
-void BinaryWriter::convertRetInstruction(archaeopteryx::ir::InstructionContainer& container,
-	const ir::Instruction& instruction)
-{
-	// Currently a NOP
-}
-
-void BinaryWriter::convertBraInstruction(archaeopteryx::ir::InstructionContainer& container,
+void BinaryWriter::convertBraInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::Bra& bra = static_cast<const ir::Bra&>(instruction);
@@ -665,12 +731,60 @@ void BinaryWriter::convertBraInstruction(archaeopteryx::ir::InstructionContainer
 	}
 }
 
-uint64_t BinaryWriter::pageAlign(uint64_t address)
+void BinaryWriter::convertCallInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
+	const ir::Instruction& instruction)
 {
-	uint64_t remainder  = address % PageSize;
-	uint64_t difference = PageSize - remainder;
+	const ir::Call& call = static_cast<const ir::Call&>(instruction);
+
+	container.asCall.target = convertOperand(*call.target);
+	
+	alignData(sizeof(OperandContainer));
+	
+	container.asCall.returnArguments      = call.returned.size();
+	container.asCall.returnArgumentOffset = m_data.size();
+	
+	for(auto operand : call.returned)
+	{
+		addOperandToDataSection(convertOperand(*operand));
+	}
+	
+	container.asCall.arguments      = call.arguments.size();
+	container.asCall.argumentOffset = m_data.size();
+	
+	for(auto operand : call.arguments)
+	{
+		addOperandToDataSection(convertOperand(*operand));
+	}
+}
+
+void BinaryWriter::convertRetInstruction(
+	archaeopteryx::ir::InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	// Currently a NOP
+	// TODO: fix this
+}
+
+void BinaryWriter::addOperandToDataSection(const OperandContainer& operand)
+{
+	const char* begin = reinterpret_cast<const char*>(&operand);
+	const char* end   = begin + sizeof(OperandContainer);
+	
+	std::copy(begin, end, std::back_inserter(m_data));
+}
+
+uint64_t BinaryWriter::align(uint64_t address, uint64_t alignment)
+{
+	uint64_t remainder  = address % alignment;
+	uint64_t difference = alignment - remainder;
 
 	return remainder == 0 ? address : address + difference;
+}
+
+uint64_t BinaryWriter::pageAlign(uint64_t address)
+{
+	return align(address, PageSize);
 }
 
 }
