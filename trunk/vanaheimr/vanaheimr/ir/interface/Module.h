@@ -61,7 +61,7 @@ public:
 
 	/*! \brief Add a new function */
 	iterator newFunction(const std::string& name, Variable::Linkage l,
-		Variable::Visibility v);
+		Variable::Visibility v, const Type* t = 0);
 
 	/*! \brief Remove a function from the module, it is deleted */
 	iterator removeFunction(iterator f);

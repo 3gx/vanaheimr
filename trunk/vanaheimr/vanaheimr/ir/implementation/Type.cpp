@@ -288,7 +288,11 @@ std::string FunctionType::functionPrototypeName(const Type* returnType,
 
 	if(returnType != 0)
 	{
-		stream << returnType->name() << " ";
+		stream << "(" << returnType->name() << ") ";
+	}
+	else
+	{
+		stream << "() ";
 	}
 	
 	stream << "(";
@@ -296,7 +300,7 @@ std::string FunctionType::functionPrototypeName(const Type* returnType,
 	for(TypeVector::const_iterator type = argumentTypes.begin();
 		type != argumentTypes.end(); ++type)
 	{
-		if(type != argumentTypes.end()) stream << ", ";
+		if(type != argumentTypes.begin()) stream << ", ";
 		
 		stream << (*type)->name();
 	}

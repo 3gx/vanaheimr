@@ -48,13 +48,13 @@ void BinaryWriter::write(std::ostream& binary, const ir::Module& m)
 
 	report(" writing header");
 	writePage(binary, (const char*)&m_header, sizeof(BinaryHeader));
+	report(" writing symbols");
+	writePage(binary, (const char*)m_symbolTable.data(), getSymbolTableSize());
 	report(" writing instructions");
 	writePage(binary, (const char*)m_instructions.data(),
 		getInstructionStreamSize());
 	report(" writing data");
 	writePage(binary, (const char*)m_data.data(), getDataSize());
-	report(" writing symbols");
-	writePage(binary, (const char*)m_symbolTable.data(), getSymbolTableSize());
 	report(" writing string table");
 	writePage(binary, (const char*)m_stringTable.data(), getStringTableSize());
 }
@@ -214,7 +214,7 @@ size_t BinaryWriter::getHeaderOffset() const
 
 size_t BinaryWriter::getInstructionOffset() const
 {
-	return pageAlign(sizeof(m_header));
+	return pageAlign(getSymbolTableSize() + getSymbolTableOffset());
 }
 
 size_t BinaryWriter::getDataOffset() const
@@ -224,12 +224,12 @@ size_t BinaryWriter::getDataOffset() const
 
 size_t BinaryWriter::getSymbolTableOffset() const
 {
-	return pageAlign(getDataSize() + getDataOffset());
+	return pageAlign(sizeof(m_header));
 }
 
 size_t BinaryWriter::getStringTableOffset() const
 {
-	 return pageAlign(getSymbolTableSize() + getSymbolTableOffset());
+	return pageAlign(getDataSize() + getDataOffset());
 }
 
 size_t BinaryWriter::getSymbolTableSize() const
@@ -651,6 +651,9 @@ void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	unsigned int visibility, unsigned int level, const std::string& name,
 	uint64_t offset, uint64_t size, const std::string& typeName)
 {
+	report("   adding symbol '" << name
+		<< "' with type name '" << typeName << "'");
+	
 	SymbolTableEntry symbol;
 
 	symbol.type                  = type;

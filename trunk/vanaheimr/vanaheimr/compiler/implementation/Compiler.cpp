@@ -11,9 +11,19 @@
 
 #include <vanaheimr/ir/interface/Type.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
+#include <sstream>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -117,13 +127,15 @@ Compiler::iterator Compiler::getOrInsertType(const ir::Type& type)
 
 Compiler::iterator Compiler::getOrInsertType(const std::string& signature)
 {
-	TypeParser parser;
+	report("Parsing type with signature: '" << signature << "'");
+	
+	TypeParser parser(this);
 	
 	std::stringstream stream(signature);
 	
 	parser.parse(stream);
 	
-	return getOrInsertType(parser.parsedType);
+	return getOrInsertType(*parser.parsedType()->clone());
 }
 
 Compiler::module_iterator Compiler::getModule(const std::string& name)
