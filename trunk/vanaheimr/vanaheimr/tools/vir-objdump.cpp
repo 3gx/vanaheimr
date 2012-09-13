@@ -10,7 +10,7 @@
 #include <vanaheimr/asm/interface/BinaryReader.h>
 
 // Hydrazine Includes
-#include <hydrazine/implementation/ArgumentParser.h>
+#include <hydrazine/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <fstream>

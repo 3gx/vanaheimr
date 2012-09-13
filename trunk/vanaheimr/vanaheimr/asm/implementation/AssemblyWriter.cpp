@@ -79,7 +79,15 @@ void AssemblyWriter::writeFunction(std::ostream& stream,
 		writeArgument(stream, *argument);
 	}
 	
-	stream << ")\n{\n";
+	stream << ")";
+	
+	if(function.size() <= 2)
+	{
+		stream << ";\n";
+		return;
+	}
+	
+	stream << "\n{\n";
 	
 	for(ir::Function::const_iterator block = function.begin();
 		block != function.end(); ++block)

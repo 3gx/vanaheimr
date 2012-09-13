@@ -42,6 +42,7 @@ ir::Module* BinaryReader::read(std::istream& stream, const std::string& name)
 	ir::Module* module = new ir::Module(name,
 		compiler::Compiler::getSingleton());
 
+	_loadTypes();
 	_initializeModule(*module);
 	
 	return module;
@@ -137,6 +138,16 @@ void BinaryReader::_readInstructions(std::istream& stream)
 	}
 }
 
+void BinaryReader::_loadTypes()
+{
+	for(auto symbol = _symbolTable.begin();
+		symbol != _symbolTable.end(); ++symbol)
+	{
+		compiler::Compiler::getSingleton()->getOrInsertType(
+			_getSymbolTypeName(*symbol));
+	}
+}
+
 void BinaryReader::_initializeModule(ir::Module& m)
 {
 	_loadGlobals(m);
@@ -148,19 +159,17 @@ void BinaryReader::_initializeModule(ir::Module& m)
 void BinaryReader::_loadGlobals(ir::Module& m)
 {
 	report(" Loading global variables from symbol table...");
-
+	
 	for(auto symbol = _symbolTable.begin();
 		symbol != _symbolTable.end(); ++symbol)
 	{
-		if(symbol->type != SymbolTableEntry::VariableType)
-		{
-			continue;
-		}
+		if(symbol->type != SymbolTableEntry::VariableType &&
+			symbol->type != SymbolTableEntry::FunctionType) continue;
 
 		uint64_t symbolTableOffset = _header.symbolOffset +
 			sizeof(SymbolTableEntry) *
 			std::distance(_symbolTable.begin(), symbol);
-
+		
 		report("  loaded " << _getSymbolName(*symbol)
 			<< " at offset " << symbol->offset
 			<< ", symbol offset is " << symbolTableOffset);
@@ -174,15 +183,72 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 				_getSymbolName(*symbol) + "'");
 		}
 
-		auto global = m.newGlobal(_getSymbolName(*symbol), type,
-			_getSymbolLinkage(*symbol), _getSymbolLevel(*symbol));
+		ir::Variable* variable = nullptr;
 
-		if(_hasInitializer(*symbol))
+		if(symbol->type == SymbolTableEntry::VariableType)
 		{
-			global->setInitializer(_getInitializer(*symbol));
-		}
+			auto global = m.newGlobal(_getSymbolName(*symbol), type,
+				_getSymbolLinkage(*symbol), _getSymbolLevel(*symbol));
 
-		_variables.insert(std::make_pair(symbolTableOffset, &*global));
+			if(_hasInitializer(*symbol))
+			{
+				global->setInitializer(_getInitializer(*symbol));
+			}
+			
+			variable = &*global;
+		}
+		else
+		{
+			ir::Module::iterator function = m.newFunction(
+				_getSymbolName(*symbol), _getSymbolLinkage(*symbol),
+				_getSymbolVisibility(*symbol));
+
+			report("   loading arguments...");
+
+			for(auto argumentSymbol = _symbolTable.begin();
+				argumentSymbol != _symbolTable.end(); ++argumentSymbol)
+			{
+				if(argumentSymbol->type != SymbolTableEntry::ArgumentType)
+				{
+					continue;
+				}
+				
+				std::string functionName =
+					_getSymbolName(*argumentSymbol).substr(2,
+					function->name().size());
+			
+				if(functionName != function->name()) continue;
+
+				uint64_t symbolTableOffset = _header.symbolOffset +
+					sizeof(SymbolTableEntry) *
+					std::distance(_symbolTable.begin(), argumentSymbol);
+
+				std::string name = _getSymbolName(*argumentSymbol).substr(
+					2 + function->name().size());
+
+				report("    loaded argument " << name
+					<< " at offset " << argumentSymbol->offset
+					<< ", symbol offset is " << symbolTableOffset);
+
+				auto type = _getSymbolType(*argumentSymbol);
+
+				if(type == nullptr)
+				{
+					throw std::runtime_error("Could not find type with name '" +
+						_getSymbolTypeName(*argumentSymbol) + "' for symbol '" +
+						name + "'");
+				}
+		
+				auto argument = function->newArgument(type, name);
+
+				_arguments.insert(std::make_pair(symbolTableOffset,
+				&*argument));
+			}
+			
+			variable = &*function;
+		}
+		
+		_variables.insert(std::make_pair(symbolTableOffset, variable));
 	}
 }
 
@@ -192,56 +258,21 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 
 	report(" Loading functions from symbol table...");
 
-	for(auto symbol : _symbolTable)
+	for(auto symbol = _symbolTable.begin();
+		symbol != _symbolTable.end(); ++symbol)
 	{
-		if(symbol.type != SymbolTableEntry::FunctionType)
-		{
-			continue;
-		}
+		if(symbol->type != SymbolTableEntry::FunctionType) continue;
 
-		report("  loaded function " << _getSymbolName(symbol));
+		uint64_t symbolTableOffset = _header.symbolOffset +
+			sizeof(SymbolTableEntry) *
+			std::distance(_symbolTable.begin(), symbol);
+	
+		report("  loaded function " << _getSymbolName(*symbol));
 
-		ir::Module::iterator function = m.newFunction(_getSymbolName(symbol),
-			_getSymbolLinkage(symbol), _getSymbolVisibility(symbol));
+		ir::Variable* variable = _getVariableAtSymbolOffset(symbolTableOffset);
+		ir::Function* function = static_cast<ir::Function*>(variable);
 
-		report("   loading arguments...");
-
-		for(auto argumentSymbol = _symbolTable.begin();
-			argumentSymbol != _symbolTable.end(); ++argumentSymbol)
-		{
-			if(argumentSymbol->type != SymbolTableEntry::ArgumentType) continue;
-
-			std::string functionName = _getSymbolName(*argumentSymbol).substr(2,
-				function->name().size());
-			
-			if(functionName != function->name()) continue;
-
-			uint64_t symbolTableOffset = _header.symbolOffset +
-				sizeof(SymbolTableEntry) *
-				std::distance(_symbolTable.begin(), argumentSymbol);
-
-			std::string name = _getSymbolName(*argumentSymbol).substr(
-				2+function->name().size());
-
-			report("    loaded argument " << name
-				<< " at offset " << argumentSymbol->offset
-				<< ", symbol offset is " << symbolTableOffset);
-
-			auto type = _getSymbolType(*argumentSymbol);
-
-			if(type == nullptr)
-			{
-				throw std::runtime_error("Could not find type with name '" +
-					_getSymbolTypeName(*argumentSymbol) + "' for symbol '" +
-					name + "'");
-			}
-		
-			auto argument = function->newArgument(type, name);
-
-			_arguments.insert(std::make_pair(symbolTableOffset, &*argument));
-		}
-
-		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(symbol);
+		BasicBlockDescriptorVector blocks = _getBasicBlocksInFunction(*symbol);
 	
 		PCToBasicBlockMap blockPCs;
 
@@ -311,7 +342,8 @@ std::string BinaryReader::_getSymbolName(const SymbolTableEntry& symbol) const
 	return std::string((char*)_stringTable.data() + symbol.stringOffset);
 }
 
-std::string BinaryReader::_getSymbolTypeName(const SymbolTableEntry& symbol) const
+std::string BinaryReader::_getSymbolTypeName(
+	const SymbolTableEntry& symbol) const
 {
 	return std::string((char*)_stringTable.data() + symbol.typeOffset);
 }
@@ -322,17 +354,20 @@ ir::Type* BinaryReader::_getSymbolType(const SymbolTableEntry& symbol) const
 		_getSymbolTypeName(symbol));
 }
 
-ir::Variable::Linkage BinaryReader::_getSymbolLinkage(const SymbolTableEntry& symbol) const
+ir::Variable::Linkage BinaryReader::_getSymbolLinkage(
+	const SymbolTableEntry& symbol) const
 {
 	return (ir::Variable::Linkage)(symbol.attributes.linkage);
 }
 
-ir::Variable::Visibility BinaryReader::_getSymbolVisibility(const SymbolTableEntry& symbol) const
+ir::Variable::Visibility BinaryReader::_getSymbolVisibility(
+	const SymbolTableEntry& symbol) const
 {
 	return (ir::Variable::Visibility)(symbol.attributes.visibility);
 }
 
-ir::Global::Level BinaryReader::_getSymbolLevel(const SymbolTableEntry& symbol) const
+ir::Global::Level BinaryReader::_getSymbolLevel(
+	const SymbolTableEntry& symbol) const
 {
 	return (ir::Global::Level)symbol.attributes.level;
 }
@@ -343,13 +378,15 @@ bool BinaryReader::_hasInitializer(const SymbolTableEntry& symbol) const
 	return false;
 }
 
-ir::Constant* BinaryReader::_getInitializer(const SymbolTableEntry& symbol) const
+ir::Constant* BinaryReader::_getInitializer(
+	const SymbolTableEntry& symbol) const
 {
 	assertM(false, "Not imeplemented.");
 }
 
 BinaryReader::BasicBlockDescriptorVector
-	BinaryReader::_getBasicBlocksInFunction(const SymbolTableEntry& symbol) const
+	BinaryReader::_getBasicBlocksInFunction(
+	const SymbolTableEntry& symbol) const
 {
 	typedef std::unordered_set<uint64_t> TargetSet;
 
@@ -373,7 +410,8 @@ BinaryReader::BasicBlockDescriptorVector
 		const archaeopteryx::ir::InstructionContainer&
 			instruction = _instructions[i];
 
-		if(instruction.asInstruction.opcode == archaeopteryx::ir::Instruction::Bra)
+		if(instruction.asInstruction.opcode ==
+			archaeopteryx::ir::Instruction::Bra)
 		{
 			report("   found branch at pc " << i);
 			auto operand = instruction.asBra.target;
@@ -384,14 +422,16 @@ BinaryReader::BasicBlockDescriptorVector
 
 				targets.insert(operand.asImmediate.uint);
 			}
-			else if(operand.asOperand.mode == archaeopteryx::ir::Operand::Symbol)
+			else if(operand.asOperand.mode ==
+				archaeopteryx::ir::Operand::Symbol)
 			{
 				uint64_t symbolOffset = (operand.asSymbol.symbolTableOffset -
 					_header.symbolOffset) / sizeof(SymbolTableEntry);
 
 				assert(symbolOffset < _symbolTable.size());
 
-				const SymbolTableEntry& targetSymbol = _symbolTable[symbolOffset];
+				const SymbolTableEntry& targetSymbol =
+					_symbolTable[symbolOffset];
 				
 				uint64_t targetPC = (targetSymbol.offset - _header.codeOffset) /
 					sizeof(InstructionContainer);
@@ -422,7 +462,8 @@ BinaryReader::BasicBlockDescriptorVector
 		{
 			isTerminator = true;
 		}
-		else if(instruction.asInstruction.opcode == archaeopteryx::ir::Instruction::Bra)
+		else if(instruction.asInstruction.opcode ==
+			archaeopteryx::ir::Instruction::Bra)
 		{
 			isTerminator = true;
 			blockEnd = i + 1;
@@ -614,7 +655,13 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		block->push_back(instruction);
 		
 		return true;
-		
+	}
+	else if(container.asInstruction.opcode
+		== archaeopteryx::ir::Instruction::Call)
+	{
+		_addCallInstruction(block, container);
+
+		return true;
 	}
 	else if(container.asInstruction.opcode
 		== archaeopteryx::ir::Instruction::Ret)
@@ -632,6 +679,44 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 	}
 	
 	return false;
+}
+
+void BinaryReader::_addCallInstruction(ir::Function::iterator block,
+	const InstructionContainer& container)
+{
+	auto instruction = static_cast<ir::Call*>(
+		ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode, &*block));
+
+	instruction->setGuard(_translateOperand(
+		container.asCall.guard, instruction));
+
+	instruction->setTarget(_translateOperand(container.asCall.target,
+		instruction));
+	
+	for(unsigned int returned = 0;
+		returned != container.asCall.returnArguments; ++returned)
+	{
+		uint64_t offset = returned * sizeof(OperandContainer) +
+			container.asCall.returnArgumentOffset;
+		const OperandContainer* operand =
+			reinterpret_cast<OperandContainer*>(&_dataSection[offset]);
+	
+		instruction->addReturn(_translateOperand(*operand, instruction));
+	}
+
+	for(unsigned int argument = 0;
+		argument != container.asCall.arguments; ++argument)
+	{
+		uint64_t offset = argument * sizeof(OperandContainer) +
+			container.asCall.argumentOffset;
+		const OperandContainer* operand =
+			reinterpret_cast<OperandContainer*>(&_dataSection[offset]);
+	
+		instruction->addArgument(_translateOperand(*operand, instruction));
+	}
+	
+	block->push_back(instruction);
 }
 
 ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
@@ -693,7 +778,7 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 		if(variable == nullptr)
 		{
 			_unresolvedTargets.insert(std::make_pair(
-				container.asSymbol.symbolTableOffset,instruction));
+				container.asSymbol.symbolTableOffset, instruction));
 		}
 
 		return operand;
@@ -714,8 +799,8 @@ ir::PredicateOperand* BinaryReader::_translateOperand(
 	if(operand.modifier != archaeopteryx::ir::PredicateOperand::PredicateTrue &&
 		operand.modifier != archaeopteryx::ir::PredicateOperand::PredicateFalse)
 	{
-		virtualRegister = _getVirtualRegister(operand.reg, archaeopteryx::ir::i1,
-			instruction->block->function());
+		virtualRegister = _getVirtualRegister(operand.reg,
+			archaeopteryx::ir::i1, instruction->block->function());
 	}
 
 	return new ir::PredicateOperand(virtualRegister, 
@@ -809,8 +894,8 @@ ir::Argument* BinaryReader::_getArgumentAtSymbolOffset(uint64_t offset) const
 	return argument->second;
 }
 
-BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(const std::string& n, uint64_t b,
-	uint64_t e)
+BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(
+	const std::string& n, uint64_t b, uint64_t e)
 : name(n), begin(b), end(e)
 {
 

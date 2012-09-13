@@ -86,21 +86,31 @@ private:
 	size_t getSymbolTableOffset(const ir::Variable* g);
 	size_t getSymbolTableOffset(const std::string& name);
 	size_t getBasicBlockSymbolTableOffset(const ir::Variable* g);
-
+	SymbolTableEntryVector::iterator getSymbol(const std::string& name);
+	
 	void addSymbol(unsigned int type, unsigned int linkage,
 		unsigned int visibility, unsigned int level,
 		const std::string& name, uint64_t offset, uint64_t size,
 		const std::string& typeName);
+	void patchSymbol(const std::string& name, uint64_t offset, uint64_t size);
+
+	void alignData(uint64_t alignment);
 
 private:
 	void convertStInstruction(InstructionContainer& container,
 		const Instruction& instruction);
 	void convertBraInstruction(InstructionContainer& container,
 		const Instruction& instruction);
+	void convertCallInstruction(InstructionContainer& container,
+		const Instruction& instruction);
 	void convertRetInstruction(InstructionContainer& container,
 		const Instruction& instruction);
 
 private:
+	void addOperandToDataSection(const OperandContainer& operand);
+
+private:
+	static uint64_t align(uint64_t address, uint64_t alignment);
 	static uint64_t pageAlign(uint64_t address);
 
 private:

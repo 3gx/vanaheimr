@@ -15,6 +15,7 @@
 
 // Forward Declaration
 namespace vanaheimr { namespace ir { class BasicBlock; } }
+namespace vanaheimr { namespace ir { class MetaData;   } }
 
 namespace vanaheimr
 {
@@ -126,9 +127,9 @@ public:
 	PredicateOperand* guard;
 
 public:
-	/*! \brief The set of all operands read by the instruction */
+	/*! \brief The list of all operands read by the instruction */
 	OperandVector reads;
-	/*! \brief The set of all operands written by the instruction */
+	/*! \brief The list of all operands written by the instruction */
 	OperandVector writes;
 
 public:
@@ -136,7 +137,8 @@ public:
 	BasicBlock* block;
 	
 private:
-	Id _id;
+	Id        _id;
+	MetaData* _metadata;
 
 };
 
@@ -363,20 +365,20 @@ public:
 };
 
 /*! \brief Branch and save the return pc */
-class Call : public Bra
+class Call : public Instruction
 {
 public:
 	typedef std::vector<Operand*> OperandVector;
 
 public:
-	Call(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
+	Call(BasicBlock* b = 0);
 	Call(const Call& i);
 
 	Call& operator=(const Call& i);
 
 public:
-	/*! \brief Set the link operand, the instruction takes onwership */
-	void setLink(Operand* o);
+	/*! \brief Set the target operand, the instruction takes onwership */
+	void setTarget(Operand* o);
 	/*! \brief Add a return operand, the instruction takes ownership  */
 	void addReturn(Operand* o);
 	/*! \brief Add an argument operand, the instruction takes ownership  */
@@ -386,8 +388,7 @@ public:
 	Instruction* clone() const;
 
 public:
-	Operand* link;
-	
+	Operand*      target;
 	OperandVector returned;
 	OperandVector arguments;
 

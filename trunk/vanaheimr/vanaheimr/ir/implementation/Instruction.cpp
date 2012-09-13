@@ -6,10 +6,12 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Instruction.h>
+#include <vanaheimr/ir/interface/BasicBlock.h>
 
 // Stdandard Library Includes
 #include <sstream>
 #include <typeinfo>
+#include <cassert>
 
 namespace vanaheimr
 {
@@ -19,7 +21,7 @@ namespace ir
 {
 
 Instruction::Instruction(Opcode o, BasicBlock* b, Id id)
-: opcode(o), guard(0), block(b), _id(id)
+: opcode(o), guard(nullptr), block(b), _id(id), _metadata(nullptr)
 {
 	reads.push_back(guard);
 }
@@ -34,13 +36,13 @@ Instruction::Instruction(const Instruction& i)
 {
 	for(auto operand : i.reads)
 	{
-		if(operand != 0)
+		if(operand != nullptr)
 		{
 			reads.push_back(operand->clone());
 		}
 		else
 		{
-			reads.push_back(0);
+			reads.push_back(nullptr);
 		}
 	}
 	
@@ -48,13 +50,13 @@ Instruction::Instruction(const Instruction& i)
 	
 	for(auto operand : i.writes)
 	{
-		if(operand != 0)
+		if(operand != nullptr)
 		{
 			writes.push_back(operand->clone());
 		}
 		else
 		{
-			writes.push_back(0);
+			writes.push_back(nullptr);
 		}
 	}
 }
@@ -72,13 +74,13 @@ Instruction& Instruction::operator=(const Instruction& i)
 	
 	for(auto operand : i.reads)
 	{
-		if(operand != 0)
+		if(operand != nullptr)
 		{
 			reads.push_back(operand->clone());
 		}
 		else
 		{
-			reads.push_back(0);
+			reads.push_back(nullptr);
 		}
 	}
 	
@@ -86,13 +88,13 @@ Instruction& Instruction::operator=(const Instruction& i)
 	
 	for(auto operand : i.writes)
 	{
-		if(operand != 0)
+		if(operand != nullptr)
 		{
 			writes.push_back(operand->clone());
 		}
 		else
 		{
-			writes.push_back(0);
+			writes.push_back(nullptr);
 		}
 	}
 	
@@ -512,33 +514,109 @@ void Bra::setTarget(Operand* o)
 	reads[1] = o;
 }
 
+BasicBlock* Bra::targetBasicBlock()
+{
+	assert(target != nullptr);
+	assert(target->isBasicBlock());
+	
+	auto block = static_cast<AddressOperand*>(target);
+	
+	return static_cast<BasicBlock*>(block->globalValue);
+}
+
+const BasicBlock* Bra::targetBasicBlock() const
+{
+	assert(target != nullptr);
+	assert(target->isBasicBlock());
+	
+	auto block = static_cast<const AddressOperand*>(target);
+	
+	return static_cast<const BasicBlock*>(block->globalValue);
+}
+
+bool Bra::isUnconditional() const
+{
+	return guard->isAlwaysTrue();
+}
+
 Instruction* Bra::clone() const
 {
 	return new Bra(*this);
 }
 
 /*! \brief Branch and save the return pc */
-Call::Call(BranchModifier m, BasicBlock* b)
-: Bra(m, b), link(0)
+Call::Call(BasicBlock* b)
+: Instruction(Instruction::Call, b), target(0)
 {
 	reads.push_back(0);
 }
 
 Call::Call(const Call& i)
-: Bra(i), link(reads[2])
+: Instruction(i), target(reads[1])
 {
+	unsigned int writeIndex = 0;
 
+	for(unsigned int r = 0; r < i.returned.size(); ++r)
+	{
+		returned.push_back(writes[writeIndex++]);
+	}
+	
+	target = reads[1];
+	
+	unsigned int readIndex = 2;
+
+	for(unsigned int a = 0; a < i.arguments.size(); ++a)
+	{
+		arguments.push_back(reads[readIndex++]);
+	}
 }
 
 Call& Call::operator=(const Call& i)
 {
 	if(this == &i) return *this;
 	
-	Bra::operator=(i);
+	Instruction::operator=(i);
 	
-	link = reads[2];
+	 returned.clear();
+	arguments.clear();
+	
+	unsigned int writeIndex = 0;
+
+	for(unsigned int r = 0; r < i.returned.size(); ++r)
+	{
+		returned.push_back(writes[writeIndex++]);
+	}
+	
+	target = reads[1];
+	
+	unsigned int readIndex = 2;
+
+	for(unsigned int a = 0; a < i.arguments.size(); ++a)
+	{
+		arguments.push_back(reads[readIndex++]);
+	}
 	
 	return *this;
+}
+
+void Call::setTarget(Operand* o)
+{
+	delete target;
+
+	target   = o;
+	reads[1] = o;	
+}
+
+void Call::addReturn(Operand* o)
+{
+	returned.push_back(o);
+	writes.push_back(o);
+}
+
+void Call::addArgument(Operand* o)
+{
+	arguments.push_back(o);
+	reads.push_back(o);
 }
 
 Instruction* Call::clone() const

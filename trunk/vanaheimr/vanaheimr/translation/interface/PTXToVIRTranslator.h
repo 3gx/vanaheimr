@@ -91,15 +91,18 @@ private:
 private:
 	ir::Operand*          _newTranslatedOperand(const PTXOperand& ptx);
 	ir::PredicateOperand* _translatePredicateOperand(const PTXOperand& ptx);
+	ir::PredicateOperand* _translatePredicateOperand(unsigned int condition);
 
 private:
 	ir::VirtualRegister*  _getRegister(PTXRegisterId id);
-	ir::VirtualRegister*  _getSpecialVirtualRegister(unsigned int id, unsigned int vectorIndex);
+	ir::VirtualRegister*  _getSpecialVirtualRegister(unsigned int id,
+	                                                 unsigned int vectorIndex);
 	ir::Variable*         _getGlobal(const std::string& name);
 	ir::Variable*         _getBasicBlock(const std::string& name);
 	ir::Argument*         _getArgument(const std::string& name);
-	ir::Operand*          _getSpecialValueOperand(unsigned int id, unsigned int vectorIndex);
-	ir::VirtualRegister*  _newTemporaryRegister();
+	ir::Operand*          _getSpecialValueOperand(unsigned int id,
+	                                              unsigned int vectorIndex);
+	ir::VirtualRegister*  _newTemporaryRegister(const std::string& type);
 	const ir::Type*       _getType(PTXDataType type);
 	const ir::Type*       _getType(const std::string& name);
 	ir::Variable::Linkage _translateLinkage(PTXAttribute linkage);
@@ -108,6 +111,8 @@ private:
 	unsigned int          _translateAddressSpace(unsigned int space);
 	ir::Constant*         _translateInitializer(const PTXGlobal& g);
 	bool                  _isArgument(const std::string& name);
+	
+	void                  _addSpecialPrototype(const std::string& name);
 	
 private:
 	compiler::Compiler* _compiler;
@@ -120,7 +125,6 @@ private:
 	const PTXInstruction* _ptxInstruction;
 	
 	RegisterMap   _registers;
-	RegisterMap   _specialRegisters;
 	BasicBlockMap _blocks;
 	
 };

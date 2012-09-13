@@ -15,6 +15,9 @@
 #include <ocelot/ir/interface/Module.h>
 #include <ocelot/ir/interface/PTXKernel.h>
 
+#include <ocelot/transforms/interface/ReadableLayoutPass.h>
+#include <ocelot/transforms/interface/PassManager.h>
+
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
@@ -91,6 +94,24 @@ void PTXToVIRTranslator::_translateGlobal(const PTXGlobal& global)
 	}
 }
 
+static ::ir::ControlFlowGraph::BlockPointerVector
+	getBlockSequence(const ::ir::IRKernel& constPTX)
+{
+	typedef ::ir::IRKernel IRKernel;
+	typedef ::ir::Module   PTXModule;
+	
+	::transforms::ReadableLayoutPass pass;
+	
+	IRKernel& ptx = const_cast<IRKernel&>(constPTX);
+	
+	transforms::PassManager manager(const_cast<PTXModule*>(ptx.module));
+	manager.addPass(pass);
+	
+	manager.runOnKernel(ptx);
+	
+	return pass.blocks;
+}
+
 void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 {
 	report(" Translating PTX kernel '" << kernel.getPrototype().toString());
@@ -120,11 +141,11 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 		_translateRegisterValue(reg->id, reg->type);
 	}
 	
-	::ir::ControlFlowGraph::ConstBlockPointerVector sequence =
-		kernel.cfg()->executable_sequence();
+	::ir::ControlFlowGraph::BlockPointerVector sequence =
+		getBlockSequence(kernel);
 
 	// Keep a record of blocks
-	for(::ir::ControlFlowGraph::ConstBlockPointerVector::iterator
+	for(::ir::ControlFlowGraph::BlockPointerVector::iterator
 		block = sequence.begin(); block != sequence.end(); ++block)
 	{
 		if(*block == kernel.cfg()->get_entry_block()) continue;
@@ -133,7 +154,7 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	}
 	
 	// Translate blocks
-	for(::ir::ControlFlowGraph::ConstBlockPointerVector::iterator
+	for(::ir::ControlFlowGraph::BlockPointerVector::iterator
 		block = sequence.begin(); block != sequence.end(); ++block)
 	{
 		if(*block == kernel.cfg()->get_entry_block()) continue;
@@ -245,6 +266,7 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 			_translateBra(ptx);
 			return true;
 		}
+		case PTXInstruction::Ret:  // fall through
 		case PTXInstruction::Exit:
 		{
 			_translateExit(ptx);
@@ -696,7 +718,8 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	}
 	case PTXOperand::BitBucket:
 	{
-		return new ir::RegisterOperand(_newTemporaryRegister(), _instruction);
+		return new ir::RegisterOperand(_newTemporaryRegister("i64"),
+			_instruction);
 	}
 	default: break;
 	}
@@ -745,49 +768,72 @@ ir::PredicateOperand* PTXToVIRTranslator::_translatePredicateOperand(
 		translatePredicateCondition(ptx.condition), _instruction);
 }
 
+ir::PredicateOperand* PTXToVIRTranslator::_translatePredicateOperand(
+	unsigned int condition)
+{
+	return new ir::PredicateOperand(nullptr,
+		translatePredicateCondition((PTXOperand::PredicateCondition)condition),
+		_instruction);
+}
+
+
 ir::VirtualRegister* PTXToVIRTranslator::_getSpecialVirtualRegister(
 	unsigned int id, unsigned int vectorIndex)
 {
-	unsigned int hash = (id << 4) | vectorIndex;
-
-	RegisterMap::iterator reg = _specialRegisters.find(hash);
-
-	if(reg == _specialRegisters.end())
-	{
-		std::stringstream stream;
+	std::stringstream stream;
 	
-		bool isScalar = true;
-		switch (id) 
-		{
-		case PTXOperand::tid:     // fall through
-		case PTXOperand::ntid:    // fall through
-		case PTXOperand::ctaId:   // fall through
-		case PTXOperand::nctaId:  // fall through
-		case PTXOperand::smId:    // fall through
-		case PTXOperand::nsmId:   // fall through
-		case PTXOperand::gridId:  // fall through
-			isScalar = false;
-			break;
-		default:
-			isScalar = true;
-		}
-		
-		if(vectorIndex != PTXOperand::v1 || isScalar) 
-		{
-			stream << PTXOperand::toString((PTXOperand::SpecialRegister)id);
-		}
-		else
-		{
-			stream << PTXOperand::toString((PTXOperand::SpecialRegister)id) +
-				"_" + PTXOperand::toString((PTXOperand::VectorIndex)vectorIndex);
-		}
-
-		ir::Function::register_iterator newRegister =
-			_function->newVirtualRegister(_getType("i32"), stream.str());
-		reg = _specialRegisters.insert(std::make_pair(hash, newRegister)).first;
+	stream << "_Zgetspecial_";
+	
+	bool isScalar = true;
+	
+	switch (id) 
+	{
+	case PTXOperand::tid:     // fall through
+	case PTXOperand::ntid:    // fall through
+	case PTXOperand::ctaId:   // fall through
+	case PTXOperand::nctaId:  // fall through
+	case PTXOperand::smId:    // fall through
+	case PTXOperand::nsmId:   // fall through
+	case PTXOperand::gridId:  // fall through
+		isScalar = false;
+		break;
+	default:
+		isScalar = true;
 	}
+	
+	
+	std::string specialName =
+		PTXOperand::toString((PTXOperand::SpecialRegister)id).substr(1);
+	
+	if(vectorIndex != PTXOperand::v1 || isScalar) 
+	{
+		stream << specialName;
+	}
+	else
+	{
+		stream << specialName + "_" +
+			PTXOperand::toString((PTXOperand::VectorIndex)vectorIndex);
+	}
+	
+	_addSpecialPrototype(stream.str());
 
-	return &*reg->second;
+	ir::Call* call = new ir::Call(_block);
+	
+	call->setGuard(_translatePredicateOperand(PTXOperand::PT));
+
+	ir::RegisterOperand* specialValue = new ir::RegisterOperand(
+		_newTemporaryRegister("i32"), call);
+
+	call->addReturn(specialValue);
+	
+	call->setTarget(new ir::AddressOperand(
+		_getGlobal(stream.str()), _instruction));
+
+	_block->push_back(call);
+	
+	report("    to " << call->toString());
+	
+	return specialValue->virtualRegister;
 }
 
 ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
@@ -809,6 +855,10 @@ ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
 
 ir::Variable* PTXToVIRTranslator::_getGlobal(const std::string& name)
 {
+	ir::Module::iterator function = _module->getFunction(name);
+
+	if(function != _module->end()) return &*function;
+
 	ir::Module::global_iterator global = _module->getGlobal(name);
 	
 	if(global == _module->global_end())
@@ -853,19 +903,22 @@ ir::Argument* PTXToVIRTranslator::_getArgument(const std::string& name)
 	return nullptr;
 }
 
-ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(unsigned int id, unsigned int vIndex)
+ir::Operand* PTXToVIRTranslator::_getSpecialValueOperand(
+	unsigned int id, unsigned int vIndex)
 {
-	return new ir::RegisterOperand(_getSpecialVirtualRegister(id, vIndex), _instruction);
+	return new ir::RegisterOperand(
+		_getSpecialVirtualRegister(id, vIndex), _instruction);
 }
 
-ir::VirtualRegister* PTXToVIRTranslator::_newTemporaryRegister()
+ir::VirtualRegister* PTXToVIRTranslator::_newTemporaryRegister(
+	const std::string& typeName)
 {
 	ir::Function::register_iterator temp = _function->newVirtualRegister(
-		_getType("i64"));
+		_getType(typeName));
 		
 	return &*temp;
 }
-
+	
 static std::string translateTypeName(::ir::PTXOperand::DataType type)
 {
 	switch(type)
@@ -942,7 +995,8 @@ ir::Variable::Linkage PTXToVIRTranslator::_translateLinkage(PTXAttribute attr)
 	}
 }
 
-ir::Variable::Visibility PTXToVIRTranslator::_translateVisibility(PTXAttribute attr)
+ir::Variable::Visibility PTXToVIRTranslator::_translateVisibility(
+	PTXAttribute attr)
 {
 	if(attr == ::ir::PTXStatement::Visible)
 	{
@@ -1027,6 +1081,21 @@ bool PTXToVIRTranslator::_isArgument(const std::string& name)
 	
 	return false;
 }
+
+void PTXToVIRTranslator::_addSpecialPrototype(const std::string& name)
+{
+	auto prototype = _module->getFunction(name);
+	
+	if(prototype != _module->end()) return;
+	
+	auto function = _module->newFunction(name, ir::Variable::ExternalLinkage,
+		ir::Variable::HiddenVisibility);
+
+	function->newReturnValue(_getType("i32"), "returnedValue");
+
+	function->interpretType();
+}
+	
 
 }
 
