@@ -59,6 +59,10 @@ public:
 		Urem,
 		Xor,
 		Zext,
+		
+		Phi,
+		Psi,
+		
 		InvalidOpcode
 	};
 	
@@ -191,6 +195,20 @@ public:
 public:
 	OperandContainer target;
 	BranchModifier   modifier;
+};
+
+/*! \brief Perform a call */
+class Call : public Instruction
+{
+public:
+	OperandContainer target;
+
+public:
+	uint32_t returnArguments;
+	uint32_t arguments;
+
+	uint64_t returnArgumentOffset;
+	uint64_t argumentOffset;
 };
 
 /*! \brief A floating point precision extension instruction */
@@ -363,6 +381,7 @@ public:
 		BinaryInstruction asBinaryInstruction;
 		Bitcast           asBitcast;
 		Bra               asBra;
+		Call              asCall;
 		Fpext             asFpext;
 		Fptosi            asFptosi;
 		Fptoui            asFptoui;
