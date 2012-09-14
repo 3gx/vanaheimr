@@ -7,9 +7,10 @@
 #pragma once
 
 // Vanaheimr Includes
-#include <vanaheimr/analysis/includes/Analysis.h>
+#include <vanaheimr/analysis/interface/Analysis.h>
 
-#include <vanaheimr/util/includes/SmallSet.h>
+#include <vanaheimr/util/interface/SmallSet.h>
+#include <vanaheimr/util/interface/LargeSet.h>
 
 // Forward Declarations
 namespace vanaheimr { namespace ir { class VirtualRegister; } }
@@ -28,15 +29,37 @@ public:
 	typedef util::SmallSet<Instruction*>     InstructionSet;
 
 public:
+	DataflowAnalysis();
+
+public:
 	VirtualRegisterSet  getLiveIns(const BasicBlock&);
 	VirtualRegisterSet getLiveOuts(const BasicBlock&);
 
 public:
-	InstructionSet getReachingDefs(const Instruction&);
-	InstructionSet getReachedUsers(const Instruction&);
+	InstructionSet getReachingDefinitions(const Instruction&);
+	InstructionSet getReachedUses(const Instruction&);
 
 public:
 	virtual void analyze(Function& function);
+
+private:
+	typedef std::vector<VirtualRegisterSet> VirtualRegisterSetVector;
+	typedef std::vector<InstructionSet>     InstructionSetVector;
+	typedef util::LargeSet<BasicBlock*>     BasicBlockSet;
+		
+private:
+	void _analyzeLiveInsAndOuts(Function& function);
+	void _analyzeReachingDefinitions(Function& function);
+
+private:
+	void _computeLocalLiveInsAndOuts(BasicBlockSet& worklist);
+
+private:
+	VirtualRegisterSetVector _liveins;
+	VirtualRegisterSetVector _liveouts;
+	
+	InstructionSetVector _reachingDefinitions;
+	InstructionSetVector _reachedUses;
 };
 
 }

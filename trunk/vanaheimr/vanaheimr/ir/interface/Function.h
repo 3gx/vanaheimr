@@ -107,6 +107,10 @@ public:
 	bool   register_empty() const;
 
 public:
+	size_t instruction_size()  const;
+	bool   instruction_empty() const;
+
+public:
 	void clear();
 
 public:
