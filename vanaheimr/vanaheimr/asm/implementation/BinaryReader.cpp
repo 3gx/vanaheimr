@@ -807,7 +807,7 @@ ir::PredicateOperand* BinaryReader::_translateOperand(
 	}
 
 	return new ir::PredicateOperand(virtualRegister, 
-		(ir::PredicateOperand::PredicateModifier)operand.mode,
+		(ir::PredicateOperand::PredicateModifier)operand.modifier,
 		instruction);
 }
 

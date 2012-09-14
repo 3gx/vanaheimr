@@ -393,7 +393,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 
 		report("     converting virtual register " << reg.virtualRegister->id
 			<< " (" << reg.virtualRegister->type->name() << ")");
-
+		
 		result.asRegister.reg  = reg.virtualRegister->id;
 		result.asRegister.type = convertType(reg.virtualRegister->type);
 		
@@ -421,6 +421,9 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 		if(predicate.modifier == ir::PredicateOperand::StraightPredicate ||
 			predicate.modifier == ir::PredicateOperand::InversePredicate)
 		{
+			report("     converting non-trivial predicate with virtual "
+				"register " << predicate.virtualRegister->id
+				<< " (" << predicate.virtualRegister->type->name() << ")");
 			result.asPredicate.reg = predicate.virtualRegister->id;
 		}
 		else
@@ -712,6 +715,7 @@ void BinaryWriter::convertBraInstruction(
 {
 	const ir::Bra& bra = static_cast<const ir::Bra&>(instruction);
 
+	container.asBra.target = convertOperand(*bra.target);
 	container.asBra.target = convertOperand(*bra.target);
 	
 	switch(bra.modifier)
