@@ -7,6 +7,9 @@
 // Vanaheimr Includes
 #include <vanaheimr/analysis/interface/DataflowAnalysis.h>
 
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/BasicBlock.h>
+
 namespace vanaheimr
 {
 
@@ -14,7 +17,7 @@ namespace analysis
 {
 
 DataflowAnalysis::DataflowAnalysis()
-: FunctionAnalysis("DataflowAnalysis", StringVector("ControlFlowGraph"))
+: FunctionAnalysis("DataflowAnalysis", StringVector(1, "ControlFlowGraph"))
 {
 
 }
@@ -60,7 +63,7 @@ void DataflowAnalysis::_analyzeLiveInsAndOuts(Function& function)
 	// should be for-all
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
-		worklist.insert(block);
+		worklist.insert(&*block);
 	}
 	
 	while(!worklist.empty())
@@ -73,7 +76,68 @@ void DataflowAnalysis::_analyzeReachingDefinitions(Function& function)
 {
 	// TODO implement this
 }
-	
+
+void DataflowAnalysis::_computeLocalLiveInsAndOuts(BasicBlockSet& worklist)
+{
+	BasicBlockSet newList;
+
+	// should be for-all
+	for(auto block : worklist)
+	{
+		bool changed = _recomputeLiveInsAndOutsForBlock(block);
+
+		if(changed) newList.insert(block);
+	}
+
+	// gather blocks to form the new worklist
+	worklist = std::move(newList);
+}	
+
+bool DataflowAnalysis::_recomputeLiveInsAndOutsForBlock(BasicBlock* block)
+{
+	// live outs is the union of live-ins of all successors
+	VirtualRegisterSet liveout;
+
+	auto successors = _cfg->getSuccessors(*block);
+
+	for(auto successor : successors)
+	{
+		auto livein = getLiveIns(*successor);
+
+		liveout.insert(livein.begin(), livein.end());
+	}
+
+	_liveouts[block->id()] = liveout;
+
+	VirtualRegisterSet livein = std::move(liveout);
+
+	// apply def/use rules in reverse order
+	for(auto instruction = block->rbegin(); instruction != block->rend();
+		++instruction)
+	{
+		// spawn on uses
+		for(auto read : instruction->reads)
+		{
+			if(!read->isRegister()) continue;
+		
+			auto reg = static_cast<ir::RegisterOperand*>(read);
+
+			livein.insert(reg->virtualRegister);
+		}
+
+		// kill on defs
+		for(auto write : instruction->write)
+		{
+			if(!write->isRegister()) continue;
+		
+			auto reg = static_cast<ir::RegisterOperand*>(write);
+
+			livein.erase(reg->virtualRegister);
+		}
+	}
+
+	_liveins[block->id()] = std::move(livein);
+}
 
 }
 
