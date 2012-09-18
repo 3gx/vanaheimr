@@ -13,10 +13,10 @@
 #include <vanaheimr/util/interface/LargeSet.h>
 
 // Forward Declarations
-namespace vanaheimr { namespace ir { class VirtualRegister;  } }
-namespace vanaheimr { namespace ir { class Instruction;      } }
-namespace vanaheimr { namespace ir { class BasicBlock;       } }
-namespace vanaheimr { namespace ir { class ControlFlowGraph; } }
+namespace vanaheimr { namespace ir       { class VirtualRegister;  } }
+namespace vanaheimr { namespace ir       { class Instruction;      } }
+namespace vanaheimr { namespace ir       { class BasicBlock;       } }
+namespace vanaheimr { namespace analysis { class ControlFlowGraph; } }
 
 namespace vanaheimr
 {
@@ -28,9 +28,10 @@ namespace analysis
 class DataflowAnalysis : public FunctionAnalysis
 {
 public:
-	typedef  ir::BasicBlock     BasicBlock;
-	typedef ir::Instruction     Instruction;
-	typedef ir::VirtualRegister VirtualRegister;
+	typedef             ir::BasicBlock BasicBlock;
+	typedef            ir::Instruction Instruction;
+	typedef        ir::VirtualRegister VirtualRegister;
+	typedef analysis::ControlFlowGraph ControlFlowGraph;
 
 	typedef util::SmallSet<VirtualRegister*> VirtualRegisterSet;
 	typedef util::SmallSet<Instruction*>     InstructionSet;

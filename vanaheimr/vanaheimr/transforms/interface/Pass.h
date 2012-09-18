@@ -67,15 +67,17 @@ public:
 	
 public:
 	/*! \brief Get an up to date analysis by type */
-	Analysis* getAnalysis(const std::string& type);
+	template<typename AnalysisType>
+	AnalysisType* getAnalysis(const std::string& type);
 
 	/*! \brief Get an up to date analysis by type (const) */
-	const Analysis* getAnalysis(const std::string& type) const;
+	template<typename AnalysisType>
+	const AnalysisType* getAnalysis(const std::string& type) const;
 	
 	/*! \brief Invalidate the analysis, the pass manager will
 		need to generate it again for other applications */
 	void invalidateAnalysis(const std::string& type);
-	
+
 public:
 	/*! \brief Get a previously run pass by name */
 	Pass* getPass(const std::string& name);

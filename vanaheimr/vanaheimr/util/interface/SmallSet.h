@@ -4,6 +4,8 @@
 	\brief  The header file for the SmallSet class.
 */
 
+#pragma once
+
 // Standard Library Includes
 #include <set>
 

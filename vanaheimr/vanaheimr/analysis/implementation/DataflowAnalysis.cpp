@@ -6,6 +6,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/analysis/interface/DataflowAnalysis.h>
+#include <vanaheimr/analysis/interface/ControlFlowGraph.h>
 
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
@@ -116,7 +117,7 @@ bool DataflowAnalysis::_recomputeLiveInsAndOutsForBlock(BasicBlock* block)
 		++instruction)
 	{
 		// spawn on uses
-		for(auto read : instruction->reads)
+		for(auto read : (*instruction)->reads)
 		{
 			if(!read->isRegister()) continue;
 		
@@ -126,7 +127,7 @@ bool DataflowAnalysis::_recomputeLiveInsAndOutsForBlock(BasicBlock* block)
 		}
 
 		// kill on defs
-		for(auto write : instruction->write)
+		for(auto write : (*instruction)->writes)
 		{
 			if(!write->isRegister()) continue;
 		
@@ -136,7 +137,11 @@ bool DataflowAnalysis::_recomputeLiveInsAndOutsForBlock(BasicBlock* block)
 		}
 	}
 
+	bool changed = _liveins[block->id()] == livein;
+
 	_liveins[block->id()] = std::move(livein);
+	
+	return changed;
 }
 
 }
