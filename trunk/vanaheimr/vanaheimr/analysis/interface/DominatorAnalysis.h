@@ -7,7 +7,12 @@
 #pragma once
 
 // Vanaheimr Includes
-#include <vanaheimr/analysis/includes/Analysis.h>
+#include <vanaheimr/analysis/interface/Analysis.h>
+
+#include <vanaheimr/util/interface/SmallSet.h>
+
+// Forward Declaration
+namespace vanaheimr { namespace ir { class BasicBlock; } }
 
 namespace vanaheimr
 {
@@ -15,11 +20,22 @@ namespace vanaheimr
 namespace analysis
 {
 
+/*! \brief Dominator analysis using the algorithm described in:
+
+	"A simple and fast dominance algorithm" by 
+		Keith D. Cooper, Timothy J. Harvey, and Ken Kennedy
+		
+	Simple extensions for parallelism.
+ */
 class DominatorAnalysis : public FunctionAnalysis
 {
 public:
+	typedef              ir::BasicBlock BasicBlock;
 	typedef util::SmallSet<BasicBlock*> BasicBlockSet;
-	
+
+public:
+	DominatorAnalysis();
+
 public:
 	/*! \brief Is a block dominated by another? */
 	bool dominates(const BasicBlock& b, const BasicBlock& potentialDominator);
@@ -28,10 +44,18 @@ public:
 	BasicBlock* getDominator(const BasicBlock& b);
 	
 	/*! \brief Get the set of blocks immediately dominated by this block */
-	BlockSet getDominatedBlocks(const BasicBlock& b);
+	const BasicBlockSet& getDominatedBlocks(const BasicBlock& b);
 	
 public:
 	virtual void analyze(Function& function);
+
+private:
+	typedef std::vector<BasicBlock*>   BasicBlockVector;
+	typedef std::vector<BasicBlockSet> BasicBlockSetVector;
+	
+private:
+	BasicBlockVector    _immediateDominators;
+	BasicBlockSetVector _dominatedBlocks;
 
 };
 

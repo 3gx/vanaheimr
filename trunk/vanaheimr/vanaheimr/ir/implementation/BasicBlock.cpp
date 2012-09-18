@@ -108,6 +108,26 @@ BasicBlock::const_iterator BasicBlock::end() const
 	return _instructions.end();
 }
 
+BasicBlock::reverse_iterator BasicBlock::rbegin()
+{
+	return _instructions.rbegin();
+}
+
+BasicBlock::const_reverse_iterator BasicBlock::rbegin() const
+{
+	return _instructions.rbegin();
+}
+
+BasicBlock::reverse_iterator BasicBlock::rend()
+{
+	return _instructions.rend();
+}
+
+BasicBlock::const_reverse_iterator BasicBlock::rend() const
+{
+	return _instructions.rend();
+}
+
 Instruction*& BasicBlock::front()
 {
 	return _instructions.front();

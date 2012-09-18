@@ -30,7 +30,10 @@ public:
 
 	typedef InstructionList::iterator       iterator;
 	typedef InstructionList::const_iterator const_iterator;
-
+	
+	typedef InstructionList::reverse_iterator       reverse_iterator;
+	typedef InstructionList::const_reverse_iterator const_reverse_iterator;
+	
 	typedef unsigned int Id;
 
 public:
@@ -55,6 +58,13 @@ public:
 
 	iterator       end();
 	const_iterator end() const;
+
+public:
+	reverse_iterator       rbegin();
+	const_reverse_iterator rbegin() const;
+
+	reverse_iterator       rend();
+	const_reverse_iterator rend() const;
 
 public:
 	Instruction*&        front();
