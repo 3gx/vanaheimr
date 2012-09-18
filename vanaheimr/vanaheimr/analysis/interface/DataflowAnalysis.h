@@ -13,7 +13,10 @@
 #include <vanaheimr/util/interface/LargeSet.h>
 
 // Forward Declarations
-namespace vanaheimr { namespace ir { class VirtualRegister; } }
+namespace vanaheimr { namespace ir { class VirtualRegister;  } }
+namespace vanaheimr { namespace ir { class Instruction;      } }
+namespace vanaheimr { namespace ir { class BasicBlock;       } }
+namespace vanaheimr { namespace ir { class ControlFlowGraph; } }
 
 namespace vanaheimr
 {
@@ -25,23 +28,28 @@ namespace analysis
 class DataflowAnalysis : public FunctionAnalysis
 {
 public:
+	typedef  ir::BasicBlock     BasicBlock;
+	typedef ir::Instruction     Instruction;
+	typedef ir::VirtualRegister VirtualRegister;
+
 	typedef util::SmallSet<VirtualRegister*> VirtualRegisterSet;
 	typedef util::SmallSet<Instruction*>     InstructionSet;
 
+
 public:
 	DataflowAnalysis();
-
+	
 public:
 	VirtualRegisterSet  getLiveIns(const BasicBlock&);
 	VirtualRegisterSet getLiveOuts(const BasicBlock&);
-
+	
 public:
 	InstructionSet getReachingDefinitions(const Instruction&);
 	InstructionSet getReachedUses(const Instruction&);
-
+	
 public:
 	virtual void analyze(Function& function);
-
+	
 private:
 	typedef std::vector<VirtualRegisterSet> VirtualRegisterSetVector;
 	typedef std::vector<InstructionSet>     InstructionSetVector;
@@ -53,6 +61,7 @@ private:
 
 private:
 	void _computeLocalLiveInsAndOuts(BasicBlockSet& worklist);
+	bool _recomputeLiveInsAndOutsForBlock(BasicBlock* block);
 
 private:
 	VirtualRegisterSetVector _liveins;
@@ -60,6 +69,9 @@ private:
 	
 	InstructionSetVector _reachingDefinitions;
 	InstructionSetVector _reachedUses;
+	
+private:
+	ControlFlowGraph* _cfg;
 };
 
 }
