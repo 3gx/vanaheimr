@@ -51,12 +51,31 @@ const DominatorAnalysis::BasicBlockSet&
 	return _dominatedBlocks[b.id()];
 }
 
-BasicBlock
+typedef std::vector<unsigned int> IntVector; 
+
+ir::BasicBlock* intersect(DominatorAnalysis* tree,
+	const IntVector& postOrderNumbers,
+	ir::BasicBlock* left, ir::BasicBlock* right)
+{
+	auto finger1 = left;
+	auto finger2 = right;
+	while(postOrderNumbers[finger1->id()] != postOrderNumbers[finger2->id()])
+	{
+		while(postOrderNumbers[finger1->id()] < postOrderNumbers[finger2->id()])
+		{
+			finger1 = tree->getDominator(*finger1);
+		}
+		while(postOrderNumbers[finger2->id()] < postOrderNumbers[finger1->id()])
+		{
+			finger2 = tree->getDominator(*finger2);
+		}
+	}
+	
+	return finger1;
+}
 
 void DominatorAnalysis::analyze(Function& function)
 {
-	typedef std::vector<unsigned int> 
-
 	_immediateDominators.clear();
 	
 	// Get dependent analyses
@@ -71,7 +90,7 @@ void DominatorAnalysis::analyze(Function& function)
 	for(auto block = reversePostOrder->order.begin();
 		block != reversePostOrder->order.end(); ++block)
 	{
-		postOrderNumbers[block->id()] =
+		postOrderNumbers[(*block)->id()] =
 			std::distance(block, reversePostOrder->order.begin());
 	}
 	
@@ -111,13 +130,13 @@ void DominatorAnalysis::analyze(Function& function)
 					continue;
 				}
 				
-				newDominator = intersect(postOrderNumbers,
+				newDominator = intersect(this, postOrderNumbers,
 					newDominator, predecessor);
 			}
 			
-			if(newDominator != getDominator(block))
+			if(newDominator != getDominator(*block))
 			{
-				_immediateDominators[block.id()] = newDominator;
+				_immediateDominators[block->id()] = newDominator;
 			}
 		}
 	}
@@ -129,7 +148,7 @@ void DominatorAnalysis::analyze(Function& function)
 	//   we can use atomics or sort+group_by_key for a parallel implementation
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
-		_dominatedBlocks[getDominator(*block)] = &*block;
+		_dominatedBlocks[getDominator(*block)->id()].insert(&*block);
 	}
 }
 
