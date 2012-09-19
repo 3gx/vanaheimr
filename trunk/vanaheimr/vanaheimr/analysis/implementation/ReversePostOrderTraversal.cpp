@@ -4,10 +4,18 @@
 	\file   The source file for the ReversePostOrderTraversal class.
 */
 
-#pragma once
-
 // Vanaheimr Includes
 #include <vanaheimr/analysis/interface/ReversePostOrderTraversal.h>
+#include <vanaheimr/analysis/interface/ControlFlowGraph.h>
+
+#include <vanaheimr/ir/interface/Function.h>
+
+#include <vanaheimr/util/interface/LargeSet.h>
+
+
+// Standard Library Include
+#include <stack>
+#include <algorithm>
 
 namespace vanaheimr
 {
@@ -24,17 +32,21 @@ ReversePostOrderTraversal::ReversePostOrderTraversal()
 
 void ReversePostOrderTraversal::analyze(Function& function)
 {
+	typedef util::LargeSet<BasicBlock*> BlockSet;
+	typedef std::stack<BasicBlock*>     BlockStack;
+
 	order.clear();
 	order.resize(function.size());
 	
 	BlockSet   visited;
 	BlockStack stack;
 	
-	auto cfg = getAnalysis<ControlFlowGraph>("ControlFlowGraph");
-	
+	auto cfgAnalysis = getAnalysis("ControlFlowGraph");
+	auto cfg         = static_cast<ControlFlowGraph*>(cfgAnalysis);	
+
 	// Post order is left subtree, right subtree, current node
 	// Parallelizing this will be tricky
-	stack.push(function.entry_block());
+	stack.push(&*function.entry_block());
 	
 	while(!stack.empty())
 	{

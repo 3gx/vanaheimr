@@ -9,6 +9,9 @@
 // Vanaheimr Includes
 #include <vanaheimr/analysis/interface/Analysis.h>
 
+// Forward Declarations
+namespace vanaheimr { namespace ir { class BasicBlock; } }
+
 namespace vanaheimr
 {
 
