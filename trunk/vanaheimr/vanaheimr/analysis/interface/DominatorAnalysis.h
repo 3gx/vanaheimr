@@ -45,9 +45,18 @@ public:
 	
 	/*! \brief Get the set of blocks immediately dominated by this block */
 	const BasicBlockSet& getDominatedBlocks(const BasicBlock& b);
+
+	/*! \brief Get the set of blocks in the dominance frontier of
+		a specified block */
+	const BasicBlockSet& getDominanceFrontier(const BasicBlock& b);
 	
 public:
 	virtual void analyze(Function& function);
+
+private:
+	void _determineImmediateDominators(Function& function);
+	void _determineDominatedSets(Function& function);
+	void _determineDominanceFrontiers(Function& function);
 
 private:
 	typedef std::vector<BasicBlock*>   BasicBlockVector;
@@ -56,6 +65,7 @@ private:
 private:
 	BasicBlockVector    _immediateDominators;
 	BasicBlockSetVector _dominatedBlocks;
+	BasicBlockSetVector _dominanceFrontiers;
 
 };
 

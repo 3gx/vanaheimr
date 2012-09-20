@@ -59,6 +59,7 @@ ir::BasicBlock* intersect(DominatorAnalysis* tree,
 {
 	auto finger1 = left;
 	auto finger2 = right;
+	
 	while(postOrderNumbers[finger1->id()] != postOrderNumbers[finger2->id()])
 	{
 		while(postOrderNumbers[finger1->id()] < postOrderNumbers[finger2->id()])
@@ -75,6 +76,13 @@ ir::BasicBlock* intersect(DominatorAnalysis* tree,
 }
 
 void DominatorAnalysis::analyze(Function& function)
+{
+	_determineImmediateDominators(function);
+	     _determineDominatedSets(function);
+	_determineDominanceFrontiers(function);
+}
+
+void DominatorAnalysis::_determineImmediateDominators(Function& function)
 {
 	_immediateDominators.clear();
 	
@@ -142,13 +150,53 @@ void DominatorAnalysis::analyze(Function& function)
 	}
 
 	_dominatedBlocks.resize(function.size());
-	
+}
+
+void DominatorAnalysis::_determineDominatedSets(Function& function)
+{
 	// Update the dominated set, 
 	//  This is another reverse insert operation
 	//   we can use atomics or sort+group_by_key for a parallel implementation
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
 		_dominatedBlocks[getDominator(*block)->id()].insert(&*block);
+	}
+}
+
+void DominatorAnalysis::_determineDominanceFrontiers(Function& function)
+{
+	_dominanceFrontiers.resize(function.size());
+
+	auto cfg = static_cast<ControlFlowGraph*>(getAnalysis("ControlFlowGraph"));
+	
+	// Update the dominance frontiers
+	//  A parallel loop generates sparse, independent frontier sets
+	//  A final sort+group_by_key to create the complete frontier sets
+	for(auto block = function.begin(); block != function.end(); ++block)
+	{
+		auto predecessors = cfg->getPredecessors(*block);
+		
+		if(predecessors.size() < 2) continue;
+		
+		BasicBlockSet blocksWithThisBlockInTheirFrontier;
+		
+		for(auto predecessor : predecessors)
+		{
+			auto runner = predecessor;
+			
+			while(runner != getDominator(*block))
+			{
+				blocksWithThisBlockInTheirFrontier.insert(runner);
+				
+				runner = getDominator(*runner);
+			}
+		}
+		
+		// sort+group_by_key
+		for(auto frontierBlock : blocksWithThisBlockInTheirFrontier)
+		{
+			_dominanceFrontiers[frontierBlock->id()].insert(&*block);
+		}
 	}
 }
 

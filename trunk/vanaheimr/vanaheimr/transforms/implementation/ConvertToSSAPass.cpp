@@ -17,14 +17,15 @@ namespace transforms
 {
 
 ConvertToSSAPass::ConvertToSSAPass()
-: FunctionPass(StringVector(), "ConvertToSSAPass")
+: FunctionPass(StringVector({"DominanceAnalysis",
+	"ControlFlowGraph", "DataflowAnalysis"}), "ConvertToSSAPass")
 {
 
 }
 
 void ConvertToSSAPass::runOnFunction(Function& f)
 {
-	assertM(false, "Not implemented.");
+	// 
 }
 
 }
