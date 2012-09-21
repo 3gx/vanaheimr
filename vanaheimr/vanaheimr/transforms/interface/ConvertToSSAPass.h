@@ -24,6 +24,29 @@ public:
 public:
 	virtual void runOnFunction(Function& f);
 
+private:
+	typedef util::LargeSet<VirtualRegister*> VirtualRegisterSet;
+	typedef util::LargeSet<BasicBlock*> BasicBlockSet;
+
+private:
+	void _insertPhis(Function& f);
+	void _insertPsis(Function& f);
+	
+	void _insertPhi(VirtualRegister& vr, BasicBlock& block);
+
+	void _renameAllDefs(VirtualRegister& vr);
+	
+	void _rename(Function& f);
+	void _renameLocalBlocks(BasicBlockSet& worklist);
+	void _renameValuesInBlock(BasicBlockSet& worklist, BasicBlock* block);
+
+private:
+
+private:
+
+private:
+	VirtualRegisterSet _registersNeedingRenaming;
+
 };
 
 }

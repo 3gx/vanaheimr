@@ -49,7 +49,7 @@ public:
 	/*! \brief Get the set of blocks in the dominance frontier of
 		a specified block */
 	const BasicBlockSet& getDominanceFrontier(const BasicBlock& b);
-	
+		
 public:
 	virtual void analyze(Function& function);
 
