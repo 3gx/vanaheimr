@@ -51,7 +51,6 @@ void DataflowAnalysis::analyze(Function& function)
 {
 	     _analyzeLiveInsAndOuts(function);
 	_analyzeReachingDefinitions(function);
-	
 }
 
 void DataflowAnalysis::_analyzeLiveInsAndOuts(Function& function)
@@ -87,7 +86,11 @@ void DataflowAnalysis::_computeLocalLiveInsAndOuts(BasicBlockSet& worklist)
 	{
 		bool changed = _recomputeLiveInsAndOutsForBlock(block);
 
-		if(changed) newList.insert(block);
+		if(changed)
+		{
+			// TODO: queue up predecessors
+			newList.insert(block);
+		}
 	}
 
 	// gather blocks to form the new worklist

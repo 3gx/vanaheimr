@@ -43,10 +43,14 @@ public:
 public:
 	VirtualRegisterSet  getLiveIns(const BasicBlock&);
 	VirtualRegisterSet getLiveOuts(const BasicBlock&);
-	
+		
 public:
 	InstructionSet getReachingDefinitions(const Instruction&);
 	InstructionSet getReachedUses(const Instruction&);
+	
+public:
+	InstructionSet getReachingDefinitions(const VirtualRegister&);
+	InstructionSet getReachedUses(const VirtualRegister&);
 	
 public:
 	virtual void analyze(Function& function);

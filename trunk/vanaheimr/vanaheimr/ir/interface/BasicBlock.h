@@ -82,13 +82,13 @@ public:
 	Function* function() const;
 	
 public:
-	/*! \brief Pushes an instruction copy to the back of the block */
+	/*! \brief Pushes an instruction to the back of the block */
 	void push_back(Instruction* i);
-	/*! \brief Pushes an instruction copy to the front of the block */
+	/*! \brief Pushes an instruction to the front of the block */
 	void push_front(Instruction* i);
 
 public:
-	/*! \brief Inserts an instruction copy into the block */
+	/*! \brief Inserts an instruction into the block */
 	iterator insert(iterator position, Instruction* i);
 
 public:
