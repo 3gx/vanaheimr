@@ -7,6 +7,13 @@
 // Vanaheimr Includes
 #include <vanaheimr/transforms/interface/ConvertToSSAPass.h>
 
+#include <vanaheimr/analysis/interface/DominatorAnalysis.h>
+#include <vanaheimr/analysis/interface/DataflowAnalysis.h>
+#include <vanaheimr/analysis/interface/ControlFlowGraph.h>
+
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/BasicBlock.h>
+
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
@@ -146,6 +153,9 @@ void ConvertToSSAPass::_rename(Function& f)
 {
 	BasicBlockSet worklist;
 	
+	 _renamedLiveIns.resize(f.size());
+	_renamedLiveOuts.resize(f.size());
+	
 	// Start with blocks that defined renamed values
 	// do this with a local insert, then a global gather + unique
 	for(auto value : _registersNeedingRenaming)
@@ -157,18 +167,122 @@ void ConvertToSSAPass::_rename(Function& f)
 		worklist.insert(definingBlocks.begin(), definingBlocks.end());
 	}
 	
-	_registersNeedingRenaming.clear();
-	
 	while(!worklist.empty())
 	{
 		// update all blocks in the worklist in parallel
 		_renameLocalBlocks(worklist);	
 	}
+	
+	// delete all of the renamed registers
+	for(auto value : _registersNeedingRenaming)
+	{
+		delete value;
+	}
+	
+	_registersNeedingRenaming.clear();
+	
+	 _renamedLiveIns.clear();
+	_renamedLiveOuts.clear();
 }
 
-void ConvertToSSAPass::_renameAllDefs(VirtualRegister& vr)
+void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 {
-	// TODO
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
+	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
+		getAnalysis("DominatorAnalysis"));
+	
+	auto definitions = dfg->getReachingDefinitions(vr);
+	
+	for(definition : definitions)
+	{
+		// create a new value
+		auto newValue = value.function->newVirtualRegister(value.type);
+		
+		// assign it to the def
+		_updateDefinition(*definition, value, *newValue);
+		
+		// update uses in this block
+		bool killed = _updateUsesInThisBlock(*definition, value, *newValue);
+		
+		// the value is not propagated further if it is killed in the same
+		// block
+		if(killed) continue;
+		
+		// add the mapping to the live in set of dominated blocks
+		auto dominatedBlocks = dominatorAnalysis->getDominatedBlocks(
+			*definition->block);
+	
+		for(dominatedBlock : dominatedBlocks)
+		{
+			VirtualRegisterMap& renamedLiveIns =
+				_renamedLiveIns[dominatedBlock->id()];
+			
+			renamedLiveIns.insert(std::make_pair(&value, &*newValue));
+		}
+	}
+}
+
+void ConvertToSSAPass::_updateDefinition(Instruction& definingInstruction,
+	VirtualRegister& value, VirtualRegister& newValue)
+{
+	for(auto write : instruction->writes)
+	{
+		assert(write->isRegister());
+		
+		auto writeOperand = static_cast<ir::RegisterOperand*>(write);
+		
+		if(&writeOperand->virtualRegister != &value) continue;
+		
+		// rename the register
+		writeOperand->virtualRegister = &newValue;
+	}
+}
+
+bool ConvertToSSAPass::_updateUsesInThisBlock(Instruction& definingInstruction,
+	VirtualRegister& value, VirtualRegister& newValue)
+{
+	// scan forward over the block until the defining instruction is hit
+	auto instruction = definingInstruction.block->begin();
+	
+	assert(instruction != definingInstruction.block->end());
+		
+	while(&*instruction != &definingInstruction)
+	{
+		++instruction;
+		assert(instruction != definingInstruction.block->end());
+	}
+	
+	// replace all uses in the block
+	for(++instruction; instruction != definingInstruction.block->end();
+		++instruction)
+	{
+		for(auto read : (*instruction)->reads)
+		{
+			// skip non-register reads
+			if(!read->isRegister()) continue;
+			
+			auto readOperand = static_cast<ir::RegisterOperand*>(read);
+			
+			// skip reads from different registers
+			if(readOperand->virtualRegister != &value) continue;
+			
+			// update the value
+			readOperand->virtualRegister = renamedValue->second;
+		}
+		
+		// stop on the first def
+		for(auto write : instruction->writes)
+		{
+			assert(write->isRegister());
+		
+			auto writeOperand = static_cast<ir::RegisterOperand*>(write);
+		
+			// another value will be live out, not this one
+			if(&writeOperand->virtualRegister == &value) return true;
+		}
+	}
+	
+	return false;
 }
 
 void ConvertToSSAPass::_renameLocalBlocks(BasicBlockSet& worklist)
@@ -185,9 +299,87 @@ void ConvertToSSAPass::_renameLocalBlocks(BasicBlockSet& worklist)
 	worklist = std::move(newList);
 }
 
-bool ConvertToSSAPass::_renameValuesInBlock(BasicBlock* block)
+void ConvertToSSAPass::_renameValuesInBlock(
+	BasicBlockSet& worklist, BasicBlock* block)
 {
-	// TODO
+	VirtualRegisterMap& renamedLiveIns = _renamedLiveIns[block->id()];
+
+	// replace all uses of values in this block, stop on the first def
+	for(auto instruction : *block)
+	{
+		// replace reads
+		for(auto read : instruction->reads)
+		{
+			// skip non-register reads
+			if(!read->isRegister()) continue;
+			
+			auto readOperand = static_cast<ir::RegisterOperand*>(read);
+			
+			auto renamedValue = renamedLiveIns.find(
+				readOperand->virtualRegister);
+			
+			// skip values that were not renamed
+			if(renamedValue == renamedLiveIns.end()) continue;
+		
+			// update the value
+			readOperand->virtualRegister = renamedValue->second;
+		}
+		
+		// kill the update on writes
+		for(auto write : instruction->writes)
+		{
+			assert(write->isRegister());
+			
+			auto writeOperand = static_cast<ir::RegisterOperand*>(write);
+			
+			auto renamedValue = renamedLiveIns.find(
+				writeOperand->virtualRegister);
+			
+			// skip values that were not renamed
+			if(renamedValue == renamedLiveIns.end()) continue;
+			
+			// kill renaming entries that are over-written
+			renamedLiveIns.erase(renamedValue);
+			
+			// if all values were killed, don't queue up successors, just exit
+			if(renamedLiveIns.empty()) return;
+		}
+	}
+	
+	// Any remaining renamed variables are live-out
+	VirtualRegisterMap& renamedLiveOuts = _renamedLiveOuts[block->id()];
+
+	renamedLiveOuts = std::move(renamedLiveIns);
+
+	// add dominator tree successors with a renamed value as a live-in
+	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
+		getAnalysis("DominatorAnalysis"));
+	
+	auto dominatedBlocks = dominatorAnalysis->getDominatedBlocks(*block);
+	
+	for(auto dominatedBlock : dominatedBlocks)
+	{
+		auto dominatedBlockLiveIns = dfg->getLiveIns(*dominatedBlock);
+	
+		VirtualRegisterMap& dominatedBlockLiveInMap =
+			_renamedLiveIns[dominatedBlock->id()];
+	
+		bool triggeredDominatedBlock = false;
+	
+		for(auto renamedValue : renamedLiveOuts)
+		{
+			if(dominatedBlockLiveIns.count(renamedValue) != 0)
+			{
+				triggeredDominatedBlock |= dominatedBlockLiveInMap.insert(
+					*renamedValue).second;
+			}
+		}
+		
+		if(triggeredDominatedBlock)
+		{
+			worklist.insert(dominatedBlock);
+		}
+	}
 }
 
 }
