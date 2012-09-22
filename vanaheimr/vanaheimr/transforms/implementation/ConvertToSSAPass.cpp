@@ -160,7 +160,7 @@ void ConvertToSSAPass::_rename(Function& f)
 	// do this with a local insert, then a global gather + unique
 	for(auto value : _registersNeedingRenaming)
 	{
-		auto definingBlocks = getBlocksThatDefineThisValue(*value);
+		auto definingBlocks = _getBlocksThatDefineThisValue(*value);
 		
 		_renameAllDefs(*value);
 		
@@ -380,6 +380,23 @@ void ConvertToSSAPass::_renameValuesInBlock(
 			worklist.insert(dominatedBlock);
 		}
 	}
+}
+
+ConverToSSAPass::BasicBlockSet ConvertToSSAPass:_getBlocksThatDefineThisValue(
+	ir::VirtualRegister& value)
+{
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
+	
+	auto instructions = dfg->getReachingDefinitions(value);
+
+	BasicBlockSet blocks;
+
+	for(auto instruction : instructions)
+	{
+		blocks.insert(instruction->block);
+	}
+
+	return blocks;
 }
 
 }
