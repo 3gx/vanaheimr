@@ -130,6 +130,7 @@ public:
 public:
 	PredicateOperand(VirtualRegister* reg,
 		PredicateModifier mod, Instruction* i);
+	PredicateOperand(PredicateModifier mod, Instruction* i);
 
 public:
 	bool isAlwaysTrue() const;

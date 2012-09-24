@@ -49,9 +49,6 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 	//         the DF of newly-placed PHIs need to be checked again
 	
 	// Get dependent analyses
-	auto cfg = static_cast<ControlFlowGraph*>(getAnalysis("ControlFlowGraph"));
-	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
-	
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
 	
@@ -59,14 +56,14 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 	for(auto value = function.register_begin();
 		value != function.register_end(); ++value)
 	{
-		auto definingBlocks = getBlocksThatDefineThisValue(*value);
+		auto definingBlocks = _getBlocksThatDefineThisValue(*value);
 
 		BasicBlockSet blocksThatNeedPhis;
 		
 		if(!definingBlocks.empty())
 		{
-				// Do this with a local update, and then a final gather
-				_registersNeedingRenaming.insert(&*value);
+			// Do this with a local update, and then a final gather
+			_registersNeedingRenaming.insert(&*value);
 		}
 		
 		// The inner loop is sequential
@@ -78,6 +75,7 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 			auto dominanceFrontier = dominatorAnalysis->getDominanceFrontier(
 				*definingBlock);
 			
+			// iterated dominance frontier
 			for(auto frontierBlock : dominanceFrontier)
 			{
 				if(blocksThatNeedPhis.insert(frontierBlock).second)
@@ -88,7 +86,7 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 		}
 		
 		// parallel version: sort by block and bulk-insert the phis
-		for(block : blocksThatNeedsPhis)
+		for(auto block : blocksThatNeedPhis)
 		{
 			_insertPhi(*value, *block);
 		}
@@ -109,23 +107,24 @@ void ConvertToSSAPass::_insertPsis(Function& function)
 			instruction != block->end(); ++instruction)
 		{
 			// skip not-predicated instructions
-			if(instruction->guard->isAlwaysTrue()) continue;
+			if((*instruction)->guard->isAlwaysTrue()) continue;
 			
 			// skip instructions without outputs
-			if(instruction->writes.empty()) continue;
+			if((*instruction)->writes.empty()) continue;
 			
 			// add psis for all register writes
 			auto next = instruction; ++next;
 			
-			for(auto write : instruction->writes)
+			for(auto write : (*instruction)->writes)
 			{
 				assert(write->isRegister());
 				
 				auto registerWrite = static_cast<ir::RegisterOperand*>(write);
 				
-				auto psi = new ir::Psi(&block);
+				auto psi = new ir::Psi(&*block);
 				
-				psi->setGuard(ir::PredicateOperand::newTruePredicate(psi));
+				psi->setGuard(new ir::PredicateOperand(
+					ir::PredicateOperand::PredicateTrue, psi));
 				psi->setD(new ir::RegisterOperand(
 					registerWrite->virtualRegister, psi));
 				
@@ -144,7 +143,8 @@ void ConvertToSSAPass::_insertPhi(VirtualRegister& vr, BasicBlock& block)
 	auto phi = new ir::Phi(&block);
 	
 	phi->setD(new ir::RegisterOperand(&vr, phi));
-	phi->setGuard(ir::PredicateOperand::newTruePredicate(phi));
+	phi->setGuard(new ir::PredicateOperand(
+		ir::PredicateOperand::PredicateTrue, phi));
 				
 	block.push_front(phi);
 }
@@ -191,9 +191,9 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
 	
-	auto definitions = dfg->getReachingDefinitions(vr);
+	auto definitions = dfg->getReachingDefinitions(value);
 	
-	for(definition : definitions)
+	for(auto definition : definitions)
 	{
 		// create a new value
 		auto newValue = value.function->newVirtualRegister(value.type);
@@ -212,7 +212,7 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 		auto dominatedBlocks = dominatorAnalysis->getDominatedBlocks(
 			*definition->block);
 	
-		for(dominatedBlock : dominatedBlocks)
+		for(auto dominatedBlock : dominatedBlocks)
 		{
 			VirtualRegisterMap& renamedLiveIns =
 				_renamedLiveIns[dominatedBlock->id()];
@@ -225,13 +225,13 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 void ConvertToSSAPass::_updateDefinition(Instruction& definingInstruction,
 	VirtualRegister& value, VirtualRegister& newValue)
 {
-	for(auto write : instruction->writes)
+	for(auto write : definingInstruction.writes)
 	{
 		assert(write->isRegister());
 		
 		auto writeOperand = static_cast<ir::RegisterOperand*>(write);
 		
-		if(&writeOperand->virtualRegister != &value) continue;
+		if(writeOperand->virtualRegister != &value) continue;
 		
 		// rename the register
 		writeOperand->virtualRegister = &newValue;
@@ -246,7 +246,7 @@ bool ConvertToSSAPass::_updateUsesInThisBlock(Instruction& definingInstruction,
 	
 	assert(instruction != definingInstruction.block->end());
 		
-	while(&*instruction != &definingInstruction)
+	while(*instruction != &definingInstruction)
 	{
 		++instruction;
 		assert(instruction != definingInstruction.block->end());
@@ -267,18 +267,18 @@ bool ConvertToSSAPass::_updateUsesInThisBlock(Instruction& definingInstruction,
 			if(readOperand->virtualRegister != &value) continue;
 			
 			// update the value
-			readOperand->virtualRegister = renamedValue->second;
+			readOperand->virtualRegister = &newValue;
 		}
 		
 		// stop on the first def
-		for(auto write : instruction->writes)
+		for(auto write : (*instruction)->writes)
 		{
 			assert(write->isRegister());
 		
 			auto writeOperand = static_cast<ir::RegisterOperand*>(write);
 		
 			// another value will be live out, not this one
-			if(&writeOperand->virtualRegister == &value) return true;
+			if(writeOperand->virtualRegister == &value) return true;
 		}
 	}
 	
@@ -350,6 +350,8 @@ void ConvertToSSAPass::_renameValuesInBlock(
 	VirtualRegisterMap& renamedLiveOuts = _renamedLiveOuts[block->id()];
 
 	renamedLiveOuts = std::move(renamedLiveIns);
+	
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 
 	// add dominator tree successors with a renamed value as a live-in
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
@@ -368,10 +370,10 @@ void ConvertToSSAPass::_renameValuesInBlock(
 	
 		for(auto renamedValue : renamedLiveOuts)
 		{
-			if(dominatedBlockLiveIns.count(renamedValue) != 0)
+			if(dominatedBlockLiveIns.count(renamedValue.first) != 0)
 			{
 				triggeredDominatedBlock |= dominatedBlockLiveInMap.insert(
-					*renamedValue).second;
+					renamedValue).second;
 			}
 		}
 		
@@ -382,14 +384,14 @@ void ConvertToSSAPass::_renameValuesInBlock(
 	}
 }
 
-ConverToSSAPass::BasicBlockSet ConvertToSSAPass:_getBlocksThatDefineThisValue(
+ConvertToSSAPass::SmallBlockSet ConvertToSSAPass::_getBlocksThatDefineThisValue(
 	ir::VirtualRegister& value)
 {
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	
 	auto instructions = dfg->getReachingDefinitions(value);
 
-	BasicBlockSet blocks;
+	SmallBlockSet blocks;
 
 	for(auto instruction : instructions)
 	{
