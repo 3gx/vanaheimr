@@ -782,6 +782,8 @@ public:
 	void addSource(PredicateOperand* predicate, RegisterOperand* reg);
 	/*! \brief Remove a source associated with the specified predicate */
 	void removeSource(PredicateOperand* predicate);
+public:
+	Instruction* clone() const;
 
 public:
 	RegisterOperand* d;
