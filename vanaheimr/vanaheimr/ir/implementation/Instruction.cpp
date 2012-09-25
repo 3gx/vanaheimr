@@ -238,7 +238,9 @@ std::string Instruction::toString(Opcode o)
 	case Urem:    return "Urem";
 	case Xor:     return "Xor";
 	case Zext:    return "Zext";
-	default:      break;
+	case Phi:     return "Phi";
+	case Psi:     return "Psi";
+	case InvalidOpcode: break;
 	}
 	
 	return "InvalidOpcode";
@@ -286,7 +288,9 @@ Instruction* Instruction::create(Opcode o, BasicBlock* b)
 	case Urem:    instruction = new ir::Urem;    break;
 	case Xor:     instruction = new ir::Xor;     break;
 	case Zext:    instruction = new ir::Zext;    break;
-	default:      break;
+	case Phi:     instruction = new ir::Phi;     break;
+	case Psi:     instruction = new ir::Psi;     break;
+	case InvalidOpcode: break;
 	}
 	
 	instruction->block = b;
@@ -997,6 +1001,42 @@ Zext::Zext(BasicBlock* b)
 Instruction* Zext::clone() const
 {
 	return new Zext(*this);
+}
+
+/*! \brief Phi join node */
+Phi::Phi(BasicBlock* b)
+: Instruction(Instruction::Phi, b), d(nullptr)
+{
+	writes.push_back(nullptr);
+}
+
+Phi::Phi(const Phi& i)
+: Instruction(i)
+{
+	d = writes.back();
+
+	for(auto read : reads)
+	{
+		sources.push_back(read);
+	}
+
+	for(auto block : i.blocks)
+	{
+		blocks.push_back(block);
+	}
+}
+
+Phi& Phi::operator=(const Phi&);
+
+void Phi::setD(RegisterOperand* d);
+
+void Phi::addSource(RegisterOperand* source, BasicBlock* predecessor);
+
+void Phi::removeSource(BasicBlock* predecessor);
+
+Instruction* Phi::clone() const
+{
+	return new Phi(*this);
 }
 
 }

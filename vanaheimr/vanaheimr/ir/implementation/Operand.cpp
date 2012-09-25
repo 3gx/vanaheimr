@@ -126,6 +126,12 @@ PredicateOperand::PredicateOperand(VirtualRegister* reg,
 
 }
 
+PredicateOperand::PredicateOperand(PredicateModifier mod, Instruction* i)
+: RegisterOperand(nullptr, i, Predicate), modifier(mod)
+{
+
+}
+
 bool PredicateOperand::isAlwaysTrue() const
 {
 	return modifier == PredicateTrue;
