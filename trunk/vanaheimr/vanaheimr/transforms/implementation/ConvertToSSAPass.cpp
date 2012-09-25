@@ -385,7 +385,7 @@ void ConvertToSSAPass::_renameValuesInBlock(
 }
 
 ConvertToSSAPass::SmallBlockSet ConvertToSSAPass::_getBlocksThatDefineThisValue(
-	ir::VirtualRegister& value)
+	const ir::VirtualRegister& value)
 {
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	
