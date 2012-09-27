@@ -18,7 +18,7 @@
 namespace vanaheimr
 {
 
-void dump(const std::string& name)
+static void dump(const std::string& name)
 {	
 	std::ios_base::openmode mode = std::ios_base::in | std::ios_base::binary;
 	

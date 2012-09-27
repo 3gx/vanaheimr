@@ -51,6 +51,13 @@ const DominatorAnalysis::BasicBlockSet&
 	return _dominatedBlocks[b.id()];
 }
 
+const DominatorAnalysis::BasicBlockSet& DominatorAnalysis::getDominanceFrontier(
+	const BasicBlock& b)
+{
+	assert(b.id() < _dominanceFrontiers.size());
+	return _dominanceFrontiers[b.id()];
+}
+
 typedef std::vector<unsigned int> IntVector; 
 
 ir::BasicBlock* intersect(DominatorAnalysis* tree,

@@ -54,9 +54,13 @@ env.Depends(PTXToVIRTranslator, libvanaheimr)
 VanaheimrObjDump = env.Program('vir-objdump',
 	['vanaheimr/tools/vir-objdump.cpp'], LIBS=vanaheimr_dep_libs)
 env.Depends(VanaheimrObjDump, libvanaheimr)
+VanaheimrOptimizer = env.Program('vir-optimizer',
+	['vanaheimr/tools/vir-optimizer.cpp'], LIBS=vanaheimr_dep_libs)
+env.Depends(VanaheimrOptimizer, libvanaheimr)
 
 Default(PTXToVIRTranslator)
-Default(VanaheimrObjDump)
+Default(VanaheimrObjDump  )
+Default(VanaheimrOptimizer)
 
 # Install rules
 if 'install' in COMMAND_LINE_TARGETS:

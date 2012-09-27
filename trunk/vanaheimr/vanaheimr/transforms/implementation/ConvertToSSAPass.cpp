@@ -62,7 +62,7 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 		
 		if(!definingBlocks.empty())
 		{
-			// Do this with a local update, and then a final gather
+			// parallel: Do this with a local update, and then a final gather
 			_registersNeedingRenaming.insert(&*value);
 		}
 		
@@ -145,7 +145,8 @@ void ConvertToSSAPass::_insertPhi(VirtualRegister& vr, BasicBlock& block)
 	phi->setD(new ir::RegisterOperand(&vr, phi));
 	phi->setGuard(new ir::PredicateOperand(
 		ir::PredicateOperand::PredicateTrue, phi));
-				
+	
+	// parallel version: atomic 		
 	block.push_front(phi);
 }
 
@@ -156,6 +157,9 @@ void ConvertToSSAPass::_rename(Function& f)
 	 _renamedLiveIns.resize(f.size());
 	_renamedLiveOuts.resize(f.size());
 	
+	//
+	// Rename the def immediately in parallel, there can be no conflicts
+	// 
 	// Start with blocks that defined renamed values
 	// do this with a local insert, then a global gather + unique
 	for(auto value : _registersNeedingRenaming)
@@ -164,12 +168,13 @@ void ConvertToSSAPass::_rename(Function& f)
 		
 		_renameAllDefs(*value);
 		
+		// local insert, needs to be gathered
 		worklist.insert(definingBlocks.begin(), definingBlocks.end());
 	}
 	
 	while(!worklist.empty())
 	{
-		// update all blocks in the worklist in parallel
+		// update all blocks in the worklist, process each iteration in parallel
 		_renameLocalBlocks(worklist);	
 	}
 	
@@ -190,6 +195,9 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
+	
+	assert(dfg != nullptr);
+	assert(dominatorAnalysis != nullptr);
 	
 	auto definitions = dfg->getReachingDefinitions(value);
 	
@@ -352,10 +360,12 @@ void ConvertToSSAPass::_renameValuesInBlock(
 	renamedLiveOuts = std::move(renamedLiveIns);
 	
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
-
+	assert(dfg != nullptr);
+	
 	// add dominator tree successors with a renamed value as a live-in
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
+	assert(dominatorAnalysis != nullptr);
 	
 	auto dominatedBlocks = dominatorAnalysis->getDominatedBlocks(*block);
 	
@@ -388,6 +398,7 @@ ConvertToSSAPass::SmallBlockSet ConvertToSSAPass::_getBlocksThatDefineThisValue(
 	const ir::VirtualRegister& value)
 {
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
+	assert(dfg != nullptr);
 	
 	auto instructions = dfg->getReachingDefinitions(value);
 

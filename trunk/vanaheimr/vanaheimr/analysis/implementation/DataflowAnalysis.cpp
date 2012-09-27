@@ -11,6 +11,12 @@
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Standard Library Includes
+#include <cassert>
+
 namespace vanaheimr
 {
 
@@ -26,25 +32,70 @@ DataflowAnalysis::DataflowAnalysis()
 DataflowAnalysis::VirtualRegisterSet
 	DataflowAnalysis::getLiveIns(const BasicBlock& block)
 {
+	assert(block.id() < _liveins.size());
+	
 	return _liveins[block.id()];
 }
 
 DataflowAnalysis::VirtualRegisterSet
 	DataflowAnalysis::getLiveOuts(const BasicBlock& block)
 {
+	assert(block.id() < _liveouts.size());
+	
 	return _liveouts[block.id()];
 }
 
 DataflowAnalysis::InstructionSet
 	DataflowAnalysis::getReachingDefinitions(const Instruction& instruction)
 {
-	return _reachingDefinitions[instruction.id()];
+	DataflowAnalysis::InstructionSet definitions;
+	
+	for(auto write : instruction.writes)
+	{
+		auto writeOperand = static_cast<ir::RegisterOperand*>(write);
+	
+		auto localDefinitions = getReachingDefinitions(
+			*writeOperand->virtualRegister);
+	
+		definitions.insert(localDefinitions.begin(), localDefinitions.end());
+	}
+	
+	return definitions;
 }
 
 DataflowAnalysis::InstructionSet 
 	DataflowAnalysis::getReachedUses(const Instruction& instruction)
 {
-	return _reachedUses[instruction.id()];
+	DataflowAnalysis::InstructionSet uses;
+	
+	for(auto read : instruction.reads)
+	{
+		if(!read->isRegister()) continue;
+	
+		auto readOperand = static_cast<ir::RegisterOperand*>(read);
+	
+		auto localUses = getReachedUses(*readOperand->virtualRegister);
+	
+		uses.insert(localUses.begin(), localUses.end());
+	}
+	
+	return uses;
+}
+
+DataflowAnalysis::InstructionSet DataflowAnalysis::getReachingDefinitions(
+	const VirtualRegister& value)
+{
+	assert(value.id < _reachingDefinitions.size());
+
+	return _reachingDefinitions[value.id];
+}
+
+DataflowAnalysis::InstructionSet
+	DataflowAnalysis::getReachedUses(const VirtualRegister& value)
+{
+	assert(value.id < _reachedUses.size());
+	
+	return _reachedUses[value.id];
 }
 
 void DataflowAnalysis::analyze(Function& function)
@@ -75,6 +126,7 @@ void DataflowAnalysis::_analyzeLiveInsAndOuts(Function& function)
 void DataflowAnalysis::_analyzeReachingDefinitions(Function& function)
 {
 	// TODO implement this
+	assertM(false, "Not implemented.");
 }
 
 void DataflowAnalysis::_computeLocalLiveInsAndOuts(BasicBlockSet& worklist)
