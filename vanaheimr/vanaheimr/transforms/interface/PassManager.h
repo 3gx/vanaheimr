@@ -36,6 +36,9 @@ public:
 public:
 	/*! \brief A map from analysis id to an up to date copy */
 	typedef std::unordered_map<std::string, Analysis*> AnalysisMap;
+	
+	typedef std::vector<Pass*> PassVector;
+	typedef std::list<PassVector> PassWaveList;
 
 public:
 	/*! \brief The constructor creates an empty pass manager associated
@@ -115,8 +118,6 @@ public:
 
 private:
 	typedef std::multimap<std::string, std::string> DependenceMap;
-	typedef std::vector<Pass*> PassVector;
-	typedef std::list<PassVector> PassWaveList;
 	typedef std::unordered_map<std::string, Pass*> PassMap;
 	typedef std::list<std::string> StringVector;
 
