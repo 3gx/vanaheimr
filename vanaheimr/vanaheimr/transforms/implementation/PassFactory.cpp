@@ -8,6 +8,8 @@
 // Vanaheimr Includes
 #include <vanaheimr/transforms/interface/PassFactory.h>
 
+#include <vanaheimr/transforms/interface/ConvertToSSAPass.h>
+
 namespace vanaheimr
 {
 
@@ -17,9 +19,19 @@ namespace transforms
 Pass* PassFactory::createPass(const std::string& name,
 	const StringVector& options)
 {
-	// TODO add some passes
+	Pass* pass = nullptr;
+
+	if(name == "ConvertToSSA" || name == "ConvertToSSAPass")
+	{
+		pass = new ConvertToSSAPass();
+	}
 	
-	return 0;
+	if(pass != nullptr)
+	{
+		pass->configure(options);
+	}
+	
+	return pass;
 }
 
 }

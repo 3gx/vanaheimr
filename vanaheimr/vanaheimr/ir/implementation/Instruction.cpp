@@ -1013,11 +1013,11 @@ Phi::Phi(BasicBlock* b)
 Phi::Phi(const Phi& i)
 : Instruction(i)
 {
-	d = writes.back();
+	d = static_cast<RegisterOperand*>(writes.back());
 
 	for(auto read : reads)
 	{
-		sources.push_back(read);
+		sources.push_back(static_cast<RegisterOperand*>(read));
 	}
 
 	for(auto block : i.blocks)
@@ -1026,17 +1026,153 @@ Phi::Phi(const Phi& i)
 	}
 }
 
-Phi& Phi::operator=(const Phi&);
+Phi& Phi::operator=(const Phi& i)
+{
+	if(&i == this) return *this;
 
-void Phi::setD(RegisterOperand* d);
+	Instruction::operator=(i);
+	
+	sources.clear();
+	 blocks.clear();
+	
+	d = static_cast<RegisterOperand*>(writes.back());
 
-void Phi::addSource(RegisterOperand* source, BasicBlock* predecessor);
+	for(auto read : reads)
+	{
+		sources.push_back(static_cast<RegisterOperand*>(read));
+	}
 
-void Phi::removeSource(BasicBlock* predecessor);
+	for(auto block : i.blocks)
+	{
+		blocks.push_back(block);
+	}
+	
+	return *this;
+}
+
+void Phi::setD(RegisterOperand* o)
+{
+	delete d;
+	
+	d = o;
+
+	writes[0] = o;
+}
+
+void Phi::addSource(RegisterOperand* source, BasicBlock* predecessor)
+{
+	  reads.push_back(source);
+	sources.push_back(source);
+	 blocks.push_back(predecessor);
+}
+
+void Phi::removeSource(BasicBlock* predecessor)
+{
+	auto sourcePosition = sources.begin();
+	auto readPosition   = reads.begin()  ; ++readPosition;
+
+	for(auto blockPosition = blocks.begin(); blockPosition != blocks.end();
+		++blockPosition, ++sourcePosition, ++readPosition)
+	{
+		if(*blockPosition != predecessor) continue;
+		
+		  reads.erase(readPosition);
+		sources.erase(sourcePosition);
+		 blocks.erase(blockPosition);
+		
+		return;
+	}
+}
 
 Instruction* Phi::clone() const
 {
 	return new Phi(*this);
+}
+
+Psi::Psi(BasicBlock* b)
+: Instruction(Instruction::Psi, b), d(nullptr)
+{
+	writes.push_back(nullptr);
+}
+
+Psi::Psi(const Psi& i)
+: Instruction(i)
+{
+	d = static_cast<RegisterOperand*>(writes.back());
+
+	for(auto read : reads)
+	{
+		sources.push_back(static_cast<RegisterOperand*>(read));
+	}
+
+	for(auto predicate : i.predicates)
+	{
+		predicates.push_back(predicate);
+	}
+}
+
+Psi& Psi::operator=(const Psi& i)
+{
+	if(this == &i) return *this;
+
+	Instruction::operator=(i);
+	
+	   sources.clear();
+	predicates.clear();
+	
+	d = static_cast<RegisterOperand*>(writes.back());
+
+	for(auto read : reads)
+	{
+		sources.push_back(static_cast<RegisterOperand*>(read));
+	}
+
+	for(auto predicate : i.predicates)
+	{
+		predicates.push_back(predicate);
+	}
+	
+	return *this;
+}
+
+void Psi::setD(RegisterOperand* o)
+{
+	delete d;
+	
+	d = o;
+
+	writes[0] = o;
+}
+
+void Psi::addSource(PredicateOperand* predicate, RegisterOperand* source)
+{
+	     reads.push_back(source);
+	   sources.push_back(source);
+	predicates.push_back(predicate);
+}
+
+void Psi::removeSource(PredicateOperand* predicate)
+{
+	auto sourcePosition = sources.begin();
+	auto readPosition   = reads.begin()  ; ++readPosition;
+
+	for(auto predicatePosition = predicates.begin();
+		predicatePosition != predicates.end();
+		++predicatePosition, ++sourcePosition, ++readPosition)
+	{
+		if(*predicatePosition != predicate) continue;
+		
+		     reads.erase(readPosition);
+		   sources.erase(sourcePosition);
+		predicates.erase(predicatePosition);
+		
+		return;
+	}
+}
+
+Instruction* Psi::clone() const
+{
+	return new Psi(*this);
 }
 
 }

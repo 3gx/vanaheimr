@@ -298,9 +298,7 @@ void PassManager::runOnFunction(Function& function)
 		for(auto pass = wave->begin(); pass != wave->end(); ++pass)
 		{
 			freeUnusedDataStructures(analyses, &function, (*pass)->analyses);
-			allocateNewDataStructures(analyses, &function,
-				(*pass)->analyses
-				);
+			allocateNewDataStructures(analyses, &function, (*pass)->analyses);
 		
 			runFunctionPass(&function, *pass);
 			_previouslyRunPasses[(*pass)->name] = *pass;
