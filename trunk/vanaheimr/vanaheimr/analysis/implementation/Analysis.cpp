@@ -18,8 +18,8 @@ namespace vanaheimr
 namespace analysis
 {
 
-Analysis::Analysis(const std::string& n, const StringVector& r)
-: name(n), required(r), _manager(0)
+Analysis::Analysis(Type t, const std::string& n, const StringVector& r)
+: type(t), name(n), required(r), _manager(0)
 {
 
 }
@@ -30,13 +30,13 @@ Analysis::~Analysis()
 }
 
 FunctionAnalysis::FunctionAnalysis(const std::string& n, const StringVector& r)
-: Analysis(n, r)
+: Analysis(Analysis::FunctionAnalysis, n, r)
 {
 
 }
 
 ModuleAnalysis::ModuleAnalysis(const std::string& n, const StringVector& r)
-: Analysis(n, r)
+: Analysis(Analysis::ModuleAnalysis, n, r)
 {
 
 }
@@ -62,6 +62,11 @@ void Analysis::invalidateAnalysis(const std::string& name)
 {
 	assert(_manager != 0);
 	_manager->invalidateAnalysis(name);
+}
+
+void Analysis::configure(const StringVector&)
+{
+
 }
 
 }
