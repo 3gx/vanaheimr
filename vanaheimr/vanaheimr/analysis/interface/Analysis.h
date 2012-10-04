@@ -25,6 +25,13 @@ namespace analysis
 class Analysis
 {
 public:
+	enum Type
+	{
+		FunctionAnalysis,
+		ModuleAnalysis
+	};
+
+public:
 	typedef std::vector<std::string> StringVector;
 
 	typedef transforms::PassManager PassManager;
@@ -33,12 +40,15 @@ public:
 
 public:
 	/*! \brief Initialize the analysis, register it with a pass manager */
-	Analysis(const std::string& name = "",
+	Analysis(Type t, const std::string& name = "",
 		const StringVector& dependentAnalyses = StringVector());
 
 	virtual ~Analysis();
 
 public:
+	/*! \brief The type of analysis */
+	const Type type;
+
 	/*! \brief The name of the analysis */
 	const std::string name;
 
@@ -58,6 +68,9 @@ public:
 	/*! \brief Invalidate the analysis, the pass manager will
 		need to generate it again for other users */
 	void invalidateAnalysis(const std::string& name);
+
+public:
+	virtual void configure(const StringVector& );
 
 private:
 	PassManager* _manager;
