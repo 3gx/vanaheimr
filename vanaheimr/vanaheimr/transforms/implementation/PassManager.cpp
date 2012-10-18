@@ -447,9 +447,9 @@ void PassManager::runOnModule()
 {
 	report("Running pass manager on module " << _module->name);
 
-	typedef std::vector<AnalysisMap> AnalysisMapVector;
+	typedef std::map<std::string, AnalysisMap> AnalysisMapMap;
 	
-	AnalysisMapVector functionAnalyses(_module->size());
+	AnalysisMapMap functionAnalyses;
 	
 	PassWaveList passes = _schedulePasses();
 
@@ -464,11 +464,13 @@ void PassManager::runOnModule()
 			if((*pass)->type == Pass::FunctionPass)     continue;
 			if((*pass)->type == Pass::BasicBlockPass) continue;
 		
-			AnalysisMapVector::iterator analyses = functionAnalyses.begin();
 			for(auto function = _module->begin();
-				function != _module->end(); ++function, ++analyses)
+				function != _module->end(); ++function)
 			{
-				allocateNewDataStructures(passesUseCounts, *analyses,
+				auto analyses = functionAnalyses.insert(std::make_pair(
+					function->name(), AnalysisMap())).first;
+				
+				allocateNewDataStructures(passesUseCounts, analyses->second,
 					&*function, (*pass)->analyses, this);
 			}
 			
@@ -478,16 +480,18 @@ void PassManager::runOnModule()
 		}
 	
 		// Run all function and bb passes
-		AnalysisMapVector::iterator analyses = functionAnalyses.begin();
 		for(auto function = _module->begin();
-			function != _module->end(); ++function, ++analyses)
+			function != _module->end(); ++function)
 		{
 			for(auto pass = wave->begin(); pass != wave->end(); ++pass)
 			{
 				initializeFunctionPass(_module, *pass);
 			}
 		
-			_analyses = &*analyses;
+			auto analyses = functionAnalyses.insert(std::make_pair(
+					function->name(), AnalysisMap())).first;
+				
+			_analyses = &analyses->second;
 			_function = &*function;
 		
 			for(auto pass = wave->begin(); pass != wave->end(); ++pass)
@@ -495,13 +499,13 @@ void PassManager::runOnModule()
 				if((*pass)->type == Pass::ImmutablePass) continue;
 				if((*pass)->type == Pass::ModulePass)    continue;
 			
-				allocateNewDataStructures(passesUseCounts, *analyses,
+				allocateNewDataStructures(passesUseCounts, analyses->second,
 					&*function, (*pass)->analyses, this);
 			
 				runFunctionPass(_module, &*function, *pass);
 				_previouslyRunPasses[(*pass)->name] = *pass;
 			
-				freeUnusedDataStructures(passesUseCounts, *analyses,
+				freeUnusedDataStructures(passesUseCounts, analyses->second,
 					(*pass)->analyses);
 			}
 
@@ -511,7 +515,7 @@ void PassManager::runOnModule()
 			}
 		
 			_analyses = 0;
-			_function   = 0;
+			_function = 0;
 		}
 	}
 	
