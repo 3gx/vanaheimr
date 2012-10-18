@@ -23,7 +23,8 @@ namespace analysis
 {
 
 DominatorAnalysis::DominatorAnalysis()
-: FunctionAnalysis("DominatorAnalysis", StringVector(1, "ControlFlowGraph"))
+: FunctionAnalysis("DominatorAnalysis", StringVector({"ControlFlowGraph",
+	"ReversePostOrderTraversal"}))
 {
 
 }

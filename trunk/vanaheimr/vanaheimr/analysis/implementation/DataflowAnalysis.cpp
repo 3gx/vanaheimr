@@ -17,6 +17,13 @@
 // Standard Library Includes
 #include <cassert>
 
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace vanaheimr
 {
 
@@ -154,7 +161,9 @@ bool DataflowAnalysis::_recomputeLiveInsAndOutsForBlock(BasicBlock* block)
 	// live outs is the union of live-ins of all successors
 	VirtualRegisterSet liveout;
 
-	auto successors = _cfg->getSuccessors(*block);
+	auto cfg = static_cast<ControlFlowGraph*>(getAnalysis("ControlFlowGraph"));	
+
+	auto successors = cfg->getSuccessors(*block);
 
 	for(auto successor : successors)
 	{
@@ -192,7 +201,7 @@ bool DataflowAnalysis::_recomputeLiveInsAndOutsForBlock(BasicBlock* block)
 		}
 	}
 
-	bool changed = _liveins[block->id()] == livein;
+	bool changed = _liveins[block->id()] != livein;
 
 	_liveins[block->id()] = std::move(livein);
 	

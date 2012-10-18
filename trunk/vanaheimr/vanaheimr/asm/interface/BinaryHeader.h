@@ -18,9 +18,11 @@ namespace as
 class BinaryHeader
 {
 public:
-	static const unsigned int PageSize = (1 << 15); // 32 KB
+	static const unsigned int PageSize    = (1 << 15); // 32 KB
+	static const uint64_t     MagicNumber = 0x2E5649527F454C46ULL;
 
 public:
+	uint64_t magic          : 64;
 	uint32_t dataPages      : 32;
 	uint32_t codePages      : 32;
 	uint32_t symbols        : 32;

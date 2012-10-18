@@ -12,10 +12,19 @@
 
 #include <vanaheimr/util/interface/LargeSet.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
 
 // Standard Library Include
 #include <stack>
 #include <algorithm>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -36,13 +45,15 @@ void ReversePostOrderTraversal::analyze(Function& function)
 	typedef std::stack<BasicBlock*>     BlockStack;
 
 	order.clear();
-	order.resize(function.size());
 	
 	BlockSet   visited;
 	BlockStack stack;
 	
 	auto cfgAnalysis = getAnalysis("ControlFlowGraph");
 	auto cfg         = static_cast<ControlFlowGraph*>(cfgAnalysis);	
+
+	report("Creating reverse post order traversal over function '" +
+		function.name() + "'");
 
 	// Post order is left subtree, right subtree, current node
 	// Parallelizing this will be tricky
@@ -58,6 +69,7 @@ void ReversePostOrderTraversal::analyze(Function& function)
 		
 		for(auto successor : successors)
 		{
+			assert(successor != nullptr);
 			if(visited.insert(successor).second)
 			{
 				allSuccessorsVisited = false;
@@ -69,6 +81,8 @@ void ReversePostOrderTraversal::analyze(Function& function)
 		
 		stack.pop();
 		order.push_back(top);
+		
+		report(" BB_" << top->id());
 	}
 	
 	// reverse the order

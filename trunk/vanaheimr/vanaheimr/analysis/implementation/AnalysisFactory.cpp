@@ -8,6 +8,11 @@
 // Vanaheimr Includes
 #include <vanaheimr/analysis/interface/AnalysisFactory.h>
 
+#include <vanaheimr/analysis/interface/ControlFlowGraph.h>
+#include <vanaheimr/analysis/interface/DataflowAnalysis.h>
+#include <vanaheimr/analysis/interface/DominatorAnalysis.h>
+#include <vanaheimr/analysis/interface/ReversePostOrderTraversal.h>
+
 namespace vanaheimr
 {
 
@@ -18,6 +23,23 @@ Analysis* AnalysisFactory::createAnalysis(const std::string& name,
 	const StringVector& options)
 {
 	Analysis* analysis = nullptr;
+
+	if(name == "ControlFlowGraph")
+	{
+		analysis = new ControlFlowGraph;
+	}
+	else if (name == "DataflowAnalysis")
+	{
+		analysis = new DataflowAnalysis;
+	}
+	else if (name == "DominatorAnalysis")
+	{
+		analysis = new DominatorAnalysis;
+	}
+	else if (name == "ReversePostOrderTraversal")
+	{
+		analysis = new ReversePostOrderTraversal;
+	}
 
 	if(analysis != nullptr)
 	{

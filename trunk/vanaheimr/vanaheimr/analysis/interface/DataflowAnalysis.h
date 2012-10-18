@@ -74,9 +74,6 @@ private:
 	
 	InstructionSetVector _reachingDefinitions;
 	InstructionSetVector _reachedUses;
-	
-private:
-	ControlFlowGraph* _cfg;
 };
 
 }

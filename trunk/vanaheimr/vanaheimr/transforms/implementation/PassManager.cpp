@@ -26,7 +26,7 @@
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 0
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -49,15 +49,18 @@ static PassUseCountMap getPassUseCounts(const PassWaveList& waves)
 	{
 		for(auto pass : wave)
 		{
-			auto use = uses.find(pass->name);
+			for(auto analysisType : pass->analyses)
+			{
+				auto use = uses.find(analysisType);
 			
-			if(use == uses.end())
-			{
-				uses.insert(std::make_pair(pass->name, 1));
-			}
-			else
-			{
-				++use->second;
+				if(use == uses.end())
+				{
+					uses.insert(std::make_pair(analysisType, 1));
+				}
+				else
+				{
+					++use->second;
+				}
 			}
 		}
 	}
@@ -66,7 +69,7 @@ static PassUseCountMap getPassUseCounts(const PassWaveList& waves)
 }
 	
 static void freeUnusedDataStructures(PassUseCountMap& uses,
-	AnalysisMap& analyses, Function* f, const Pass::StringVector& types)
+	AnalysisMap& analyses, const Pass::StringVector& types)
 {
 	for(auto analysisType : types)
 	{
@@ -76,6 +79,8 @@ static void freeUnusedDataStructures(PassUseCountMap& uses,
 		
 		if(use->second == 0)
 		{
+			report("  Freeing analysis " << analysisType);
+			
 			auto analysis = analyses.find(analysisType);
 			assert(analysis != analyses.end());
 
@@ -87,14 +92,26 @@ static void freeUnusedDataStructures(PassUseCountMap& uses,
 	}
 }
 
-static void allocateDataStructure(const std::string& analysisType,
+static void allocateDependencies(PassUseCountMap& uses,
+	analysis::Analysis* newAnalysis,
+	AnalysisMap& analyses, Function* function, PassManager* manager);
+
+static void allocateDataStructure(PassUseCountMap& uses,
+	const std::string& analysisType,
 	AnalysisMap& analyses, Function* function, PassManager* manager)
 {
-	assert(analyses.count(analysisType) == 0);
+	if(analyses.count(analysisType) != 0) return;
 
+	report("  Creating analysis " << analysisType);
+	
 	auto newAnalysis = analysis::AnalysisFactory::createAnalysis(analysisType);
+	assert(newAnalysis != nullptr);
 
 	newAnalysis->setPassManager(manager);
+
+	// allocate dependencies
+	allocateDependencies(uses, newAnalysis, analyses, function, manager);
+	
 	assert(newAnalysis->type == analysis::Analysis::FunctionAnalysis);
 
 	auto functionAnalysis = static_cast<analysis::FunctionAnalysis*>(
@@ -102,7 +119,36 @@ static void allocateDataStructure(const std::string& analysisType,
 
 	functionAnalysis->analyze(*function);
 
+	// free dependencies
+	freeUnusedDataStructures(uses, analyses, newAnalysis->required);
+
 	analyses.insert(std::make_pair(analysisType, newAnalysis));
+}
+
+static void allocateDependencies(PassUseCountMap& uses,
+	analysis::Analysis* newAnalysis,
+	AnalysisMap& analyses, Function* function, PassManager* manager)
+{
+	// increment use count
+	for(auto type : newAnalysis->required)
+	{
+		auto use = uses.find(type);
+			
+		if(use == uses.end())
+		{
+			uses.insert(std::make_pair(type, 1));
+		}
+		else
+		{
+			++use->second;
+		}
+	}
+	
+	// allocate dependencies
+	for(auto type : newAnalysis->required)
+	{
+		allocateDataStructure(uses, type, analyses, function, manager);
+	}
 }
 
 static void allocateNewDataStructures(PassUseCountMap& uses,
@@ -111,6 +157,8 @@ static void allocateNewDataStructures(PassUseCountMap& uses,
 {
 	for(auto analysisType : types)
 	{
+		report(" Recording use of analysis " << analysisType);
+		
 		auto use = uses.find(analysisType);
 		
 		assert(use != uses.end());
@@ -119,7 +167,7 @@ static void allocateNewDataStructures(PassUseCountMap& uses,
 		
 		--use->second;
 		
-		allocateDataStructure(analysisType, analyses, function, manager);
+		allocateDataStructure(uses, analysisType, analyses, function, manager);
 	}
 }
 
@@ -373,17 +421,15 @@ void PassManager::runOnFunction(Function& function)
 	
 		for(auto pass = wave->begin(); pass != wave->end(); ++pass)
 		{
-			 freeUnusedDataStructures(passesUseCounts, analyses,
-			 	&function, (*pass)->analyses);
 			allocateNewDataStructures(passesUseCounts, analyses,
 				&function, (*pass)->analyses, this);
 		
 			runFunctionPass(&function, *pass);
 			_previouslyRunPasses[(*pass)->name] = *pass;
+			
+			freeUnusedDataStructures(passesUseCounts, analyses,
+			 	(*pass)->analyses);
 		}
-
-		freeUnusedDataStructures(passesUseCounts, analyses, &function,
-			Pass::StringVector());
 
 		for(auto pass = wave->begin(); pass != wave->end(); ++pass)
 		{
@@ -449,17 +495,15 @@ void PassManager::runOnModule()
 				if((*pass)->type == Pass::ImmutablePass) continue;
 				if((*pass)->type == Pass::ModulePass)    continue;
 			
-				freeUnusedDataStructures(passesUseCounts, *analyses,
-					&*function, (*pass)->analyses);
 				allocateNewDataStructures(passesUseCounts, *analyses,
 					&*function, (*pass)->analyses, this);
 			
 				runFunctionPass(_module, &*function, *pass);
 				_previouslyRunPasses[(*pass)->name] = *pass;
+			
+				freeUnusedDataStructures(passesUseCounts, *analyses,
+					(*pass)->analyses);
 			}
-		
-			freeUnusedDataStructures(passesUseCounts, *analyses, &*function,
-				Pass::StringVector());
 
 			for(auto pass = wave->begin(); pass != wave->end(); ++pass)
 			{
@@ -483,10 +527,6 @@ PassManager::Analysis* PassManager::getAnalysis(const std::string& type)
 	AnalysisMap::iterator analysis = _analyses->find(type);
 	if(analysis == _analyses->end())
 	{
-		assert(_function != 0);
-		allocateNewDataStructures(uses, *_analyses, _function,
-			Pass::StringVector(1, type), this);
-		
 		analysis = _analyses->find(type);
 	}
 	
