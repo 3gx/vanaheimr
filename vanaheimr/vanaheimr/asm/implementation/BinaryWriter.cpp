@@ -195,6 +195,7 @@ void BinaryWriter::linkSymbols()
 
 void BinaryWriter::populateHeader()
 {
+	m_header.magic         = BinaryHeader::MagicNumber;
 	m_header.dataPages     = (m_data.size() + PageSize - 1) / PageSize; 
 	m_header.codePages     =
 		((m_instructions.size() * sizeof(InstructionContainer)) + PageSize - 1)

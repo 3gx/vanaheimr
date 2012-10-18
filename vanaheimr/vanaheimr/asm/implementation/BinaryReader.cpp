@@ -59,6 +59,12 @@ void BinaryReader::_readHeader(std::istream& stream)
 			"header, hit EOF.");
 	}
 
+	if(_header.magic != BinaryHeader::MagicNumber)
+	{
+		throw std::runtime_error("Failed to read binary "
+			"header, invalid magic number.");
+	}
+
 	report(" data pages:    " << _header.dataPages);
 	report(" code pages:    " << _header.codePages);
 	report(" symbols:       " << _header.symbols);

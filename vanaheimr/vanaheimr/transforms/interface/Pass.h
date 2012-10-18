@@ -8,8 +8,8 @@
 
 // Standard Library Includes
 #include <string>
-#include <list>
 #include <vector>
+#include <list>
 
 // Forward Declarations
 namespace vanaheimr { namespace ir         { class Function;    } }
@@ -39,7 +39,7 @@ public:
 		InvalidPass
 	};
 	
-	typedef std::list<std::string> StringVector;
+	typedef std::vector<std::string> StringVector;
 	
 	// Typedef commonly used base classes into this namespace
 	typedef analysis::Analysis Analysis;

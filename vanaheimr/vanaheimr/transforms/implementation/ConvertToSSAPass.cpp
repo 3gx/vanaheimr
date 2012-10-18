@@ -24,7 +24,7 @@ namespace transforms
 {
 
 ConvertToSSAPass::ConvertToSSAPass()
-: FunctionPass(StringVector({"DominanceAnalysis",
+: FunctionPass(StringVector({"DominatorAnalysis",
 	"ControlFlowGraph", "DataflowAnalysis"}), "ConvertToSSAPass")
 {
 

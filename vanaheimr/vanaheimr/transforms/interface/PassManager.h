@@ -119,7 +119,7 @@ public:
 private:
 	typedef std::multimap<std::string, std::string> DependenceMap;
 	typedef std::unordered_map<std::string, Pass*> PassMap;
-	typedef std::list<std::string> StringVector;
+	typedef std::vector<std::string> StringVector;
 
 private:
 	PassWaveList _schedulePasses();
