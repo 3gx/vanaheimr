@@ -132,8 +132,57 @@ void DataflowAnalysis::_analyzeLiveInsAndOuts(Function& function)
 
 void DataflowAnalysis::_analyzeReachingDefinitions(Function& function)
 {
-	// 
+	// For each instruction, create a writer set and a reader set
+	//  gather them together 
 	
+	_reachingDefinitions.clear();
+	        _reachedUses.clear();
+	
+	_reachingDefinitions.resize(function.register_size());
+	        _reachedUses.resize(function.register_size());
+	
+	
+	// parallel for-all
+	for(auto block = function.begin(); block != function.end(); ++block)
+	{
+		for(auto instruction : *block)
+		{
+			VirtualRegisterSet localDefinitions;
+			VirtualRegisterSet localUses;
+		
+			// find values that are written to
+			for(auto write : instruction->writes)
+			{
+				if(!write->isRegister()) continue;
+			
+				auto registerWrite = static_cast<ir::RegisterOperand*>(write);
+			
+				localDefinitions.insert(registerWrite->virtualRegister);
+			}
+
+			// find values that are read from
+			for(auto read : instruction->reads)
+			{
+				if(!read->isRegister()) continue;
+			
+				auto registerRead = static_cast<ir::RegisterOperand*>(read);
+			
+				localUses.insert(registerRead->virtualRegister);
+			}
+		
+			// insert the instruction into the read value's user set
+			for(auto readValue : localUses)
+			{
+				_reachedUses[readValue->id].insert(instruction);
+			}
+		
+			// insert the instruction into the written value's def set
+			for(auto writtenValue : localDefinitions)
+			{
+				_reachingDefinitions[writtenValue->id].insert(instruction);
+			}
+		}
+	}
 }
 
 void DataflowAnalysis::_computeLocalLiveInsAndOuts(BasicBlockSet& worklist)

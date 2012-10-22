@@ -17,6 +17,13 @@
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace vanaheimr
 {
 
@@ -32,6 +39,7 @@ ConvertToSSAPass::ConvertToSSAPass()
 
 void ConvertToSSAPass::runOnFunction(Function& function)
 {
+	report("Running ConvertToSSA pass on function '" << function.name() << "'");
 	_insertPsis(function);
 	_insertPhis(function);
 
@@ -40,6 +48,8 @@ void ConvertToSSAPass::runOnFunction(Function& function)
 
 void ConvertToSSAPass::_insertPhis(Function& function)
 {
+	report(" Inserting PHIs");
+
 	typedef util::SmallSet<BasicBlock*> BasicBlockSet;
 
 	// Insert Phis for live ins that are in the dominance frontier of
@@ -59,13 +69,7 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 		auto definingBlocks = _getBlocksThatDefineThisValue(*value);
 
 		BasicBlockSet blocksThatNeedPhis;
-		
-		if(!definingBlocks.empty())
-		{
-			// parallel: Do this with a local update, and then a final gather
-			_registersNeedingRenaming.insert(&*value);
-		}
-		
+				
 		// The inner loop is sequential
 		while(!definingBlocks.empty())
 		{
@@ -89,12 +93,20 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 		for(auto block : blocksThatNeedPhis)
 		{
 			_insertPhi(*value, *block);
+			
+			// parallel: Do this with a local update, and then a final gather
+			if(_registersNeedingRenaming.insert(&*value).second)
+			{
+				report("  PHI needed for R" << value->id);
+			}
 		}
 	}
 }
 
 void ConvertToSSAPass::_insertPsis(Function& function)
 {
+	report(" Inserting PSIs");
+
 	// for all predicated instructions
 	//  insert a PSI after conditional assignments
 	
@@ -152,6 +164,8 @@ void ConvertToSSAPass::_insertPhi(VirtualRegister& vr, BasicBlock& block)
 
 void ConvertToSSAPass::_rename(Function& f)
 {
+	report(" Renaming registers...");
+
 	BasicBlockSet worklist;
 	
 	 _renamedLiveIns.resize(f.size());
@@ -406,6 +420,7 @@ ConvertToSSAPass::SmallBlockSet ConvertToSSAPass::_getBlocksThatDefineThisValue(
 
 	for(auto instruction : instructions)
 	{
+		assert(instruction->block != nullptr);
 		blocks.insert(instruction->block);
 	}
 

@@ -24,6 +24,7 @@ public:
 
 public:
 	Constant(const Type* type);
+	virtual ~Constant();
 
 public:
 	/*! \brief Is the constant equivalent to 0 */

@@ -95,6 +95,7 @@ public:
 public:
 	size_t returned_size()  const;
 	bool   returned_empty() const;
+	
 public:
 	register_iterator       register_begin();
 	const_register_iterator register_begin() const;
