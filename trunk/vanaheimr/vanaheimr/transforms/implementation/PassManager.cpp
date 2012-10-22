@@ -53,13 +53,77 @@ static PassUseCountMap getPassUseCounts(const PassWaveList& waves)
 			{
 				auto use = uses.find(analysisType);
 			
+				report(" Recording future use of analysis " << analysisType);
+				
 				if(use == uses.end())
 				{
 					uses.insert(std::make_pair(analysisType, 1));
 				}
 				else
 				{
-					++use->second;
+					use->second += 1;
+				}
+			}
+		}
+	}
+
+	return uses;
+}
+
+static PassUseCountMap getPassUseCounts(const PassWaveList& waves,
+	const ir::Module& module)
+{
+	PassUseCountMap uses;
+	
+	for(auto wave : waves)
+	{
+		for(auto pass : wave)
+		{
+			for(auto analysisType : pass->analyses)
+			{
+				auto use = uses.find(analysisType);
+			
+				report(" Recording future use of analysis " << analysisType);
+				
+				unsigned int useCount = 0;
+				
+				switch(pass->type)
+				{
+				case Pass::ImmutablePass: // fall through
+				case Pass::ModulePass:
+				{
+					useCount = 1;
+				}
+				break;
+				case Pass::ImmutableFunctionPass: // fall through
+				case Pass::FunctionPass:
+				{
+					useCount = module.size();
+				}
+				break;
+				{
+					useCount = module.size();
+				}
+				break;
+				case Pass::BasicBlockPass:
+				{
+					for(auto function = module.begin();
+						function != module.end(); ++function)
+					{
+						useCount += function->size();
+					}
+				}
+				break;
+				default : break;
+				}
+				
+				if(use == uses.end())
+				{
+					uses.insert(std::make_pair(analysisType, useCount));
+				}
+				else
+				{
+					use->second += useCount;
 				}
 			}
 		}
@@ -134,6 +198,8 @@ static void allocateDependencies(PassUseCountMap& uses,
 	{
 		auto use = uses.find(type);
 			
+		report(" Recording future use of analysis " << type);
+		
 		if(use == uses.end())
 		{
 			uses.insert(std::make_pair(type, 1));
@@ -453,7 +519,7 @@ void PassManager::runOnModule()
 	
 	PassWaveList passes = _schedulePasses();
 
-	PassUseCountMap passesUseCounts = getPassUseCounts(passes);
+	PassUseCountMap passesUseCounts = getPassUseCounts(passes, *_module);
 	
 	// Run waves in order
 	for(auto wave = passes.begin(); wave != passes.end(); ++wave)
@@ -461,7 +527,7 @@ void PassManager::runOnModule()
 		// Run all module passes first
 		for(auto pass = wave->begin(); pass != wave->end(); ++pass)
 		{
-			if((*pass)->type == Pass::FunctionPass)     continue;
+			if((*pass)->type == Pass::FunctionPass)   continue;
 			if((*pass)->type == Pass::BasicBlockPass) continue;
 		
 			for(auto function = _module->begin();

@@ -81,7 +81,7 @@ public:
 
 public:
 	Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0, Id id = 0);
-	~Instruction();
+	virtual ~Instruction();
 
 	Instruction(const Instruction&);
 	Instruction& operator=(const Instruction&);

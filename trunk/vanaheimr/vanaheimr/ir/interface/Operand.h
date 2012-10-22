@@ -43,6 +43,7 @@ public:
 
 public:
 	Operand(OperandMode mode, Instruction* instruction);
+	virtual ~Operand();
 
 public:
 	/*! \brief Is the operand a register */

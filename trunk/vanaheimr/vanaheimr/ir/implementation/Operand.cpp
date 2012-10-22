@@ -26,6 +26,11 @@ Operand::Operand(OperandMode mode, Instruction* instruction)
 
 }
 
+Operand::~Operand()
+{
+	
+}
+
 bool Operand::isRegister() const
 {
 	if(mode() == Register || mode() == Indirect) 
