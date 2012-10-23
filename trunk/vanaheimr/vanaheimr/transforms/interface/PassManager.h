@@ -124,7 +124,7 @@ private:
 private:
 	PassWaveList _schedulePasses();
 	StringVector _getAllDependentPasses(Pass* p);
-	Pass* _findPass(const std::string& name);
+	Pass*        _findPass(const std::string& name);
 
 private:
 	PassVector    _passes;
