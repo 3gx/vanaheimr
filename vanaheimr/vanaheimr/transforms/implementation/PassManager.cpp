@@ -291,7 +291,8 @@ static void runFunctionPass(Module* module, Function* function, Pass* pass)
 	break;
 	case Pass::FunctionPass:
 	{
-		report("  Running function pass '" << pass->toString() << "' on function '"
+		report("  Running function pass '" << pass->toString()
+			<< "' on function '"
 			<< function->name() << "'" );
 		FunctionPass* functionPass = static_cast<FunctionPass*>(pass);
 		functionPass->runOnFunction(*function);

@@ -164,6 +164,68 @@ def getExtraLibs():
 	else:
 		return []
 
+def getVersion(base):
+	try:
+		svn_path = which('svn')
+	except:
+		print 'Failed to get subversion revision'
+		return base + '.0'
+
+	process = subprocess.Popen('svn info ..', shell=True,
+		stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+	(svn_info, std_err_data) = process.communicate()
+	
+	match = re.search('Revision: ', svn_info)
+	revision = 'unknown'
+	if match:
+		end = re.search('\n', svn_info[match.end():])
+		if end:
+			revision = svn_info[match.end():match.end()+end.start()]
+	else:
+		print 'Failed to get SVN repository version!'
+
+	return base + '.' + revision
+
+def fixPath(path):
+	if (os.name == 'nt'):
+		return path.replace('\\', '\\\\')
+	else:
+		return path
+
+import collections
+
+def flatten(l):
+	for el in l:
+		if isinstance(el, collections.Iterable) and not isinstance(
+			el, basestring):
+			for sub in flatten(el):
+				yield sub
+		else:
+			yield el
+			
+def defineConfigFlags(env):
+	
+	include_path = os.path.join(env['INSTALL_PATH'], "include")
+	library_path = os.path.join(env['INSTALL_PATH'], "lib")
+	bin_path     = os.path.join(env['INSTALL_PATH'], "bin")
+
+	configFlags = env['CXXFLAGS'] + " ".join( 
+		["%s\"\\\"%s\\\"\"" % x for x in (
+			('-DVANAHEIMR_CXXFLAGS=', " ".join(flatten(env['CXXFLAGS']))),
+			('-DPACKAGE=', 'vanaheimr'),
+			('-DVERSION=', env['VERSION']),
+			('-DVANAHEIMR_PREFIX_PATH=', fixPath(env['INSTALL_PATH'])),
+			('-DVANAHEIMR_LDFLAGS=', fixPath(env['VANAHEIMR_LDFLAGS'])),
+			('-L', fixPath(library_path)),
+			('-DVANAHEIMR_INCLUDE_PATH=', fixPath(include_path)),
+			('-DVANAHEIMR_LIB_PATH=', fixPath(library_path)),
+			('-DVANAHEIMR_BIN_PATH=', fixPath(bin_path))
+		)])
+
+	env.Replace(VANAHEIMR_CONFIG_FLAGS = configFlags)
+
+
 def importEnvironment():
 	env = {  }
 	
@@ -212,10 +274,18 @@ def Environment():
 	vars.Add(PathVariable('install_path', 'The vanaheimr install path',
 		default_install_path))
 
+	vars.Add(BoolVariable('install', 'Include vanaheimr install path in default '
+		'targets that will be built and configure to install in the '
+		'install_path (defaults to false unless one of the targets is '
+		'"install")', 0))
+	
 	# create an Environment
 	env = OldEnvironment(ENV = importEnvironment(), \
 		tools = getTools(), variables = vars)
 
+	# set the version
+	env.Replace(VERSION = getVersion("0.1"))
+	
 	# always link with the c++ compiler
 	if os.name != 'nt':
 		env['LINK'] = env['CXX']
@@ -237,7 +307,7 @@ def Environment():
 	env.AppendUnique(LINKFLAGS = getLINKFLAGS(env['mode'], env.subst('$LINK')))
 
 	# Install paths
-	if 'install' in COMMAND_LINE_TARGETS:
+	if env['install']:
 		env.Replace(INSTALL_PATH = os.path.abspath(env['install_path']))
 	else:
 		env.Replace(INSTALL_PATH = os.path.abspath('.'))
@@ -249,6 +319,13 @@ def Environment():
 	# set extra libs 
 	env.Replace(EXTRA_LIBS=getExtraLibs())
 
+	# set vanaheimr libs
+	vanaheimr_libs = '-lvanaheimr'
+	env.Replace(VANAHEIMR_LDFLAGS=vanaheimr_libs)
+	
+	# generate vanaheimr-config flags
+	defineConfigFlags(env)
+
 	# get ocelot paths
 	(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
 		ocelot_lflags,ocelot_libs) = getOcelotPaths()
@@ -257,6 +334,9 @@ def Environment():
 	env.AppendUnique(CXXFLAGS = ocelot_cflags)
 	env.AppendUnique(LINKFLAGS = ocelot_lflags)
 	env.AppendUnique(EXTRA_LIBS = ocelot_libs)
+
+	# set the build path
+	env.Replace(BUILD_ROOT = str(env.Dir('.')))
 
 	# set vanaheimr include path
 	env.Prepend(CPPPATH = os.path.dirname(thisDir))

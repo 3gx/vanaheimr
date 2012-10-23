@@ -7,6 +7,18 @@
 #	\brief  The SCons master build script for Vanaheimr
 ################################################################################
 
+## Hepler functions
+def config_h_build(target, source, env):
+
+	config_h_defines = env.Dictionary()
+
+	for a_target, a_source in zip(target, source):
+		config_h = file(str(a_target), "w")
+		config_h_in = file(str(a_source), "r")
+		config_h.write(config_h_in.read() % config_h_defines)
+		config_h_in.close()
+		config_h.close()
+
 #
 #
 ## The script begins here
@@ -18,6 +30,16 @@ except:
 	prefix = '../'
 	exec open(prefix + "scripts/build_environment.py")
 	env = Environment()
+
+# set the vanaheimr build root if a higher level script didn't already do it
+if not 'VANAHEIMR_BUILD_ROOT' in env:
+	env.Replace(VANAHEIMR_BUILD_ROOT = env['BUILD_ROOT'])
+
+# include the build directory in case of generated files
+env.AppendUnique(CPPPATH = env['VANAHEIMR_BUILD_ROOT'])
+
+# Create configure.h
+env.AlwaysBuild(env.Command('configure.h', 'configure.h.in', config_h_build))
 
 # find all source files in the source tree
 sources = []
@@ -41,7 +63,7 @@ vanaheimr_dep_libs = env['EXTRA_LIBS']
 libvanaheimr = env.SharedLibrary('vanaheimr', sources, LIBS=vanaheimr_dep_libs)
 
 # Install libraries
-if 'install' in COMMAND_LINE_TARGETS:
+if env['install']:
 	libvanaheimr = env.Install(
 		os.path.join(env['install_path'], "lib"), libvanaheimr)
 
@@ -57,13 +79,18 @@ env.Depends(VanaheimrObjDump, libvanaheimr)
 VanaheimrOptimizer = env.Program('vir-optimizer',
 	['vanaheimr/tools/vir-optimizer.cpp'], LIBS=vanaheimr_dep_libs)
 env.Depends(VanaheimrOptimizer, libvanaheimr)
+VanaheimrConfig = env.Program('vanaheimr-config', \
+	['vanaheimr/tools/vanaheimr-config.cpp'], LIBS=vanaheimr_dep_libs, \
+	CXXFLAGS = env['VANAHEIMR_CONFIG_FLAGS'])
+env.Depends(VanaheimrConfig, libvanaheimr)
 
+Default(VanaheimrConfig   )
 Default(PTXToVIRTranslator)
 Default(VanaheimrObjDump  )
 Default(VanaheimrOptimizer)
 
 # Install rules
-if 'install' in COMMAND_LINE_TARGETS:
+if env['install']:
 	print 'Installing vanaheimr...'
 
 	installed = []
@@ -78,7 +105,10 @@ if 'install' in COMMAND_LINE_TARGETS:
 	directories = ['vanaheimr/asm/interface', 
 		'vanaheimr/ir/interface',
 		'vanaheimr/compiler/interface',
-		'vanaheimr/translation/interface' ]
+		'vanaheimr/translation/interface',
+		'vanaheimr/analysis/interface',
+		'vanaheimr/asm/interface',
+		'vanaheimr/transforms/interface' ]
 	extensions = ['*.h']
 
 	for dir in directories:
@@ -95,5 +125,6 @@ if 'install' in COMMAND_LINE_TARGETS:
 	for i in installed:
 		env.AddPostAction(str(i), Chmod(str(i), 0644))
 	
-	env.Alias('install', env['install_path'])
+	install_alias = env.Alias('install', env['install_path'])
+	Default(install_alias)
 
