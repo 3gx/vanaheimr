@@ -26,6 +26,7 @@
 namespace vanaheimr { namespace ir       { class Module;           } }
 namespace vanaheimr { namespace ir       { class PredicateOperand; } }
 namespace vanaheimr { namespace ir       { class Constant;         } }
+namespace vanaheimr { namespace ir       { class Call;             } }
 namespace vanaheimr { namespace compiler { class Compiler;         } }
 
 namespace vanaheimr
@@ -57,6 +58,7 @@ private:
 	typedef int                  PTXDataType;
 	
 	typedef ir::Variable::Visibility Visibility;
+	typedef ir::Call                 Call;
 
 	typedef unsigned int PTXRegisterId;
 	typedef unsigned int PTXAttribute;
@@ -81,6 +83,7 @@ private:
 	void _translateSetp(const PTXInstruction& );
 	void _translateBra(const PTXInstruction& );
 	void _translateExit(const PTXInstruction& );
+	void _translateFma(const PTXInstruction& );
 
 private:
 	typedef std::unordered_map<PTXRegisterId,
@@ -113,6 +116,8 @@ private:
 	bool                  _isArgument(const std::string& name);
 	
 	void                  _addSpecialPrototype(const std::string& name);
+	void                  _addPrototype(const std::string& name,
+	                                    const Call& call);
 	
 private:
 	compiler::Compiler* _compiler;

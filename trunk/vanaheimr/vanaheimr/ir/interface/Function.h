@@ -66,6 +66,10 @@ public:
 	const BasicBlock& back() const;
 
 public:
+	bool isPrototype() const;
+	bool hasAttribute(const std::string& attribute) const;
+
+public:
 	iterator newBasicBlock(iterator position, const std::string& name);
 	register_iterator newVirtualRegister(const Type* type,
 		const std::string& name = "");
@@ -73,6 +77,9 @@ public:
 		const std::string& name);
 	argument_iterator newReturnValue(const Type* type,
 		const std::string& name);
+
+public:
+	void addAttribute(const std::string& attribute);
 
 public:
 	argument_iterator       argument_begin();
@@ -119,10 +126,14 @@ public:
 	void interpretType();
 
 private:
+	typedef std::list<std::string> StringList;
+
+private:
 	BasicBlockList      _blocks;
 	ArgumentList        _returnValues;
 	ArgumentList        _arguments;
 	VirtualRegisterList _registers;
+	StringList          _attributes;
 	
 	iterator _entry;
 	iterator _exit;

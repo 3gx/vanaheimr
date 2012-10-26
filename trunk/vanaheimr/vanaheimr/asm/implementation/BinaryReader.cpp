@@ -289,7 +289,8 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 
 			blockPCs.insert(std::make_pair(blockOffset.begin, &*block));
 
-			report("   adding basic block using instructions [" 
+			report("   adding basic block " << blockOffset.name
+				<< " using instructions [" 
 				<< blockOffset.begin << ", " << blockOffset.end << "]");
 		
 			for(unsigned int i = blockOffset.begin; i != blockOffset.end; ++i)
@@ -414,23 +415,21 @@ BinaryReader::BasicBlockDescriptorVector
 
 	for(uint64_t i = begin; i != end; ++i)
 	{
-		const archaeopteryx::ir::InstructionContainer&
-			instruction = _instructions[i];
+		const InstructionContainer& instruction = _instructions[i];
 
-		if(instruction.asInstruction.opcode ==
-			archaeopteryx::ir::Instruction::Bra)
+		if(instruction.asInstruction.opcode == Instruction::Bra)
 		{
 			report("   found branch at pc " << i);
 			auto operand = instruction.asBra.target;
 
-			if(operand.asOperand.mode == archaeopteryx::ir::Operand::Immediate)
+			if(operand.asOperand.mode == Operand::Immediate)
 			{
 				report("    to target " << operand.asImmediate.uint);
 
 				targets.insert(operand.asImmediate.uint);
 			}
 			else if(operand.asOperand.mode ==
-				archaeopteryx::ir::Operand::Symbol)
+				Operand::Symbol)
 			{
 				uint64_t symbolOffset = (operand.asSymbol.symbolTableOffset -
 					_header.symbolOffset) / sizeof(SymbolTableEntry);
@@ -462,7 +461,7 @@ BinaryReader::BasicBlockDescriptorVector
 		bool isTerminator = false;
 		uint64_t blockEnd = i;
 
-		const archaeopteryx::ir::InstructionContainer&
+		const InstructionContainer&
 			instruction = _instructions[i];
 
 		if(targets.count(i) != 0)
@@ -470,13 +469,13 @@ BinaryReader::BasicBlockDescriptorVector
 			isTerminator = true;
 		}
 		else if(instruction.asInstruction.opcode ==
-			archaeopteryx::ir::Instruction::Bra)
+			Instruction::Bra)
 		{
 			isTerminator = true;
 			blockEnd = i + 1;
 		}
 
-		if(isTerminator)
+		if(isTerminator && blockEnd != block.begin)
 		{
 			block.end = blockEnd;
 			blocks.push_back(block);
@@ -515,22 +514,22 @@ bool BinaryReader::_addSimpleBinaryInstruction(ir::Function::iterator block,
 {	
 	switch(container.asInstruction.opcode)
 	{
-	case archaeopteryx::ir::Instruction::Add:
-	case archaeopteryx::ir::Instruction::And:
-	case archaeopteryx::ir::Instruction::Ashr:
-	case archaeopteryx::ir::Instruction::Fdiv:
-	case archaeopteryx::ir::Instruction::Fmul:
-	case archaeopteryx::ir::Instruction::Frem:
-	case archaeopteryx::ir::Instruction::Lshr:
-	case archaeopteryx::ir::Instruction::Mul:
-	case archaeopteryx::ir::Instruction::Or:
-	case archaeopteryx::ir::Instruction::Sdiv:
-	case archaeopteryx::ir::Instruction::Shl:
-	case archaeopteryx::ir::Instruction::Srem:
-	case archaeopteryx::ir::Instruction::Sub:
-	case archaeopteryx::ir::Instruction::Udiv:
-	case archaeopteryx::ir::Instruction::Urem:
-	case archaeopteryx::ir::Instruction::Xor:
+	case Instruction::Add:
+	case Instruction::And:
+	case Instruction::Ashr:
+	case Instruction::Fdiv:
+	case Instruction::Fmul:
+	case Instruction::Frem:
+	case Instruction::Lshr:
+	case Instruction::Mul:
+	case Instruction::Or:
+	case Instruction::Sdiv:
+	case Instruction::Shl:
+	case Instruction::Srem:
+	case Instruction::Sub:
+	case Instruction::Udiv:
+	case Instruction::Urem:
+	case Instruction::Xor:
 	{
 		auto instruction = static_cast<ir::BinaryInstruction*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -561,17 +560,17 @@ bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
 {
 	switch(container.asInstruction.opcode)
 	{
-	case archaeopteryx::ir::Instruction::Bitcast:
-	case archaeopteryx::ir::Instruction::Fpext:
-	case archaeopteryx::ir::Instruction::Fptosi:
-	case archaeopteryx::ir::Instruction::Fptoui:
-	case archaeopteryx::ir::Instruction::Fptrunc:
-	case archaeopteryx::ir::Instruction::Ld:
-	case archaeopteryx::ir::Instruction::Sext:
-	case archaeopteryx::ir::Instruction::Sitofp:
-	case archaeopteryx::ir::Instruction::Trunc:
-	case archaeopteryx::ir::Instruction::Uitofp:
-	case archaeopteryx::ir::Instruction::Zext:
+	case Instruction::Bitcast:
+	case Instruction::Fpext:
+	case Instruction::Fptosi:
+	case Instruction::Fptoui:
+	case Instruction::Fptrunc:
+	case Instruction::Ld:
+	case Instruction::Sext:
+	case Instruction::Sitofp:
+	case Instruction::Trunc:
+	case Instruction::Uitofp:
+	case Instruction::Zext:
 	{
 		auto instruction = static_cast<ir::UnaryInstruction*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -598,7 +597,7 @@ bool BinaryReader::_addSimpleUnaryInstruction(ir::Function::iterator block,
 bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 	const InstructionContainer& container)
 {
-	if(container.asInstruction.opcode == archaeopteryx::ir::Instruction::St)
+	if(container.asInstruction.opcode == Instruction::St)
 	{
 		auto instruction = static_cast<ir::St*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -618,7 +617,7 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		
 	}
 	else if(container.asInstruction.opcode
-		== archaeopteryx::ir::Instruction::Setp)
+		== Instruction::Setp)
 	{
 		auto instruction = static_cast<ir::Setp*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -644,7 +643,7 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		
 	}
 	else if(container.asInstruction.opcode
-		== archaeopteryx::ir::Instruction::Bra)
+		== Instruction::Bra)
 	{
 		auto instruction = static_cast<ir::Bra*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -664,14 +663,14 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		return true;
 	}
 	else if(container.asInstruction.opcode
-		== archaeopteryx::ir::Instruction::Call)
+		== Instruction::Call)
 	{
 		_addCallInstruction(block, container);
 
 		return true;
 	}
 	else if(container.asInstruction.opcode
-		== archaeopteryx::ir::Instruction::Ret)
+		== Instruction::Ret)
 	{
 		auto instruction = static_cast<ir::Ret*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -729,7 +728,7 @@ void BinaryReader::_addCallInstruction(ir::Function::iterator block,
 ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 	ir::Instruction* instruction)
 {
-	typedef archaeopteryx::ir::Operand Operand;
+	typedef Operand Operand;
 
 	switch(container.asOperand.mode)
 	{
@@ -805,11 +804,11 @@ ir::PredicateOperand* BinaryReader::_translateOperand(
 {
 	ir::VirtualRegister* virtualRegister = nullptr;
 
-	if(operand.modifier != archaeopteryx::ir::PredicateOperand::PredicateTrue &&
-		operand.modifier != archaeopteryx::ir::PredicateOperand::PredicateFalse)
+	if(operand.modifier != PredicateOperand::PredicateTrue &&
+		operand.modifier != PredicateOperand::PredicateFalse)
 	{
 		virtualRegister = _getVirtualRegister(operand.reg,
-			archaeopteryx::ir::i1, instruction->block->function());
+			i1, instruction->block->function());
 	}
 
 	return new ir::PredicateOperand(virtualRegister, 
@@ -817,37 +816,37 @@ ir::PredicateOperand* BinaryReader::_translateOperand(
 		instruction);
 }
 
-const ir::Type* BinaryReader::_getType(archaeopteryx::ir::DataType type) const
+const ir::Type* BinaryReader::_getType(DataType type) const
 {
 	switch(type)
 	{
-	case archaeopteryx::ir::i1:
+	case i1:
 	{
 		return compiler::Compiler::getSingleton()->getType("i1");
 	}
-	case archaeopteryx::ir::i8:
+	case i8:
 	{
 		return compiler::Compiler::getSingleton()->getType("i8");
 	}
-	case archaeopteryx::ir::i16:
+	case i16:
 	{
 		return compiler::Compiler::getSingleton()->getType("i16");
 	}
-	case archaeopteryx::ir::i32:
+	case i32:
 	{
 		return compiler::Compiler::getSingleton()->getType("i32");
 	}
-	case archaeopteryx::ir::i64:
+	case i64:
 	{
 		return compiler::Compiler::getSingleton()->getType("i64");
 	}
-	case archaeopteryx::ir::f32:
+	case f32:
 	{
-		return compiler::Compiler::getSingleton()->getType("f32");
+		return compiler::Compiler::getSingleton()->getType("float");
 	}
-	case archaeopteryx::ir::f64:
+	case f64:
 	{
-		return compiler::Compiler::getSingleton()->getType("f64");
+		return compiler::Compiler::getSingleton()->getType("double");
 	}
 	default: break;
 	}
@@ -858,8 +857,8 @@ const ir::Type* BinaryReader::_getType(archaeopteryx::ir::DataType type) const
 }
 	
 ir::VirtualRegister* BinaryReader::_getVirtualRegister(
-	archaeopteryx::ir::RegisterType reg,
-	archaeopteryx::ir::DataType type, ir::Function* function)
+	RegisterType reg,
+	DataType type, ir::Function* function)
 {
 	auto virtualRegister = _virtualRegisters.find(reg);
 

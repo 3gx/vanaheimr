@@ -49,6 +49,9 @@ public:
 	/*! \brief Is the operand a register */
 	bool isRegister() const;
 	
+	/*! \brief Is the operand an address */
+	bool isAddress() const;
+	
 	/*! \brief Is the operand a function argument */
 	bool isArgument() const;
 	
