@@ -241,7 +241,7 @@ void PTXToVIRTranslator::_translateInstruction(const PTXInstruction& ptx)
 	
 	// Translate simple instructions
 	if(_translateSimpleBinaryInstruction(ptx)) return;
-	if(_translateSimpleUnaryInstruction(ptx))  return;
+	if( _translateSimpleUnaryInstruction(ptx)) return;
 	
 	assertM(false, "No translation implemented for instruction "
 		<< ptx.toString());
@@ -264,6 +264,12 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 		case PTXInstruction::Bra:
 		{
 			_translateBra(ptx);
+			return true;
+		}
+		case PTXInstruction::Fma: // fall through
+		case PTXInstruction::Mad:
+		{
+			_translateFma(ptx);
 			return true;
 		}
 		case PTXInstruction::Ret:  // fall through
@@ -291,6 +297,7 @@ static ir::UnaryInstruction* newUnaryInstruction(
 	{
 		return new ir::Ld;
 	}
+	case PTXInstruction::Cvta:
 	case PTXInstruction::Mov:
 	{
 		return new ir::Bitcast;
@@ -406,6 +413,7 @@ static bool isSimpleUnaryInstruction(const ::ir::PTXInstruction& ptx)
 	case PTXInstruction::Ldu:
 	case PTXInstruction::Ld:
 	case PTXInstruction::Mov:
+	case PTXInstruction::Cvta:
 	{
 		return true;
 		break;
@@ -675,6 +683,78 @@ void PTXToVIRTranslator::_translateExit(const PTXInstruction& ptx)
 	_block->push_back(exit);
 }
 
+static std::string translateTypeName(::ir::PTXOperand::DataType type)
+{
+	switch(type)
+	{
+	case ::ir::PTXOperand::b8:  /* fall through */
+	case ::ir::PTXOperand::s8:  /* fall through */
+	case ::ir::PTXOperand::u8:
+	{
+		return "i8";
+	}
+	case ::ir::PTXOperand::s16: /* fall through */
+	case ::ir::PTXOperand::u16: /* fall through */
+	case ::ir::PTXOperand::b16:
+	{
+		return "i16";
+	}
+	case ::ir::PTXOperand::s32: /* fall through */
+	case ::ir::PTXOperand::b32: /* fall through */
+	case ::ir::PTXOperand::u32:
+	{
+		return "i32";
+	}
+	case ::ir::PTXOperand::s64: /* fall through */
+	case ::ir::PTXOperand::b64: /* fall through */
+	case ::ir::PTXOperand::u64:
+	{
+		return "i64";
+	}
+	case ::ir::PTXOperand::f32:
+	{
+		return "float";
+	}
+	case ::ir::PTXOperand::f64:
+	{
+		return "double";
+	}
+	case ::ir::PTXOperand::pred:
+	{
+		return "i1";
+	}
+	default: break;
+	}
+	
+	return "";
+}
+
+void PTXToVIRTranslator::_translateFma(const PTXInstruction& ptx)
+{	
+	ir::Call* call = new ir::Call(_block);
+	
+	call->setGuard(_translatePredicateOperand(PTXOperand::PT));
+
+	call->addReturn(_newTranslatedOperand(ptx.d));
+
+	call->addArgument(_newTranslatedOperand(ptx.a));
+	call->addArgument(_newTranslatedOperand(ptx.b));
+	call->addArgument(_newTranslatedOperand(ptx.c));
+	
+	std::stringstream stream;
+	
+	stream << "_Z_intrinsic_fma_" << translateTypeName(ptx.type);
+	
+	_addPrototype(stream.str(), *call);
+	
+	call->setTarget(new ir::AddressOperand(_getGlobal(stream.str()),	
+		_instruction));
+
+	_block->push_back(call);
+	
+	report("    to " << call->toString());
+}
+
 ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 {
 	switch(ptx.addressMode)
@@ -918,52 +998,6 @@ ir::VirtualRegister* PTXToVIRTranslator::_newTemporaryRegister(
 		
 	return &*temp;
 }
-	
-static std::string translateTypeName(::ir::PTXOperand::DataType type)
-{
-	switch(type)
-	{
-	case ::ir::PTXOperand::b8:  /* fall through */
-	case ::ir::PTXOperand::s8:  /* fall through */
-	case ::ir::PTXOperand::u8:
-	{
-		return "i8";
-	}
-	case ::ir::PTXOperand::s16: /* fall through */
-	case ::ir::PTXOperand::u16: /* fall through */
-	case ::ir::PTXOperand::b16:
-	{
-		return "i16";
-	}
-	case ::ir::PTXOperand::s32: /* fall through */
-	case ::ir::PTXOperand::b32: /* fall through */
-	case ::ir::PTXOperand::u32:
-	{
-		return "i32";
-	}
-	case ::ir::PTXOperand::s64: /* fall through */
-	case ::ir::PTXOperand::b64: /* fall through */
-	case ::ir::PTXOperand::u64:
-	{
-		return "i64";
-	}
-	case ::ir::PTXOperand::f32:
-	{
-		return "f32";
-	}
-	case ::ir::PTXOperand::f64:
-	{
-		return "f64";
-	}
-	case ::ir::PTXOperand::pred:
-	{
-		return "i1";
-	}
-	default: break;
-	}
-	
-	return "";
-}
 
 const ir::Type* PTXToVIRTranslator::_getType(PTXDataType ptxType)
 {
@@ -1095,7 +1129,53 @@ void PTXToVIRTranslator::_addSpecialPrototype(const std::string& name)
 
 	function->interpretType();
 }
+
+void PTXToVIRTranslator::_addPrototype(const std::string& name,
+	const ir::Call& call)
+{
+	auto prototype = _module->getFunction(name);
 	
+	if(prototype != _module->end()) return;
+	
+	auto function = _module->newFunction(name, ir::Variable::ExternalLinkage,
+		ir::Variable::HiddenVisibility);
+
+	unsigned int index = 0;
+
+	for(auto returned : call.returned)
+	{
+		assertM(returned->isRegister(), "Only register operands to "
+			"calls supported for now.");
+		
+		auto registerOperand = static_cast<ir::RegisterOperand*>(returned);
+	
+		std::stringstream stream;
+		
+		stream << "returnValue_" << index++;
+	
+		function->newReturnValue(registerOperand->virtualRegister->type,
+			stream.str());
+	}
+
+	index = 0;
+
+	for(auto argument : call.arguments)
+	{
+		assertM(argument->isRegister(), "Only register operands to "
+			"calls supported for now.");
+		
+		auto registerOperand = static_cast<ir::RegisterOperand*>(argument);
+	
+		std::stringstream stream;
+		
+		stream << "argument_" << index++;
+	
+		function->newArgument(registerOperand->virtualRegister->type,
+			stream.str());
+	}
+	
+	function->interpretType();
+}
 
 }
 

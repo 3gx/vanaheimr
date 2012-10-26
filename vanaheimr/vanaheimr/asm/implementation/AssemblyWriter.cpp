@@ -188,7 +188,7 @@ void AssemblyWriter::writeArgument(std::ostream& stream,
 void AssemblyWriter::writeBasicBlock(std::ostream& stream,
 	const ir::BasicBlock& block)
 {
-	stream << "\t BB_" << block.id() << ":\n";
+	stream << "\t " << block.name() << ":\n";
 	
 	for(auto instruction : block)
 	{

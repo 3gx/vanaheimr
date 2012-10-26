@@ -11,8 +11,7 @@
 
 #include <vanaheimr/asm/interface/SymbolTableEntry.h>
 
-// Archaeopteryx Includes
-#include <archaeopteryx/ir/interface/Instruction.h>
+#include <vanaheimr/asm/interface/Instruction.h>
 
 // Standard Library Includes
 #include <vector>
@@ -38,9 +37,7 @@ class BinaryWriter
 {
 public:
 	typedef vanaheimr::ir::Instruction Instruction;
-	typedef vanaheimr::ir::Operand Operand;
-	typedef archaeopteryx::ir::InstructionContainer InstructionContainer;
-	typedef archaeopteryx::ir::OperandContainer     OperandContainer;
+	typedef vanaheimr::ir::Operand     Operand;
 	typedef std::vector<SymbolTableEntry> SymbolTableEntryVector;
 	typedef SymbolTableEntryVector::iterator symbol_iterator;
 
@@ -114,13 +111,11 @@ private:
 	static uint64_t pageAlign(uint64_t address);
 
 private:
-	typedef std::vector<InstructionContainer> InstructionVector;
-	typedef std::vector<char>                 DataVector;
-	typedef std::vector<SymbolTableEntry>     SymbolVector;
-	typedef std::unordered_map<std::string,
-		uint64_t> OffsetMap;
-	typedef std::unordered_map<uint64_t,
-		uint64_t> OffsetToSymbolMap;
+	typedef std::vector<InstructionContainer>         InstructionVector;
+	typedef std::vector<char>                         DataVector;
+	typedef std::vector<SymbolTableEntry>             SymbolVector;
+	typedef std::unordered_map<std::string, uint64_t> OffsetMap;
+	typedef std::unordered_map<uint64_t, uint64_t>    OffsetToSymbolMap;
 
 private:
 	const ir::Module*  m_module;

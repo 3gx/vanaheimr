@@ -59,7 +59,8 @@ int main(int argc, char** argv)
 
 	std::string virFileName;
 
-	parser.description("This program prints out an assembly representation of a VIR binary.");
+	parser.description("This program prints out an assembly "
+		"representation of a VIR binary.");
 
 	parser.parse("-i", "--input",  virFileName, "", "The input VIR file path.");
 	parser.parse();

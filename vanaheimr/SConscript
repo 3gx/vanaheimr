@@ -99,7 +99,11 @@ if env['install']:
 		env['install_path'], "bin"), PTXToVIRTranslator))
 	installed.append(env.Install(os.path.join( \
 		env['install_path'], "bin"), VanaheimrObjDump))
-
+	installed.append(env.Install(os.path.join( \
+		env['install_path'], "bin"), VanaheimrOptimizer))
+	installed.append(env.Install(os.path.join( \
+		env['install_path'], "bin"), VanaheimrConfig))
+	
 	# find all header files in the source tree
 	headers = []
 	directories = ['vanaheimr/asm/interface', 

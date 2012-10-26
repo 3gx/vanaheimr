@@ -10,11 +10,10 @@
 #include <vanaheimr/asm/interface/BinaryHeader.h>
 #include <vanaheimr/asm/interface/SymbolTableEntry.h>
 
+#include <vanaheimr/asm/interface/Instruction.h>
+
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/Global.h>
-
-// Archaeopteryx Includes
-#include <archaeopteryx/ir/interface/Instruction.h>
 
 // Standard Library Includes
 #include <istream>
@@ -37,9 +36,6 @@ public:
 	ir::Module* read(std::istream& stream, const std::string& name);
 
 private:
-	typedef archaeopteryx::ir::InstructionContainer InstructionContainer;
-	typedef archaeopteryx::ir::OperandContainer     OperandContainer;
-	typedef archaeopteryx::ir::PredicateOperand     PredicateOperand;
 	typedef std::vector<InstructionContainer>       InstructionVector;
 	typedef std::vector<char>                       DataVector;
 	typedef std::vector<SymbolTableEntry>           SymbolVector;
@@ -111,10 +107,9 @@ private:
 	ir::PredicateOperand* _translateOperand(
 		const PredicateOperand& predicate, ir::Instruction* instruction);
 
-	const ir::Type* _getType(archaeopteryx::ir::DataType type) const;
+	const ir::Type* _getType(DataType type) const;
 	ir::VirtualRegister* _getVirtualRegister(
-		archaeopteryx::ir::RegisterType reg,
-		archaeopteryx::ir::DataType type, ir::Function*);	
+		RegisterType reg, DataType type, ir::Function*);	
 	ir::Variable* _getVariableAtSymbolOffset(uint64_t offset) const;
 	ir::Argument* _getArgumentAtSymbolOffset(uint64_t offset) const;
 
@@ -127,7 +122,7 @@ private:
 	SymbolVector      _symbolTable;
 
 private:
-	typedef std::unordered_map<archaeopteryx::ir::RegisterType,
+	typedef std::unordered_map<RegisterType,
 		ir::VirtualRegister*> VirtualRegisterMap;
 	typedef std::unordered_map<uint64_t, ir::Variable*>
 		SymbolToVariableMap;

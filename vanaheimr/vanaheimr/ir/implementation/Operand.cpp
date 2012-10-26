@@ -49,6 +49,11 @@ bool Operand::isRegister() const
 	return false;
 }
 
+bool Operand::isAddress() const
+{
+	return mode() == Address;
+}
+
 bool Operand::isArgument() const
 {
 	return mode() == Argument;

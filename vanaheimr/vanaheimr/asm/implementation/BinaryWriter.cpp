@@ -253,10 +253,10 @@ size_t BinaryWriter::getStringTableSize() const
 	return m_stringTable.size();
 }
 
-static archaeopteryx::ir::Instruction::Opcode convertOpcode(
+static Instruction::Opcode convertOpcode(
 	ir::Instruction::Opcode opcode)
 {
-	typedef archaeopteryx::ir::Instruction AInstruction;
+	typedef Instruction AInstruction;
 	
 	switch(opcode)
 	{
@@ -303,7 +303,7 @@ static archaeopteryx::ir::Instruction::Opcode convertOpcode(
 	return AInstruction::InvalidOpcode;	
 }
 
-static archaeopteryx::ir::DataType convertType(const ir::Type* type)
+static DataType convertType(const ir::Type* type)
 {
 	if(type->isInteger())
 	{
@@ -313,23 +313,23 @@ static archaeopteryx::ir::DataType convertType(const ir::Type* type)
 		{
 		case 1:
 		{
-			return archaeopteryx::ir::i1;
+			return i1;
 		}
 		case 8:
 		{
-			return archaeopteryx::ir::i8;
+			return i8;
 		}
 		case 16:
 		{
-			return archaeopteryx::ir::i16;
+			return i16;
 		}
 		case 32:
 		{
-			return archaeopteryx::ir::i32;
+			return i32;
 		}
 		case 64:
 		{
-			return archaeopteryx::ir::i64;
+			return i64;
 		}
 		default: assertM(false, "Invalid integer bit width.");
 		}
@@ -338,52 +338,52 @@ static archaeopteryx::ir::DataType convertType(const ir::Type* type)
 	{
 		if(type->isSinglePrecisionFloat())
 		{
-			return archaeopteryx::ir::f32;
+			return f32;
 		}
 		else
 		{
-			return archaeopteryx::ir::f64;
+			return f64;
 		}
 	}
 
 	assertM(false, "Data type conversion not implemented in binary writer");
 
-	return archaeopteryx::ir::InvalidDataType;
+	return InvalidDataType;
 }
 
-static archaeopteryx::ir::PredicateOperand::PredicateModifier convertPredicate(
+static PredicateOperand::PredicateModifier convertPredicate(
 	ir::PredicateOperand::PredicateModifier modifier)
 {
 	switch(modifier)
 	{
 	case ir::PredicateOperand::StraightPredicate:
 	{
-		return archaeopteryx::ir::PredicateOperand::StraightPredicate;
+		return PredicateOperand::StraightPredicate;
 	}
 	case ir::PredicateOperand::InversePredicate:
 	{
-		return archaeopteryx::ir::PredicateOperand::InversePredicate;
+		return PredicateOperand::InversePredicate;
 	}
 	case ir::PredicateOperand::PredicateTrue:
 	{
-		return archaeopteryx::ir::PredicateOperand::PredicateTrue;
+		return PredicateOperand::PredicateTrue;
 	}
 	case ir::PredicateOperand::PredicateFalse:
 	{
-		return archaeopteryx::ir::PredicateOperand::PredicateFalse;
+		return PredicateOperand::PredicateFalse;
 	}
 	default: break;
 	}
 
 	assertM(false, "Invalid predicate.");
 
-	return archaeopteryx::ir::PredicateOperand::InvalidPredicate;
+	return PredicateOperand::InvalidPredicate;
 }
 
-archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
+OperandContainer BinaryWriter::convertOperand(
 	const ir::Operand& operand)
 {
-	archaeopteryx::ir::OperandContainer result;
+	OperandContainer result;
 
 	switch(operand.mode())
 	{
@@ -398,7 +398,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 		result.asRegister.reg  = reg.virtualRegister->id;
 		result.asRegister.type = convertType(reg.virtualRegister->type);
 		
-		result.asOperand.mode = archaeopteryx::ir::Operand::Register;
+		result.asOperand.mode = as::Operand::Register;
 		break;
 	}
 	case ir::Operand::Immediate:
@@ -409,7 +409,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 		result.asImmediate.type = convertType(immediate.type);
 		result.asImmediate.uint = immediate.uint;
 		
-		result.asOperand.mode = archaeopteryx::ir::Operand::Immediate;
+		result.asOperand.mode = as::Operand::Immediate;
 		break;
 	}
 	case ir::Operand::Predicate:
@@ -432,7 +432,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 			result.asPredicate.reg = 0;
 		}
 		
-		result.asOperand.mode = archaeopteryx::ir::Operand::Predicate;
+		result.asOperand.mode = as::Operand::Predicate;
 
 		break;
 	}
@@ -445,7 +445,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 		result.asIndirect.type   = convertType(indirect.virtualRegister->type);
 		result.asIndirect.offset = indirect.offset;
 		
-		result.asOperand.mode = archaeopteryx::ir::Operand::Indirect;
+		result.asOperand.mode = as::Operand::Indirect;
 
 		break;
 	}
@@ -454,7 +454,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 		const ir::AddressOperand& address =
 			static_cast<const ir::AddressOperand&>(operand);
 		
-		result.asOperand.mode = archaeopteryx::ir::Operand::Symbol;
+		result.asOperand.mode = as::Operand::Symbol;
 
 		if(address.globalValue->type().isBasicBlock())
 		{
@@ -477,7 +477,7 @@ archaeopteryx::ir::OperandContainer BinaryWriter::convertOperand(
 		result.asSymbol.symbolTableOffset =
 			getSymbolTableOffset(argument.argument);
 		
-		result.asOperand.mode = archaeopteryx::ir::Operand::Symbol;
+		result.asOperand.mode = as::Operand::Symbol;
 
 		break;
 	}
@@ -504,7 +504,7 @@ static bool isComplexInstruction(const ir::Instruction& instruction)
 }
 
 void BinaryWriter::convertComplexInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	switch(instruction.opcode)
@@ -535,7 +535,7 @@ void BinaryWriter::convertComplexInstruction(
 }
 
 void BinaryWriter::convertUnaryInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::UnaryInstruction& unary =
@@ -546,7 +546,7 @@ void BinaryWriter::convertUnaryInstruction(
 }
 
 void BinaryWriter::convertBinaryInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::BinaryInstruction& binary =
@@ -557,7 +557,7 @@ void BinaryWriter::convertBinaryInstruction(
 	container.asBinaryInstruction.b = convertOperand(*binary.b);
 }
 
-BinaryWriter::InstructionContainer BinaryWriter::convertToContainer(
+InstructionContainer BinaryWriter::convertToContainer(
 	const Instruction& instruction)
 {
 	report("    " << instruction.toString());
@@ -701,7 +701,7 @@ void BinaryWriter::alignData(uint64_t alignment)
 }
 
 void BinaryWriter::convertStInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::St& st = static_cast<const ir::St&>(instruction);
@@ -711,7 +711,7 @@ void BinaryWriter::convertStInstruction(
 }
 
 void BinaryWriter::convertBraInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::Bra& bra = static_cast<const ir::Bra&>(instruction);
@@ -723,24 +723,24 @@ void BinaryWriter::convertBraInstruction(
 	{
 	case ir::Bra::UniformBranch:
 	{
-		container.asBra.modifier = archaeopteryx::ir::Bra::UniformBranch;
+		container.asBra.modifier = Bra::UniformBranch;
 		break;
 	}
 	case ir::Bra::MultitargetBranch:
 	{
-		container.asBra.modifier = archaeopteryx::ir::Bra::MultitargetBranch;
+		container.asBra.modifier = Bra::MultitargetBranch;
 		break;
 	}
 	case ir::Bra::InvalidModifier:
 	{
-		container.asBra.modifier = archaeopteryx::ir::Bra::InvalidModifier;
+		container.asBra.modifier = Bra::InvalidModifier;
 		break;
 	}
 	}
 }
 
 void BinaryWriter::convertCallInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	const ir::Call& call = static_cast<const ir::Call&>(instruction);
@@ -767,7 +767,7 @@ void BinaryWriter::convertCallInstruction(
 }
 
 void BinaryWriter::convertRetInstruction(
-	archaeopteryx::ir::InstructionContainer& container,
+	InstructionContainer& container,
 	const ir::Instruction& instruction)
 {
 	// Currently a NOP

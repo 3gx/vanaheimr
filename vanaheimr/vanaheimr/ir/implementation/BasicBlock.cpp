@@ -170,11 +170,15 @@ Function* BasicBlock::function() const
 
 void BasicBlock::push_back(Instruction* i)
 {
+	i->block = this;
+	
 	_instructions.push_back(i);
 }
 
 void BasicBlock::push_front(Instruction* i)
 {
+	i->block = this;
+	
 	_instructions.push_front(i);
 }
 
