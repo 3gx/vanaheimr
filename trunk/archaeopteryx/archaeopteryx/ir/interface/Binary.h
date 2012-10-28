@@ -6,10 +6,15 @@
 
 #pragma once
 
-// Forward Declarations
-namespace util { class File;                 }
-namespace ir   { union InstructionContainer; }
+// Vanaheimr Includes
+#include <vanaheimr/util/interface/IntTypes.h>
 
+// Forward Declarations
+namespace archaeopteryx { namespace util { class File;                 } }
+namespace vanaheimr     { namespace as   { class InstructionContainer; } }
+
+namespace archaeopteryx
+{
 
 namespace ir
 {
@@ -18,12 +23,11 @@ namespace ir
 class Binary
 {
 public:
-	/*! \brief 32-bit unsigned int */
-	typedef unsigned int uint32;
-	/*! \brief 64-bit unsigned int */
-	typedef long long unsigned int uint64;
+	/*! \brief An instruction object stored in the binary */
+	typedef vanaheimr::as::InstructionContainer InstructionContainer;
+
 	/*! \brief a 64-bit program counter */
-	typedef uint64 PC;
+	typedef uint64_t PC;
 	/*! \brief a file handle */
 	typedef util::File File;
 
@@ -31,14 +35,14 @@ public:
 	class Header
 	{
 	public:
-		uint32 dataPages;
-		uint32 codePages;
-		uint32 symbols;
-		uint32 strings;
+		uint32_t dataPages;
+		uint32_t codePages;
+		uint32_t symbols;
+		uint32_t strings;
 	};
 
 	/*! \brief A 32-KB page */
-	typedef uint32 PageDataType[1 << 13];
+	typedef uint32_t PageDataType[1 << 13];
 	
 	/*! \brief A symbol type */
 	enum SymbolType
@@ -61,15 +65,15 @@ public:
 	{
 	public:
 		/*! \brief The type of symbol */
-		uint32 type;
+		uint32_t type;
 		/*! \brief The offset in the string table of the name */
-		uint32 stringTableOffset;
+		uint32_t stringTableOffset;
 		/*! \brief The page id it is stored in */
-		uint32 pageId;
+		uint32_t pageId;
 		/*! \brief The offset within the page */
-		uint32 pageOffset;
+		uint32_t pageOffset;
 		/*! \brief The set of attributes */
-		uint64 attributes;
+		uint64_t attributes;
 	};
 
 	/*! \brief A symbol table iterator */
@@ -116,7 +120,7 @@ public:
 
 public:
 	/*! \brief Copy code from a PC */
-	__device__ void copyCode(ir::InstructionContainer* code, PC pc,
+	__device__ void copyCode(InstructionContainer* code, PC pc,
 		unsigned int instructions);
 
 public:
@@ -150,6 +154,8 @@ private:
 	File* _file;
 
 };
+
+}
 
 }
 

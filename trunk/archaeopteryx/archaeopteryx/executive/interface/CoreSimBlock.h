@@ -27,7 +27,7 @@ namespace executive
 class CoreSimBlock
 {
     typedef ir::Binary::PC PC;
-    typedef ir::InstructionContainer InstructionContainer;
+    typedef ir::Binary::InstructionContainer InstructionContainer;
     typedef char SharedMemory;
     typedef char LocalMemory;
 

@@ -10,8 +10,8 @@
 #include <archaeopteryx/ir/interface/Binary.h>
 
 // Forward Declarations
-namespace executive { class CoreSimBlock; }
-namespace ir        { class Instruction;  }
+namespace archaeopteryx { namespace executive { class CoreSimBlock; } }
+namespace vanaheimr     { namespace as        { class Instruction;  } }
 
 namespace archaeopteryx
 {
@@ -21,6 +21,7 @@ namespace executive
 class CoreSimThread
 {
     public:
+		typedef vanaheimr::as::Instruction Instruction;
         typedef ir::Binary::PC PC;
         typedef long long unsigned int Value;
         typedef long long signed int SValue;
@@ -28,7 +29,7 @@ class CoreSimThread
     public:
         __device__ CoreSimThread(CoreSimBlock* parentBlock = 0,
         	unsigned threadId = 0, unsigned priority = 1, bool barrier = false);
-        __device__ PC executeInstruction(ir::Instruction*, PC);
+        __device__ PC executeInstruction(Instruction*, PC);
 
 	public:
 		__device__ void setParentBlock(CoreSimBlock* parentBlock);

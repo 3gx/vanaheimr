@@ -7,7 +7,7 @@
 #pragma once
 
 // Standard Library Includes
-#include <cstdint>
+#include <vanaheimr/util/interface/IntTypes.h>
 
 namespace vanaheimr
 {
