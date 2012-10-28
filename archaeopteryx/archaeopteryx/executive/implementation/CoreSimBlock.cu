@@ -7,10 +7,15 @@
 
 // Archaeopteryx Includes
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
-#include <archaeopteryx/ir/interface/Instruction.h>
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 
+// Vanaheimr Includes
+#include <vanaheimr/asm/interface/Instruction.h>
+
 #include <archaeopteryx/util/interface/debug.h>
+
+namespace archaeopteryx
+{
 
 namespace executive
 {
@@ -257,7 +262,7 @@ __device__ void CoreSimBlock::initializeSpecialRegisters()
 
 __device__ CoreSimThread::Value CoreSimBlock::getRegister(unsigned int threadId, unsigned int reg)
 {
-    Value v = m_registerFiles[(m_blockState.registersPerThread * threadId)+reg];
+    CoreSimThread::Value v = m_registerFiles[(m_blockState.registersPerThread * threadId)+reg];
 
     device_report("(%d): reading register r%d, (%p)\n", threadId, reg, v);
 
@@ -318,6 +323,8 @@ __device__ void CoreSimBlock::setMemoryState(unsigned int localMemory, unsigned 
 __device__ void CoreSimBlock::setBlockState(const BlockState& blockState)
 {
     m_blockState = blockState;
+}
+
 }
 
 }

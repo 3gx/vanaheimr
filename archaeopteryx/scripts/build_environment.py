@@ -218,7 +218,11 @@ def Environment():
 	thisFile = inspect.getabsfile(Environment)
 	thisDir = os.path.dirname(thisFile)
 
-	env.Prepend(CPPPATH = os.path.dirname(thisDir))
+	env.AppendUnique(CPPPATH = [os.path.abspath(os.path.join(thisDir, '..'))])
+
+	# get the path to vanaheimr
+	env.AppendUnique(CPPPATH = [os.path.abspath(os.path.join(thisDir,
+		'../../vanaheimr'))])
 
 	# enable nvcc
 	env.Tool('nvcc', toolpath = [os.path.join(thisDir)])
