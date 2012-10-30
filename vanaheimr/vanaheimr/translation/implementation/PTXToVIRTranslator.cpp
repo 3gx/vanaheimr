@@ -1142,12 +1142,15 @@ void PTXToVIRTranslator::_addPrototype(const std::string& name,
 
 	unsigned int index = 0;
 
-	for(auto returned : call.returned)
+	auto returnedArguments = call.returned();
+
+	for(auto returned : returnedArguments)
 	{
 		assertM(returned->isRegister(), "Only register operands to "
 			"calls supported for now.");
 		
-		auto registerOperand = static_cast<ir::RegisterOperand*>(returned);
+		auto registerOperand =
+			static_cast<const ir::RegisterOperand*>(returned);
 	
 		std::stringstream stream;
 		
@@ -1159,12 +1162,15 @@ void PTXToVIRTranslator::_addPrototype(const std::string& name,
 
 	index = 0;
 
-	for(auto argument : call.arguments)
+	auto arguments = call.arguments();
+	
+	for(auto argument : arguments)
 	{
 		assertM(argument->isRegister(), "Only register operands to "
 			"calls supported for now.");
 		
-		auto registerOperand = static_cast<ir::RegisterOperand*>(argument);
+		auto registerOperand =
+			static_cast<const ir::RegisterOperand*>(argument);
 	
 		std::stringstream stream;
 		

@@ -541,8 +541,8 @@ void BinaryWriter::convertUnaryInstruction(
 	const ir::UnaryInstruction& unary =
 		static_cast<const ir::UnaryInstruction&>(instruction);
 
-	container.asUnaryInstruction.d = convertOperand(*unary.d);
-	container.asUnaryInstruction.a = convertOperand(*unary.a);
+	container.asUnaryInstruction.d = convertOperand(*unary.d());
+	container.asUnaryInstruction.a = convertOperand(*unary.a());
 }
 
 void BinaryWriter::convertBinaryInstruction(
@@ -552,9 +552,9 @@ void BinaryWriter::convertBinaryInstruction(
 	const ir::BinaryInstruction& binary =
 		static_cast<const ir::BinaryInstruction&>(instruction);
 
-	container.asBinaryInstruction.d = convertOperand(*binary.d);
-	container.asBinaryInstruction.a = convertOperand(*binary.a);
-	container.asBinaryInstruction.b = convertOperand(*binary.b);
+	container.asBinaryInstruction.d = convertOperand(*binary.d());
+	container.asBinaryInstruction.a = convertOperand(*binary.a());
+	container.asBinaryInstruction.b = convertOperand(*binary.b());
 }
 
 InstructionContainer BinaryWriter::convertToContainer(
@@ -566,7 +566,7 @@ InstructionContainer BinaryWriter::convertToContainer(
 
 	container.asInstruction.opcode = convertOpcode(instruction.opcode);
 	container.asInstruction.guard  =
-		convertOperand(*instruction.guard).asPredicate;
+		convertOperand(*instruction.guard()).asPredicate;
 
 	if(isComplexInstruction(instruction))
 	{
@@ -706,8 +706,8 @@ void BinaryWriter::convertStInstruction(
 {
 	const ir::St& st = static_cast<const ir::St&>(instruction);
 
-	container.asSt.d = convertOperand(*st.d);
-	container.asSt.a = convertOperand(*st.a);
+	container.asSt.d = convertOperand(*st.d());
+	container.asSt.a = convertOperand(*st.a());
 }
 
 void BinaryWriter::convertBraInstruction(
@@ -716,8 +716,8 @@ void BinaryWriter::convertBraInstruction(
 {
 	const ir::Bra& bra = static_cast<const ir::Bra&>(instruction);
 
-	container.asBra.target = convertOperand(*bra.target);
-	container.asBra.target = convertOperand(*bra.target);
+	container.asBra.target = convertOperand(*bra.target());
+	container.asBra.target = convertOperand(*bra.target());
 	
 	switch(bra.modifier)
 	{
@@ -745,22 +745,26 @@ void BinaryWriter::convertCallInstruction(
 {
 	const ir::Call& call = static_cast<const ir::Call&>(instruction);
 
-	container.asCall.target = convertOperand(*call.target);
+	container.asCall.target = convertOperand(*call.target());
 	
 	alignData(sizeof(OperandContainer));
 	
-	container.asCall.returnArguments      = call.returned.size();
+	auto returnArguments = call.returned();
+	
+	container.asCall.returnArguments      = returnArguments.size();
 	container.asCall.returnArgumentOffset = m_data.size();
 	
-	for(auto operand : call.returned)
+	for(auto operand : returnArguments)
 	{
 		addOperandToDataSection(convertOperand(*operand));
 	}
 	
-	container.asCall.arguments      = call.arguments.size();
+	auto arguments = call.arguments();
+	
+	container.asCall.arguments      = arguments.size();
 	container.asCall.argumentOffset = m_data.size();
 	
-	for(auto operand : call.arguments)
+	for(auto operand : arguments)
 	{
 		addOperandToDataSection(convertOperand(*operand));
 	}

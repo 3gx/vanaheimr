@@ -119,7 +119,7 @@ void ConvertToSSAPass::_insertPsis(Function& function)
 			instruction != block->end(); ++instruction)
 		{
 			// skip not-predicated instructions
-			if((*instruction)->guard->isAlwaysTrue()) continue;
+			if((*instruction)->guard()->isAlwaysTrue()) continue;
 			
 			// skip instructions without outputs
 			if((*instruction)->writes.empty()) continue;

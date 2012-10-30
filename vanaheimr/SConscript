@@ -112,6 +112,7 @@ if env['install']:
 		'vanaheimr/translation/interface',
 		'vanaheimr/analysis/interface',
 		'vanaheimr/asm/interface',
+		'vanaheimr/util/interface',
 		'vanaheimr/transforms/interface' ]
 	extensions = ['*.h']
 

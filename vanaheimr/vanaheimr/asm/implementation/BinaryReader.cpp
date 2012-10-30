@@ -335,7 +335,7 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 			
 			report("    setting target to " << block->second->name());
 
-			static_cast<ir::AddressOperand*>(branch->target)->globalValue =
+			static_cast<ir::AddressOperand*>(branch->target())->globalValue =
 				block->second;
 		}
 
