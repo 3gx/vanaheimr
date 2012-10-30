@@ -8,6 +8,9 @@
 #include <vanaheimr/ir/interface/Instruction.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Stdandard Library Includes
 #include <sstream>
 #include <typeinfo>
@@ -21,9 +24,9 @@ namespace ir
 {
 
 Instruction::Instruction(Opcode o, BasicBlock* b, Id id)
-: opcode(o), guard(nullptr), block(b), _id(id), _metadata(nullptr)
+: opcode(o), block(b), _id(id), _metadata(nullptr)
 {
-	reads.push_back(guard);
+	reads.push_back(nullptr); // for the guard
 }
 
 Instruction::~Instruction()
@@ -45,8 +48,6 @@ Instruction::Instruction(const Instruction& i)
 			reads.push_back(nullptr);
 		}
 	}
-	
-	guard = static_cast<PredicateOperand*>(reads[0]);
 	
 	for(auto operand : i.writes)
 	{
@@ -84,8 +85,6 @@ Instruction& Instruction::operator=(const Instruction& i)
 		}
 	}
 	
-	guard = static_cast<PredicateOperand*>(reads[0]);
-	
 	for(auto operand : i.writes)
 	{
 		if(operand != nullptr)
@@ -103,15 +102,56 @@ Instruction& Instruction::operator=(const Instruction& i)
 
 void Instruction::setGuard(PredicateOperand* p)
 {
-	delete guard;
+	delete guard();
 	
 	reads[0] = p;
-	guard    = p;
+}
+
+Instruction::PredicateOperandPointer Instruction::guard()
+{
+	assert(!reads.empty());
+	
+	return static_cast<PredicateOperandPointer>(reads[0]);
+}
+
+const Instruction::PredicateOperandPointer Instruction::guard() const
+{
+	assert(!reads.empty());
+	
+	return static_cast<const PredicateOperandPointer>(reads[0]);
 }
 
 Instruction::Id Instruction::id() const
 {
 	return _id;
+}
+
+void Instruction::replaceOperand(Operand* original, Operand* newOperand)
+{
+	assert(original->instruction() == this);
+
+	for(auto read = reads.begin(); read != reads.end(); ++read)
+	{
+		if(*read == original)
+		{
+			delete *read;
+			*read = newOperand;
+			return;
+		}
+	}
+
+	for(auto write = writes.begin(); write != writes.end(); ++write)
+	{
+		if(*write == original)
+		{
+			delete *write;
+			*write = newOperand;
+			return;
+		}
+	}
+	
+	assertM(false, "Operand " << original->toString()
+		<< " not found in owning instruction " << toString());
 }
 
 bool Instruction::isLoad() const
@@ -148,9 +188,9 @@ std::string Instruction::toString() const
 {
 	std::stringstream stream;
 	
-	if(!guard->isAlwaysTrue())
+	if(!guard()->isAlwaysTrue())
 	{
-		stream << guard->toString() << " ";
+		stream << guard()->toString() << " ";
 	}
 	
 	stream << toString(opcode) << " ";
@@ -171,7 +211,7 @@ std::string Instruction::toString() const
 
 	for(auto read : reads)
 	{
-		if(read == *reads.begin()) continue;
+		if(read == guard()) continue;
 		
 		if(!first)
 		{
@@ -194,7 +234,7 @@ void Instruction::clear()
 	for(auto operand : reads)  delete operand;
 	for(auto operand : writes) delete operand;
 	
-	reads.clear();
+	 reads.clear();
 	writes.clear();
 }
 
@@ -202,44 +242,44 @@ std::string Instruction::toString(Opcode o)
 {
 	switch(o)
 	{
-	case Add:     return "Add";
-	case And:     return "And";
-	case Ashr:    return "Ashr";
-	case Atom:    return "Atom";
-	case Bar:     return "Bar";
-	case Bitcast: return "Bitcast";
-	case Bra:     return "Bra";
-	case Call:    return "Call";
-	case Fdiv:    return "Fdiv";
-	case Fmul:    return "Fmul";
-	case Fpext:   return "Fpext";
-	case Fptosi:  return "Fptosi";
-	case Fptoui:  return "Fptoui";
-	case Fptrunc: return "Fptrunc";
-	case Frem:    return "Frem";
-	case Launch:  return "Launch";
-	case Ld:      return "Ld";
-	case Lshr:    return "Lshr";
-	case Membar:  return "Membar";
-	case Mul:     return "Mul";
-	case Or:      return "Or";
-	case Ret:     return "Ret";
-	case Setp:    return "Setp";
-	case Sext:    return "Sext";
-	case Sdiv:    return "Sdiv";
-	case Shl:     return "Shl";
-	case Sitofp:  return "Sitofp";
-	case Srem:    return "Srem";
-	case St:      return "St";
-	case Sub:     return "Sub";
-	case Trunc:   return "Trunc";
-	case Udiv:    return "Udiv";
-	case Uitofp:  return "Uitofp";
-	case Urem:    return "Urem";
-	case Xor:     return "Xor";
-	case Zext:    return "Zext";
-	case Phi:     return "Phi";
-	case Psi:     return "Psi";
+	case Add:     return "add";
+	case And:     return "and";
+	case Ashr:    return "ashr";
+	case Atom:    return "atom";
+	case Bar:     return "bar";
+	case Bitcast: return "bitcast";
+	case Bra:     return "bra";
+	case Call:    return "call";
+	case Fdiv:    return "fdiv";
+	case Fmul:    return "fmul";
+	case Fpext:   return "fpext";
+	case Fptosi:  return "fptosi";
+	case Fptoui:  return "fptoui";
+	case Fptrunc: return "fptrunc";
+	case Frem:    return "frem";
+	case Launch:  return "launch";
+	case Ld:      return "ld";
+	case Lshr:    return "lshr";
+	case Membar:  return "membar";
+	case Mul:     return "mul";
+	case Or:      return "or";
+	case Ret:     return "ret";
+	case Setp:    return "setp";
+	case Sext:    return "sext";
+	case Sdiv:    return "sdiv";
+	case Shl:     return "shl";
+	case Sitofp:  return "sitofp";
+	case Srem:    return "srem";
+	case St:      return "st";
+	case Sub:     return "sub";
+	case Trunc:   return "trunc";
+	case Udiv:    return "udiv";
+	case Uitofp:  return "uitofp";
+	case Urem:    return "urem";
+	case Xor:     return "xor";
+	case Zext:    return "zext";
+	case Phi:     return "phi";
+	case Psi:     return "psi";
 	case InvalidOpcode: break;
 	}
 	
@@ -299,95 +339,123 @@ Instruction* Instruction::create(Opcode o, BasicBlock* b)
 }
 
 UnaryInstruction::UnaryInstruction(Opcode o, BasicBlock* b)
-: Instruction(o, b), d(0), a(0)
+: Instruction(o, b)
 {
-	writes.push_back(d);
-	 reads.push_back(a);
-}
-
-UnaryInstruction::UnaryInstruction(const UnaryInstruction& i)
-: Instruction(i), d(writes[0]), a(reads[1])
-{
-	
-}
-
-UnaryInstruction& UnaryInstruction::operator=(const UnaryInstruction& i)
-{
-	if(&i == this) return *this;
-	
-	Instruction::operator=(i);
-	
-	d = writes[0];
-	a =  reads[1];
-	
-	return *this;
+	writes.push_back(nullptr); // d
+	 reads.push_back(nullptr); // a
 }
 
 void UnaryInstruction::setD(Operand* o)
 {
-	delete d;
+	delete d();
 	
-	d         = o;
-	writes[0] = o;
+	d() = o;
 }
 
 void UnaryInstruction::setA(Operand* o)
 {
-	delete a;
+	delete a();
 	
-	a        = o;
-	reads[1] = o;
+	a() = o;
+}
+
+Instruction::OperandPointer& UnaryInstruction::d()
+{
+	assert(writes.size() > 0);
+	
+	return writes[0];
+}
+
+const Instruction::OperandPointer& UnaryInstruction::d() const
+{
+	assert(writes.size() > 0);
+	
+	return writes[0];
+}
+
+Instruction::OperandPointer& UnaryInstruction::a()
+{
+	assert(reads.size() > 1);
+	
+	return reads[1];
+}
+
+const Instruction::OperandPointer& UnaryInstruction::a() const
+{
+	assert(reads.size() > 1);
+	
+	return reads[1];
 }
 
 BinaryInstruction::BinaryInstruction(Opcode o, BasicBlock* bb)
-: Instruction(o, bb), d(0), a(0), b(0)
+: Instruction(o, bb)
 {
-	writes.push_back(d);
-	 reads.push_back(a);
-	 reads.push_back(b);
-}
-
-BinaryInstruction::BinaryInstruction(const BinaryInstruction& i)
-: Instruction(i), d(writes.back()), a(reads[1]), b(reads[2])
-{
-	
-}
-
-BinaryInstruction& BinaryInstruction::operator=(const BinaryInstruction& i)
-{
-	if(&i == this) return *this;
-	
-	Instruction::operator=(i);
-	
-	d = writes[0];
-	a =  reads[1];
-	b =  reads[2];
-	
-	return *this;
+	writes.push_back(nullptr); // d
+	 reads.push_back(nullptr); // a 
+	 reads.push_back(nullptr); // b
 }
 
 void BinaryInstruction::setD(Operand* o)
 {
-	delete d;
+	delete d();
 	
-	d         = o;
-	writes[0] = o;
+	d() = o;
 }
 
 void BinaryInstruction::setA(Operand* o)
 {
-	delete a;
+	delete a();
 	
-	a        = o;
-	reads[1] = o;
+	a() = o;
 }
 
 void BinaryInstruction::setB(Operand* o)
 {
-	delete b;
+	delete b();
 	
-	b        = o;
-	reads[2] = o;
+	b() = o;
+}	
+
+Instruction::OperandPointer& BinaryInstruction::d()
+{
+	assert(writes.size() > 0);
+
+	return writes[0];
+}
+
+const Instruction::OperandPointer& BinaryInstruction::d() const
+{
+	assert(writes.size() > 0);
+
+	return writes[0];
+}
+
+Instruction::OperandPointer& BinaryInstruction::a()
+{
+	assert(reads.size() > 1);
+
+	return reads[1];
+}
+
+const Instruction::OperandPointer& BinaryInstruction::a() const
+{
+	assert(reads.size() > 1);
+
+	return reads[1];
+}
+
+Instruction::OperandPointer& BinaryInstruction::b()
+{
+	assert(reads.size() > 2);
+
+	return reads[2];
+}
+
+const Instruction::OperandPointer& BinaryInstruction::b() const
+{
+	assert(reads.size() > 2);
+
+	return reads[2];
 }
 
 ComparisonInstruction::ComparisonInstruction(Opcode o,
@@ -434,26 +502,9 @@ Instruction* Ashr::clone() const
 
 /*! \brief An atomic operation instruction */
 Atom::Atom(Operation o, BasicBlock* b)
-: BinaryInstruction(Instruction::Atom, b), operation(o), c(0)
+: BinaryInstruction(Instruction::Atom, b), operation(o)
 {
-	reads.push_back(c);
-}
-
-Atom::Atom(const Atom& i)
-: BinaryInstruction(i)
-{
-	c = reads[3];
-}
-
-Atom& Atom::operator=(const Atom& i)
-{
-	if(&i == this) return *this;
-	
-	BinaryInstruction::operator=(i);
-	
-	c = reads[3];
-	
-	return *this;
+	reads.push_back(nullptr); // c
 }
 
 Instruction* Atom::clone() const
@@ -487,60 +538,55 @@ Instruction* Bitcast::clone() const
 
 /*! \brief Perform a branch */
 Bra::Bra(BranchModifier m, BasicBlock* b)
-: Instruction(Instruction::Bra, b), target(0), modifier(m)
+: Instruction(Instruction::Bra, b), modifier(m)
 {
-	reads.push_back(0);
-}
-
-Bra::Bra(const Bra& i)
-: Instruction(i), modifier(i.modifier)
-{
-	target = reads[1];
-}
-
-Bra& Bra::operator=(const Bra& i)
-{
-	if(this == &i) return *this;
-	
-	Instruction::operator=(i);
-	
-	target   = reads[1];
-	modifier = i.modifier;
-	
-	return *this;
+	reads.push_back(nullptr); // target
 }
 
 void Bra::setTarget(Operand* o)
 {
-	delete target;
+	delete target();
 
-	target   = o;
-	reads[1] = o;
+	target() = o;
+}
+
+Instruction::OperandPointer& Bra::target()
+{
+	assert(reads.size() > 1);
+	
+	return reads[1];
+}
+
+const Instruction::OperandPointer& Bra::target() const
+{
+	assert(reads.size() > 1);
+	
+	return reads[1];
 }
 
 BasicBlock* Bra::targetBasicBlock()
 {
-	assert(target != nullptr);
-	assert(target->isBasicBlock());
+	assert(target() != nullptr);
+	assert(target()->isBasicBlock());
 	
-	auto block = static_cast<AddressOperand*>(target);
+	auto block = static_cast<AddressOperand*>(target());
 	
 	return static_cast<BasicBlock*>(block->globalValue);
 }
 
 const BasicBlock* Bra::targetBasicBlock() const
 {
-	assert(target != nullptr);
-	assert(target->isBasicBlock());
+	assert(target() != nullptr);
+	assert(target()->isBasicBlock());
 	
-	auto block = static_cast<const AddressOperand*>(target);
+	auto block = static_cast<const AddressOperand*>(target());
 	
 	return static_cast<const BasicBlock*>(block->globalValue);
 }
 
 bool Bra::isUnconditional() const
 {
-	return guard->isAlwaysTrue();
+	return guard()->isAlwaysTrue();
 }
 
 Instruction* Bra::clone() const
@@ -550,77 +596,87 @@ Instruction* Bra::clone() const
 
 /*! \brief Branch and save the return pc */
 Call::Call(BasicBlock* b)
-: Instruction(Instruction::Call, b), target(0)
+: Instruction(Instruction::Call, b)
 {
-	reads.push_back(0);
-}
-
-Call::Call(const Call& i)
-: Instruction(i), target(reads[1])
-{
-	unsigned int writeIndex = 0;
-
-	for(unsigned int r = 0; r < i.returned.size(); ++r)
-	{
-		returned.push_back(writes[writeIndex++]);
-	}
-	
-	target = reads[1];
-	
-	unsigned int readIndex = 2;
-
-	for(unsigned int a = 0; a < i.arguments.size(); ++a)
-	{
-		arguments.push_back(reads[readIndex++]);
-	}
-}
-
-Call& Call::operator=(const Call& i)
-{
-	if(this == &i) return *this;
-	
-	Instruction::operator=(i);
-	
-	 returned.clear();
-	arguments.clear();
-	
-	unsigned int writeIndex = 0;
-
-	for(unsigned int r = 0; r < i.returned.size(); ++r)
-	{
-		returned.push_back(writes[writeIndex++]);
-	}
-	
-	target = reads[1];
-	
-	unsigned int readIndex = 2;
-
-	for(unsigned int a = 0; a < i.arguments.size(); ++a)
-	{
-		arguments.push_back(reads[readIndex++]);
-	}
-	
-	return *this;
+	reads.push_back(nullptr); // target
 }
 
 void Call::setTarget(Operand* o)
 {
-	delete target;
+	delete target();
 
-	target   = o;
-	reads[1] = o;	
+	target() = o;	
 }
 
 void Call::addReturn(Operand* o)
 {
-	returned.push_back(o);
 	writes.push_back(o);
 }
 
 void Call::addArgument(Operand* o)
 {
-	arguments.push_back(o);
 	reads.push_back(o);
+}
+
+Instruction::OperandPointer& Call::target()
+{
+	assert(reads.size() > 1);
+
+	return reads[1];
+}
+
+const Instruction::OperandPointer& Call::target() const
+{
+	assert(reads.size() > 1);
+
+	return reads[1];
+}
+
+Call::OperandVector Call::returned()
+{
+	return writes;
+}
+
+Call::ConstOperandVector Call::returned() const
+{
+	ConstOperandVector operands;
+	
+	for(auto write : writes)
+	{
+		operands.push_back(write);
+	}
+	
+	return operands;
+}
+
+Call::OperandVector Call::arguments()
+{
+	assert(reads.size() > 1);
+	
+	OperandVector operands;
+	
+	auto read = reads.begin(); ++read; ++read;
+	for(; read != reads.end(); ++read)
+	{
+		operands.push_back(*read);
+	}
+	
+	return operands;
+}
+
+Call::ConstOperandVector Call::arguments() const
+{
+	assert(reads.size() > 1);
+	
+	ConstOperandVector operands;
+	
+	auto read = reads.begin(); ++read; ++read;
+	for(; read != reads.end(); ++read)
+	{
+		operands.push_back(*read);
+	}
+	
+	return operands;
 }
 
 Instruction* Call::clone() const
@@ -872,46 +928,50 @@ Instruction* Srem::clone() const
 St::St(BasicBlock* b)
 : Instruction(Instruction::St, b)
 {
-	reads.push_back(0);
-	reads.push_back(0);
-	
-	d = reads[1];
-	a = reads[2];
-}
-
-St::St(const St& s)
-: Instruction(s)
-{
-	d = reads[1];
-	a = reads[2];
-}
-
-St& St::operator=(const St& s)
-{
-	if(&s == this) return *this;
-	
-	Instruction::operator=(s);
-	
-	d = reads[1];
-	a = reads[2];
-	
-	return *this;
+	reads.push_back(nullptr); // d
+	reads.push_back(nullptr); // a
 }
 
 void St::setD(Operand* o)
 {
-	delete d;
+	delete d();
 	
-	d        = o;
-	reads[1] = d;
+	d() = o;
 }
 
 void St::setA(Operand* o)
 {
-	delete a;
+	delete a();
 	
-	a        = o;
-	reads[2] = o;
+	a() = o;
+}
+
+St::OperandPointer& St::d()
+{
+	assert(reads.size() > 1);
+
+	return reads[1];
+}
+
+const St::OperandPointer& St::d() const
+{
+	assert(reads.size() > 1);
+
+	return reads[1];
+}
+
+St::OperandPointer& St::a()
+{
+	assert(reads.size() > 2);
+
+	return reads[2];
+}
+
+const St::OperandPointer& St::a() const
+{
+	assert(reads.size() > 2);
+
+	return reads[2];
 }
 
 Instruction* St::clone() const
@@ -1005,7 +1065,7 @@ Instruction* Zext::clone() const
 
 /*! \brief Phi join node */
 Phi::Phi(BasicBlock* b)
-: Instruction(Instruction::Phi, b), d(nullptr)
+: Instruction(Instruction::Phi, b)
 {
 	writes.push_back(nullptr);
 }
@@ -1013,13 +1073,6 @@ Phi::Phi(BasicBlock* b)
 Phi::Phi(const Phi& i)
 : Instruction(i)
 {
-	d = static_cast<RegisterOperand*>(writes.back());
-
-	for(auto read : reads)
-	{
-		sources.push_back(static_cast<RegisterOperand*>(read));
-	}
-
 	for(auto block : i.blocks)
 	{
 		blocks.push_back(block);
@@ -1032,16 +1085,8 @@ Phi& Phi::operator=(const Phi& i)
 
 	Instruction::operator=(i);
 	
-	sources.clear();
-	 blocks.clear();
+	blocks.clear();
 	
-	d = static_cast<RegisterOperand*>(writes.back());
-
-	for(auto read : reads)
-	{
-		sources.push_back(static_cast<RegisterOperand*>(read));
-	}
-
 	for(auto block : i.blocks)
 	{
 		blocks.push_back(block);
@@ -1052,36 +1097,64 @@ Phi& Phi::operator=(const Phi& i)
 
 void Phi::setD(RegisterOperand* o)
 {
-	delete d;
+	delete d();
 	
-	d = o;
-
 	writes[0] = o;
 }
 
 void Phi::addSource(RegisterOperand* source, BasicBlock* predecessor)
 {
 	  reads.push_back(source);
-	sources.push_back(source);
 	 blocks.push_back(predecessor);
 }
 
 void Phi::removeSource(BasicBlock* predecessor)
 {
-	auto sourcePosition = sources.begin();
-	auto readPosition   = reads.begin()  ; ++readPosition;
+	auto readPosition = reads.begin(); ++readPosition;
 
 	for(auto blockPosition = blocks.begin(); blockPosition != blocks.end();
-		++blockPosition, ++sourcePosition, ++readPosition)
+		++blockPosition, ++readPosition)
 	{
 		if(*blockPosition != predecessor) continue;
 		
 		  reads.erase(readPosition);
-		sources.erase(sourcePosition);
 		 blocks.erase(blockPosition);
 		
 		return;
 	}
+	
+	assertM(false, "Phi instruction " << toString()
+		<< " does not contain basic block " << predecessor->name());
+}
+
+Phi::RegisterOperandPointer Phi::d()
+{
+	assert(writes.size() > 0);
+	
+	return static_cast<RegisterOperandPointer>(writes[0]);
+}
+
+const Phi::RegisterOperandPointer Phi::d() const
+{
+	assert(writes.size() > 0);
+	
+	return static_cast<RegisterOperandPointer>(writes[0]);
+}
+
+Phi::RegisterOperandVector Phi::sources()
+{
+	assert(reads.size() > 0);
+
+	RegisterOperandVector sourceOperands;
+	
+	auto read = reads.begin(); ++read;
+	
+	for(; read != reads.end(); ++read)
+	{
+		sourceOperands.push_back(static_cast<RegisterOperandPointer>(*read));
+	}
+	
+	return sourceOperands;
 }
 
 Instruction* Phi::clone() const
@@ -1090,84 +1163,97 @@ Instruction* Phi::clone() const
 }
 
 Psi::Psi(BasicBlock* b)
-: Instruction(Instruction::Psi, b), d(nullptr)
+: Instruction(Instruction::Psi, b)
 {
 	writes.push_back(nullptr);
 }
 
-Psi::Psi(const Psi& i)
-: Instruction(i)
-{
-	d = static_cast<RegisterOperand*>(writes.back());
-
-	for(auto read : reads)
-	{
-		sources.push_back(static_cast<RegisterOperand*>(read));
-	}
-
-	for(auto predicate : i.predicates)
-	{
-		predicates.push_back(predicate);
-	}
-}
-
-Psi& Psi::operator=(const Psi& i)
-{
-	if(this == &i) return *this;
-
-	Instruction::operator=(i);
-	
-	   sources.clear();
-	predicates.clear();
-	
-	d = static_cast<RegisterOperand*>(writes.back());
-
-	for(auto read : reads)
-	{
-		sources.push_back(static_cast<RegisterOperand*>(read));
-	}
-
-	for(auto predicate : i.predicates)
-	{
-		predicates.push_back(predicate);
-	}
-	
-	return *this;
-}
-
 void Psi::setD(RegisterOperand* o)
 {
-	delete d;
+	delete d();
 	
-	d = o;
-
 	writes[0] = o;
 }
 
 void Psi::addSource(PredicateOperand* predicate, RegisterOperand* source)
 {
-	     reads.push_back(source);
-	   sources.push_back(source);
-	predicates.push_back(predicate);
+	reads.push_back(predicate);
+	reads.push_back(   source);
 }
 
 void Psi::removeSource(PredicateOperand* predicate)
 {
-	auto sourcePosition = sources.begin();
-	auto readPosition   = reads.begin()  ; ++readPosition;
+	auto readPosition = reads.begin(); ++readPosition;
 
-	for(auto predicatePosition = predicates.begin();
-		predicatePosition != predicates.end();
-		++predicatePosition, ++sourcePosition, ++readPosition)
+	for(; readPosition != reads.end(); ++readPosition)
 	{
-		if(*predicatePosition != predicate) continue;
+		if(*readPosition != predicate) continue;
 		
-		     reads.erase(readPosition);
-		   sources.erase(sourcePosition);
-		predicates.erase(predicatePosition);
+		auto next = readPosition; ++next;
 		
+		assert(next != reads.end());
+		
+		reads.erase(readPosition);
+		reads.erase(next);
+
 		return;
 	}
+}
+
+Psi::RegisterOperandPointer Psi::d()
+{
+	assert(writes.size() > 0);
+	
+	return static_cast<RegisterOperandPointer>(writes[0]);
+}
+
+const Psi::RegisterOperandPointer Psi::d() const
+{
+	assert(writes.size() > 0);
+	
+	return static_cast<RegisterOperandPointer>(writes[0]);
+}
+
+Psi::RegisterOperandVector Psi::sources()
+{
+	assert(reads.size() > 0);
+
+	RegisterOperandVector sourceOperands;
+	
+	// skip the guard
+	auto read = reads.begin(); ++read;
+
+	for(; read != reads.end(); ++read)
+	{
+		++read;
+
+		assert(read != reads.end());
+		
+		sourceOperands.push_back(static_cast<RegisterOperandPointer>(*read));
+	}
+	
+	return sourceOperands;
+}
+
+Psi::PredicateOperandVector Psi::predicates()
+{
+	assert(reads.size() > 0);
+
+	PredicateOperandVector sourceOperands;
+	
+	// skip the guard
+	auto read = reads.begin(); ++read;
+
+	for(; read != reads.end(); ++read)
+	{
+		sourceOperands.push_back(static_cast<PredicateOperandPointer>(*read));
+		
+		++read;
+
+		assert(read != reads.end());
+	}
+	
+	return sourceOperands;
 }
 
 Instruction* Psi::clone() const

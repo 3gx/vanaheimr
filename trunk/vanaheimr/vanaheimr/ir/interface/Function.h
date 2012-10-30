@@ -11,6 +11,10 @@
 #include <vanaheimr/ir/interface/Argument.h>
 #include <vanaheimr/ir/interface/VirtualRegister.h>
 
+// Standard Library Includes
+#include <list>
+#include <set>
+
 namespace vanaheimr
 {
 
@@ -126,14 +130,14 @@ public:
 	void interpretType();
 
 private:
-	typedef std::list<std::string> StringList;
+	typedef std::set<std::string> StringSet;
 
 private:
 	BasicBlockList      _blocks;
 	ArgumentList        _returnValues;
 	ArgumentList        _arguments;
 	VirtualRegisterList _registers;
-	StringList          _attributes;
+	StringSet           _attributes;
 	
 	iterator _entry;
 	iterator _exit;

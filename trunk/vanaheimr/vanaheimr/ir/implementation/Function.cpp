@@ -242,6 +242,16 @@ const BasicBlock& Function::back() const
 	return _blocks.back();
 }
 
+bool Function::isPrototype() const
+{
+	return hasAttribute("prototype");
+}
+
+bool Function::hasAttribute(const std::string& attribute) const
+{
+	return _attributes.count(attribute) != 0;	
+}
+
 Function::iterator Function::newBasicBlock(iterator position,
 	const std::string& name)
 {

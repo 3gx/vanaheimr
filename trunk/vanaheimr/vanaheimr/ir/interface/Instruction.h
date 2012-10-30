@@ -76,11 +76,14 @@ public:
 		InvalidOpcode
 	};
 
-	typedef std::vector<Operand*> OperandVector;
+	typedef Operand* OperandPointer;
+	typedef std::vector<OperandPointer> OperandVector;
+	typedef PredicateOperand* PredicateOperandPointer;
+	
 	typedef unsigned int Id;
 
 public:
-	Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0, Id id = 0);
+	explicit Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0, Id id = 0);
 	virtual ~Instruction();
 
 	Instruction(const Instruction&);
@@ -90,9 +93,19 @@ public:
 	/*! \brief Sets the predicate guard, the instruction now owns it */
 	void setGuard(PredicateOperand* g);
 
+	/*! \brief Get the guard predicate */
+	      PredicateOperandPointer guard();
+	const PredicateOperandPointer guard() const;
+
 public:
 	/*! \brief The instruction Id, unique within the function */
 	Id id() const;
+
+public:
+	/*! \brief Replace a matching operand with another,
+	     the original operand is deleted,
+	     the new operand is now owned by the instruction */
+	void replaceOperand(Operand* original, Operand* newOperand);
 
 public:
 	bool isLoad()       const;
@@ -123,9 +136,6 @@ public:
 	/*! \brief The instruction opcode */
 	Opcode opcode;
 
-	/*! \brief The guard predicate */
-	PredicateOperand* guard;
-
 public:
 	/*! \brief The list of all operands read by the instruction */
 	OperandVector reads;
@@ -146,10 +156,7 @@ private:
 class UnaryInstruction : public Instruction
 {
 public:
-	UnaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
-	UnaryInstruction(const UnaryInstruction& i);
-
-	UnaryInstruction& operator=(const UnaryInstruction& i);
+	explicit UnaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -162,9 +169,11 @@ public:
 
 public:
 	/*! \brief The destination operand. */
-	Operand* d;
+	      OperandPointer& d();
+	const OperandPointer& d() const;
 	/*! \brief The source operand. */
-	Operand* a;
+	      OperandPointer& a();
+	const OperandPointer& a() const;
 
 };
 
@@ -172,10 +181,7 @@ public:
 class BinaryInstruction : public Instruction
 {
 public:
-	BinaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
-	BinaryInstruction(const BinaryInstruction& i);
-
-	BinaryInstruction& operator=(const BinaryInstruction& i);
+	explicit BinaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -190,11 +196,14 @@ public:
 
 public:
 	/*! \brief The destination operand. */
-	Operand* d;
+	      OperandPointer& d();
+	const OperandPointer& d() const;
 	/*! \brief The first source operand. */
-	Operand* a;
+	      OperandPointer& a();
+	const OperandPointer& a() const;
 	/*! \brief The second source operand. */
-	Operand* b;
+	      OperandPointer& b();
+	const OperandPointer& b() const;
 };
 
 /*! \brief An instruction involving a comparison */
@@ -237,7 +246,7 @@ public:
 class Add : public BinaryInstruction
 {
 public:
-	Add(BasicBlock* b = 0);
+	explicit Add(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -248,7 +257,7 @@ public:
 class And : public BinaryInstruction
 {
 public:
-	And(BasicBlock* b = 0);
+	explicit And(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -259,7 +268,7 @@ public:
 class Ashr : public BinaryInstruction
 {
 public:
-	Ashr(BasicBlock* b = 0);
+	explicit Ashr(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -286,28 +295,27 @@ public:
 	};
 
 public:
-	Atom(Operation op = InvalidOperation, BasicBlock* b = 0);
-	Atom(const Atom& i);
-
-	Atom& operator=(const Atom& i);
+	explicit Atom(Operation op = InvalidOperation, BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the third source, the instruction takes ownership */
 	void setC(Operand* c);
+	/*! \brief Get the third source */
+	      OperandPointer& c();
+	const OperandPointer& c() const;
 
 public:
 	virtual Instruction* clone() const;
 
 public:
 	Operation operation;
-	Operand*  c;
 };
 
 /*! \brief Perform a thread group barrier */
 class Bar : public Instruction
 {
 public:
-	Bar(BasicBlock* b = 0);
+	explicit Bar(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -318,7 +326,7 @@ public:
 class Bitcast : public UnaryInstruction
 {
 public:
-	Bitcast(BasicBlock* b = 0);
+	explicit Bitcast(BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -337,15 +345,15 @@ public:
 	};
 
 public:
-	Bra(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
-	Bra(const Bra& i);
-
-	Bra& operator=(const Bra& i);
+	explicit Bra(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the target operand, the instruction takes onwership */
 	void setTarget(Operand* o);
-
+	/*! \brief Get the target operand. */	
+	      OperandPointer& target();
+	const OperandPointer& target() const;
+	
 public:
 	/*! \brief Get the target basic block */
 	BasicBlock*       targetBasicBlock();
@@ -360,7 +368,6 @@ public:
 	virtual Instruction* clone() const;
 
 public:
-	Operand*       target;
 	BranchModifier modifier;
 };
 
@@ -368,13 +375,11 @@ public:
 class Call : public Instruction
 {
 public:
-	typedef std::vector<Operand*> OperandVector;
-
+	typedef std::vector<Operand*>       OperandVector;
+	typedef std::vector<const Operand*> ConstOperandVector;
+	
 public:
-	Call(BasicBlock* b = 0);
-	Call(const Call& i);
-
-	Call& operator=(const Call& i);
+	explicit Call(BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the target operand, the instruction takes onwership */
@@ -385,12 +390,17 @@ public:
 	void addArgument(Operand* o);
 
 public:
-	Instruction* clone() const;
+	OperandPointer&       target();
+	const OperandPointer& target() const;
+
+	OperandVector      returned();
+	ConstOperandVector returned() const;
+
+	OperandVector      arguments();
+	ConstOperandVector arguments() const;
 
 public:
-	Operand*      target;
-	OperandVector returned;
-	OperandVector arguments;
+	Instruction* clone() const;
 
 };
 
@@ -398,7 +408,7 @@ public:
 class Fdiv : public BinaryInstruction
 {
 public:
-	Fdiv(BasicBlock* b =  0);
+	explicit Fdiv(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -409,7 +419,7 @@ public:
 class Fmul : public BinaryInstruction
 {
 public:
-	Fmul(BasicBlock* b =  0);
+	explicit Fmul(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -420,7 +430,7 @@ public:
 class Fpext : public UnaryInstruction
 {
 public:
-	Fpext(BasicBlock* b =  0);
+	explicit Fpext(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -431,7 +441,7 @@ public:
 class Fptosi : public UnaryInstruction
 {
 public:
-	Fptosi(BasicBlock* b =  0);
+	explicit Fptosi(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -442,7 +452,7 @@ public:
 class Fptoui : public UnaryInstruction
 {
 public:
-	Fptoui(BasicBlock* b =  0);
+	explicit Fptoui(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -453,7 +463,7 @@ public:
 class Fptrunc : public UnaryInstruction
 {
 public:
-	Fptrunc(BasicBlock* b =  0);
+	explicit Fptrunc(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -464,7 +474,7 @@ public:
 class Frem : public BinaryInstruction
 {
 public:
-	Frem(BasicBlock* b =  0);
+	explicit Frem(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -475,7 +485,7 @@ public:
 class Launch : public Instruction
 {
 public:
-	Launch(BasicBlock* b =  0);
+	explicit Launch(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -486,7 +496,7 @@ public:
 class Ld : public UnaryInstruction
 {
 public:
-	Ld(BasicBlock* b =  0);
+	explicit Ld(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -497,7 +507,7 @@ public:
 class Lshr : public BinaryInstruction
 {
 public:
-	Lshr(BasicBlock* b =  0);
+	explicit Lshr(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -518,7 +528,7 @@ public:
 	};
 
 public:
-	Membar(Level = InvalidLevel, BasicBlock* b = 0);
+	explicit Membar(Level = InvalidLevel, BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -532,7 +542,7 @@ public:
 class Mul : public BinaryInstruction
 {
 public:
-	Mul(BasicBlock* b =  0);
+	explicit Mul(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -543,7 +553,7 @@ public:
 class Or : public BinaryInstruction
 {
 public:
-	Or(BasicBlock* b =  0);
+	explicit Or(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -554,7 +564,7 @@ public:
 class Ret : public Instruction
 {
 public:
-	Ret(BasicBlock* b =  0);
+	explicit Ret(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -565,7 +575,7 @@ public:
 class Setp : public ComparisonInstruction
 {
 public:
-	Setp(Comparison c = InvalidComparison, BasicBlock* b = 0);
+	explicit Setp(Comparison c = InvalidComparison, BasicBlock* b = 0);
 
 public:
 	Instruction* clone() const;
@@ -576,7 +586,7 @@ public:
 class Sext : public UnaryInstruction
 {
 public:
-	Sext(BasicBlock* b =  0);
+	explicit Sext(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -587,7 +597,7 @@ public:
 class Sdiv : public BinaryInstruction
 {
 public:
-	Sdiv(BasicBlock* b =  0);
+	explicit Sdiv(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -598,7 +608,7 @@ public:
 class Shl : public BinaryInstruction
 {
 public:
-	Shl(BasicBlock* b =  0);
+	explicit Shl(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -609,7 +619,7 @@ public:
 class Sitofp : public UnaryInstruction
 {
 public:
-	Sitofp(BasicBlock* b =  0);
+	explicit Sitofp(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -620,7 +630,7 @@ public:
 class Srem : public BinaryInstruction
 {
 public:
-	Srem(BasicBlock* b =  0);
+	explicit Srem(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -631,10 +641,7 @@ public:
 class St : public Instruction
 {
 public:
-	St(BasicBlock* b = 0);
-
-	St(const St&);
-	St& operator=(const St&);
+	explicit St(BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -642,20 +649,24 @@ public:
 	/*! \brief Set the source, the instruction takes ownership */
 	void setA(Operand* a);
 
+	/*! \brief Get the destination */
+	      OperandPointer& d();
+	const OperandPointer& d() const;
+	
+	/*! \brief Get the source */
+	      OperandPointer& a();
+	const OperandPointer& a() const;
+
 public:
 	Instruction* clone() const;
-
-public:
-	Operand* d;
-	Operand* a;
-
+	
 };
 
 /*! \brief Perform a subtract operation */
 class Sub : public BinaryInstruction
 {
 public:
-	Sub(BasicBlock* b =  0);
+	explicit Sub(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -666,7 +677,7 @@ public:
 class Trunc : public UnaryInstruction
 {
 public:
-	Trunc(BasicBlock* b =  0);
+	explicit Trunc(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -677,7 +688,7 @@ public:
 class Udiv : public BinaryInstruction
 {
 public:
-	Udiv(BasicBlock* b =  0);
+	explicit Udiv(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -688,7 +699,7 @@ public:
 class Uitofp : public UnaryInstruction
 {
 public:
-	Uitofp(BasicBlock* b =  0);
+	explicit Uitofp(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -699,7 +710,7 @@ public:
 class Urem : public BinaryInstruction
 {
 public:
-	Urem(BasicBlock* b =  0);
+	explicit Urem(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -710,7 +721,7 @@ public:
 class Xor : public BinaryInstruction
 {
 public:
-	Xor(BasicBlock* b =  0);
+	explicit Xor(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -721,7 +732,7 @@ public:
 class Zext : public UnaryInstruction
 {
 public:
-	Zext(BasicBlock* b =  0);
+	explicit Zext(BasicBlock* b =  0);
 
 public:
 	Instruction* clone() const;
@@ -733,11 +744,12 @@ public:
 class Phi : public Instruction
 {
 public:
+	typedef RegisterOperand* RegisterOperandPointer;
 	typedef std::vector<RegisterOperand*> RegisterOperandVector;
 	typedef std::vector<BasicBlock*>      BasicBlockVector;
 
 public:
-	Phi(BasicBlock* b = 0);
+	explicit Phi(BasicBlock* b = 0);
 
 	Phi(const Phi&);
 	Phi& operator=(const Phi&);
@@ -751,14 +763,17 @@ public:
 	void removeSource(BasicBlock* predecessor);
 
 public:
+	      RegisterOperandPointer d();
+	const RegisterOperandPointer d() const;
+	
+	RegisterOperandVector sources();
+
+public:
 	Instruction* clone() const;
-
+	
 public:
-	RegisterOperand* d;
-
-public:
-	RegisterOperandVector sources;
-	BasicBlockVector      blocks;
+	
+	BasicBlockVector blocks;
 };
 
 /*! \brief A PSI node defines a new value only if at least one of a set of
@@ -766,14 +781,12 @@ public:
 class Psi : public Instruction
 {
 public:
+	typedef RegisterOperand* RegisterOperandPointer;
 	typedef std::vector<RegisterOperand*>  RegisterOperandVector;
 	typedef std::vector<PredicateOperand*> PredicateOperandVector;
 	
 public:
-	Psi(BasicBlock* b = 0);
-
-	Psi(const Psi&);
-	Psi& operator=(const Psi&);
+	explicit Psi(BasicBlock* b = 0);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -786,11 +799,12 @@ public:
 	Instruction* clone() const;
 
 public:
-	RegisterOperand* d;
+	RegisterOperandPointer d();
+	const RegisterOperandPointer d() const;
 	
 public:
-	RegisterOperandVector  sources;
-	PredicateOperandVector predicates;
+	RegisterOperandVector  sources();
+	PredicateOperandVector predicates();
 
 };
 
