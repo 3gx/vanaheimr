@@ -7,8 +7,10 @@
 
 #pragma once
 
-/*! \brief A namespace for program execution */
-//forward declarations
+// Vanaheimr Includes
+#include <vanaheimr/util/interface/IntTypes.h>
+
+// Forward declarations
 namespace archaeopteryx { namespace executive { class CoreSimBlock; } }
 namespace archaeopteryx { namespace        ir { class Binary;       } }
 
@@ -20,15 +22,17 @@ namespace executive
 
 class CoreSimKernel
 {
-    public:
-        //__device__ CoreSimKernel(void *gpuState, char* binaryName);
-        __device__ void launchKernel(unsigned int simulatedBlocks,
-			executive::CoreSimBlock* blocks, ir::Binary* binary);
-        
-    public:
-    	// Interface to CoreSimBlock
-    	__device__ size_t translateVirtualToPhysicalAddress(
-    		size_t virtualAddress) const;
+public:
+	typedef uint64_t Address;
+
+public:
+   __device__ void launchKernel(unsigned int simulatedBlocks,
+		executive::CoreSimBlock* blocks, ir::Binary* binary);
+    
+public:
+	// Interface to CoreSimBlock
+	__device__ Address translateVirtualToPhysicalAddress(
+		Address virtualAddress) const;
 
 };
 
