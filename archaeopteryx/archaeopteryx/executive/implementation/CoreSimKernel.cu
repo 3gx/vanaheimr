@@ -10,7 +10,8 @@
 #include <archaeopteryx/runtime/interface/Runtime.h>
 #include <archaeopteryx/ir/interface/Binary.h>
 
-#define REGISTER_FILE_SIZE 64
+namespace archaeopteryx
+{
 
 namespace executive
 {
@@ -18,26 +19,31 @@ namespace executive
 __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, 
 	CoreSimBlock* blocks, ir::Binary* binary)
 {
-    for (unsigned int simulatedBlock = blockIdx.x;
-    	simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)
-    {
-        if(threadIdx.x == 0)
-        {
-            blocks[blockIdx.x].setupBinary(binary);
-            blocks[blockIdx.x].setupCoreSimBlock(simulatedBlock,
-            	REGISTER_FILE_SIZE, this);
-        }
-        
-        __syncthreads();
+	unsigned int registerCount = 0; // TODO
 
-        blocks[blockIdx.x].runBlock();
-    }
+	for (unsigned int simulatedBlock = blockIdx.x;
+		simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)
+	{
+		if(threadIdx.x == 0)
+		{
+			blocks[blockIdx.x].setupBinary(binary);
+			blocks[blockIdx.x].setupCoreSimBlock(simulatedBlock,
+				registerCount, this);
+		}
+
+		__syncthreads();
+
+		blocks[blockIdx.x].runBlock();
+	}
     
 }
 
-__device__ size_t CoreSimKernel::translateVirtualToPhysicalAddress(size_t va) const
+__device__ CoreSimKernel::Address
+	CoreSimKernel::translateVirtualToPhysicalAddress(Address va) const
 {
-    return (size_t)rt::Runtime::translateSimulatedAddressToCudaAddress((void*)va);
+    return rt::Runtime::translateSimulatedAddressToCudaAddress(va);
+}
+
 }
 
 }
