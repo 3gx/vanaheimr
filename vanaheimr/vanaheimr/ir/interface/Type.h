@@ -43,6 +43,9 @@ public:
 	bool isBasicBlock()           const;
 
 public:
+	virtual size_t alignment() const;
+	
+public:
 	virtual size_t bytes() const = 0;
 	virtual Type*  clone() const = 0;
 
