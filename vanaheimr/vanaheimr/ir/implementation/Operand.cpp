@@ -40,7 +40,7 @@ bool Operand::isRegister() const
 
 	if(mode() == Predicate)
 	{
-		const PredicateOperand* pred = static_cast<const PredicateOperand*>(this);
+		auto pred = static_cast<const PredicateOperand*>(this);
 
 		return pred->modifier == PredicateOperand::InversePredicate ||
 			pred->modifier == PredicateOperand::StraightPredicate;
@@ -57,6 +57,11 @@ bool Operand::isAddress() const
 bool Operand::isArgument() const
 {
 	return mode() == Argument;
+}
+
+bool Operand::isImmediate() const
+{
+	return mode() == Immediate;
 }
 
 bool Operand::isBasicBlock() const
@@ -84,6 +89,11 @@ RegisterOperand::RegisterOperand(VirtualRegister* reg, Instruction* i)
 	
 }
 
+const Type* RegisterOperand::type() const
+{
+	return virtualRegister->type;
+}
+
 Operand* RegisterOperand::clone() const
 {
 	return new RegisterOperand(*this);
@@ -102,15 +112,20 @@ RegisterOperand::RegisterOperand(VirtualRegister* reg, Instruction* i,
 }
 
 ImmediateOperand::ImmediateOperand(uint64_t v, Instruction* i, const Type* t)
-: Operand(Immediate, i), type(t)
+: Operand(Immediate, i), dataType(t)
 {
 	uint = v;
 }
 
 ImmediateOperand::ImmediateOperand(double d, Instruction* i, const Type* t)
-: Operand(Immediate, i), type(t)
+: Operand(Immediate, i), dataType(t)
 {
 	fp = d;
+}
+
+const Type* ImmediateOperand::type() const
+{
+	return dataType;
 }
 
 Operand* ImmediateOperand::clone() const
@@ -122,7 +137,7 @@ std::string ImmediateOperand::toString() const
 {
 	std::stringstream stream;
 
-	stream << type->name() << " ";
+	stream << type()->name() << " ";
 		
 	stream << "0x" << std::hex << uint << std::dec;
 
@@ -218,6 +233,11 @@ AddressOperand::AddressOperand(Variable* value, Instruction* i)
 	
 }
 
+const Type* AddressOperand::type() const
+{
+	return &globalValue->type();
+}
+
 Operand* AddressOperand::clone() const
 {
 	return new AddressOperand(*this);
@@ -245,6 +265,11 @@ ArgumentOperand::ArgumentOperand(ir::Argument* a, Instruction* i)
 : Operand(Argument, i), argument(a)
 {
 	
+}
+
+const Type* ArgumentOperand::type() const
+{
+	return &argument->type();
 }
 
 Operand* ArgumentOperand::clone() const

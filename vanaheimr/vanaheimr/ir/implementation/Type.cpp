@@ -67,6 +67,16 @@ bool Type::isBasicBlock() const
 	return typeid(BasicBlockType) == typeid(*this);
 }
 
+bool Type::isFunction() const
+{
+	return typeid(FunctionType) == typeid(*this);
+}
+
+size_t Type::alignment() const
+{
+	return bytes();
+}
+
 IntegerType::IntegerType(Compiler* c, unsigned int bits)
 : Type(integerName(bits), c), _bits(bits)
 {
@@ -112,7 +122,6 @@ size_t FloatType::bytes() const
 {
 	return 4;
 }
-
 
 Type* FloatType::clone() const
 {

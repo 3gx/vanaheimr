@@ -90,7 +90,15 @@ public:
 public:
 	/*! \brief Inserts an instruction into the block */
 	iterator insert(iterator position, Instruction* i);
+	/*! \brief Inserts an instruction into the block */
+	iterator insert(const Instruction* position, Instruction* i);
 
+public:
+	/*! \brief Erase an instruction from the block, deleting it */
+	iterator erase(iterator position);
+	/*! \brief Erase an instruction from the block, deleting it */
+	iterator erase(const Instruction* position);
+	
 public:
 	/*! \brief Delete all instructions within the block */
 	void clear();
