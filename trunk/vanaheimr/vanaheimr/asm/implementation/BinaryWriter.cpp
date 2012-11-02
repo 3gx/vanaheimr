@@ -406,7 +406,7 @@ OperandContainer BinaryWriter::convertOperand(
 		const ir::ImmediateOperand& immediate =
 			static_cast<const ir::ImmediateOperand&>(operand);
 		
-		result.asImmediate.type = convertType(immediate.type);
+		result.asImmediate.type = convertType(immediate.type());
 		result.asImmediate.uint = immediate.uint;
 		
 		result.asOperand.mode = as::Operand::Immediate;

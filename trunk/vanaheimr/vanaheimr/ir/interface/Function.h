@@ -119,6 +119,9 @@ public:
 	bool   register_empty() const;
 
 public:
+	register_iterator findVirtualRegister(const std::string& name);
+
+public:
 	size_t instruction_size()  const;
 	bool   instruction_empty() const;
 

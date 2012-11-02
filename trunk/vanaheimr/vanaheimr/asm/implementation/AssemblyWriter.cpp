@@ -16,6 +16,7 @@
 // Standard Library Includes
 #include <stdexcept>
 
+// Preprocessor Macros
 #ifdef REPORT_BASE
 #undef REPORT_BASE
 #endif
@@ -257,7 +258,7 @@ void AssemblyWriter::writeOperand(std::ostream& stream, const ir::Operand& o)
 		const ir::ImmediateOperand& operand =
 			static_cast<const ir::ImmediateOperand&>(o);
 		
-		writeType(stream, *operand.type);
+		writeType(stream, *operand.type());
 		
 		stream << "0x" << std::hex << operand.uint << std::dec;
 		

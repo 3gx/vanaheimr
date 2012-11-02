@@ -10,6 +10,9 @@
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
+// Standard Library Includes
+#include <algorithm>
+
 namespace vanaheimr
 {
 
@@ -182,10 +185,32 @@ void BasicBlock::push_front(Instruction* i)
 	_instructions.push_front(i);
 }
 
+BasicBlock::iterator BasicBlock::insert(
+	const Instruction* pointer, Instruction* i)
+{
+	auto position = std::find(begin(), end(), pointer);
+	
+	return insert(position, i);
+}
+
 BasicBlock::iterator BasicBlock::insert(iterator position, Instruction* i)
 {
 	return _instructions.insert(position, i);
 }
+
+BasicBlock::iterator BasicBlock::erase(iterator position)
+{
+	delete *position;
+	return _instructions.erase(position);
+}
+
+BasicBlock::iterator BasicBlock::erase(const Instruction* pointer)
+{
+	auto position = std::find(begin(), end(), pointer);
+	
+	return erase(position);
+}
+	
 
 void BasicBlock::clear()
 {

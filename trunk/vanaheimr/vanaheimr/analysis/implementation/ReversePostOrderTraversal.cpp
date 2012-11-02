@@ -24,7 +24,7 @@
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace vanaheimr
 {
@@ -55,34 +55,65 @@ void ReversePostOrderTraversal::analyze(Function& function)
 	report("Creating reverse post order traversal over function '" +
 		function.name() + "'");
 
-	// Post order is left subtree, right subtree, current node
-	// Parallelizing this will be tricky
+	// reverse post order is reversed topological order
 	stack.push(&*function.entry_block());
 	
-	while(!stack.empty())
+	while(order.size() != function.size())
 	{
-		BasicBlock* top = stack.top();
-		
-		auto successors = cfg->getSuccessors(*top);
-		
-		bool allSuccessorsVisited = true;
-		
-		for(auto successor : successors)
+		if(stack.empty())
 		{
-			assert(successor != nullptr);
-			if(visited.insert(successor).second)
+			for(auto block : order)
 			{
-				allSuccessorsVisited = false;
-				stack.push(successor);
+				auto successors = cfg->getSuccessors(*block);
+				
+				for(auto successor : successors)
+				{
+					if(visited.insert(successor).second)
+					{
+						stack.push(successor);
+						break;
+					}
+				}
+				
+				if(!stack.empty()) break;
 			}
 		}
 		
-		if(!allSuccessorsVisited) continue;
+		while(!stack.empty())
+		{
+			BasicBlock* top = stack.top();
+			stack.pop();
 		
-		stack.pop();
-		order.push_back(top);
+			auto successors = cfg->getSuccessors(*top);
+			
+			for(auto successor : successors)
+			{
+				assert(successor != nullptr);
+				
+				auto predecessors = cfg->getSuccessors(*successor);
+				
+				bool allPredecessorsVisited = true;
 		
-		report(" BB_" << top->id());
+				for(auto predecessor : predecessors)
+				{
+					if(visited.count(predecessor) == 0)
+					{
+						allPredecessorsVisited = false;
+						break;
+					}
+				}
+				
+				if(!allPredecessorsVisited) continue;
+				
+				if(visited.insert(successor).second)
+				{
+					stack.push(successor);
+				}
+			}
+			order.push_back(top);
+		
+			report(" " << top->name());
+		}
 	}
 	
 	// reverse the order

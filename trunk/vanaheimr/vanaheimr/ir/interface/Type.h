@@ -41,6 +41,7 @@ public:
 	bool isSinglePrecisionFloat() const;
 	bool isDoublePrecisionFloat() const;
 	bool isBasicBlock()           const;
+	bool isFunction()             const;
 
 public:
 	virtual size_t alignment() const;

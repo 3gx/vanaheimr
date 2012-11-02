@@ -52,6 +52,9 @@ public:
 	/*! \brief Is the operand an address */
 	bool isAddress() const;
 	
+	/*! \brief Is the operand an immediate */
+	bool isImmediate() const;
+	
 	/*! \brief Is the operand a function argument */
 	bool isArgument() const;
 	
@@ -64,6 +67,10 @@ public:
 
 	/*! \brief The owning instruction */
 	Instruction* instruction() const;
+
+public:
+	/*! \brief Get the operand type */
+	virtual const Type* type() const = 0;
 
 public:
 	virtual Operand* clone() const = 0;
@@ -83,6 +90,7 @@ public:
 	RegisterOperand(VirtualRegister* reg, Instruction* i);
 
 public:
+	virtual const Type* type() const;
 	virtual Operand* clone() const;
 	virtual std::string toString() const;
 
@@ -103,8 +111,9 @@ public:
 	ImmediateOperand(double   d, Instruction* i, const Type* t);
 
 public:
-	Operand* clone() const;
-	std::string toString() const;
+	virtual const Type* type() const;
+	virtual Operand* clone() const;
+	virtual std::string toString() const;
 
 public:
 	/*! \brief The immediate value */
@@ -115,7 +124,7 @@ public:
 	};
 
 	/*! \brief The data type */
-	const Type* type;
+	const Type* dataType;
 };
 
 /*! \brief A predicate operand */
@@ -140,8 +149,8 @@ public:
 	bool isAlwaysTrue() const;
 
 public:
-	Operand* clone() const;
-	std::string toString() const;
+	virtual Operand* clone() const;
+	virtual std::string toString() const;
 
 public:
 	/*! \brief The predicate modifier */
@@ -155,8 +164,8 @@ public:
 	IndirectOperand(VirtualRegister* reg, int64_t offset, Instruction* i);
 
 public:
-	Operand* clone() const;
-	std::string toString() const;
+	virtual Operand* clone() const;
+	virtual std::string toString() const;
 
 public:
 	/*! \brief The offset to add to the register */
@@ -170,8 +179,9 @@ public:
 	AddressOperand(Variable* value, Instruction* i);
 
 public:
-	Operand* clone() const;
-	std::string toString() const;
+	virtual const Type* type() const;
+	virtual Operand* clone() const;
+	virtual std::string toString() const;
 
 public:
 	Variable* globalValue;
@@ -183,8 +193,9 @@ public:
 	ArgumentOperand(ir::Argument* a, Instruction* i);
 
 public:
-	Operand* clone() const;
-	std::string toString() const;
+	virtual const Type* type() const;
+	virtual Operand* clone() const;
+	virtual std::string toString() const;
 	
 public:
 	ir::Argument* argument;

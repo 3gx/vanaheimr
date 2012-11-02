@@ -8,6 +8,8 @@
 #include <vanaheimr/ir/interface/Instruction.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
 
+#include <vanaheimr/ir/interface/Type.h>
+
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
@@ -184,6 +186,11 @@ bool Instruction::isBinary() const
 	return dynamic_cast<const BinaryInstruction*>(this) != nullptr;
 }
 
+bool Instruction::isComparison() const
+{
+	return dynamic_cast<const ComparisonInstruction*>(this) != nullptr;
+}
+
 std::string Instruction::toString() const
 {
 	std::stringstream stream;
@@ -227,6 +234,11 @@ std::string Instruction::toString() const
 
 	return stream.str();
 
+}
+
+void Instruction::eraseFromBlock()
+{
+	block->erase(this);
 }
 
 void Instruction::clear()
@@ -465,6 +477,30 @@ ComparisonInstruction::ComparisonInstruction(Opcode o,
 
 }
 
+std::string ComparisonInstruction::toString(Comparison c)
+{
+	switch(c)
+	{
+	case OrderedEqual:            return "eq";
+	case OrderedNotEqual:         return "ne";
+	case OrderedLessThan:         return "lt";
+	case OrderedLessOrEqual:      return "lte";
+	case OrderedGreaterThan:      return "gt";
+	case OrderedGreaterOrEqual:   return "gte";
+	case UnorderedEqual:          return "ueq";
+	case UnorderedNotEqual:       return "une";
+	case UnorderedLessThan:       return "ult";
+	case UnorderedLessOrEqual:    return "utle";
+	case UnorderedGreaterThan:    return "ugt";
+	case UnorderedGreaterOrEqual: return "ugte";
+	case IsANumber:               return "num";
+	case NotANumber:              return "nan";
+	case InvalidComparison:       break;
+	}
+
+	return "InvalidComparison";
+}
+
 Add::Add(BasicBlock* b)
 : BinaryInstruction(Instruction::Add, b)
 {
@@ -599,6 +635,17 @@ Call::Call(BasicBlock* b)
 : Instruction(Instruction::Call, b)
 {
 	reads.push_back(nullptr); // target
+}
+
+bool Call::isIntrinsic() const
+{
+	if(!target()->isAddress()) return false;
+	
+	auto addressOperand = static_cast<AddressOperand*>(target());
+	
+	if(!addressOperand->globalValue->type().isFunction()) return false;
+	
+	return addressOperand->globalValue->name().find("_Zintrinsic_") == 0;
 }
 
 void Call::setTarget(Operand* o)

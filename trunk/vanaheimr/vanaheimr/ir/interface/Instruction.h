@@ -115,13 +115,16 @@ public:
 	bool isInstrinsic() const;
 
 public:
-	bool isUnary()  const;
-	bool isBinary() const;
+	bool isUnary()      const;
+	bool isBinary()     const;
+	bool isComparison() const;
 
 public:
 	std::string toString() const;
 	
 public:
+	/*! \brief Erase the instruction from the parent block */
+	void eraseFromBlock();
 	/*! \brief Clear the reader/writer sets. */
 	void clear();
 
@@ -236,6 +239,10 @@ public:
 
 public:
 	virtual Instruction* clone() const = 0;
+
+public:
+	std::string toString() const;
+	static std::string toString(Comparison c);
 
 public:
 	/*! \brief The comparison operation */
@@ -380,6 +387,10 @@ public:
 	
 public:
 	explicit Call(BasicBlock* b = 0);
+
+public:
+	/*! \brief Is the call to an intrinsic */
+	bool isIntrinsic() const;
 
 public:
 	/*! \brief Set the target operand, the instruction takes onwership */

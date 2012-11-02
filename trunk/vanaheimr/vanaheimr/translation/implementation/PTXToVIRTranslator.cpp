@@ -729,6 +729,78 @@ static std::string translateTypeName(::ir::PTXOperand::DataType type)
 	return "";
 }
 
+static std::string modifierString(unsigned int modifier,  
+        ::ir::PTXInstruction::CarryFlag carry)
+{
+	typedef ::ir::PTXInstruction PTXInstruction;
+	
+	std::string result;
+	
+	if(modifier & PTXInstruction::approx)
+	{
+		result += "approx";
+	}
+	else if(modifier & PTXInstruction::wide)
+	{
+		result += "wide";
+	}
+	else if(modifier & PTXInstruction::hi)
+	{
+		result += "hi";
+	}
+	else if(modifier & PTXInstruction::lo)
+	{
+		result += "lo";
+	}
+	else if(modifier & PTXInstruction::rn)
+	{
+		result += "rn";
+	}
+	else if(modifier & PTXInstruction::rz)
+	{
+		result += "rz";
+	}
+	else if(modifier & PTXInstruction::rm)
+	{
+		result += "rm";
+	}
+	else if(modifier & PTXInstruction::rp)
+	{
+		result += "rp";
+	}
+	else if(modifier & PTXInstruction::rni)
+	{
+		result += "rni";
+	}
+	else if(modifier & PTXInstruction::rzi)
+	{
+		result += "rzi";
+	}
+	else if(modifier & PTXInstruction::rmi)
+	{
+		result += "rmi";
+	}
+	else if(modifier & PTXInstruction::rpi)
+	{
+		result += "rpi";
+	}
+
+	if(modifier & PTXInstruction::ftz)
+	{
+		result += "ftz";
+	}
+	if(modifier & PTXInstruction::sat)
+	{
+		result += "sat";
+	}
+	if(carry == PTXInstruction::CC)
+	{
+		result += "cc";
+	}
+	return result;
+}
+
+
 void PTXToVIRTranslator::_translateFma(const PTXInstruction& ptx)
 {	
 	ir::Call* call = new ir::Call(_block);
@@ -741,9 +813,18 @@ void PTXToVIRTranslator::_translateFma(const PTXInstruction& ptx)
 	call->addArgument(_newTranslatedOperand(ptx.b));
 	call->addArgument(_newTranslatedOperand(ptx.c));
 	
+	std::string modifiers = modifierString(ptx.modifier, ptx.carry);
+	
 	std::stringstream stream;
 	
-	stream << "_Z_intrinsic_fma_" << translateTypeName(ptx.type);
+	stream << "_Zintrinsic_fma_";
+	
+	if(!modifiers.empty())
+	{
+		stream << modifiers << "_";
+	}
+	
+	stream << translateTypeName(ptx.type);
 	
 	_addPrototype(stream.str(), *call);
 	
@@ -862,7 +943,7 @@ ir::VirtualRegister* PTXToVIRTranslator::_getSpecialVirtualRegister(
 {
 	std::stringstream stream;
 	
-	stream << "_Zgetspecial_";
+	stream << "_Zintrinsic_getspecial_";
 	
 	bool isScalar = true;
 	
@@ -880,7 +961,6 @@ ir::VirtualRegister* PTXToVIRTranslator::_getSpecialVirtualRegister(
 	default:
 		isScalar = true;
 	}
-	
 	
 	std::string specialName =
 		PTXOperand::toString((PTXOperand::SpecialRegister)id).substr(1);

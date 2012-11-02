@@ -13,8 +13,18 @@
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -61,7 +71,7 @@ const DominatorAnalysis::BasicBlockSet& DominatorAnalysis::getDominanceFrontier(
 
 typedef std::vector<unsigned int> IntVector; 
 
-ir::BasicBlock* intersect(DominatorAnalysis* tree,
+static ir::BasicBlock* intersect(DominatorAnalysis* tree,
 	const IntVector& postOrderNumbers,
 	ir::BasicBlock* left, ir::BasicBlock* right)
 {
@@ -85,6 +95,8 @@ ir::BasicBlock* intersect(DominatorAnalysis* tree,
 
 void DominatorAnalysis::analyze(Function& function)
 {
+	report("Running dominator analysis over function " << function.name());
+	
 	_determineImmediateDominators(function);
 	     _determineDominatedSets(function);
 	_determineDominanceFrontiers(function);
@@ -103,11 +115,14 @@ void DominatorAnalysis::_determineImmediateDominators(Function& function)
 	// Determine post order numbers
 	IntVector postOrderNumbers(function.size());
 	
+	report(" creating post order sequence...");
 	for(auto block = reversePostOrder->order.begin();
 		block != reversePostOrder->order.end(); ++block)
 	{
 		postOrderNumbers[(*block)->id()] =
-			std::distance(block, reversePostOrder->order.begin());
+			std::distance(reversePostOrder->order.begin(), block);
+		report("  " << (*block)->name() << " -> "
+			<< postOrderNumbers[(*block)->id()]);
 	}
 	
 	// All blocks start being uninitialized
@@ -116,6 +131,8 @@ void DominatorAnalysis::_determineImmediateDominators(Function& function)
 	// The entry starts dominating itself
 	_immediateDominators[function.entry_block()->id()] =
 		&*function.entry_block();
+	report(" " << function.entry_block()->name() << " dominates "
+		<< function.entry_block()->name());
 	
 	// Propagate changes, serial for each iteration
 	bool changed = true;
@@ -128,6 +145,8 @@ void DominatorAnalysis::_determineImmediateDominators(Function& function)
 		// TODO, can this be done in parallel?
 		for(auto block : reversePostOrder->order)
 		{
+			report(" checking " << block->name());
+				
 			// Get all predecessors
 			auto predecessors = cfg->getPredecessors(*block);
 		
@@ -142,17 +161,26 @@ void DominatorAnalysis::_determineImmediateDominators(Function& function)
 				
 				if(newDominator == nullptr)
 				{
-					newDominator = getDominator(*predecessor);
+					newDominator = predecessor;
+					report("  setting to first predecessor "
+						<< newDominator->name());
 					continue;
 				}
 				
+				report("  intersection of "
+						<< newDominator->name() << " with "
+						<< predecessor->name());
 				newDominator = intersect(this, postOrderNumbers,
-					newDominator, predecessor);
+					predecessor, newDominator);
+				report("   yielded " << newDominator->name());
 			}
 			
 			if(newDominator != getDominator(*block))
 			{
+				report("  " << newDominator->name() << " dominates "
+					<< block->name());
 				_immediateDominators[block->id()] = newDominator;
+				changed = true;
 			}
 		}
 	}

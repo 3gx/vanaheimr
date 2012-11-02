@@ -33,10 +33,10 @@ namespace as
 
 ir::Module* BinaryReader::read(std::istream& stream, const std::string& name)
 {
-	_readHeader(stream);
-	_readDataSection(stream);
-	_readStringTable(stream);
-	_readSymbolTable(stream);
+	      _readHeader(stream);
+	 _readDataSection(stream);
+	 _readStringTable(stream);
+	 _readSymbolTable(stream);
 	_readInstructions(stream);
 
 	ir::Module* module = new ir::Module(name,
@@ -44,6 +44,8 @@ ir::Module* BinaryReader::read(std::istream& stream, const std::string& name)
 
 	_loadTypes();
 	_initializeModule(*module);
+	
+	report("Finished loading binary...");
 	
 	return module;
 }
