@@ -202,6 +202,13 @@ std::string Instruction::toString() const
 	
 	stream << toString(opcode) << " ";
 	
+	std::string modifier = modifierString();
+	
+	if(!modifier.empty())
+	{
+		stream << modifier << " ";
+	}
+	
 	for(auto write : writes)
 	{
 		if(write != *writes.begin()) stream << ", ";
@@ -234,6 +241,11 @@ std::string Instruction::toString() const
 
 	return stream.str();
 
+}
+
+std::string Instruction::modifierString() const
+{
+	return "";
 }
 
 void Instruction::eraseFromBlock()
@@ -475,6 +487,16 @@ ComparisonInstruction::ComparisonInstruction(Opcode o,
 : BinaryInstruction(o, b), comparison(c)
 {
 
+}
+
+std::string ComparisonInstruction::toString() const
+{
+	return Instruction::toString();
+}
+
+std::string ComparisonInstruction::modifierString() const
+{
+	return toString(comparison);
 }
 
 std::string ComparisonInstruction::toString(Comparison c)
