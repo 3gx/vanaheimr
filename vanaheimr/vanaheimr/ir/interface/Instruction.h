@@ -120,7 +120,8 @@ public:
 	bool isComparison() const;
 
 public:
-	std::string toString() const;
+	virtual std::string toString() const;
+	virtual std::string modifierString() const;
 	
 public:
 	/*! \brief Erase the instruction from the parent block */
@@ -241,7 +242,8 @@ public:
 	virtual Instruction* clone() const = 0;
 
 public:
-	std::string toString() const;
+	virtual std::string modifierString() const;
+	virtual std::string toString() const;
 	static std::string toString(Comparison c);
 
 public:
