@@ -8,6 +8,28 @@ import re
 import subprocess
 from SCons import SConf
 
+def getOcelotPaths():
+	"""Determines Ocelot {bin,lib,include,cflags,lflags,libs} paths
+	
+	returns (bin_path,lib_path,inc_path,cflags,lflags,libs)
+	"""
+	
+	try:
+		llvm_config_path = which('OcelotConfig')
+	except:
+		raise ValueError, 'Error: Failed to find OcelotConfig, make sure ' + \
+			'it is on your PATH'
+	
+	# determine defaults
+	bin_path = os.popen('OcelotConfig --bindir').read().split()
+	lib_path = os.popen('OcelotConfig --libdir').read().split()
+	inc_path = os.popen('OcelotConfig --includedir').read().split()
+	cflags   = os.popen('OcelotConfig --cppflags').read().split()
+	lflags   = os.popen('OcelotConfig --ldflags').read().split()
+	libs     = os.popen('OcelotConfig --libs').read().split()
+	
+	return (bin_path,lib_path,inc_path,cflags,lflags,libs)
+
 def getCudaPaths():
 	"""Determines CUDA {bin,lib,include} paths
 	
@@ -223,6 +245,15 @@ def Environment():
 	# get the path to vanaheimr
 	env.AppendUnique(CPPPATH = [os.path.abspath(os.path.join(thisDir,
 		'../../vanaheimr'))])
+	
+	# get ocelot paths
+	(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
+		ocelot_lflags,ocelot_libs) = getOcelotPaths()
+	env.AppendUnique(LIBPATH = ocelot_lib_path)
+	env.AppendUnique(CPPPATH = ocelot_inc_path)
+	env.AppendUnique(CXXFLAGS = ocelot_cflags)
+	env.AppendUnique(LINKFLAGS = ocelot_lflags)
+	env.AppendUnique(EXTRA_LIBS = ocelot_libs)
 
 	# enable nvcc
 	env.Tool('nvcc', toolpath = [os.path.join(thisDir)])

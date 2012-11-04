@@ -626,18 +626,18 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 			container.asInstruction.opcode, &*block));
 
 		instruction->setGuard(_translateOperand(
-			container.asSetP.guard, instruction));
+			container.asSetp.guard, instruction));
 
-		instruction->setD(_translateOperand(container.asSetP.d,
+		instruction->setD(_translateOperand(container.asSetp.d,
 			instruction));
-		instruction->setA(_translateOperand(container.asSetP.a,
+		instruction->setA(_translateOperand(container.asSetp.a,
 			instruction));
-		instruction->setB(_translateOperand(container.asSetP.b,
+		instruction->setB(_translateOperand(container.asSetp.b,
 			instruction));
 
 		instruction->comparison =
 			(ir::ComparisonInstruction::Comparison)
-			container.asSetP.comparison;
+			container.asSetp.comparison;
 
 		block->push_back(instruction);
 		
