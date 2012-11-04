@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <iostream>
+#include <cstdio>
 
 #ifdef REPORT_BASE
 #undef REPORT_BASE

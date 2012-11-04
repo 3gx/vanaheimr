@@ -283,7 +283,7 @@ class Ret : public UnaryInstruction
 };
 
 /*! \brief Compare two operands and set a third predicate */
-class SetP : public ComparisonInstruction
+class Setp : public ComparisonInstruction
 {
 
 };
@@ -393,7 +393,7 @@ public:
 		Mul               asMul;
 		Or                asOr;
 		Ret               asRet;
-		SetP              asSetP;
+		Setp              asSetp;
 		Sext              asSext;
 		Sdiv              asSdiv;
 		Shl               asShl;

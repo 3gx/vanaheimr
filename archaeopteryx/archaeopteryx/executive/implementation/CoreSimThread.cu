@@ -32,6 +32,16 @@ typedef executive::CoreSimThread::Value   Value;
 typedef executive::CoreSimThread::SValue  SValue;
 typedef executive::CoreSimThread::Address Address;
 
+typedef vanaheimr::as::Instruction Instruction;
+
+typedef vanaheimr::as::Operand          Operand;
+typedef vanaheimr::as::RegisterOperand  RegisterOperand;
+typedef vanaheimr::as::PredicateOperand PredicateOperand;
+typedef vanaheimr::as::ImmediateOperand ImmediateOperand;
+typedef vanaheimr::as::IndirectOperand  IndirectOperand;
+typedef vanaheimr::as::OperandContainer OperandContainer;
+
+
 __device__ CoreSimThread::CoreSimThread(CoreSimBlock* parentBlock,
     unsigned threadId, unsigned p, bool b)
 : pc(0), finished(false), instructionPriority(p), barrierBit(b),
@@ -69,10 +79,10 @@ __device__ T bitcast(const F& from)
 }
 
 static __device__ CoreSimThread::Value getRegisterOperand(
-	const ir::Operand& operand, CoreSimBlock* block, unsigned threadId)
+	const Operand& operand, CoreSimBlock* block, unsigned threadId)
 {
-    const ir::RegisterOperand& reg =
-    	static_cast<const ir::RegisterOperand&>(operand); 
+    const RegisterOperand& reg =
+    	static_cast<const RegisterOperand&>(operand); 
 
     CoreSimThread::Value value = block->getRegister(threadId, reg.reg);
 
@@ -80,26 +90,26 @@ static __device__ CoreSimThread::Value getRegisterOperand(
 }
 
 static __device__ CoreSimThread::Value getImmediateOperand(
-	const ir::Operand& operand, CoreSimBlock* block, unsigned threadId)
+	const Operand& operand, CoreSimBlock* block, unsigned threadId)
 {
-    const ir::ImmediateOperand& imm =
-    	static_cast<const ir::ImmediateOperand&>(operand); 
+    const ImmediateOperand& imm =
+    	static_cast<const ImmediateOperand&>(operand); 
 
     return imm.uint;
 }
 
 static __device__ CoreSimThread::Value getPredicateOperand(
-	const ir::Operand& operand, CoreSimBlock* block, unsigned threadId)
+	const Operand& operand, CoreSimBlock* block, unsigned threadId)
 {
-    const ir::PredicateOperand& reg =
-    	static_cast<const ir::PredicateOperand&>(operand); 
+    const PredicateOperand& reg =
+    	static_cast<const PredicateOperand&>(operand); 
     //FIX ME    
     
     Value value = block->getRegister(threadId, reg.reg);
 
     switch(reg.modifier)
     {
-    case ir::PredicateOperand::StraightPredicate:
+    case PredicateOperand::StraightPredicate:
     {
         value = value;
         break;
@@ -111,10 +121,10 @@ static __device__ CoreSimThread::Value getPredicateOperand(
 }
 
 static __device__ CoreSimThread::Value getIndirectOperand(
-	const ir::Operand& operand, CoreSimBlock* block, unsigned threadId)
+	const Operand& operand, CoreSimBlock* block, unsigned threadId)
 {
-    const ir::IndirectOperand& indirect =
-    	static_cast<const ir::IndirectOperand&>(operand); 
+    const IndirectOperand& indirect =
+    	static_cast<const IndirectOperand&>(operand); 
     
     Value address = block->getRegister(threadId, indirect.reg) +
     	indirect.offset;
@@ -124,7 +134,7 @@ static __device__ CoreSimThread::Value getIndirectOperand(
 }
 
 
-typedef Value (*GetOperandValuePointer)(const ir::Operand&,
+typedef Value (*GetOperandValuePointer)(const Operand&,
 	CoreSimBlock*, unsigned);
 
 static __device__ GetOperandValuePointer getOperandFunctionTable[] = {
@@ -134,7 +144,7 @@ static __device__ GetOperandValuePointer getOperandFunctionTable[] = {
     getIndirectOperand
 };
 
-static __device__ CoreSimThread::Value getOperand(const ir::Operand& operand,
+static __device__ CoreSimThread::Value getOperand(const Operand& operand,
 	CoreSimBlock* parentBlock, unsigned threadId)
 {
     GetOperandValuePointer function = getOperandFunctionTable[operand.mode];
@@ -143,24 +153,26 @@ static __device__ CoreSimThread::Value getOperand(const ir::Operand& operand,
 }
 
 static __device__ CoreSimThread::Value getOperand(
-	const ir::OperandContainer& operandContainer,
+	const OperandContainer& operandContainer,
 	CoreSimBlock* parentBlock, unsigned threadId)
 {
     return getOperand(operandContainer.asOperand, parentBlock, threadId);
 }
 
-static void __device__ setRegister(ir::OperandContainer& operandContainer,
+static void __device__ setRegister(OperandContainer& operandContainer,
 	CoreSimBlock* parentBlock, unsigned threadId, const Value& result)
 {
-    const ir::RegisterOperand& reg = operandContainer.asRegister;
+    const RegisterOperand& reg = operandContainer.asRegister;
 
     parentBlock->setRegister(threadId, reg.reg, result);
 }
 
-static __device__ ir::Binary::PC executeAdd(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeAdd(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Add* add = static_cast<ir::Add*>(instruction);
+    typedef vanaheimr::as::Add Add;
+
+	Add* add = static_cast<Add*>(instruction);
 
     Value a = getOperand(add->a, parentBlock, threadId);
     Value b = getOperand(add->b, parentBlock, threadId);
@@ -171,10 +183,12 @@ static __device__ ir::Binary::PC executeAdd(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeAnd(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeAnd(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::And* andd = static_cast<ir::And*>(instruction);
+    typedef vanaheimr::as::And And;
+
+    And* andd = static_cast<And*>(instruction);
 
     Value a = getOperand(andd->a, parentBlock, threadId);
     Value b = getOperand(andd->b, parentBlock, threadId);
@@ -185,10 +199,12 @@ static __device__ ir::Binary::PC executeAnd(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeAshr(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeAshr(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Ashr* ashr = static_cast<ir::Ashr*>(instruction);
+    typedef vanaheimr::as::Ashr Ashr;
+
+    Ashr* ashr = static_cast<Ashr*>(instruction);
 
     SValue a = getOperand(ashr->a, parentBlock, threadId);
     Value b = getOperand(ashr->b, parentBlock, threadId);
@@ -199,10 +215,12 @@ static __device__ ir::Binary::PC executeAshr(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeAtom(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeAtom(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Atom* atom = static_cast<ir::Atom*>(instruction);
+    typedef vanaheimr::as::Atom Atom;
+
+    Atom* atom = static_cast<Atom*>(instruction);
 
     Value a = getOperand(atom->a, parentBlock, threadId);
     Value b = getOperand(atom->b, parentBlock, threadId);
@@ -216,7 +234,7 @@ static __device__ ir::Binary::PC executeAtom(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeBar(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeBar(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
     parentBlock->barrier(threadId);
@@ -224,10 +242,12 @@ static __device__ ir::Binary::PC executeBar(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeBitcast(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeBitcast(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Bitcast* bitcast = static_cast<ir::Bitcast*>(instruction);
+    typedef vanaheimr::as::Bitcast Bitcast;
+
+    Bitcast* bitcast = static_cast<Bitcast*>(instruction);
 
     Value a = getOperand(bitcast->a, parentBlock, threadId);
 
@@ -236,10 +256,12 @@ static __device__ ir::Binary::PC executeBitcast(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeBra(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeBra(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Bra* bra = static_cast<ir::Bra*>(instruction);
+    typedef vanaheimr::as::Bra Bra;
+
+    Bra* bra = static_cast<Bra*>(instruction);
 
     Value a = getOperand(bra->target, parentBlock, threadId);
 
@@ -247,10 +269,12 @@ static __device__ ir::Binary::PC executeBra(ir::Instruction* instruction,
     return a;
 }
 
-static __device__ ir::Binary::PC executeFpext(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeFpext(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Fpext* fpext = static_cast<ir::Fpext*>(instruction);
+    typedef vanaheimr::as::Fpext Fpext;
+
+    Fpext* fpext = static_cast<Fpext*>(instruction);
 
     Value a = getOperand(fpext->a, parentBlock, threadId);
 
@@ -261,10 +285,12 @@ static __device__ ir::Binary::PC executeFpext(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeFptosi(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeFptosi(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Fptosi* fptosi = static_cast<ir::Fptosi*>(instruction);
+    typedef vanaheimr::as::Fptosi Fptosi;
+
+    Fptosi* fptosi = static_cast<Fptosi*>(instruction);
 
     Value a = getOperand(fptosi->a, parentBlock, threadId);
 
@@ -275,10 +301,12 @@ static __device__ ir::Binary::PC executeFptosi(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeFptoui(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeFptoui(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Fptoui* fptoui = static_cast<ir::Fptoui*>(instruction);
+    typedef vanaheimr::as::Fptoui Fptoui;
+
+    Fptoui* fptoui = static_cast<Fptoui*>(instruction);
 
     Value a = getOperand(fptoui->a, parentBlock, threadId);
 
@@ -289,10 +317,12 @@ static __device__ ir::Binary::PC executeFptoui(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeFpTrunc(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeFpTrunc(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Fptrunc* fptrunc = static_cast<ir::Fptrunc*>(instruction);
+    typedef vanaheimr::as::Fptrunc Fptrunc;
+
+    Fptrunc* fptrunc = static_cast<Fptrunc*>(instruction);
 
     Value a = getOperand(fptrunc->a, parentBlock, threadId);
 
@@ -303,10 +333,12 @@ static __device__ ir::Binary::PC executeFpTrunc(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeLd(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeLd(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Ld* ld = static_cast<ir::Ld*>(instruction);
+    typedef vanaheimr::as::Ld Ld;
+    
+	Ld* ld = static_cast<Ld*>(instruction);
 
     Value a = getOperand(ld->a, parentBlock, threadId);
 
@@ -316,25 +348,25 @@ static __device__ ir::Binary::PC executeLd(ir::Instruction* instruction,
     
     switch(ld->d.asIndirect.type)
     {
-        case ir::i1:
-        case ir::i8:
+        case vanaheimr::as::i1:
+        case vanaheimr::as::i8:
         {
             d = *bitcast<uint8_t*>(physical);
             break;
         }
-        case ir::i16:
+        case vanaheimr::as::i16:
         {
             d = *bitcast<uint16_t*>(physical);
             break;
         }
-        case ir::f32:
-        case ir::i32:
+        case vanaheimr::as::f32:
+        case vanaheimr::as::i32:
         {
             d = *bitcast<uint32_t*>(physical);
             break;
         }
-        case ir::f64:
-        case ir::i64:
+        case vanaheimr::as::f64:
+        case vanaheimr::as::i64:
         {
             d = *bitcast<uint64_t*>(physical);
             break;
@@ -346,10 +378,12 @@ static __device__ ir::Binary::PC executeLd(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeLshr(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeLshr(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Lshr* lshr = static_cast<ir::Lshr*>(instruction);
+    typedef vanaheimr::as::Lshr Lshr;
+    
+    Lshr* lshr = static_cast<Lshr*>(instruction);
 
     Value a = getOperand(lshr->a, parentBlock, threadId);
     Value b = getOperand(lshr->b, parentBlock, threadId);
@@ -360,17 +394,19 @@ static __device__ ir::Binary::PC executeLshr(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeMembar(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeMembar(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
     //__threadfence_block();
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeMul(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeMul(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Mul* mul = static_cast<ir::Mul*>(instruction);
+    typedef vanaheimr::as::Mul Mul;
+    
+    Mul* mul = static_cast<Mul*>(instruction);
 
     Value a = getOperand(mul->a, parentBlock, threadId);
     Value b = getOperand(mul->b, parentBlock, threadId);
@@ -381,10 +417,12 @@ static __device__ ir::Binary::PC executeMul(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeOr(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeOr(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Or* orr = static_cast<ir::Or*>(instruction);
+    typedef vanaheimr::as::Or Or;
+    
+    Or* orr = static_cast<Or*>(instruction);
 
     Value a = getOperand(orr->a, parentBlock, threadId);
     Value b = getOperand(orr->b, parentBlock, threadId);
@@ -395,16 +433,18 @@ static __device__ ir::Binary::PC executeOr(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeRet(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeRet(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
     return parentBlock->returned(threadId, pc); 
 }
 
-static __device__ ir::Binary::PC executeSetP(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSetp(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::SetP* setp = static_cast<ir::SetP*>(instruction);
+    typedef vanaheimr::as::Setp Setp;
+    
+    Setp* setp = static_cast<Setp*>(instruction);
 
     Value a = getOperand(setp->a, parentBlock, threadId);
     Value b = getOperand(setp->b, parentBlock, threadId);
@@ -415,10 +455,12 @@ static __device__ ir::Binary::PC executeSetP(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeSext(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSext(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Sext* sext = static_cast<ir::Sext*>(instruction);
+    typedef vanaheimr::as::Sext Sext;
+    
+    Sext* sext = static_cast<Sext*>(instruction);
 
     Value a = getOperand(sext->a, parentBlock, threadId);
 
@@ -429,10 +471,12 @@ static __device__ ir::Binary::PC executeSext(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeSdiv(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSdiv(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Sdiv* sdiv = static_cast<ir::Sdiv*>(instruction);
+    typedef vanaheimr::as::Sdiv Sdiv;
+    
+    Sdiv* sdiv = static_cast<Sdiv*>(instruction);
 
     Value a = getOperand(sdiv->a, parentBlock, threadId);
     Value b = getOperand(sdiv->b, parentBlock, threadId);
@@ -443,10 +487,12 @@ static __device__ ir::Binary::PC executeSdiv(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeShl(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeShl(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Shl* shl = static_cast<ir::Shl*>(instruction);
+    typedef vanaheimr::as::Shl Shl;
+    
+    Shl* shl = static_cast<Shl*>(instruction);
 
     Value a = getOperand(shl->a, parentBlock, threadId);
     Value b = getOperand(shl->b, parentBlock, threadId);
@@ -457,10 +503,12 @@ static __device__ ir::Binary::PC executeShl(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeSitofp(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSitofp(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Sitofp* sitofp = static_cast<ir::Sitofp*>(instruction);
+    typedef vanaheimr::as::Sitofp Sitofp;
+    
+    Sitofp* sitofp = static_cast<Sitofp*>(instruction);
 
     Value a = getOperand(sitofp->a, parentBlock, threadId);
 
@@ -471,10 +519,12 @@ static __device__ ir::Binary::PC executeSitofp(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeSrem(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSrem(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Srem* srem = static_cast<ir::Srem*>(instruction);
+    typedef vanaheimr::as::Srem Srem;
+    
+    Srem* srem = static_cast<Srem*>(instruction);
 
     SValue a = getOperand(srem->a, parentBlock, threadId);
     SValue b = getOperand(srem->b, parentBlock, threadId);
@@ -485,10 +535,12 @@ static __device__ ir::Binary::PC executeSrem(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeSt(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSt(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::St* st = static_cast<ir::St*>(instruction);
+    typedef vanaheimr::as::St St;
+    
+    St* st = static_cast<St*>(instruction);
 
     Value d = getOperand(st->d, parentBlock, threadId);
     Value physical = parentBlock->translateVirtualToPhysical(d);
@@ -497,25 +549,25 @@ static __device__ ir::Binary::PC executeSt(ir::Instruction* instruction,
 
     switch(st->a.asIndirect.type)
     {
-        case ir::i1:
-        case ir::i8:
+        case vanaheimr::as::i1:
+        case vanaheimr::as::i8:
         {
             *bitcast<uint8_t*>(physical) = a;
             break;
         }
-        case ir::i16:
+        case vanaheimr::as::i16:
         {
             *bitcast<uint16_t*>(physical) = a;
             break;
         }
-        case ir::f32:
-        case ir::i32:
+        case vanaheimr::as::f32:
+        case vanaheimr::as::i32:
         {
             *bitcast<uint32_t*>(physical) = a;
             break;
         }
-        case ir::f64:
-        case ir::i64:
+        case vanaheimr::as::f64:
+        case vanaheimr::as::i64:
         {
             *bitcast<uint64_t*>(physical) = a;
             break;
@@ -526,10 +578,12 @@ static __device__ ir::Binary::PC executeSt(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeSub(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeSub(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Sub* sub = static_cast<ir::Sub*>(instruction);
+    typedef vanaheimr::as::Sub Sub;
+    
+    Sub* sub = static_cast<Sub*>(instruction);
 
     Value a = getOperand(sub->a, parentBlock, threadId);
     Value b = getOperand(sub->b, parentBlock, threadId);
@@ -540,10 +594,12 @@ static __device__ ir::Binary::PC executeSub(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeTrunc(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeTrunc(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Trunc* trunc = static_cast<ir::Trunc*>(instruction);
+    typedef vanaheimr::as::Trunc Trunc;
+    
+    Trunc* trunc = static_cast<Trunc*>(instruction);
 
     Value a = getOperand(trunc->a, parentBlock, threadId);
 
@@ -554,10 +610,12 @@ static __device__ ir::Binary::PC executeTrunc(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeUdiv(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeUdiv(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Udiv* udiv = static_cast<ir::Udiv*>(instruction);
+    typedef vanaheimr::as::Udiv Udiv;
+    
+    Udiv* udiv = static_cast<Udiv*>(instruction);
 
     Value a = getOperand(udiv->a, parentBlock, threadId);
     Value b = getOperand(udiv->b, parentBlock, threadId);
@@ -569,10 +627,12 @@ static __device__ ir::Binary::PC executeUdiv(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeUitofp(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeUitofp(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Uitofp* uitofp = static_cast<ir::Uitofp*>(instruction);
+    typedef vanaheimr::as::Uitofp Uitofp;
+    
+    Uitofp* uitofp = static_cast<Uitofp*>(instruction);
 
     Value a = getOperand(uitofp->a, parentBlock, threadId);
 
@@ -583,10 +643,12 @@ static __device__ ir::Binary::PC executeUitofp(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeUrem(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeUrem(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Urem* urem = static_cast<ir::Urem*>(instruction);
+    typedef vanaheimr::as::Urem Urem;
+    
+    Urem* urem = static_cast<Urem*>(instruction);
 
     Value a = getOperand(urem->a, parentBlock, threadId);
     Value b = getOperand(urem->b, parentBlock, threadId);
@@ -597,10 +659,12 @@ static __device__ ir::Binary::PC executeUrem(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeXor(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeXor(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Xor* xorr = static_cast<ir::Xor*>(instruction);
+    typedef vanaheimr::as::Xor Xor;
+    
+    Xor* xorr = static_cast<Xor*>(instruction);
 
     Value a = getOperand(xorr->a, parentBlock, threadId);
     Value b = getOperand(xorr->b, parentBlock, threadId);
@@ -611,10 +675,12 @@ static __device__ ir::Binary::PC executeXor(ir::Instruction* instruction,
     return pc+1;
 }
 
-static __device__ ir::Binary::PC executeZext(ir::Instruction* instruction,
+static __device__ ir::Binary::PC executeZext(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
-    ir::Zext* zext = static_cast<ir::Zext*>(instruction);
+    typedef vanaheimr::as::Zext Zext;
+    
+    Zext* zext = static_cast<Zext*>(instruction);
 
     Value a = getOperand(zext->a, parentBlock, threadId);
 
@@ -625,7 +691,7 @@ static __device__ ir::Binary::PC executeZext(ir::Instruction* instruction,
 }
 
 static __device__ ir::Binary::PC executeInvalidOpcode(
-	ir::Instruction* instruction, ir::Binary::PC pc,
+	Instruction* instruction, ir::Binary::PC pc,
 	CoreSimBlock* parentBlock, unsigned threadId)
 {
     // TODO add this
@@ -634,7 +700,7 @@ static __device__ ir::Binary::PC executeInvalidOpcode(
     return pc+1;
 }
 
-typedef ir::Binary::PC (*JumpTablePointer)(ir::Instruction*,
+typedef ir::Binary::PC (*JumpTablePointer)(Instruction*,
 	ir::Binary::PC, CoreSimBlock*, unsigned);
 
 static __device__ JumpTablePointer decodeTable[] = 
@@ -656,7 +722,7 @@ static __device__ JumpTablePointer decodeTable[] =
     executeMul,
     executeOr,
     executeRet,
-    executeSetP,
+    executeSetp,
     executeSext,
     executeSdiv,
     executeShl,
@@ -673,41 +739,41 @@ static __device__ JumpTablePointer decodeTable[] =
     executeInvalidOpcode
 };
 
-static __device__ const char* toString(ir::Instruction::Opcode opcode)
+static __device__ const char* toString(Instruction::Opcode opcode)
 {
     switch(opcode)
     {
-    case ir::Instruction::Add:     return "Add";
-    case ir::Instruction::And:     return "And";
-    case ir::Instruction::Ashr:    return "Ashr";
-    case ir::Instruction::Atom:    return "Atom";
-    case ir::Instruction::Bar:     return "Bar";
-    case ir::Instruction::Bitcast: return "Bitcast";
-    case ir::Instruction::Bra:     return "Bra";
-    case ir::Instruction::Fpext:   return "Fpext";
-    case ir::Instruction::Fptosi:  return "Fptosi";
-    case ir::Instruction::Fptoui:  return "Fptoui";
-    case ir::Instruction::Fptrunc: return "Fptrunc";
-    case ir::Instruction::Ld:      return "Ld";
-    case ir::Instruction::Lshr:    return "Lshr";
-    case ir::Instruction::Membar:  return "Membar";
-    case ir::Instruction::Mul:     return "Mul";
-    case ir::Instruction::Or:      return "Or";
-    case ir::Instruction::Ret:     return "Ret";
-    case ir::Instruction::SetP:    return "SetP";
-    case ir::Instruction::Sext:    return "Sext";
-    case ir::Instruction::Sdiv:    return "Sdiv";
-    case ir::Instruction::Shl:     return "Shl";
-    case ir::Instruction::Sitofp:  return "Sitofp";
-    case ir::Instruction::Srem:    return "Srem";
-    case ir::Instruction::St:      return "St";
-    case ir::Instruction::Sub:     return "Sub";
-    case ir::Instruction::Trunc:   return "Trunc";
-    case ir::Instruction::Udiv:    return "Udiv";
-    case ir::Instruction::Uitofp:  return "Uitofp";
-    case ir::Instruction::Urem:    return "Urem";
-    case ir::Instruction::Xor:     return "Xor";
-    case ir::Instruction::Zext:    return "Zext";
+    case Instruction::Add:     return "Add";
+    case Instruction::And:     return "And";
+    case Instruction::Ashr:    return "Ashr";
+    case Instruction::Atom:    return "Atom";
+    case Instruction::Bar:     return "Bar";
+    case Instruction::Bitcast: return "Bitcast";
+    case Instruction::Bra:     return "Bra";
+    case Instruction::Fpext:   return "Fpext";
+    case Instruction::Fptosi:  return "Fptosi";
+    case Instruction::Fptoui:  return "Fptoui";
+    case Instruction::Fptrunc: return "Fptrunc";
+    case Instruction::Ld:      return "Ld";
+    case Instruction::Lshr:    return "Lshr";
+    case Instruction::Membar:  return "Membar";
+    case Instruction::Mul:     return "Mul";
+    case Instruction::Or:      return "Or";
+    case Instruction::Ret:     return "Ret";
+    case Instruction::Setp:    return "Setp";
+    case Instruction::Sext:    return "Sext";
+    case Instruction::Sdiv:    return "Sdiv";
+    case Instruction::Shl:     return "Shl";
+    case Instruction::Sitofp:  return "Sitofp";
+    case Instruction::Srem:    return "Srem";
+    case Instruction::St:      return "St";
+    case Instruction::Sub:     return "Sub";
+    case Instruction::Trunc:   return "Trunc";
+    case Instruction::Udiv:    return "Udiv";
+    case Instruction::Uitofp:  return "Uitofp";
+    case Instruction::Urem:    return "Urem";
+    case Instruction::Xor:     return "Xor";
+    case Instruction::Zext:    return "Zext";
     default: break;
     }
     
@@ -715,7 +781,7 @@ static __device__ const char* toString(ir::Instruction::Opcode opcode)
 }
 
 __device__ ir::Binary::PC CoreSimThread::executeInstruction(
-    ir::Instruction* instruction, ir::Binary::PC pc)
+    Instruction* instruction, ir::Binary::PC pc)
 {
     JumpTablePointer decoderFunction = decodeTable[instruction->opcode];
     
