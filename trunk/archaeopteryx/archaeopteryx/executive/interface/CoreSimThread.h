@@ -22,11 +22,14 @@ class CoreSimThread
 {
     public:
 		typedef vanaheimr::as::Instruction Instruction;
-        typedef ir::Binary::PC PC;
-        typedef long long unsigned int Value;
+        typedef ir::Binary Binary;
+		typedef Binary::PC PC;
+        
+		typedef long long unsigned int Value;
         typedef long long signed int SValue;
         typedef long long unsigned int Address;
-    public:
+    
+	public:
         __device__ CoreSimThread(CoreSimBlock* parentBlock = 0,
         	unsigned threadId = 0, unsigned priority = 1, bool barrier = false);
         __device__ PC executeInstruction(Instruction*, PC);
