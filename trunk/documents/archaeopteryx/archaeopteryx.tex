@@ -532,6 +532,22 @@ Simple operations like binary loading and initial memory space setup are
 performed directly by this thread.  More heavy-weight operations such as memory
 initialization are performed by synchronously launching additional HTAs.
 
+Since the focus of this work is on the simulation of the M-BSP processor itself
+rather than an associated CPU, this infrastructure does not model the CPU at
+all.  Native programs are simulated directly by initializing memory for static
+variables and starting a single thread at the program entry point.  However,
+existing programs, such as CUDA/OpenCL/etc, are modeled one kernel at a time.  
+GPU-Ocelot is used to capture memory checkpoints before and after each kernel
+is executed, along with enough state to reproduce the kernel launch (kernel
+arguments, launch dimensions, etc).  When archaeopteryx simulates a kernel
+from a checkpoint, it loads the initial contents of memory from the checkpoint,
+loads the kernel binary into program memory, and launches the kernel with
+the parameters specified in the checkpoint.  Note that this prevents
+archaeopteryx from modeling existing applications that may execute multiple
+kernels that are launched from a host CPU simultaneously.  Programs that
+initiate multiple kernel launches from the device (using CUDA Nested
+Parallelism) are supported.
+
 
 %As a consequence, only the kernels from CUDA applications can be simulated.  
 
@@ -547,7 +563,7 @@ through shared GPU-CPU memory queues, decoding them, performing I/O operations
 or system calls, and replying back to threads.  This is done due to a lack of
 device drivers or other OS-level functionality that is available on current GPUs
 to CUDA applications. If future GPUs support system calls directly, an updated
-implementation of Archeopteryx could map these operations directly onto system
+implementation of Archaeopteryx could map these operations directly onto system
 calls and bypass the CPU completely.
 
 \paragraph{System Calls}
