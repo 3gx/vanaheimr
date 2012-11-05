@@ -12,6 +12,7 @@
 #include <vanaheimr/ir/interface/Module.h>
 
 // Hydrazine Includes
+#include <hydrazine/interface/string.h>
 #include <hydrazine/interface/debug.h>
 
 // Standard Library Includes
@@ -211,6 +212,17 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 				_getSymbolName(*symbol), _getSymbolLinkage(*symbol),
 				_getSymbolVisibility(*symbol), type);
 
+			// Add attributes
+			auto attributeList = _getSymbolAttributes(*symbol);
+			
+			auto attributes = hydrazine::split(attributeList, ", ");
+			
+			for(auto attribute : attributes)
+			{
+				report("   added attribute '" << attribute << "'");
+				function->addAttribute(attribute);
+			}
+
 			variable = &*function;
 		}
 		
@@ -229,15 +241,15 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 	{
 		if(symbol->type != SymbolTableEntry::FunctionType) continue;
 
+		report("  loaded function " << _getSymbolName(*symbol));
+
 		uint64_t symbolTableOffset = _header.symbolOffset +
 			sizeof(SymbolTableEntry) *
 			std::distance(_symbolTable.begin(), symbol);
 	
-		report("  loaded function " << _getSymbolName(*symbol));
-
 		ir::Variable* variable = _getVariableAtSymbolOffset(symbolTableOffset);
 		ir::Function* function = static_cast<ir::Function*>(variable);
-
+				
 		report("   loading arguments...");
 
 		for(auto argumentSymbol = _symbolTable.begin();
@@ -356,6 +368,12 @@ std::string BinaryReader::_getSymbolTypeName(
 	const SymbolTableEntry& symbol) const
 {
 	return std::string((char*)_stringTable.data() + symbol.typeOffset);
+}
+
+std::string BinaryReader::_getSymbolAttributes(
+	const SymbolTableEntry& symbol) const
+{
+	return std::string((char*)_stringTable.data() + symbol.attributeOffset);
 }
 
 ir::Type* BinaryReader::_getSymbolType(const SymbolTableEntry& symbol) const
@@ -618,8 +636,7 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		return true;
 		
 	}
-	else if(container.asInstruction.opcode
-		== Instruction::Setp)
+	else if(container.asInstruction.opcode == Instruction::Setp)
 	{
 		auto instruction = static_cast<ir::Setp*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -644,8 +661,7 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		return true;
 		
 	}
-	else if(container.asInstruction.opcode
-		== Instruction::Bra)
+	else if(container.asInstruction.opcode == Instruction::Bra)
 	{
 		auto instruction = static_cast<ir::Bra*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -664,15 +680,13 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		
 		return true;
 	}
-	else if(container.asInstruction.opcode
-		== Instruction::Call)
+	else if(container.asInstruction.opcode == Instruction::Call)
 	{
 		_addCallInstruction(block, container);
 
 		return true;
 	}
-	else if(container.asInstruction.opcode
-		== Instruction::Ret)
+	else if(container.asInstruction.opcode == Instruction::Ret)
 	{
 		auto instruction = static_cast<ir::Ret*>(
 			ir::Instruction::create((ir::Instruction::Opcode)
@@ -844,11 +858,11 @@ const ir::Type* BinaryReader::_getType(DataType type) const
 	}
 	case f32:
 	{
-		return compiler::Compiler::getSingleton()->getType("float");
+		return compiler::Compiler::getSingleton()->getType("f32");
 	}
 	case f64:
 	{
-		return compiler::Compiler::getSingleton()->getType("double");
+		return compiler::Compiler::getSingleton()->getType("f64");
 	}
 	default: break;
 	}

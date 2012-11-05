@@ -112,6 +112,7 @@ public:
 	bool isStore()      const;
 	bool isBranch()     const;
 	bool isCall()       const;
+	bool isReturn()     const;
 	bool isInstrinsic() const;
 
 public:

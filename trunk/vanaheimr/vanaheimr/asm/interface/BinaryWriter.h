@@ -71,9 +71,11 @@ private:
 	
 	void convertComplexInstruction(InstructionContainer& container,
 		const Instruction& instruction);
+	void convertUnaryInstruction(InstructionContainer& container,
+		const Instruction& instruction);
 	void convertBinaryInstruction(InstructionContainer& container,
 		const Instruction& instruction);
-	void convertUnaryInstruction(InstructionContainer& container,
+	void convertComparisonInstruction(InstructionContainer& container,
 		const Instruction& instruction);
 	
 	OperandContainer     convertOperand(const Operand&);
@@ -88,7 +90,7 @@ private:
 	void addSymbol(unsigned int type, unsigned int linkage,
 		unsigned int visibility, unsigned int level,
 		const std::string& name, uint64_t offset, uint64_t size,
-		const std::string& typeName);
+		const std::string& typeName, const std::string& attributeName = "");
 	void patchSymbol(const std::string& name, uint64_t offset, uint64_t size);
 
 	void alignData(uint64_t alignment);

@@ -28,7 +28,8 @@ public:
 	typedef std::list<BasicBlock>      BasicBlockList;
 	typedef std::list<Argument>        ArgumentList;
 	typedef std::list<VirtualRegister> VirtualRegisterList;
-
+	typedef std::list<std::string>     StringList;
+	
 	typedef BasicBlockList::iterator       iterator;
 	typedef BasicBlockList::const_iterator const_iterator;
 
@@ -71,7 +72,11 @@ public:
 
 public:
 	bool isPrototype() const;
+	bool isIntrinsic() const;
+	
 	bool hasAttribute(const std::string& attribute) const;
+
+	StringList attributes() const;
 
 public:
 	iterator newBasicBlock(iterator position, const std::string& name);

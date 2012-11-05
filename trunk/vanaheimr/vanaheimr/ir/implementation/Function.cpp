@@ -247,9 +247,19 @@ bool Function::isPrototype() const
 	return hasAttribute("prototype");
 }
 
+bool Function::isIntrinsic() const
+{
+	return hasAttribute("intrinsic");
+}
+
 bool Function::hasAttribute(const std::string& attribute) const
 {
 	return _attributes.count(attribute) != 0;	
+}
+
+Function::StringList Function::attributes() const
+{
+	return StringList(_attributes.begin(), _attributes.end());
 }
 
 Function::iterator Function::newBasicBlock(iterator position,
@@ -275,6 +285,11 @@ Function::argument_iterator Function::newReturnValue(const Type* type,
 	const std::string& name)
 {
 	return _returnValues.insert(returned_end(), Argument(type, this, name));
+}
+
+void Function::addAttribute(const std::string& attribute)
+{
+	_attributes.insert(attribute);	
 }
 
 Function::argument_iterator Function::argument_begin()

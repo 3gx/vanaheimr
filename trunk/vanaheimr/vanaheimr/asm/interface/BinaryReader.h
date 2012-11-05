@@ -74,6 +74,8 @@ private:
 		const SymbolTableEntry& symbol) const;
 	std::string              _getSymbolTypeName(
 		const SymbolTableEntry& symbol) const;
+	std::string              _getSymbolAttributes(
+		const SymbolTableEntry& symbol) const;
 	ir::Type*                _getSymbolType(
 		const SymbolTableEntry& symbol) const;
 	ir::Variable::Linkage    _getSymbolLinkage(

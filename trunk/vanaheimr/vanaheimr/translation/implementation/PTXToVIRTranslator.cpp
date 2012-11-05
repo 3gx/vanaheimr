@@ -122,6 +122,11 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 	
 	_function = &*function;
 
+	if(!kernel.function())
+	{
+		_function->addAttribute("kernel");
+	}
+
 	// Translate Arguments
 	for(PTXKernel::ParameterVector::const_iterator
 		argument = kernel.arguments.begin();
@@ -713,11 +718,11 @@ static std::string translateTypeName(::ir::PTXOperand::DataType type)
 	}
 	case ::ir::PTXOperand::f32:
 	{
-		return "float";
+		return "f32";
 	}
 	case ::ir::PTXOperand::f64:
 	{
-		return "double";
+		return "f64";
 	}
 	case ::ir::PTXOperand::pred:
 	{
@@ -1207,6 +1212,9 @@ void PTXToVIRTranslator::_addSpecialPrototype(const std::string& name)
 
 	function->newReturnValue(_getType("i32"), "returnedValue");
 
+	function->addAttribute("intrinsic");
+	function->addAttribute("prototype");
+
 	function->interpretType();
 }
 
@@ -1220,6 +1228,9 @@ void PTXToVIRTranslator::_addPrototype(const std::string& name,
 	auto function = _module->newFunction(name, ir::Variable::ExternalLinkage,
 		ir::Variable::HiddenVisibility);
 
+	function->addAttribute("prototype");
+	function->addAttribute("intrinsic");
+	
 	unsigned int index = 0;
 
 	auto returnedArguments = call.returned();

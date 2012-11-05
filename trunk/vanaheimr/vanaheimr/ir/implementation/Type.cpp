@@ -113,7 +113,7 @@ std::string IntegerType::integerName(unsigned int bits)
 }
 
 FloatType::FloatType(Compiler* c)
-: Type("float", c)
+: Type("f32", c)
 {
 
 }
@@ -129,7 +129,7 @@ Type* FloatType::clone() const
 }
 
 DoubleType::DoubleType(Compiler* c)
-: Type("double", c)
+: Type("f64", c)
 {
 
 }

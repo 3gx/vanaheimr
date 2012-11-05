@@ -1,7 +1,7 @@
 /*	\file   Vanaheimr.h
 	\date   Saturday January 22, 2011
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
-	\brief  The header file for the Vanaheimr class.
+	\brief  The header file for the Instruction byte-code class.
 */
 
 #pragma once
@@ -109,7 +109,7 @@ public:
 		OrderedNotEqual,
 		OrderedLessThan,
 		OrderedLessOrEqual,
-		OrderedGreater,
+		OrderedGreaterThan,
 		OrderedGreaterOrEqual,
 		UnorderedEqual,
 		UnorderedNotEqual,
@@ -373,41 +373,42 @@ class InstructionContainer
 public:
 	union
 	{
-		Add               asAdd;
-		And               asAnd;
-		Ashr              asAshr;
-		Atom              asAtom;
-		Bar               asBar;
-		BinaryInstruction asBinaryInstruction;
-		Bitcast           asBitcast;
-		Bra               asBra;
-		Call              asCall;
-		Fpext             asFpext;
-		Fptosi            asFptosi;
-		Fptoui            asFptoui;
-		Fptrunc           asFptrunc;
-		Instruction       asInstruction;
-		Ld                asLd;
-		Lshr              asLshr;
-		Membar            asMembar;
-		Mul               asMul;
-		Or                asOr;
-		Ret               asRet;
-		Setp              asSetp;
-		Sext              asSext;
-		Sdiv              asSdiv;
-		Shl               asShl;
-		Sitofp            asSitofp;
-		Srem              asSrem;
-		St                asSt;
-		Sub               asSub;
-		Trunc             asTrunc;
-		Udiv              asUdiv;
-		Uitofp            asUitofp;
-		UnaryInstruction  asUnaryInstruction;
-		Urem              asUrem;
-		Xor               asXor;
-		Zext              asZext;
+		Add                   asAdd;
+		And                   asAnd;
+		Ashr                  asAshr;
+		Atom                  asAtom;
+		Bar                   asBar;
+		BinaryInstruction     asBinaryInstruction;
+		Bitcast               asBitcast;
+		Bra                   asBra;
+		Call                  asCall;
+		ComparisonInstruction asComparisonInstruction;
+		Fpext                 asFpext;
+		Fptosi                asFptosi;
+		Fptoui                asFptoui;
+		Fptrunc               asFptrunc;
+		Instruction           asInstruction;
+		Ld                    asLd;
+		Lshr                  asLshr;
+		Membar                asMembar;
+		Mul                   asMul;
+		Or                    asOr;
+		Ret                   asRet;
+		Setp                  asSetp;
+		Sext                  asSext;
+		Sdiv                  asSdiv;
+		Shl                   asShl;
+		Sitofp                asSitofp;
+		Srem                  asSrem;
+		St                    asSt;
+		Sub                   asSub;
+		Trunc                 asTrunc;
+		Udiv                  asUdiv;
+		Uitofp                asUitofp;
+		UnaryInstruction      asUnaryInstruction;
+		Urem                  asUrem;
+		Xor                   asXor;
+		Zext                  asZext;
 	};
 };
 
