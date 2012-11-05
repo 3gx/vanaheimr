@@ -117,6 +117,23 @@ void BinaryWriter::populateData()
 	
 }
 
+static std::string flattenAttributes(const ir::Function& function)
+{
+	auto attributes = function.attributes();
+	
+	std::stringstream list;
+	
+	for(auto attribute = attributes.begin();
+		attribute != attributes.end(); ++attribute)
+	{
+		if(attribute != attributes.begin()) list << ", ";
+		
+		list << *attribute;
+	}
+	
+	return list.str();
+}
+
 void BinaryWriter::populateInstructions()
 {
 	report(" Adding function symbols.");
@@ -126,7 +143,7 @@ void BinaryWriter::populateInstructions()
 		report("  " << function->name());
 		addSymbol(SymbolTableEntry::FunctionType, function->linkage(),
 			function->visibility(), ir::Global::InvalidLevel, function->name(),
-			0, 0, function->type().name());
+			0, 0, function->type().name(), flattenAttributes(*function));
 	}
 	
 	report(" Adding functions.");
@@ -557,6 +574,91 @@ void BinaryWriter::convertBinaryInstruction(
 	container.asBinaryInstruction.b = convertOperand(*binary.b());
 }
 
+static ComparisonInstruction::Comparison convertComparison(
+	ir::ComparisonInstruction::Comparison comparison)
+{
+	switch(comparison)
+	{
+	case ir::ComparisonInstruction::OrderedEqual:
+	{
+		return ComparisonInstruction::OrderedEqual;
+	}
+	case ir::ComparisonInstruction::OrderedNotEqual:
+	{
+		return ComparisonInstruction::OrderedNotEqual;
+	}
+	case ir::ComparisonInstruction::OrderedLessThan:
+	{
+		return ComparisonInstruction::OrderedLessThan;
+	}
+	case ir::ComparisonInstruction::OrderedLessOrEqual:
+	{
+		return ComparisonInstruction::OrderedLessOrEqual;
+	}
+	case ir::ComparisonInstruction::OrderedGreaterThan:
+	{
+		return ComparisonInstruction::OrderedGreaterThan;
+	}
+	case ir::ComparisonInstruction::OrderedGreaterOrEqual:
+	{
+		return ComparisonInstruction::OrderedGreaterOrEqual;
+	}
+	case ir::ComparisonInstruction::UnorderedEqual:
+	{
+		return ComparisonInstruction::UnorderedEqual;
+	}
+	case ir::ComparisonInstruction::UnorderedNotEqual:
+	{
+		return ComparisonInstruction::UnorderedNotEqual;
+	}
+	case ir::ComparisonInstruction::UnorderedLessThan:
+	{
+		return ComparisonInstruction::UnorderedLessThan;
+	}
+	case ir::ComparisonInstruction::UnorderedLessOrEqual:
+	{
+		return ComparisonInstruction::UnorderedLessOrEqual;
+	}
+	case ir::ComparisonInstruction::UnorderedGreaterThan:
+	{
+		return ComparisonInstruction::UnorderedGreaterThan;
+	}
+	case ir::ComparisonInstruction::UnorderedGreaterOrEqual:
+	{
+		return ComparisonInstruction::UnorderedGreaterOrEqual;
+	}
+	case ir::ComparisonInstruction::IsANumber:
+	{
+		return ComparisonInstruction::IsANumber;
+	}
+	case ir::ComparisonInstruction::NotANumber:
+	{
+		return ComparisonInstruction::NotANumber;
+	}
+	case ir::ComparisonInstruction::InvalidComparison:
+	{
+		return ComparisonInstruction::InvalidComparison;
+	}
+	}
+	
+	return ComparisonInstruction::InvalidComparison;
+}
+
+void BinaryWriter::convertComparisonInstruction(
+	InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	const ir::ComparisonInstruction& comparison =
+		static_cast<const ir::ComparisonInstruction&>(instruction);
+
+	container.asComparisonInstruction.d = convertOperand(*comparison.d());
+	container.asComparisonInstruction.a = convertOperand(*comparison.a());
+	container.asComparisonInstruction.b = convertOperand(*comparison.b());
+	
+	container.asComparisonInstruction.comparison =
+		convertComparison(comparison.comparison);
+}
+
 InstructionContainer BinaryWriter::convertToContainer(
 	const Instruction& instruction)
 {
@@ -571,6 +673,10 @@ InstructionContainer BinaryWriter::convertToContainer(
 	if(isComplexInstruction(instruction))
 	{
 		convertComplexInstruction(container, instruction);
+	}
+	else if(instruction.isComparison())
+	{
+		convertComparisonInstruction(container, instruction);
 	}
 	else if(instruction.isUnary())
 	{
@@ -653,10 +759,12 @@ BinaryWriter::SymbolTableEntryVector::iterator
 
 void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	unsigned int visibility, unsigned int level, const std::string& name,
-	uint64_t offset, uint64_t size, const std::string& typeName)
+	uint64_t offset, uint64_t size, const std::string& typeName,
+	const std::string& attributeList)
 {
 	report("   adding symbol '" << name
-		<< "' with type name '" << typeName << "'");
+		<< "' with type name '" << typeName << "' and attributes '"
+		<< attributeList << "'");
 	
 	SymbolTableEntry symbol;
 
@@ -677,7 +785,15 @@ void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	std::copy(typeName.begin(), typeName.end(),
 		std::back_inserter(m_stringTable));
 	m_stringTable.push_back('\0');
+	
+	// Add the attribute name string
+	symbol.attributeOffset = m_stringTable.size();
+		
+	std::copy(attributeList.begin(), attributeList.end(),
+		std::back_inserter(m_stringTable));
+	m_stringTable.push_back('\0');
 
+	// Add the symbol
 	m_symbolTable.push_back(symbol);
 }
 

@@ -42,10 +42,11 @@ public:
 		Attributes attributes;
 	};
 
-	uint64_t stringOffset : 64;
-    uint64_t offset       : 64;
-	uint64_t typeOffset   : 64;
-	uint64_t size         : 64;
+	uint64_t stringOffset    : 64;
+    uint64_t offset          : 64;
+	uint64_t typeOffset      : 64;
+	uint64_t attributeOffset : 64;
+	uint64_t size            : 64;
 };
 
 }

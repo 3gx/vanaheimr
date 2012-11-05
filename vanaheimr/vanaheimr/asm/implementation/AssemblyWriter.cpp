@@ -56,6 +56,13 @@ void AssemblyWriter::writeFunction(std::ostream& stream,
 	report(" For function '" << function.name() << "'");
 
 	stream << ".function ";
+
+	auto attributes = function.attributes();
+	
+	for(auto attribute : attributes)
+	{
+		stream << "." << attribute << " ";
+	}
 	
 	writeLinkage(stream, function); 
 	
@@ -212,11 +219,11 @@ void AssemblyWriter::writeType(std::ostream& stream, const ir::Type& type)
 		}
 		else if(type.isSinglePrecisionFloat())
 		{
-			stream << ".float ";
+			stream << ".f32 ";
 		}
 		else if(type.isDoublePrecisionFloat())
 		{
-			stream << ".double ";
+			stream << ".f64 ";
 		}
 		else
 		{

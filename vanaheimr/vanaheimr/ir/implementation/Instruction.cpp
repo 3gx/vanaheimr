@@ -176,6 +176,11 @@ bool Instruction::isCall() const
 	return opcode == Call;
 }
 
+bool Instruction::isReturn() const
+{
+	return opcode == Ret;
+}
+
 bool Instruction::isUnary() const
 {
 	return dynamic_cast<const UnaryInstruction*>(this) != nullptr;
@@ -506,15 +511,15 @@ std::string ComparisonInstruction::toString(Comparison c)
 	case OrderedEqual:            return "eq";
 	case OrderedNotEqual:         return "ne";
 	case OrderedLessThan:         return "lt";
-	case OrderedLessOrEqual:      return "lte";
+	case OrderedLessOrEqual:      return "le";
 	case OrderedGreaterThan:      return "gt";
-	case OrderedGreaterOrEqual:   return "gte";
-	case UnorderedEqual:          return "ueq";
-	case UnorderedNotEqual:       return "une";
-	case UnorderedLessThan:       return "ult";
-	case UnorderedLessOrEqual:    return "utle";
-	case UnorderedGreaterThan:    return "ugt";
-	case UnorderedGreaterOrEqual: return "ugte";
+	case OrderedGreaterOrEqual:   return "ge";
+	case UnorderedEqual:          return "equ";
+	case UnorderedNotEqual:       return "neu";
+	case UnorderedLessThan:       return "ltu";
+	case UnorderedLessOrEqual:    return "leu";
+	case UnorderedGreaterThan:    return "gtu";
+	case UnorderedGreaterOrEqual: return "geu";
 	case IsANumber:               return "num";
 	case NotANumber:              return "nan";
 	case InvalidComparison:       break;
