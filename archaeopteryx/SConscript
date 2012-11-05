@@ -39,8 +39,8 @@ for dir in directories:
 		sources.extend(env.Glob(regexp))
 
 # Create the archaeopteryx library
-libvanaheimr = env.SharedLibrary('archaeopteryx', sources, LIBS=libs)
-libs.append(libvanaheimr)
+libarchaeopteryx = env.SharedLibrary('archaeopteryx', sources, LIBS=libs)
+libs.append(libarchaeopteryx)
 
 # Create the archaeopteryx unit tests
 tests = []
