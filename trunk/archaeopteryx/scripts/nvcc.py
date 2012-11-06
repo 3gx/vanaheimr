@@ -84,6 +84,13 @@ def generate(env):
                                       src_suffix = CUDASuffixes)
   env['BUILDERS']['PTXFile'] = ptx_builder
 
+  # create a builder that makes PTX libraries from .ptx files
+  ptx_lib_builder = SCons.Builder.Builder(action = 'cat $SOURCES > $TARGET',
+                                      emitter = {},
+                                      suffix = '.ptx',
+                                      src_suffix = ['.ptx'])
+  env['BUILDERS']['PTXLibrary'] = ptx_lib_builder
+  
   # create builders that make static & shared objects from .cu files
   static_obj, shared_obj = SCons.Tool.createObjBuilders(env)
 

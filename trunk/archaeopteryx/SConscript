@@ -39,8 +39,8 @@ for dir in directories:
 		sources.extend(env.Glob(regexp))
 
 # Create the archaeopteryx library
-libarchaeopteryx = env.SharedLibrary('archaeopteryx', sources, LIBS=libs)
-libs.append(libarchaeopteryx)
+libarchaeopteryx = env.PTXLibrary('archaeopteryx', sources, LIBS=libs)
+libs.insert(0, libarchaeopteryx)
 
 # Create the archaeopteryx unit tests
 tests = []
