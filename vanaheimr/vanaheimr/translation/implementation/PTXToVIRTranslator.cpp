@@ -271,16 +271,17 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 			_translateBra(ptx);
 			return true;
 		}
-		case PTXInstruction::Fma: // fall through
-		case PTXInstruction::Mad:
-		{
-			_translateFma(ptx);
-			return true;
-		}
 		case PTXInstruction::Ret:  // fall through
 		case PTXInstruction::Exit:
 		{
 			_translateExit(ptx);
+			return true;
+		}
+		case PTXInstruction::SelP: // fall through
+		case PTXInstruction::Fma:  // fall through
+		case PTXInstruction::Mad:
+		{
+			_translateSimpleIntrinsic(ptx);
 			return true;
 		}
 		default: break;	
@@ -473,6 +474,7 @@ static bool isSimpleBinaryInstruction(const ::ir::PTXInstruction& ptx)
 	case PTXInstruction::Or:  // fall through
 	case PTXInstruction::Rem: // fall through
 	case PTXInstruction::Shl: // fall through
+	case PTXInstruction::Shr: // fall through
 	case PTXInstruction::Sub: // fall through
 	case PTXInstruction::Xor:
 	{
@@ -558,9 +560,20 @@ static ir::BinaryInstruction* newBinaryInstruction(
 	{
 		return new ir::Shl;		
 	}
+	case PTXInstruction::Shr:
+	{
+		if(PTXOperand::isSigned(ptx.type))
+		{
+			return new ir::Ashr;
+		}
+		else
+		{
+			return new ir::Lshr;
+		}
+	}
 	case PTXInstruction::Sub:
 	{
-		return new ir::Sub;		
+		return new ir::Sub;
 	}
 	case PTXInstruction::Xor:
 	{
@@ -805,24 +818,29 @@ static std::string modifierString(unsigned int modifier,
 	return result;
 }
 
-
-void PTXToVIRTranslator::_translateFma(const PTXInstruction& ptx)
+void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 {	
 	ir::Call* call = new ir::Call(_block);
 	
-	call->setGuard(_translatePredicateOperand(PTXOperand::PT));
-
-	call->addReturn(_newTranslatedOperand(ptx.d));
-
-	call->addArgument(_newTranslatedOperand(ptx.a));
-	call->addArgument(_newTranslatedOperand(ptx.b));
-	call->addArgument(_newTranslatedOperand(ptx.c));
+	call->setGuard(static_cast<ir::PredicateOperand*>(
+		_translatePredicateOperand(ptx.pg)));
 	
-	std::string modifiers = modifierString(ptx.modifier, ptx.carry);
+	call->addReturn(_newTranslatedOperand(ptx.d));
+	
+	auto operands = {&ptx.a, &ptx.b, &ptx.c};
+
+	for(auto operand : operands)
+	{
+		if(operand->addressMode == PTXOperand::Invalid) continue;
+		
+		call->addArgument(_newTranslatedOperand(*operand));
+	}
 	
 	std::stringstream stream;
 	
-	stream << "_Zintrinsic_fma_";
+	stream << "_Zintrinsic_" << PTXInstruction::toString(ptx.opcode) << "_";
+	
+	std::string modifiers = modifierString(ptx.modifier, ptx.carry);
 	
 	if(!modifiers.empty())
 	{

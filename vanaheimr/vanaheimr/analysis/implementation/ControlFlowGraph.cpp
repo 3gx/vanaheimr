@@ -168,7 +168,7 @@ void ControlFlowGraph::_initializePredecessorsAndSuccessors(BasicBlock* block,
 	// TODO: handle conflicts
 	if(target != nullptr)
 	{
-		BasicBlockSet& predecessors = _predecessors[fallthrough->id()];
+		BasicBlockSet& predecessors = _predecessors[target->id()];
 		
 		predecessors.insert(&*block);
 	}

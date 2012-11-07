@@ -44,6 +44,11 @@ void ConvertToSSAPass::runOnFunction(Function& function)
 	_insertPhis(function);
 
 	_rename(function);
+	
+	_renamePhis(function);
+	
+	// invalidate dataflow
+	invalidateAnalysis("DataflowAnalysis");
 }
 
 void ConvertToSSAPass::_insertPhis(Function& function)
@@ -59,6 +64,7 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 	//         the DF of newly-placed PHIs need to be checked again
 	
 	// Get dependent analyses
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
 	
@@ -82,9 +88,15 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 			// iterated dominance frontier
 			for(auto frontierBlock : dominanceFrontier)
 			{
-				if(blocksThatNeedPhis.insert(frontierBlock).second)
+				// the value needs a PHI if it is live-in here
+				auto liveIns = dfg->getLiveIns(*frontierBlock);
+				
+				if(liveIns.count(&*value) != 0)
 				{
-					definingBlocks.insert(frontierBlock);
+					if(blocksThatNeedPhis.insert(frontierBlock).second)
+					{
+						definingBlocks.insert(frontierBlock);
+					}
 				}
 			}
 		}
@@ -113,7 +125,7 @@ void ConvertToSSAPass::_insertPsis(Function& function)
 	// parallel for-all over blocks
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
-		// posibly more parallelism in here over instructions,
+		// possibly more parallelism in here over instructions,
 		//  but phi insertions will require a scan
 		for(auto instruction = block->begin();
 			instruction != block->end(); ++instruction)
@@ -165,7 +177,7 @@ void ConvertToSSAPass::_insertPhi(VirtualRegister& vr, BasicBlock& block)
 void ConvertToSSAPass::_rename(Function& f)
 {
 	report(" Renaming registers...");
-
+	
 	BasicBlockSet worklist;
 	
 	 _renamedLiveIns.resize(f.size());
@@ -176,26 +188,30 @@ void ConvertToSSAPass::_rename(Function& f)
 	// 
 	// Start with blocks that defined renamed values
 	// do this with a local insert, then a global gather + unique
+	report("  Renaming local registers...");
 	for(auto value : _registersNeedingRenaming)
 	{
-		auto definingBlocks = _getBlocksThatDefineThisValue(*value);
-		
 		_renameAllDefs(*value);
 		
 		// local insert, needs to be gathered
+		auto definingBlocks = _getBlocksThatDefineThisValue(*value);
+		
 		worklist.insert(definingBlocks.begin(), definingBlocks.end());
 	}
 	
+	report("  Renaming registers that are used in different blocks...");
 	while(!worklist.empty())
 	{
 		// update all blocks in the worklist, process each iteration in parallel
 		_renameLocalBlocks(worklist);	
 	}
 	
+	report("  Deleting renamed registers...");
 	// delete all of the renamed registers
 	for(auto value : _registersNeedingRenaming)
 	{
-		delete value;
+		report("   deleting r" << value->id);
+		f.erase(value);
 	}
 	
 	_registersNeedingRenaming.clear();
@@ -206,6 +222,8 @@ void ConvertToSSAPass::_rename(Function& f)
 
 void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 {
+	report("   renaming r" << value.id);
+		
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
@@ -223,6 +241,8 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 		// assign it to the def
 		_updateDefinition(*definition, value, *newValue);
 		
+		report("     to r" << newValue->id);
+		
 		// update uses in this block
 		bool killed = _updateUsesInThisBlock(*definition, value, *newValue);
 		
@@ -230,7 +250,7 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 		// block
 		if(killed) continue;
 		
-		// add the mapping to the live in set of dominated blocks
+		// add the mapping to the live-in set of dominated blocks
 		auto dominatedBlocks = dominatorAnalysis->getDominatedBlocks(
 			*definition->block);
 	
@@ -242,11 +262,16 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 			renamedLiveIns.insert(std::make_pair(&value, &*newValue));
 		}
 	}
+	
+	// rename the PHI 
 }
 
 void ConvertToSSAPass::_updateDefinition(Instruction& definingInstruction,
 	VirtualRegister& value, VirtualRegister& newValue)
 {
+	report("    in defining instruction '" << definingInstruction.toString()
+		<< "'");
+	
 	for(auto write : definingInstruction.writes)
 	{
 		assert(write->isRegister());
@@ -288,6 +313,9 @@ bool ConvertToSSAPass::_updateUsesInThisBlock(Instruction& definingInstruction,
 			// skip reads from different registers
 			if(readOperand->virtualRegister != &value) continue;
 			
+			report("      replacing use by '"
+				<< (*instruction)->toString() << "'");
+			
 			// update the value
 			readOperand->virtualRegister = &newValue;
 		}
@@ -326,6 +354,11 @@ void ConvertToSSAPass::_renameValuesInBlock(
 {
 	VirtualRegisterMap& renamedLiveIns = _renamedLiveIns[block->id()];
 
+	if(renamedLiveIns.empty()) return;
+	
+	report("   Checking block " << block->name() << " with "
+		<< renamedLiveIns.size() << " renamed live ins.");
+	
 	// replace all uses of values in this block, stop on the first def
 	for(auto instruction : *block)
 	{
@@ -344,9 +377,14 @@ void ConvertToSSAPass::_renameValuesInBlock(
 			if(renamedValue == renamedLiveIns.end()) continue;
 		
 			// update the value
+			report("    renaming r" << readOperand->virtualRegister->id
+				<< " to r"
+				<< renamedValue->second->id << " in '"
+				<< instruction->toString() << "'");
+	
 			readOperand->virtualRegister = renamedValue->second;
 		}
-		
+			
 		// kill the update on writes
 		for(auto write : instruction->writes)
 		{
@@ -359,6 +397,9 @@ void ConvertToSSAPass::_renameValuesInBlock(
 			
 			// skip values that were not renamed
 			if(renamedValue == renamedLiveIns.end()) continue;
+			
+			report("    killed renamed value r" << renamedValue->first->id
+				<< " on instruction " << instruction->toString() << ".");
 			
 			// kill renaming entries that are over-written
 			renamedLiveIns.erase(renamedValue);
@@ -376,7 +417,7 @@ void ConvertToSSAPass::_renameValuesInBlock(
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	assert(dfg != nullptr);
 	
-	// add dominator tree successors with a renamed value as a live-in
+	// add immediate dominator tree successors with a renamed value as a live-in
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
 		getAnalysis("DominatorAnalysis"));
 	assert(dominatorAnalysis != nullptr);

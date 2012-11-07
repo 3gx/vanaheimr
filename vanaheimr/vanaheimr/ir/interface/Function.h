@@ -124,6 +124,10 @@ public:
 	bool   register_empty() const;
 
 public:
+	register_iterator erase(const register_iterator&);
+	register_iterator erase(const VirtualRegister*);
+
+public:
 	register_iterator findVirtualRegister(const std::string& name);
 
 public:
