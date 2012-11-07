@@ -72,6 +72,14 @@ def add_common_nvcc_variables(env):
     # assemble the common command line
     env['_NVCCCOMCOM'] = '${_concat("-Xcompiler ", CPPFLAGS, "", __env__)} $_CPPDEFFLAGS $_NVCCWRAPCPPPATH'
 
+def ptxEmitter(target, source, env):
+	
+	newSources = []
+	for s in source:
+		newSources.append(env.PTXFile(s))
+	
+	return target, newSources
+
 def generate(env):
   """
   Add Builders and construction variables for CUDA compilers to an Environment.
@@ -86,7 +94,7 @@ def generate(env):
 
   # create a builder that makes PTX libraries from .ptx files
   ptx_lib_builder = SCons.Builder.Builder(action = 'cat $SOURCES > $TARGET',
-                                      emitter = {},
+                                      emitter = ptxEmitter,
                                       suffix = '.ptx',
                                       src_suffix = ['.ptx'])
   env['BUILDERS']['PTXLibrary'] = ptx_lib_builder
