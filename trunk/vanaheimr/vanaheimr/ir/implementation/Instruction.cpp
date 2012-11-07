@@ -181,6 +181,11 @@ bool Instruction::isReturn() const
 	return opcode == Ret;
 }
 
+bool Instruction::isPhi() const
+{
+	return opcode == Phi;
+}
+
 bool Instruction::isUnary() const
 {
 	return dynamic_cast<const UnaryInstruction*>(this) != nullptr;

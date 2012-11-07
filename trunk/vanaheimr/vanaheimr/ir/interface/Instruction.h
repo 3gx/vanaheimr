@@ -114,6 +114,7 @@ public:
 	bool isCall()       const;
 	bool isReturn()     const;
 	bool isInstrinsic() const;
+	bool isPhi()        const;
 
 public:
 	bool isUnary()      const;

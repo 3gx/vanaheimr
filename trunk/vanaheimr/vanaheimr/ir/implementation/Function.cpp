@@ -382,6 +382,27 @@ bool Function::register_empty() const
 	return _registers.empty();
 }
 
+Function::register_iterator Function::erase(const register_iterator& r)
+{
+	return _registers.erase(r);
+}
+
+Function::register_iterator Function::erase(const VirtualRegister* r)
+{
+	register_iterator registerIterator = register_end();
+	
+	for(auto reg = register_begin(); reg != register_end(); ++reg)
+	{
+		if(&*reg == r)
+		{
+			registerIterator = reg;
+			break;
+		}
+	}
+	
+	return erase(registerIterator);
+}
+
 void Function::clear()
 {
 	_blocks.clear();
