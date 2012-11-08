@@ -103,6 +103,8 @@ private:
 	
 	void _addCallInstruction(ir::Function::iterator block,
 		const InstructionContainer& container);
+	void _addPhiInstruction(ir::Function::iterator block,
+		const InstructionContainer& container);
 		
 	ir::Operand* _translateOperand(const OperandContainer& container,
 		ir::Instruction* instruction);

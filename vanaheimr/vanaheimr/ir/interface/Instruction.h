@@ -763,9 +763,8 @@ public:
 class Phi : public Instruction
 {
 public:
-	typedef RegisterOperand* RegisterOperandPointer;
-	typedef std::vector<RegisterOperand*> RegisterOperandVector;
-	typedef std::vector<BasicBlock*>      BasicBlockVector;
+	typedef RegisterOperand*                    RegisterOperandPointer;
+	typedef std::vector<BasicBlock*>            BasicBlockVector;
 
 public:
 	explicit Phi(BasicBlock* b = 0);
@@ -777,7 +776,7 @@ public:
 	/*! \brief Set the destination, the instruction takes ownership */
 	void setD(RegisterOperand* d);
 	/*! \brief Add a new source, the instruction takes ownership */
-	void addSource(RegisterOperand* source, BasicBlock* predecessor);
+	void addSource(RegisterOperand* source, AddressOperand* predecessor);
 	/*! \brief Remove a source from the specified basic block */
 	void removeSource(BasicBlock* predecessor);
 
@@ -785,15 +784,14 @@ public:
 	      RegisterOperandPointer d();
 	const RegisterOperandPointer d() const;
 	
-	RegisterOperandVector sources();
+	     RegisterOperandVector sources();
+	ConstRegisterOperandVector sources() const;
+	
+public:
+	BasicBlockVector blocks();
 
 public:
-	virtual std::string toString() const;
 	virtual Instruction* clone() const;
-	
-public:
-	
-	BasicBlockVector blocks;
 };
 
 /*! \brief A PSI node defines a new value only if at least one of a set of
