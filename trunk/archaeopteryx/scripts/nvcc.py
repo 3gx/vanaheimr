@@ -76,7 +76,9 @@ def ptxEmitter(target, source, env):
 	
 	newSources = []
 	for s in source:
-		newSources.append(env.PTXFile(s))
+		name, extension = os.path.splitext(str(s)) 
+		if extension == '.cu':
+			newSources.append(env.PTXFile(s))
 	
 	return target, newSources
 

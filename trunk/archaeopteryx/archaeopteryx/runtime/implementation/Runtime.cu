@@ -14,7 +14,10 @@
 #define PHYSICAL_MEMORY_SIZE           (1 << 14)
 #define PARAMETER_MEMORY_SIZE          (1 << 10)
 
-__device__ rt::Runtime::RuntimeState g_runtimeState;
+__device__ archaeopteryx::rt::Runtime::RuntimeState g_runtimeState;
+
+namespace archaeopteryx
+{
 
 namespace rt
 {
@@ -33,7 +36,7 @@ __device__ void Runtime::create()
 
 __device__ void Runtime::destroy()
 {
-   delete []g_runtimeState.m_blocks;
+   delete[] g_runtimeState.m_blocks;
    delete g_runtimeState.m_loadedBinary;
    delete g_runtimeState.m_kernel;
 }
@@ -150,6 +153,7 @@ __device__ void Runtime::unloadBinary()
     delete g_runtimeState.m_loadedBinary;
 }
 
+}
 
 }
 

@@ -5,9 +5,12 @@
 		CUDA file accesses.
 */
 
-// Archaeopteryx Includes
-#include <archaeopteryx/util/interface/File.h>
-#include <archaeopteryx/util/interface/HostReflection.h>
+// Ocelot Includes
+#include <ocelot/api/interface/ocelot.h>
+#include <ocelot/cuda/interface/cuda_runtime.h>
+
+// Autogen files
+#include <TestFileAccessesKernel.inc>
 
 // Standard Library Includes
 #include <string>
@@ -15,15 +18,6 @@
 
 namespace test
 {
-
-__global__ void kernelTestReadWriteFile(const char* filename,
-	void* result, const void* data, unsigned int size)
-{
-	util::File file(filename);
-	
-	file.write(data, size);
-	file.read(result, size);
-}
 
 static unsigned int align(unsigned int size, unsigned int alignment)
 {
@@ -37,26 +31,38 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 	char* hostFilename = 0;
 	char* deviceFilename = 0;
-	cudaHostAlloc(&hostFilename, filename.size() + 1, cudaHostAllocMapped);
-	cudaHostGetDevicePointer(&deviceFilename, hostFilename, 0);
+	cudaHostAlloc((void**)&hostFilename, filename.size() + 1, cudaHostAllocMapped);
+	cudaHostGetDevicePointer((void**)&deviceFilename, hostFilename, 0);
 
 	strcpy(hostFilename, filename.c_str());
 
 	unsigned int* hostData = 0;
 	unsigned int* deviceData = 0;
-	cudaHostAlloc(&hostData, size, cudaHostAllocMapped);
-	cudaHostGetDevicePointer(&deviceData, hostData, 0);
+	cudaHostAlloc((void**)&hostData, size, cudaHostAllocMapped);
+	cudaHostGetDevicePointer((void**)&deviceData, hostData, 0);
 
 	unsigned int* hostResult = 0;
 	unsigned int* deviceResult = 0;
-	cudaHostAlloc(&hostResult, size, cudaHostAllocMapped);
-	cudaHostGetDevicePointer(&deviceResult, hostResult, 0);
+	cudaHostAlloc((void**)&hostResult, size, cudaHostAllocMapped);
+	cudaHostGetDevicePointer((void**)&deviceResult, hostResult, 0);
 
 	for(unsigned int i = 0; i < size/sizeof(unsigned int); ++i)
 	{
 		hostData[i] = std::rand();
 	}
 	
+	cudaConfigureCall(dim3(1, 1, 1), dim3(1, 1, 1), 0, 0);
+
+	cudaSetupArgument(&deviceFilename, 8, 0 );
+	cudaSetupArgument(&deviceResult,   8, 8 );
+	cudaSetupArgument(&deviceData,     8, 16);
+	cudaSetupArgument(&size,           4, 24);
+
+	std::stringstream stream(TestFileAccessesKernel);
+
+	ocelot::registerPTXModule(stream, "TestPTXModule");
+	ocelot::launch("TestPTXModule", "main");
+
 	kernelTestReadWriteFile<<<1, 1>>>(deviceFilename, deviceResult,
 		deviceData, size);
 	
@@ -89,8 +95,6 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 int main(int argc, char** argv)
 {
-	util::HostReflection::create(__FILE__);
-
 	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1000))
 	{
 		std::cout << "Pass/Fail: Pass\n";
@@ -99,8 +103,6 @@ int main(int argc, char** argv)
 	{
 		std::cout << "Pass/Fail: Fail\n";
 	}
-
-	util::HostReflection::destroy();
 }
 
 

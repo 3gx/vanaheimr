@@ -30,7 +30,8 @@ libs = env['EXTRA_LIBS']
 sources = []
 intermediate_headers = []
 directories = ['archaeopteryx/executive/implementation',
-	'archaeopteryx/util/implementation']
+	'archaeopteryx/util/implementation',
+	'archaeopteryx/runtime/implementation']
 extensions = ['*.cu']
 
 for dir in directories:
@@ -39,15 +40,18 @@ for dir in directories:
 		sources.extend(env.Glob(regexp))
 
 # Create the archaeopteryx library
-libarchaeopteryx = env.PTXLibrary('archaeopteryx', sources, LIBS=libs)
+libarchaeopteryx = env.PTXLibrary('archaeopteryx', sources)
+
+testFileAccesses = env.PTXFile('TestFileAccess.ptx',
+	['archaeopteryx/util/test/TestFileAccess.cu', libarchaeopteryx])
 
 # Create the archaeopteryx unit tests
 tests = []
 
-tests.append(('TestFileAccesses',
-	'archaeopteryx/util/test/TestFileAccess.cpp', 'basic'))
-tests.append(('TestRuntime',
-	'archaeopteryx/runtime/test/TestRuntime.cpp', 'basic'))
+#tests.append(('TestFileAccesses',
+#	'archaeopteryx/util/test/TestFileAccess.cpp', 'basic'))
+#tests.append(('TestRuntime',
+#	'archaeopteryx/runtime/test/TestRuntime.cpp', 'basic'))
 
 for test in tests:
 	env.Program(test[0], [test[1]], LIBS=libs)
