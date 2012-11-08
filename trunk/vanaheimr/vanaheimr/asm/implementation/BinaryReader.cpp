@@ -699,6 +699,12 @@ bool BinaryReader::_addComplexInstruction(ir::Function::iterator block,
 		
 		return true;
 	}
+	else if(container.asInstruction.opcode == Instruction::Phi)
+	{
+		_addPhiInstruction(block, container);
+
+		return true;
+	}
 	
 	return false;
 }
@@ -736,6 +742,41 @@ void BinaryReader::_addCallInstruction(ir::Function::iterator block,
 			reinterpret_cast<OperandContainer*>(&_dataSection[offset]);
 	
 		instruction->addArgument(_translateOperand(*operand, instruction));
+	}
+	
+	block->push_back(instruction);
+}
+
+void BinaryReader::_addPhiInstruction(ir::Function::iterator block,
+	const InstructionContainer& container)
+{
+	auto instruction = static_cast<ir::Phi*>(
+		ir::Instruction::create((ir::Instruction::Opcode)
+			container.asInstruction.opcode, &*block));
+
+	instruction->setGuard(_translateOperand(
+		container.asCall.guard, instruction));
+
+	auto destinationOperand = _translateOperand(container.asPhi.destination,
+		instruction);
+
+	instruction->setD(static_cast<ir::RegisterOperand*>(destinationOperand));
+	
+	for(unsigned int source = 0, block = container.asPhi.sources;
+		source != container.asPhi.sources; ++source, ++block)
+	{
+		uint64_t offset = source * sizeof(OperandContainer) +
+			container.asPhi.sourcesOffset;
+		uint64_t blockOffset = block * sizeof(OperandContainer) +
+			container.asPhi.sourcesOffset;
+		
+		const OperandContainer* operandSource =
+			reinterpret_cast<OperandContainer*>(&_dataSection[offset]);
+		const OperandContainer* operandBlock =
+			reinterpret_cast<OperandContainer*>(&_dataSection[blockOffset]);
+				
+		instruction->addSource(_translateOperand(*operandSource, instruction),
+			_translateOperand(*operandBlock, instruction));
 	}
 	
 	block->push_back(instruction);
@@ -799,7 +840,7 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 	
 		if(variable == nullptr)
 		{
-			report("  adding unresolved branch target for symbol at offset "
+			report("  adding unresolved basic block for symbol at offset "
 				<< container.asSymbol.symbolTableOffset);
 			_unresolvedTargets.insert(std::make_pair(
 				container.asSymbol.symbolTableOffset, instruction));

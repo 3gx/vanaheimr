@@ -297,6 +297,8 @@ static Instruction::Opcode convertOpcode(
 	case ir::Instruction::Lshr:          return AInstruction::Lshr;
 	case ir::Instruction::Membar:        return AInstruction::Membar;
 	case ir::Instruction::Mul:           return AInstruction::Mul;
+	case ir::Instruction::Phi:           return AInstruction::Phi;
+	case ir::Instruction::Psi:           return AInstruction::Psi;
 	case ir::Instruction::Or:            return AInstruction::Or;
 	case ir::Instruction::Ret:           return AInstruction::Ret;
 	case ir::Instruction::Setp:          return AInstruction::Setp;
@@ -511,6 +513,7 @@ static bool isComplexInstruction(const ir::Instruction& instruction)
 	case ir::Instruction::Bra:  // fall through
 	case ir::Instruction::Ret:  // fall through
 	case ir::Instruction::Call: // fall through
+	case ir::Instruction::Phi: // fall through
 	{
 		return true;
 	}
@@ -544,6 +547,11 @@ void BinaryWriter::convertComplexInstruction(
 	case ir::Instruction::Ret:
 	{
 		convertRetInstruction(container, instruction);
+		break;
+	}
+	case ir::Instruction::Phi:
+	{
+		convertPhiInstruction(container, instruction);
 		break;
 	}
 	default: assertM(false, "Translation for "
@@ -892,6 +900,33 @@ void BinaryWriter::convertRetInstruction(
 {
 	// Currently a NOP
 	// TODO: fix this
+}
+
+void BinaryWriter::convertPhiInstruction(
+	InstructionContainer& container,
+	const ir::Instruction& instruction)
+{
+	const ir::Phi& phi = static_cast<const ir::Phi&>(instruction);
+
+	container.asPhi.destination = convertOperand(*phi.d());
+	
+	alignData(sizeof(OperandContainer));
+	
+	auto sources = phi.sources();
+	
+	container.asPhi.sources       = sources.size();
+	container.asPhi.sourcesOffset = m_data.size();
+	
+	for(auto source : sources)
+	{
+		addOperandToDataSection(convertOperand(*source));
+	}
+	
+	for(auto block : phi.blocks)
+	{
+		addOperandToDataSection(convertOperand(
+			ir::AddressOperand(block, nullptr)));
+	}
 }
 
 void BinaryWriter::addOperandToDataSection(const OperandContainer& operand)

@@ -276,6 +276,18 @@ class Or : public BinaryInstruction
 
 };
 
+/*! \brief A PHI instruction in the IR */
+class Phi : public Instruction
+{
+public:
+	OperandContainer destination;
+
+public:
+	uint32_t sources;
+
+	uint64_t sourcesOffset;
+};
+
 /*! \brief Return from the current function call, or exit */
 class Ret : public UnaryInstruction
 {
@@ -392,6 +404,7 @@ public:
 		Lshr                  asLshr;
 		Membar                asMembar;
 		Mul                   asMul;
+		Phi                   asPhi;
 		Or                    asOr;
 		Ret                   asRet;
 		Setp                  asSetp;

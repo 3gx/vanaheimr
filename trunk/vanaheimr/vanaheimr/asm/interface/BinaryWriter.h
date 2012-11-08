@@ -104,6 +104,8 @@ private:
 		const Instruction& instruction);
 	void convertRetInstruction(InstructionContainer& container,
 		const Instruction& instruction);
+	void convertPhiInstruction(InstructionContainer& container,
+		const Instruction& instruction);
 
 private:
 	void addOperandToDataSection(const OperandContainer& operand);
