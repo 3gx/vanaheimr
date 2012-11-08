@@ -54,6 +54,9 @@ private:
 	typedef util::LargeSet<VirtualRegister*> VirtualRegisterSet;
 	typedef util::LargeSet<BasicBlock*> BasicBlockSet;
 	typedef util::SmallSet<BasicBlock*> SmallBlockSet;
+	
+	typedef util::SmallMap<VirtualRegister*, VirtualRegister*>
+		VirtualRegisterMap;
 
 private:
 	void _insertPhis(Function& f);
@@ -64,7 +67,7 @@ private:
 private:
 	void _rename(Function& f);
 
-	void _renameAllDefs(VirtualRegister& vr);
+	void _renameAllDefs(VirtualRegister& vr, BasicBlockSet& worklist);
 	
 	void _updateDefinition(Instruction& definingInstruction,
 		VirtualRegister& value, VirtualRegister& newValue);
@@ -74,12 +77,12 @@ private:
 	void _renameLocalBlocks(BasicBlockSet& worklist);
 	void _renameValuesInBlock(BasicBlockSet& worklist, BasicBlock* block);
 
+	void _renamePhiInputs(BasicBlock* block, VirtualRegisterMap& renamedValues);
+	
 private:
 	SmallBlockSet _getBlocksThatDefineThisValue(const ir::VirtualRegister&);
 
 private:
-	typedef util::SmallMap<VirtualRegister*, VirtualRegister*>
-		VirtualRegisterMap;
 	
 	typedef std::vector<VirtualRegisterMap> VirtualRegisterMapVector;
 	

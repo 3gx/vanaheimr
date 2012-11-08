@@ -128,6 +128,24 @@ Instruction::Id Instruction::id() const
 	return _id;
 }
 
+unsigned int Instruction::index() const
+{
+	unsigned int index = 0;
+	
+	for(auto instruction : *block)
+	{
+		if(instruction == this)
+		{
+			return index;
+		}
+		++index;
+	}
+	
+	assertM(false, "Could not find instruction in parent block.");
+	
+	return index;
+}
+
 void Instruction::replaceOperand(Operand* original, Operand* newOperand)
 {
 	assert(original->instruction() == this);
@@ -1234,6 +1252,60 @@ Phi::RegisterOperandVector Phi::sources()
 	}
 	
 	return sourceOperands;
+}
+
+std::string Phi::toString() const
+{
+	std::stringstream stream;
+	
+	if(!guard()->isAlwaysTrue())
+	{
+		stream << guard()->toString() << " ";
+	}
+	
+	stream << Instruction::toString(opcode) << " ";
+	
+	std::string modifier = modifierString();
+	
+	if(!modifier.empty())
+	{
+		stream << modifier << " ";
+	}
+	
+	for(auto write : writes)
+	{
+		if(write != *writes.begin()) stream << ", ";
+		
+		stream << write->toString();
+	}
+	
+	if(!writes.empty() && reads.size() > 1)
+	{
+		stream << ", ";
+	}
+	
+	bool first = true;
+
+	auto block = blocks.begin();
+	for(auto read : reads)
+	{
+		if(read == guard()) continue;
+		
+		if(!first)
+		{
+			 stream << ", ";
+		}
+		else
+		{
+			first = false;
+		}
+		
+		stream << "[ " << read->toString() << ", " << (*block)->name() << " ]";
+		++block;
+	}
+
+	return stream.str();
+
 }
 
 Instruction* Phi::clone() const

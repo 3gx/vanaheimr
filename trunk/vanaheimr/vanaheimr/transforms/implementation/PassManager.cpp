@@ -144,14 +144,15 @@ static void freeUnusedDataStructures(PassUseCountMap& uses,
 		if(use->second == 0)
 		{
 			report("  Freeing analysis " << analysisType);
+			uses.erase(use);
 			
 			auto analysis = analyses.find(analysisType);
-			assert(analysis != analyses.end());
+			if(analysis != analyses.end())
+			{
+				delete analysis->second;
 
-			delete analysis->second;
-
-			uses.erase(use);
-			analyses.erase(analysis);
+				analyses.erase(analysis);
+			}
 		}
 	}
 }
@@ -624,6 +625,7 @@ void PassManager::invalidateAnalysis(const std::string& type)
 	AnalysisMap::iterator analysis = _analyses->find(type);
 	if(analysis != _analyses->end())
 	{
+		report("Invalidating analysis " << type);
 		delete analysis->second;
 		_analyses->erase(analysis);
 	}

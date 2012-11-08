@@ -102,6 +102,10 @@ public:
 	Id id() const;
 
 public:
+	/*! \brief The index of the instruction within the basic block */
+	unsigned int index() const;
+
+public:
 	/*! \brief Replace a matching operand with another,
 	     the original operand is deleted,
 	     the new operand is now owned by the instruction */
@@ -784,7 +788,8 @@ public:
 	RegisterOperandVector sources();
 
 public:
-	Instruction* clone() const;
+	virtual std::string toString() const;
+	virtual Instruction* clone() const;
 	
 public:
 	

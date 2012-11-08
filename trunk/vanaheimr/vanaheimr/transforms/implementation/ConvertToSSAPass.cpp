@@ -17,6 +17,9 @@
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
+// Standard Library Includes
+#include <algorithm>
+
 // Preprocessor Macros
 #ifdef REPORT_BASE
 #undef REPORT_BASE
@@ -44,8 +47,6 @@ void ConvertToSSAPass::runOnFunction(Function& function)
 	_insertPhis(function);
 
 	_rename(function);
-	
-	_renamePhis(function);
 	
 	// invalidate dataflow
 	invalidateAnalysis("DataflowAnalysis");
@@ -106,11 +107,11 @@ void ConvertToSSAPass::_insertPhis(Function& function)
 		{
 			_insertPhi(*value, *block);
 			
+			report("  PHI needed for R" << value->id << " in block "
+				<< block->name());
+			
 			// parallel: Do this with a local update, and then a final gather
-			if(_registersNeedingRenaming.insert(&*value).second)
-			{
-				report("  PHI needed for R" << value->id);
-			}
+			_registersNeedingRenaming.insert(&*value);
 		}
 	}
 }
@@ -169,8 +170,26 @@ void ConvertToSSAPass::_insertPhi(VirtualRegister& vr, BasicBlock& block)
 	phi->setD(new ir::RegisterOperand(&vr, phi));
 	phi->setGuard(new ir::PredicateOperand(
 		ir::PredicateOperand::PredicateTrue, phi));
+
+	// add sources for each predecessor
+	auto cfg = static_cast<ControlFlowGraph*>(getAnalysis("ControlFlowGraph"));
+	assert(cfg != nullptr);
+
+	auto predecessors = cfg->getPredecessors(block);
+
+	for(auto predecessor : predecessors)
+	{
+		phi->addSource(new ir::RegisterOperand(&vr, phi), predecessor);
+	}
 	
-	// parallel version: atomic 		
+	// update reaching defs, serial is fine since each value is processed
+	// independently
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
+	assert(dfg != nullptr);
+	
+	dfg->addReachingDefinition(vr, *phi);
+
+	// parallel version: atomic
 	block.push_front(phi);
 }
 
@@ -191,12 +210,7 @@ void ConvertToSSAPass::_rename(Function& f)
 	report("  Renaming local registers...");
 	for(auto value : _registersNeedingRenaming)
 	{
-		_renameAllDefs(*value);
-		
-		// local insert, needs to be gathered
-		auto definingBlocks = _getBlocksThatDefineThisValue(*value);
-		
-		worklist.insert(definingBlocks.begin(), definingBlocks.end());
+		_renameAllDefs(*value, worklist);
 	}
 	
 	report("  Renaming registers that are used in different blocks...");
@@ -220,7 +234,39 @@ void ConvertToSSAPass::_rename(Function& f)
 	_renamedLiveOuts.clear();
 }
 
-void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
+typedef std::vector<vanaheimr::ir::Instruction*> InstructionVector;
+
+class InstructionComparator
+{
+public:
+	bool operator()(const vanaheimr::ir::Instruction* l,
+		const vanaheimr::ir::Instruction* r)
+	{
+		if(l->block != r->block)
+		{
+			return l->block->id() < r->block->id();
+		}
+		else
+		{
+			return l->index() < r->index();
+		}
+	}
+};
+
+static InstructionVector sort(
+	const vanaheimr::analysis::DataflowAnalysis::InstructionSet& instructions)
+{
+	InstructionVector sortedInstructions(instructions.begin(),
+		instructions.end());
+	
+	std::sort(sortedInstructions.begin(), sortedInstructions.end(),
+		InstructionComparator());
+	
+	return sortedInstructions;
+}
+
+void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value,
+	BasicBlockSet& worklist)
 {
 	report("   renaming r" << value.id);
 		
@@ -233,14 +279,16 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 	
 	auto definitions = dfg->getReachingDefinitions(value);
 	
-	for(auto definition : definitions)
+	// sort the definitions in program order
+	auto orderedDefinitions = sort(definitions);
+	
+	for(auto definition : orderedDefinitions)
 	{
 		// create a new value
 		auto newValue = value.function->newVirtualRegister(value.type);
 		
-		// assign it to the def
 		_updateDefinition(*definition, value, *newValue);
-		
+
 		report("     to r" << newValue->id);
 		
 		// update uses in this block
@@ -250,7 +298,8 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 		// block
 		if(killed) continue;
 		
-		// add the mapping to the live-in set of dominated blocks
+		// add the mapping to the live-in set of immediately dominated blocks,
+		//  queue them for processing
 		auto dominatedBlocks = dominatorAnalysis->getDominatedBlocks(
 			*definition->block);
 	
@@ -260,10 +309,17 @@ void ConvertToSSAPass::_renameAllDefs(VirtualRegister& value)
 				_renamedLiveIns[dominatedBlock->id()];
 			
 			renamedLiveIns.insert(std::make_pair(&value, &*newValue));
+			
+			worklist.insert(dominatedBlock);
 		}
+		
+		// update PHI sources	 TODO optimize this	
+		VirtualRegisterMap map;
+		
+		map.insert(std::make_pair(&value, &*newValue));
+		
+		_renamePhiInputs(definition->block, map);
 	}
-	
-	// rename the PHI 
 }
 
 void ConvertToSSAPass::_updateDefinition(Instruction& definingInstruction,
@@ -288,20 +344,21 @@ void ConvertToSSAPass::_updateDefinition(Instruction& definingInstruction,
 bool ConvertToSSAPass::_updateUsesInThisBlock(Instruction& definingInstruction,
 	VirtualRegister& value, VirtualRegister& newValue)
 {
-	// scan forward over the block until the defining instruction is hit
-	auto instruction = definingInstruction.block->begin();
+	auto definingBlock = definingInstruction.block;
 	
-	assert(instruction != definingInstruction.block->end());
+	// scan forward over the block until the first defining instruction is hit
+	auto instruction = definingBlock->begin();
+	
+	assert(instruction != definingBlock->end());
 		
 	while(*instruction != &definingInstruction)
 	{
 		++instruction;
-		assert(instruction != definingInstruction.block->end());
+		assert(instruction != definingBlock->end());
 	}
 	
 	// replace all uses in the block
-	for(++instruction; instruction != definingInstruction.block->end();
-		++instruction)
+	for(++instruction; instruction != definingBlock->end(); ++instruction)
 	{
 		for(auto read : (*instruction)->reads)
 		{
@@ -409,13 +466,32 @@ void ConvertToSSAPass::_renameValuesInBlock(
 		}
 	}
 	
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
+	assert(dfg != nullptr);
+	
+	// kill renamed variables that are not live out
+	// kill live outs with renamed variables
+	auto blockLiveOuts = dfg->getLiveOuts(*block);
+	
+	VirtualRegisterMap newRenamedValues;
+	
+	for(auto value : renamedLiveIns)
+	{
+		auto liveOut = blockLiveOuts.find(value.first);
+		
+		if(liveOut != blockLiveOuts.end())
+		{
+			blockLiveOuts.erase(liveOut);
+			newRenamedValues.insert(value);
+		}
+	}
+	
+	dfg->setLiveOuts(*block, blockLiveOuts);
+	
 	// Any remaining renamed variables are live-out
 	VirtualRegisterMap& renamedLiveOuts = _renamedLiveOuts[block->id()];
 
-	renamedLiveOuts = std::move(renamedLiveIns);
-	
-	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
-	assert(dfg != nullptr);
+	renamedLiveOuts = std::move(newRenamedValues);
 	
 	// add immediate dominator tree successors with a renamed value as a live-in
 	auto dominatorAnalysis = static_cast<DominatorAnalysis*>(
@@ -445,6 +521,69 @@ void ConvertToSSAPass::_renameValuesInBlock(
 		if(triggeredDominatedBlock)
 		{
 			worklist.insert(dominatedBlock);
+		}
+	}
+
+	_renamePhiInputs(block, renamedLiveOuts);
+}
+
+void ConvertToSSAPass::_renamePhiInputs(BasicBlock* block,
+	VirtualRegisterMap& renamedValues)
+{
+	// check (successors that are not dominated) for phis that need updating
+	auto cfg = static_cast<ControlFlowGraph*>(getAnalysis("ControlFlowGraph"));
+	assert(cfg != nullptr);
+	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
+	assert(dfg != nullptr);
+	
+	auto successors = cfg->getSuccessors(*block);
+
+	for(auto successor : successors)
+	{		
+		auto successorBlockLiveIns = dfg->getLiveIns(*successor);
+		
+		for(auto value : renamedValues)
+		{
+			// skip values that are not live into the successor
+			if(successorBlockLiveIns.count(value.first) == 0) continue;
+			
+			report("      checking for phi in successor block "
+				<< successor->name());
+			
+			bool foundPhi = false;
+			
+			// get the phi corresponding to the value
+			for(auto instruction : *successor)
+			{
+				if(!instruction->isPhi()) break;
+				
+				auto phi = static_cast<ir::Phi*>(instruction);
+				
+				// replace the entry for this block
+				auto sources     = phi->sources();
+				auto predecessor = phi->blocks.begin();
+
+				for(auto source : sources)
+				{
+					if(*predecessor != block)
+					{
+						++predecessor;	
+						continue;
+					}
+					
+					if(source->virtualRegister != value.first) continue;
+					
+					report("       replacing use by '"
+						<< instruction->toString() << "' from predecessor "
+						<< block->name());
+					
+					foundPhi = true;
+					source->virtualRegister = value.second;
+					break;
+				}
+				
+				if(foundPhi) break;
+			}
 		}
 	}
 }
