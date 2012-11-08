@@ -89,6 +89,20 @@ DataflowAnalysis::InstructionSet
 	return uses;
 }
 
+void DataflowAnalysis::setLiveOuts(const BasicBlock& block,
+	const VirtualRegisterSet& liveOuts)
+{
+	assert(block.id() < _liveouts.size());
+	
+	_liveouts[block.id()] = liveOuts;
+}
+
+void DataflowAnalysis::addReachingDefinition(VirtualRegister& value,
+	Instruction& instruction)
+{
+	_reachingDefinitions[value.id].insert(&instruction);
+}
+
 DataflowAnalysis::InstructionSet DataflowAnalysis::getReachingDefinitions(
 	const VirtualRegister& value)
 {
