@@ -33,8 +33,6 @@ public:
 
 };
 
-
-
 class KnobDatabase
 {
 public:
