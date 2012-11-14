@@ -9,13 +9,6 @@
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/runtime/interface/Runtime.h>
 
-#define NUMBER_OF_HW_THREADS_PER_BLOCK        32 
-#define NUMBER_OF_HW_BLOCKS                   64
-#define PHYSICAL_MEMORY_SIZE           (1 << 14)
-#define PARAMETER_MEMORY_SIZE          (1 << 10)
-
-__device__ archaeopteryx::rt::Runtime::RuntimeState g_runtimeState;
-
 namespace archaeopteryx
 {
 

@@ -55,10 +55,10 @@ public:
 		size_t offset);
 	__device__ static void setupKernelEntryPoint(const char* functionName);
 
-	__device__ static void launchSimulation();
-	
 public:
+	__device__ static void launchSimulationSerially();
 	__device__ static void launchSimulationInParallel();
+
 };
 
 }
