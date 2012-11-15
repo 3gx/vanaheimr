@@ -32,87 +32,87 @@ public:
 
 public:
 	// construction
-	vector();
-    explicit vector(const allocator_type&);
-    explicit vector(size_type n);
-    vector(size_type n, const value_type& value, const allocator_type& =
+	__device__ vector();
+    __device__ explicit vector(const allocator_type&);
+    __device__ explicit vector(size_type n);
+    __device__ vector(size_type n, const value_type& value, const allocator_type& =
 		allocator_type());
     template <class InputIterator>
-        vector(InputIterator first, InputIterator last, const allocator_type& =
+        __device__ vector(InputIterator first, InputIterator last, const allocator_type& =
 			allocator_type());
     
-	vector(const vector& x);
-    ~vector();
+	__device__ vector(const vector& x);
+    __device__ ~vector();
     
-	vector& operator=(const vector& x);
-    vector& operator=(vector&& x);
+	__device__ vector& operator=(const vector& x);
+    __device__ vector& operator=(vector&& x);
     template <class InputIterator>
-        void assign(InputIterator first, InputIterator last);
-    void assign(size_type n, const value_type& u);
+        __device__ void assign(InputIterator first, InputIterator last);
+    __device__ void assign(size_type n, const value_type& u);
 	
 public:
 	// iteration
-    iterator               begin();
-    const_iterator         begin()   const;
-    iterator               end();
-    const_iterator         end()     const;
+    __device__ iterator               begin();
+    __device__ const_iterator         begin()   const;
+    __device__ iterator               end();
+    __device__ const_iterator         end()     const;
 
-    reverse_iterator       rbegin();
-    const_reverse_iterator rbegin()  const;
-    reverse_iterator       rend();
-    const_reverse_iterator rend()    const;
+    __device__ reverse_iterator       rbegin();
+    __device__ const_reverse_iterator rbegin()  const;
+    __device__ reverse_iterator       rend();
+    __device__ const_reverse_iterator rend()    const;
 
 public:
 	// capacity
-    size_type size() const;
-    size_type max_size() const;
-    size_type capacity() const;
-    bool empty() const;
+    __device__ size_type size() const;
+    __device__ size_type max_size() const;
+    __device__ size_type capacity() const;
+    __device__ bool empty() const;
 
 public:
 	// resize
-    void reserve(size_type n);
-    void shrink_to_fit();
-    void resize(size_type sz);
-    void resize(size_type sz, const value_type& c);
+    __device__ void reserve(size_type n);
+    __device__ void shrink_to_fit();
+    __device__ void resize(size_type sz);
+    __device__ void resize(size_type sz, const value_type& c);
 
 
 public:
 	// element access
-    reference       operator[](size_type n);
-    const_reference operator[](size_type n) const;
-    reference       at(size_type n);
-    const_reference at(size_type n) const;
+    __device__ reference       operator[](size_type n);
+    __device__ const_reference operator[](size_type n) const;
+    __device__ reference       at(size_type n);
+    __device__ const_reference at(size_type n) const;
 
-    reference       front();
-    const_reference front() const;
-    reference       back();
-    const_reference back() const;
+    __device__ reference       front();
+    __device__ const_reference front() const;
+    __device__ reference       back();
+    __device__ const_reference back() const;
 
-    value_type*       data();
-    const value_type* data() const;
+    __device__ value_type*       data();
+    __device__ const value_type* data() const;
 
 public:
 	// insertion/deletion
-    void push_back(const value_type& x);
-    void pop_back();
+    __device__ void push_back(const value_type& x);
+    __device__ void pop_back();
 
-    iterator insert(const_iterator position, const value_type& x);
-    iterator insert(const_iterator position, size_type n, const value_type& x);
+    __device__ iterator insert(const_iterator position, const value_type& x);
+    __device__ iterator insert(const_iterator position, size_type n, const value_type& x);
     template <class InputIterator>
-        iterator insert(const_iterator position, InputIterator first,
+        __device__ iterator insert(const_iterator position, InputIterator first,
 			InputIterator last);
 
-    iterator erase(const_iterator position);
-    iterator erase(const_iterator first, const_iterator last);
+    __device__ iterator erase(const_iterator position);
+    __device__ iterator erase(const_iterator first, const_iterator last);
 
-    void clear();
+    __device__ void clear();
 
-    void swap(vector&);
+    __device__ void swap(vector&);
 
 public:
 	// misc
-	allocator_type get_allocator() const;
+	__device__ allocator_type get_allocator() const;
 
 private:
 	pointer _begin;

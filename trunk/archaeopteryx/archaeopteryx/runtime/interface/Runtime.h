@@ -32,20 +32,18 @@ public:
 public:
 	__device__ static void loadBinary(const char* fileName);
 	__device__ static void loadBinary(ir::Binary* binary);
-	__device__ static void unloadBinary();
+	__device__ static void unloadBinaries();
 
 public:
+	__device__ static Address mmap(bytes);
 	__device__ static bool mmap(size_t bytes, Address address);
 	__device__ static void munmap(Address address);
 
 	__device__ static void memcpy(Address src, Address dest, size_t dataSize);
 
 public:
-	__device__ static Address translateSimulatedAddressToCudaAddress(
-		Address simAddress);
 	__device__ static Address translateCudaAddressToSimulatedAddress(
 		Address CudaAddress);
-	__device__ static Address baseOfUserMemory();
 
 public:
 	__device__ static void setupLaunchConfig(unsigned int totalCtas,
@@ -56,8 +54,14 @@ public:
 	__device__ static void setupKernelEntryPoint(const char* functionName);
 
 public:
-	__device__ static void launchSimulationSerially();
-	__device__ static void launchSimulationInParallel();
+	__device__ static void launchSimulation();
+
+private:
+	__global__ static void launchSimulationInParallel();
+
+private:
+	__device__ static size_t findFunctionsPC(const char* functionName);
+	__device__ static ir::Binary* getSelectedBinary();
 
 };
 

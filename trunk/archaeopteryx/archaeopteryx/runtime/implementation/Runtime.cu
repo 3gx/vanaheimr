@@ -5,9 +5,12 @@
  *   \brief  The implementation file for the runtime API.
  **/
 
+// Archaeopteryx Includes
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
+
 #include <archaeopteryx/runtime/interface/Runtime.h>
+#include <archaeopteryx/runtime/interface/MemoryPool.h>
 
 namespace archaeopteryx
 {
@@ -15,64 +18,70 @@ namespace archaeopteryx
 namespace rt
 {
 
+class RuntimeState
+{
+public:
+	typedef util::vector<executive::CoreSimBlock> CTAVector;
+	typedef util::map<util::string, ir::Binary>   BinaryMap;
+	typedef executive::CoreSimKernel              Kernel;
+
+public:
+	Kernel     kernel;
+	CTAVector  hardwareCTAs;
+	BinaryMap  binaries;
+	MemoryPool memory;
+	
+public:
+	size_t parameterMemoryAddress;
+	
+public:
+	size_t simulatedBlockCount;
+	size_t programEntryPointAddress;
+
+};
+
+__device__ static RuntimeState* state = 0;
+
 __device__ void Runtime::create()
 {
-	printf("Creating runtime with %d blocks, %d bytes of memory\n", 
-		NUMBER_OF_HW_BLOCKS, PHYSICAL_MEMORY_SIZE);
-    
-    g_runtimeState.m_kernel         = new executive::CoreSimKernel;
-    g_runtimeState.m_blocks         =
-    	new executive::CoreSimBlock[NUMBER_OF_HW_BLOCKS];
-    g_runtimeState.m_physicalMemory = malloc(PHYSICAL_MEMORY_SIZE);
-    g_runtimeState.m_loadedBinary   = 0;
+	state = new RuntimeState;
+
+	state->parameterMemoryAddress = allocateMemoryWhereAvailable(
+		util::KnobDatabase::getKnob<size_t>("parameter-memory-size"),
+		parameterMemory);
+
+	unsigned int ctas = util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
+	state->hardwareCTAs.resize(ctas);
 }
 
 __device__ void Runtime::destroy()
 {
-   delete[] g_runtimeState.m_blocks;
-   delete g_runtimeState.m_loadedBinary;
-   delete g_runtimeState.m_kernel;
+	delete state; state = 0;
 }
 
-// We will need a list/map of open binaries
-//  a) maybe just one to start with
-//  b) create a binary object using the filename in the constructor, it
-//     will read the data for us
 __device__ void Runtime::loadBinary(const char* fileName)
 {
-    g_runtimeState.m_loadedBinary = new ir::Binary(new util::File(fileName));
-    //TODO: eventually m_loadedBinary.push_back(new Binary(fileName));
+    state->binaries.insert(util::make_pair(fileName, ir::Binary(fileName)));
 }
 
-
-// We want a window of allocated global memory (malloced)
-//   a) This window contains all allocations
-//   b) The base of the window starts at the address of the first allocation
-//   c) All other allocations are offsets from the base
-//
-//   It looks like this
-//   
-//   base 
-//   <------------------------------------------------------------>
-//   <------>                      <------------------->
-//   allocation1 (address=base)    allocation2 (address=base+offset)
-//
-__device__ bool Runtime::allocateMemoryChunk(size_t bytes, size_t address)
+__device__ bool Runtime::mmap(size_t bytes, Address address)
 {
-    return !(address+bytes > ((size_t)g_runtimeState.m_physicalMemory+PHYSICAL_MEMORY_SIZE));
+	return state->memory.allocate(bytes, address);
 }
 
-__device__ void* Runtime::translateSimulatedAddressToCudaAddress(void* simAddress)
+__device__ Runtime::Address Runtime::mmap(size_t bytes)
 {
-    void* cudaAddress = (void*)((size_t)g_runtimeState.m_physicalMemory + (size_t)simAddress);
-	printf("Translated simulated address %p to cuda address %p\n", simAddress, cudaAddress);
-	
-	return cudaAddress;
+	return state->memory.allocate(bytes);
+}
+
+__device__ void Runtime::munmap(size_t address)
+{
+	state->memory->deallocate(address);
 }
 
 __device__ void* Runtime::translateCudaAddressToSimulatedAddress(void* cudaAddress)
 {
-    return (void*)((size_t)cudaAddress - (size_t)g_runtimeState.m_physicalMemory);
+	return state->memory.translateAddress((size_t) simAddress);
 }
 
 // The Runtime class owns all of the simulator state, it should have allocated it in the constructor
@@ -80,70 +89,81 @@ __device__ void* Runtime::translateCudaAddressToSimulatedAddress(void* cudaAddre
 //  b) this call changes the number of CoreSimBlock/Thread
 __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta)
 {
-    g_runtimeState.m_simulatedBlocks = totalCtas;
-    
-    for (unsigned int i = 0; i < NUMBER_OF_HW_BLOCKS; ++i)
+    state->simulatedBlockCount = totalCtas;
+   
+	// TODO: run in a kernel 
+    for(RuntimeState::CTAVector::iterator cta = state->hardwareCTAs.begin();
+		cta != state->hardwareCTAs.end(); ++cta)
     {
-        g_runtimeState.m_blocks[i].setNumberOfThreadsPerBlock(threadsPerCta);
+        cta->setNumberOfThreadsPerBlock(threadsPerCta);
     }
 }
 
 // Similar to the previous call, this sets the memory sizes
 __device__ void Runtime::setupMemoryConfig(unsigned int localMemoryPerThread, unsigned int sharedMemoryPerCta)
 {
-    for (unsigned int i = 0; i < NUMBER_OF_HW_BLOCKS; ++i) 
+	// TODO: run in a kernel 
+    for(RuntimeState::CTAVector::iterator cta = state->hardwareCTAs.begin();
+		cta != state->hardwareCTAs.end(); ++cta)
     {
-       g_runtimeState.m_blocks[i].setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
+        cta->setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
     }
 }
 
 __device__ void Runtime::setupArgument(const void* data, size_t size, size_t offset)
 {
-	char* parameterBase = (char*)translateSimulatedAddressToCudaAddress(0);
+	char* parameterBase =
+		(char*)translateCudaAddressToSimulatedAddress(state->parameterMemoryAddress);
 	
 	std::memcpy(parameterBase + offset, data, size);
-}
-
-__device__ size_t Runtime::baseOfUserMemory()
-{
-	// parameter base + parameter size
-	return 0 + PARAMETER_MEMORY_SIZE;
 }
 
 // Set the PC of all threads to the PC of the specified function
 //   Call into the binary to get the PC
 __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 {
-    g_runtimeState.m_launchSimulationAtPC = g_runtimeState.m_loadedBinary->findFunctionsPC(functionName);    
+    state->programEntryPointAddress = findFunctionsPC(functionName);    
 }
 
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
 __device__ void Runtime::launchSimulation()
 {
-    util::HostReflection::launch(NUMBER_OF_HW_BLOCKS,
-    	NUMBER_OF_HW_THREADS_PER_BLOCK, "launchSimulation");
+	unsigned int ctas    = util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
+	unsigned int threads = util::KnobDatabase::getKnob<unsigned int>("simulator-threads-per-cta");
+	
+	launchSimulationInParallel<<<ctas, threads>>>();
 }
 
-__device__ void Runtime::launchSimulationInParallel()
+__global__ void Runtime::launchSimulationInParallel()
 {
-    g_runtimeState.m_kernel->launchKernel(g_runtimeState.m_simulatedBlocks, 	
-        g_runtimeState.m_blocks, g_runtimeState.m_loadedBinary);
+    state->kernel.launchKernel(state->simulatedBlockCount, 	
+        state->hardwareCTAs, getSelectedBinary());
 }
 
-extern "C" __global__ void launchSimulation(
-	util::HostReflection::Payload payload)
+__device__ void Runtime::unloadBinaries()
 {
-	Runtime::launchSimulationInParallel();
+	state->binaries.clear();
 }
 
-__device__ void Runtime::munmap(size_t address)
+__device__ size_t Runtime::findFunctionsPC(const char* functionName)
 {
+	for(State::BinaryMap::iterator binary = state->binaries.begin();
+		binary != state->binaries.end(); ++binary)
+	{
+		if(!binary->second.containsFunctin(functionName)) continue;
 
+		return binary->second.findFunctionsPC(functionName);
+	}
+
+	assertM(false, "Function name not found.");
+
+	return 0;
 }
 
-__device__ void Runtime::unloadBinary()
+__device__ ir::Binary* Runtime::getSelectedBinary()
 {
-    delete g_runtimeState.m_loadedBinary;
+	//TODO support multiple binaries (requires linking)
+	return &state->binaries->begin()->second;
 }
 
 }
