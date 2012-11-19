@@ -26,6 +26,7 @@ public:
 	/*! \brief Create a analysis object from the specified name */
 	static Analysis* createAnalysis(const std::string& name,
 		const StringVector& options = StringVector());
+
 };
 
 }
