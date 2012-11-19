@@ -8,6 +8,7 @@
 
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/map.h>
+#include <archaeopteryx/util/interface/vector.h>
 
 namespace archaeopteryx
 {
@@ -33,12 +34,16 @@ private:
 		Page(uint64_t size, Address address);
 
 	public:
-		Address base;
+		Address          address() const;
+		Address       endAddress() const;
+		Address  physicalAddress() const;
+		uint64_t            size() const;
 
 	private:
 		typedef std::vector<uint8_t> DataVector;
 
 	private:
+		Address    _address;
 		DataVector _data;	
 	};
 
@@ -54,6 +59,4 @@ private:
 }
 
 }
-
-
 
