@@ -913,6 +913,7 @@ void BinaryWriter::convertPhiInstruction(
 	alignData(sizeof(OperandContainer));
 	
 	auto sources = phi.sources();
+	auto blocks  = phi.blocks();
 	
 	container.asPhi.sources       = sources.size();
 	container.asPhi.sourcesOffset = m_data.size();
@@ -922,10 +923,10 @@ void BinaryWriter::convertPhiInstruction(
 		addOperandToDataSection(convertOperand(*source));
 	}
 	
-	for(auto block : phi.blocks)
+	for(auto block : blocks)
 	{
 		addOperandToDataSection(convertOperand(
-			ir::AddressOperand(block, nullptr)));
+			ir::AddressOperand(const_cast<ir::BasicBlock*>(block), nullptr)));
 	}
 }
 

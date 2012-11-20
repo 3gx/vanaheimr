@@ -119,6 +119,7 @@ public:
 	bool isReturn()     const;
 	bool isInstrinsic() const;
 	bool isPhi()        const;
+	bool isPsi()        const;
 
 public:
 	bool isUnary()      const;
@@ -764,8 +765,14 @@ class Phi : public Instruction
 {
 public:
 	typedef RegisterOperand*                    RegisterOperandPointer;
+	typedef AddressOperand*                     AddressOperandPointer;
+	typedef std::vector<RegisterOperandPointer> RegisterOperandVector;
+	typedef std::vector<AddressOperandPointer>  AddressOperandVector;
 	typedef std::vector<BasicBlock*>            BasicBlockVector;
-
+	typedef std::vector<const BasicBlock*>      ConstBasicBlockVector;
+	typedef std::vector<const RegisterOperand*> ConstRegisterOperandVector;
+	typedef std::vector<const AddressOperand*>  ConstAddressOperandVector;
+	
 public:
 	explicit Phi(BasicBlock* b = 0);
 
@@ -788,7 +795,12 @@ public:
 	ConstRegisterOperandVector sources() const;
 	
 public:
-	BasicBlockVector blocks();
+ 	     BasicBlockVector blocks();
+	ConstBasicBlockVector blocks() const;
+
+public:
+	     AddressOperandVector blockOperands();
+	ConstAddressOperandVector blockOperands() const;
 
 public:
 	virtual Instruction* clone() const;
