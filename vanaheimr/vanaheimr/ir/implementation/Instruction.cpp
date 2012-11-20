@@ -204,6 +204,11 @@ bool Instruction::isPhi() const
 	return opcode == Phi;
 }
 
+bool Instruction::isPsi() const
+{
+	return opcode == Psi;
+}
+
 bool Instruction::isUnary() const
 {
 	return dynamic_cast<const UnaryInstruction*>(this) != nullptr;
@@ -1170,10 +1175,7 @@ Phi::Phi(BasicBlock* b)
 Phi::Phi(const Phi& i)
 : Instruction(i)
 {
-	for(auto block : i.blocks)
-	{
-		blocks.push_back(block);
-	}
+
 }
 
 Phi& Phi::operator=(const Phi& i)
@@ -1181,13 +1183,6 @@ Phi& Phi::operator=(const Phi& i)
 	if(&i == this) return *this;
 
 	Instruction::operator=(i);
-	
-	blocks.clear();
-	
-	for(auto block : i.blocks)
-	{
-		blocks.push_back(block);
-	}
 	
 	return *this;
 }
@@ -1199,25 +1194,31 @@ void Phi::setD(RegisterOperand* o)
 	writes[0] = o;
 }
 
-void Phi::addSource(RegisterOperand* source, BasicBlock* predecessor)
+void Phi::addSource(RegisterOperand* source, AddressOperand* predecessor)
 {
-	  reads.push_back(source);
-	 blocks.push_back(predecessor);
+	 reads.push_back(source);
+	 reads.push_back(predecessor);
 }
 
 void Phi::removeSource(BasicBlock* predecessor)
 {
-	auto readPosition = reads.begin(); ++readPosition;
-
-	for(auto blockPosition = blocks.begin(); blockPosition != blocks.end();
-		++blockPosition, ++readPosition)
+	auto readPosition = reads.begin();
+	for(++readPosition; readPosition != reads.end(); ++readPosition)
 	{
-		if(*blockPosition != predecessor) continue;
+		++readPosition;
+		assert(readPosition != reads.end());
 		
-		  reads.erase(readPosition);
-		 blocks.erase(blockPosition);
+		auto operand = static_cast<AddressOperand*>(*readPosition);
 		
-		return;
+		if(operand->globalValue != predecessor) continue;
+		
+		--readPosition;
+		delete *readPosition;
+		readPosition = reads.erase(readPosition);
+		delete *readPosition;
+		reads.erase(readPosition);
+		
+		break;
 	}
 	
 	assertM(false, "Phi instruction " << toString()
@@ -1249,6 +1250,8 @@ Phi::RegisterOperandVector Phi::sources()
 	for(; read != reads.end(); ++read)
 	{
 		sourceOperands.push_back(static_cast<RegisterOperandPointer>(*read));
+		++read;
+		assert(read != reads.end());
 	}
 	
 	return sourceOperands;
@@ -1266,14 +1269,84 @@ Phi::ConstRegisterOperandVector Phi::sources() const
 	{
 		sourceOperands.push_back(
 			static_cast<const RegisterOperandPointer>(*read));
+		++read;
+		assert(read != reads.end());
 	}
 	
 	return sourceOperands;
 }
 
-Phi::BasicBlockVector Phi::blocks() const
+Phi::BasicBlockVector Phi::blocks()
 {
+	BasicBlockVector blockVector;
 	
+	auto read = reads.begin(); ++read;
+	
+	for(; read != reads.end(); ++read)
+	{
+		++read;
+		assert(read != reads.end());
+		
+		auto operand = static_cast<AddressOperand*>(*read);
+		
+		blockVector.push_back(static_cast<BasicBlock*>(operand->globalValue));
+	}
+	
+	return blockVector;
+}
+
+Phi::ConstBasicBlockVector Phi::blocks() const
+{
+	ConstBasicBlockVector blockVector;
+	
+	auto read = reads.begin(); ++read;
+	
+	for(; read != reads.end(); ++read)
+	{
+		++read;
+		assert(read != reads.end());
+		
+		auto operand = static_cast<const AddressOperand*>(*read);
+		
+		blockVector.push_back(static_cast<const BasicBlock*>(
+			operand->globalValue));
+	}
+	
+	return blockVector;
+}
+
+Phi::AddressOperandVector Phi::blockOperands()
+{
+	AddressOperandVector operands;
+	
+	auto read = reads.begin(); ++read;
+	
+	for(; read != reads.end(); ++read)
+	{
+		++read;
+		assert(read != reads.end());
+		
+		operands.push_back(static_cast<AddressOperand*>(*read));
+	}
+	
+	return operands;
+}
+
+Phi::ConstAddressOperandVector Phi::blockOperands() const
+{
+	ConstAddressOperandVector operands;
+	
+	auto read = reads.begin(); ++read;
+	
+	for(; read != reads.end(); ++read)
+	{
+		++read;
+		assert(read != reads.end());
+		
+		operands.push_back(static_cast<const AddressOperand*>(*read));
+	}
+	
+	return operands;
 }
 
 Instruction* Phi::clone() const

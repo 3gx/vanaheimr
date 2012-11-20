@@ -345,11 +345,9 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 				throw std::runtime_error(message.str());
 			}
 			
-			auto branch = static_cast<ir::Bra*>(unresolved.second);
-			
 			report("    setting target to " << block->second->name());
 
-			static_cast<ir::AddressOperand*>(branch->target())->globalValue =
+			static_cast<ir::AddressOperand*>(unresolved.second)->globalValue =
 				block->second;
 		}
 
@@ -448,8 +446,7 @@ BinaryReader::BasicBlockDescriptorVector
 
 				targets.insert(operand.asImmediate.uint);
 			}
-			else if(operand.asOperand.mode ==
-				Operand::Symbol)
+			else if(operand.asOperand.mode == Operand::Symbol)
 			{
 				uint64_t symbolOffset = (operand.asSymbol.symbolTableOffset -
 					_header.symbolOffset) / sizeof(SymbolTableEntry);
@@ -488,8 +485,7 @@ BinaryReader::BasicBlockDescriptorVector
 		{
 			isTerminator = true;
 		}
-		else if(instruction.asInstruction.opcode ==
-			Instruction::Bra)
+		else if(instruction.asInstruction.opcode ==	Instruction::Bra)
 		{
 			isTerminator = true;
 			blockEnd = i + 1;
@@ -774,9 +770,13 @@ void BinaryReader::_addPhiInstruction(ir::Function::iterator block,
 			reinterpret_cast<OperandContainer*>(&_dataSection[offset]);
 		const OperandContainer* operandBlock =
 			reinterpret_cast<OperandContainer*>(&_dataSection[blockOffset]);
-				
-		instruction->addSource(_translateOperand(*operandSource, instruction),
+			
+		auto registerSource = static_cast<ir::RegisterOperand*>(
+			_translateOperand(*operandSource, instruction));
+		auto addressBlock   = static_cast<ir::AddressOperand*>(
 			_translateOperand(*operandBlock, instruction));
+			
+		instruction->addSource(registerSource, addressBlock);
 	}
 	
 	block->push_back(instruction);
@@ -843,7 +843,7 @@ ir::Operand* BinaryReader::_translateOperand(const OperandContainer& container,
 			report("  adding unresolved basic block for symbol at offset "
 				<< container.asSymbol.symbolTableOffset);
 			_unresolvedTargets.insert(std::make_pair(
-				container.asSymbol.symbolTableOffset, instruction));
+				container.asSymbol.symbolTableOffset, operand));
 		}
 
 		return operand;

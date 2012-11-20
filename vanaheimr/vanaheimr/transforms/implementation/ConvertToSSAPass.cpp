@@ -179,7 +179,8 @@ void ConvertToSSAPass::_insertPhi(VirtualRegister& vr, BasicBlock& block)
 
 	for(auto predecessor : predecessors)
 	{
-		phi->addSource(new ir::RegisterOperand(&vr, phi), predecessor);
+		phi->addSource(new ir::RegisterOperand(&vr, phi),
+			new ir::AddressOperand(predecessor, phi));
 	}
 	
 	// update reaching defs, serial is fine since each value is processed
@@ -560,8 +561,10 @@ void ConvertToSSAPass::_renamePhiInputs(BasicBlock* block,
 				auto phi = static_cast<ir::Phi*>(instruction);
 				
 				// replace the entry for this block
-				auto sources     = phi->sources();
-				auto predecessor = phi->blocks.begin();
+				auto sources = phi->sources();
+				auto blocks  = phi->blocks();
+				
+				auto predecessor = blocks.begin();
 
 				for(auto source : sources)
 				{
