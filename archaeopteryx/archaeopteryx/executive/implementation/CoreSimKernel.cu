@@ -41,7 +41,7 @@ __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks,
 __device__ CoreSimKernel::Address
 	CoreSimKernel::translateVirtualToPhysicalAddress(Address va) const
 {
-    return rt::Runtime::translateSimulatedAddressToCudaAddress(va);
+    return rt::Runtime::translateVirtualToPhysicalAddress(va);
 }
 
 }

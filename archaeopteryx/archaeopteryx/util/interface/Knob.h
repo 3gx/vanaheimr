@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <archaeopteryx/util/interface/map.h>
-#include <archaeopteryx/util/interface/string.h>
+
+namespace archaeopteryx { namespace util { class string; } }
+
 
 namespace archaeopteryx
 {
@@ -18,7 +19,14 @@ namespace util
 class KnobBase
 {
 public:
-	string name;
+	KnobBase(const util::string& name);
+	~KnobBase();
+
+public:
+	const util::string& name() const;
+
+private:
+	util::string* _name;
 
 };
 
@@ -30,7 +38,7 @@ public:
 	typedef value_type& reference;
 
 public:
-	__device__ Knob(const string& name, const reference);
+	__device__ Knob(const util::string& name, const reference);
 
 public:
 	__device__ Knob& operator=(const Knob&);
@@ -44,10 +52,10 @@ public:
 class KnobDatabase
 {
 public:
-	__device__ static void addKnob(const KnobBase* base);
-	__device__ static void removeKnob(const KnobBase* base);
+	__device__ static void addKnob(const KnobBase& base);
+	__device__ static void removeKnob(const KnobBase& base);
 
-	__device__ static const KnobBase& getKnob(const string& name);
+	__device__ static const KnobBase& getKnob(const util::string& name);
 
 public:
 	static __device__ void loadDatabase();

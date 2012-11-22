@@ -35,15 +35,15 @@ public:
 	__device__ static void unloadBinaries();
 
 public:
-	__device__ static Address mmap(bytes);
+	__device__ static Address mmap(uint64_t bytes);
 	__device__ static bool mmap(size_t bytes, Address address);
 	__device__ static void munmap(Address address);
 
 	__device__ static void memcpy(Address src, Address dest, size_t dataSize);
 
 public:
-	__device__ static Address translateCudaAddressToSimulatedAddress(
-		Address CudaAddress);
+	__device__ static Address translateVirtualToPhysicalAddress(
+		Address VirtualAddress);
 
 public:
 	__device__ static void setupLaunchConfig(unsigned int totalCtas,
@@ -55,9 +55,6 @@ public:
 
 public:
 	__device__ static void launchSimulation();
-
-private:
-	__global__ static void launchSimulationInParallel();
 
 private:
 	__device__ static size_t findFunctionsPC(const char* functionName);
