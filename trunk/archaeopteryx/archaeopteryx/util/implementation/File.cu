@@ -6,7 +6,7 @@
 
 // Archaeoperyx Includes
 #include <archaeopteryx/util/interface/File.h>
-#include <archaeopteryx/util/interface/string.h>
+#include <archaeopteryx/util/interface/cstring.h>
 #include <archaeopteryx/util/interface/debug.h>
 #include <archaeopteryx/util/interface/StlFunctions.h>
 

@@ -4,8 +4,6 @@
 	\brief  The source file for the MemoryPool class
 */
 
-#pragma once
-
 // Archaeopteryx Includes
 #include <archaeopteryx/runtime/interface/MemoryPool.h>
 
