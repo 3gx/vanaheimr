@@ -45,7 +45,6 @@ public:
     __device__ ~vector();
     
 	__device__ vector& operator=(const vector& x);
-    __device__ vector& operator=(vector&& x);
     template <class InputIterator>
         __device__ void assign(InputIterator first, InputIterator last);
     __device__ void assign(size_type n, const value_type& u);

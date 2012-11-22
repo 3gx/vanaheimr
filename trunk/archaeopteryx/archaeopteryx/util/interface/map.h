@@ -6,6 +6,10 @@
 
 #pragma once
 
+// Archaeopteryx Includes
+#include <archaeopteryx/util/interface/functional.h>
+#include <archaeopteryx/util/interface/allocator_traits.h>
+
 namespace archaeopteryx
 {
 
@@ -13,7 +17,7 @@ namespace util
 {
 
 template <class Key, class T, class Compare = less<Key>,
-          class Allocator = allocator<pair<const Key, T>>>
+          class Allocator = allocator<pair<const Key, T> > >
 class map
 {
 public:
@@ -38,8 +42,8 @@ public:
 
 	typedef Iterator                              iterator;
 	typedef ConstIterator                         const_iterator;
-	typedef reverse_iterator<iterator>       reverse_iterator;
-	typedef reverse_iterator<const_iterator> const_reverse_iterator;
+	typedef util::reverse_iterator<iterator>       reverse_iterator;
+	typedef util::reverse_iterator<const_iterator> const_reverse_iterator;
 
 public:
 	

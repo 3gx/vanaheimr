@@ -6,22 +6,16 @@
 
 #pragma once
 
+// Archaeopteryx Includes
+#include <archaeopteryx/util/interface/functional.h>
+#include <archaeopteryx/util/interface/iterator.h>
+#include <archaeopteryx/util/interface/utility.h>
+
 namespace archaeopteryx
 {
 
 namespace util
 {
-
-// Reference transformations:
-template <class T> struct remove_reference;
-template <class T> struct add_lvalue_reference;
-template <class T> struct add_rvalue_reference;
-
-// Integral properties:
-template <class T> struct is_signed;
-template <class T> struct is_unsigned;
-template <class T> struct make_signed;
-template <class T> struct make_unsigned;
 
 struct allocator_arg_t { };
 
@@ -131,7 +125,7 @@ class raw_storage_iterator
                       T,                               // purposefully not C++03
                       ptrdiff_t,                       // purposefully not C++03
                       T*,                              // purposefully not C++03
-                      raw_storage_iterator&>           // purposefully not C++03
+                      raw_storage_iterator<OutputIterator, T>&>           // purposefully not C++03
 {
 public:
     explicit raw_storage_iterator(OutputIterator x);
