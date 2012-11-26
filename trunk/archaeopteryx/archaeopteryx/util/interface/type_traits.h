@@ -95,6 +95,16 @@ const _Tp integral_constant<_Tp, __v>::value;
 typedef integral_constant<bool, true>  true_type;
 typedef integral_constant<bool, false> false_type;
 
+
+// add_lvalue_reference
+
+template <class _Tp> struct add_lvalue_reference {typedef _Tp& type;};
+//template <class _Tp> struct add_lvalue_reference<_Tp&> {typedef _Tp& type;};  // for older compiler
+template <>          struct add_lvalue_reference<void> {typedef void type;};
+template <>          struct add_lvalue_reference<const void> {typedef const void type;};
+template <>          struct add_lvalue_reference<volatile void> {typedef volatile void type;};
+template <>          struct add_lvalue_reference<const volatile void> {typedef const volatile void type;};
+
 }
 
 }
