@@ -13,7 +13,7 @@ namespace archaeopteryx
 namespace runtime
 {
 
-bool MemoryPool::allocate(uint64_t size, Address address)
+__device__ bool MemoryPool::allocate(uint64_t size, Address address)
 {
 	PageMap::iterator page = _pages.lower_bound(address);
 
@@ -30,7 +30,7 @@ bool MemoryPool::allocate(uint64_t size, Address address)
 	return true;
 }
 
-MemoryPool::Address MemoryPool::allocate(uint64_t size)
+__device__ MemoryPool::Address MemoryPool::allocate(uint64_t size)
 {
 	// Get the next available address
 	Address address = 0;
@@ -49,7 +49,7 @@ MemoryPool::Address MemoryPool::allocate(uint64_t size)
 	_pages.insert(util::make_pair(address, Page(address, size)));
 }
 
-MemoryPool::Address MemoryPool::translate(Address address)
+__device__ MemoryPool::Address MemoryPool::translate(Address address)
 {
 	PageMap::iterator page = _pages.lower_bound(address);
 
@@ -64,28 +64,28 @@ MemoryPool::Address MemoryPool::translate(Address address)
 	return InvalidAddress;
 }
 
-MemoryPool::Page::Page(uint64_t size, Address address)
+__device__ MemoryPool::Page::Page(uint64_t size, Address address)
 : _address(address), _data(size)
 {
 
 }
 
-MemoryPool::Address MemoryPool::Page::address() const
+__device__ MemoryPool::Address MemoryPool::Page::address() const
 {
 	return _address;
 }
 
-MemoryPool::Address MemoryPool::Page::endAddress() const
+__device__ MemoryPool::Address MemoryPool::Page::endAddress() const
 {
 	return address() + size();
 }
 
-MemoryPool::Address MemoryPool::Page::physicalAddress() const
+__device__ MemoryPool::Address MemoryPool::Page::physicalAddress() const
 {
 	return (Address)_data.data();
 }
 
-uint64_t MemoryPool::Page::size() const
+__device__ uint64_t MemoryPool::Page::size() const
 {
 	return _data.size();
 }

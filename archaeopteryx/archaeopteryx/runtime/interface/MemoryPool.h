@@ -23,22 +23,22 @@ public:
 	typedef uint64_t Address;
 
 public:
-	bool allocate(uint64_t size, Address address);
-	void allocate(Address address);
+	__device__ bool allocate(uint64_t size, Address address);
+	__device__ Address allocate(uint64_t address);
 
-	Address translate(Address address);
+	__device__ Address translate(Address address);
 
 private:
 	class Page
 	{
 	public:
-		Page(uint64_t size, Address address);
+		__device__ Page(uint64_t size, Address address);
 
 	public:
-		Address          address() const;
-		Address       endAddress() const;
-		Address  physicalAddress() const;
-		uint64_t            size() const;
+		__device__ Address          address() const;
+		__device__ Address       endAddress() const;
+		__device__ Address  physicalAddress() const;
+		__device__ uint64_t            size() const;
 
 	private:
 		typedef util::vector<uint8_t> DataVector;
