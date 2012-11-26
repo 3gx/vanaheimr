@@ -7,6 +7,7 @@
 #pragma once
 
 // Archaeopteryx Includes
+#include <archaeopteryx/util/interface/IntTypes.h>
 #include <archaeopteryx/util/interface/map.h>
 #include <archaeopteryx/util/interface/vector.h>
 
@@ -40,7 +41,7 @@ private:
 		uint64_t            size() const;
 
 	private:
-		typedef std::vector<uint8_t> DataVector;
+		typedef util::vector<uint8_t> DataVector;
 
 	private:
 		Address    _address;
