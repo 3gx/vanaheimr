@@ -218,7 +218,8 @@ is composed of memory controllers that are tiled across the processor die
 and connected to 3D DRAM modules either directly through vias, or
 indirectly through a silicon interposer.  The cache is organized
 into an H-tree structure, with clusters at each level of the hierarchy.  Each
-level is connected by a stage of an indirect network.  The cache bank size,
+level is connected by a stage of an indirect network with bandwidth tapering off
+as traffic moves higher up the network.  The cache bank size,
 number of levels, as well as degree of connectivity at each level is
 configurable.  
 
@@ -240,6 +241,7 @@ work~\cite{ref:vanaheimr}.
 \begin{figure}
 	\begin{center}
 		%% TODO replace with real image
+		%\includegraphics[width=0.9\linewidth]{vanaheimr-overview}
 		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
 		\caption{An overview of the Vanaheimr processor architecture.}
 		\label{fig:vanaheimr}
@@ -258,7 +260,7 @@ commodity parallel processor, such as NVIDIA Kepler with a peak throughput of
 Although some components, namely the SIMD lanes, used in the Vanaheimr
 architecture map naturally onto the CUDA model, the memory system, network,
 and core control logic exhibit either serial operation in hardware or many
-fine-grained dependences.  These components are modeled individually by
+fine-grained dependencies.  These components are modeled individually by
 leveraging bulk-parallelism where it exists (such as among network buffers and
 lanes), and falling back to serial execution where it does not (such as the
 SIMD instruction fetch to broadcast loop). Individual components are composed 
@@ -270,6 +272,7 @@ expand or contract the amount of parallelism during execution.
 \begin{figure}
 	\begin{center}
 		%% TODO replace with real image
+		%\includegraphics[width=0.9\linewidth]{vanaheimr-execution-model}
 		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
 		\caption{An overview of the Vanaheimr execution model.}
 		\label{fig:vanaheimr-execution-model}
@@ -324,15 +327,17 @@ allocate memory that is shared across threads at the same level.
 The exact mechanism used to specify the scope of a variable is left to the 
 programming language designer.  This mechanism is meant to communicate this 
 information to the runtime or compiler, which can control the placement of these
-memory allocations at the appropriate level in the memory hierarchy.
+memory allocations at the appropriate level in the memory hierarchy.  
 
 % Synchronization
 %  - barriers
 %  - call-return
 Synchronization can be performed explicitly via barriers at any level of a HTA,
 or implicitly through the bulk-synchronization mechanism as HTAs complete.  This
-means that memory that was modified by a synchronously launched HTA will be 
-immediately available to the calling thread when it resumes.  
+implies that memory that was modified by a synchronously launched HTA will be 
+immediately available to the calling thread when it resumes.  Function calls
+within a thread are treated the same as other control flow, they are a separate
+concept that is not related to thread creation.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -370,6 +375,7 @@ kernel is shown in Figure~\ref{fig:saxpy-kernel-source}.
 \begin{figure}
 	\begin{center}
 		%% TODO replace with real image
+		%\includegraphics[width=0.9\linewidth]{saxpy-source}
 		\includegraphics[width=0.9\linewidth]{archaeopteryx-bird}
 		\caption{The main program thread CUDA "C" source code.}
 		\label{fig:saxpy-main-thread}
@@ -451,7 +457,7 @@ instructions in the kernel body. In a real implementation, these parameter
 accesses would be either converted into reads from pre-initialized registers or
 loads from memory by a backend compiler for Vanaheimr.  However, since this
 form of the program is simulated directly, they are supported by the simulator
-and complete in a single instruction.
+and complete in a single instruction, mimicking the behavior of register accesses.
 
 % - show data distribution, per-thread group
 As simulated HTAs are launched, they can specify the launch of any level in the
@@ -471,7 +477,7 @@ CUDA kernel with a single thread.   This thread uses the CUDA API extensions to
 open the VIR binary and read the symbol table.  It determines the memory
 requirements and HTA configuration of the binary's "main" function, sets up the
 simulator state, points the work distributor at a descriptor of the first
-simulated HTA, and finally enters the main simulator loop.  
+simulated HTA, and enters the main simulator loop.  
 
 % Main simulator thread
 %% Binary loading
@@ -581,12 +587,34 @@ binary, and reporting messages to the simulator console such as aggregate
 statistics or error messages. 
 
 \paragraph{Memory Management}
+Archaeopteryx 
 
 \paragraph{HTA Launches}
 
 \subsection{Simulator Core}
 
+The models in this initial version are quite naive and serve mainly to test the
+feasibility of the approach rather than to model the Vanaheimr architecture with
+fine precision.
 
+\paragraph{Multi-Processor Simulation}
+
+Vanaheimr multi-processors simulation is split into functional and timing components.
+The functional component interprets VIR instructions and updates architecture-visible
+state while the timing component tracks pipeline-level structures on a per-cycle basis.
+For each time step, the simulation proceeds independently as long as there are no
+outstanding memory operations (cache misses).  When these events are encountered,
+they are aggregated together and queued for processing by the network and memory models.
+However, the multi-processor simulation does not block immediately; it continues running 
+for the minimum latency of an outstanding memory access.  For example, if a data cache
+miss occurs at cycle 20, and the minimum hit latency is 10 cycles, then the multi-processor
+model will run up to cycle 30 to reduce the frequency of synchronization.  
+
+\paragraph{Network Simulation}
+
+The network simulation only consists of a timing components since  
+
+\paragraph{Memory Controller Simulation}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -814,7 +842,7 @@ simulator.
 
 \paragraph{Memory Transactions}
 
-\paragraph{Related Work Comparison}
+\subsection{Related Work Comparison}
 
 % Ocelot
 % Barra
