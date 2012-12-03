@@ -41,11 +41,26 @@ template <class T> struct is_union;
 template <class T> struct is_class;
 template <class T> struct is_function;
 
+// Secondary classification traits:
+template <class T> struct is_reference;
+template <class T> struct is_arithmetic;
+template <class T> struct is_fundamental;
+template <class T> struct is_member_pointer;
+template <class T> struct is_scalar;
+template <class T> struct is_object;
+template <class T> struct is_compound;
+
 // Integral properties:
 template <class T> struct is_signed;
 template <class T> struct is_unsigned;
 template <class T> struct make_signed;
 template <class T> struct make_unsigned;
+
+// Array properties and transformations:
+template <class T> struct rank;
+template <class T, unsigned I = 0> struct extent;
+template <class T> struct remove_extent;
+template <class T> struct remove_all_extents;
 
 // Relationships between types:
 template <class T, class U> struct is_same;
@@ -238,6 +253,128 @@ template <class _Tp> struct is_class
 template <class _Tp, class _Up> struct is_same           : public false_type {};
 template <class _Tp>            struct is_same<_Tp, _Tp> : public true_type {};
 
+// remove_all_extents
+
+template <class _Tp> struct remove_all_extents
+    {typedef _Tp type;};
+template <class _Tp> struct remove_all_extents<_Tp[]>
+    {typedef typename remove_all_extents<_Tp>::type type;};
+template <class _Tp, size_t _Np> struct remove_all_extents<_Tp[_Np]>
+    {typedef typename remove_all_extents<_Tp>::type type;};
+
+// is_abstract
+
+namespace __is_abstract_imp
+{
+template <class _Tp> char  __test(_Tp (*)[1]);
+template <class _Tp> __two __test(...);
+}
+
+template <class _Tp, bool = is_class<_Tp>::value>
+struct __libcpp_abstract : public integral_constant<bool, sizeof(__is_abstract_imp::__test<_Tp>(0)) != 1> {};
+
+template <class _Tp> struct __libcpp_abstract<_Tp, false> : public false_type {};
+
+template <class _Tp> struct is_abstract : public __libcpp_abstract<_Tp> {};
+
+// is_base_of
+template <class _Bp, class _Dp>
+struct is_base_of
+    : public integral_constant<bool, __is_base_of(_Bp, _Dp)> {};
+
+
+// is_convertible
+
+
+namespace __is_convertible_imp
+{
+template <class _Tp> char  __test(_Tp);
+template <class _Tp> typename remove_reference<_Tp>::type& __source();
+
+template <class _Tp, bool _IsArray =    is_array<_Tp>::value,
+                     bool _IsFunction = is_function<_Tp>::value,
+                     bool _IsVoid =     is_void<_Tp>::value>
+                     struct __is_array_function_or_void                          {enum {value = 0};};
+template <class _Tp> struct __is_array_function_or_void<_Tp, true, false, false> {enum {value = 1};};
+template <class _Tp> struct __is_array_function_or_void<_Tp, false, true, false> {enum {value = 2};};
+template <class _Tp> struct __is_array_function_or_void<_Tp, false, false, true> {enum {value = 3};};
+}
+
+template <class _Tp,
+    unsigned = __is_convertible_imp::__is_array_function_or_void<typename remove_reference<_Tp>::type>::value>
+struct __is_convertible_check
+{
+    static const size_t __v = 0;
+};
+
+template <class _Tp>
+struct __is_convertible_check<_Tp, 0>
+{
+    static const size_t __v = sizeof(_Tp);
+};
+
+template <class _T1, class _T2,
+    unsigned _T1_is_array_function_or_void = __is_convertible_imp::__is_array_function_or_void<_T1>::value,
+    unsigned _T2_is_array_function_or_void = __is_convertible_imp::__is_array_function_or_void<_T2>::value>
+struct __is_convertible
+    : public integral_constant<bool,
+        sizeof(__is_convertible_imp::__test<_T2>(__is_convertible_imp::__source<_T1>())) == 1
+         && !(!is_function<_T1>::value && !is_reference<_T1>::value && is_reference<_T2>::value
+              && (!is_const<typename remove_reference<_T2>::type>::value
+                  || is_volatile<typename remove_reference<_T2>::type>::value)
+                  && (is_same<typename remove_cv<_T1>::type,
+                              typename remove_cv<typename remove_reference<_T2>::type>::type>::value
+                      || is_base_of<typename remove_reference<_T2>::type, _T1>::value))
+    >
+{};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 1, 0> : false_type {};
+
+template <class _T1> struct __is_convertible<_T1, const _T1&, 1, 0> : true_type {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2*, 1, 0>
+    : public integral_constant<bool, __is_convertible<typename remove_all_extents<_T1>::type*, _T2*>::value> {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2* const, 1, 0>
+    : public integral_constant<bool, __is_convertible<typename remove_all_extents<_T1>::type*, _T2*const>::value> {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2* volatile, 1, 0>
+    : public integral_constant<bool, __is_convertible<typename remove_all_extents<_T1>::type*, _T2*volatile>::value> {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2* const volatile, 1, 0>
+    : public integral_constant<bool, __is_convertible<typename remove_all_extents<_T1>::type*, _T2*const volatile>::value> {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 2, 0>                : public false_type {};
+template <class _T1>            struct __is_convertible<_T1, _T1&, 2, 0>               : public true_type {};
+template <class _T1>            struct __is_convertible<_T1, _T1*, 2, 0>               : public true_type {};
+template <class _T1>            struct __is_convertible<_T1, _T1*const, 2, 0>          : public true_type {};
+template <class _T1>            struct __is_convertible<_T1, _T1*volatile, 2, 0>       : public true_type {};
+template <class _T1>            struct __is_convertible<_T1, _T1*const volatile, 2, 0> : public true_type {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 3, 0> : public false_type {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 0, 1> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 1, 1> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 2, 1> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 3, 1> : public false_type {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 0, 2> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 1, 2> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 2, 2> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 3, 2> : public false_type {};
+
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 0, 3> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 1, 3> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 2, 3> : public false_type {};
+template <class _T1, class _T2> struct __is_convertible<_T1, _T2, 3, 3> : public true_type {};
+
+template <class _T1, class _T2> struct is_convertible
+    : public __is_convertible<_T1, _T2>
+{
+    static const size_t __complete_check1 = __is_convertible_check<_T1>::__v;
+    static const size_t __complete_check2 = __is_convertible_check<_T2>::__v;
+};
+
 // is_function
 
 namespace __is_function_imp
@@ -293,6 +430,12 @@ template <class _Tp> struct is_enum
                                      !is_union<_Tp>::value            &&
                                      !is_class<_Tp>::value            &&
                                      !is_function<_Tp>::value         > {};
+
+// is_arithmetic
+
+template <class _Tp> struct is_arithmetic
+    : public integral_constant<bool, is_integral<_Tp>::value      ||
+                                     is_floating_point<_Tp>::value> {};
 
 // remove_reference
 
@@ -451,7 +594,6 @@ struct make_unsigned
 {
     typedef typename __apply_cv<_Tp, typename __make_unsigned<typename remove_cv<_Tp>::type>::type>::type type;
 };
-
 
 }
 

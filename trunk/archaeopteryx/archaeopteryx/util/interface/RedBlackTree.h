@@ -51,7 +51,7 @@ __root, have a non-null __parent_ field.
 */
 
 // Returns:  true if __x is a left child of its parent, else false
-// Precondition:  __x != nullptr.
+// Precondition:  __x != 0.
 template <class _NodePtr>
 inline bool
 __tree_is_left_child(_NodePtr __x)
@@ -66,17 +66,17 @@ template <class _NodePtr>
 unsigned
 __tree_sub_invariant(_NodePtr __x)
 {
-    if (__x == nullptr)
+    if (__x == 0)
         return 1;
     // parent consistency checked by caller
     // check __x->__left_ consistency
-    if (__x->__left_ != nullptr && __x->__left_->__parent_ != __x)
+    if (__x->__left_ != 0 && __x->__left_->__parent_ != __x)
         return 0;
     // check __x->__right_ consistency
-    if (__x->__right_ != nullptr && __x->__right_->__parent_ != __x)
+    if (__x->__right_ != 0 && __x->__right_->__parent_ != __x)
         return 0;
-    // check __x->__left_ != __x->__right_ unless both are nullptr
-    if (__x->__left_ == __x->__right_ && __x->__left_ != nullptr)
+    // check __x->__left_ != __x->__right_ unless both are 0
+    if (__x->__left_ == __x->__right_ && __x->__left_ != 0)
         return 0;
     // If this is red, neither child can be red
     if (!__x->__is_black_)
@@ -95,16 +95,16 @@ __tree_sub_invariant(_NodePtr __x)
 }
 
 // Determintes if the red black tree rooted at __root is a proper red black tree.
-//    __root == nullptr is a proper tree.  Returns true is __root is a proper
+//    __root == 0 is a proper tree.  Returns true is __root is a proper
 //    red black tree, else returns false.
 template <class _NodePtr>
 bool
 __tree_invariant(_NodePtr __root)
 {
-    if (__root == nullptr)
+    if (__root == 0)
         return true;
     // check __x->__parent_ consistency
-    if (__root->__parent_ == nullptr)
+    if (__root->__parent_ == 0)
         return false;
     if (!__tree_is_left_child(__root))
         return false;
@@ -116,34 +116,34 @@ __tree_invariant(_NodePtr __root)
 }
 
 // Returns:  pointer to the left-most node under __x.
-// Precondition:  __x != nullptr.
+// Precondition:  __x != 0.
 template <class _NodePtr>
 inline _NodePtr
 __tree_min(_NodePtr __x)
 {
-    while (__x->__left_ != nullptr)
+    while (__x->__left_ != 0)
         __x = __x->__left_;
     return __x;
 }
 
 // Returns:  pointer to the right-most node under __x.
-// Precondition:  __x != nullptr.
+// Precondition:  __x != 0.
 template <class _NodePtr>
 inline _NodePtr
 __tree_max(_NodePtr __x)
 {
-    while (__x->__right_ != nullptr)
+    while (__x->__right_ != 0)
         __x = __x->__right_;
     return __x;
 }
 
 // Returns:  pointer to the next in-order node after __x.
-// Precondition:  __x != nullptr.
+// Precondition:  __x != 0.
 template <class _NodePtr>
 _NodePtr
 __tree_next(_NodePtr __x)
 {
-    if (__x->__right_ != nullptr)
+    if (__x->__right_ != 0)
         return __tree_min(__x->__right_);
     while (!__tree_is_left_child(__x))
         __x = __x->__parent_;
@@ -151,12 +151,12 @@ __tree_next(_NodePtr __x)
 }
 
 // Returns:  pointer to the previous in-order node before __x.
-// Precondition:  __x != nullptr.
+// Precondition:  __x != 0.
 template <class _NodePtr>
 _NodePtr
 __tree_prev(_NodePtr __x)
 {
-    if (__x->__left_ != nullptr)
+    if (__x->__left_ != 0)
         return __tree_max(__x->__left_);
     while (__tree_is_left_child(__x))
         __x = __x->__parent_;
@@ -164,19 +164,19 @@ __tree_prev(_NodePtr __x)
 }
 
 // Returns:  pointer to a node which has no children
-// Precondition:  __x != nullptr.
+// Precondition:  __x != 0.
 template <class _NodePtr>
 _NodePtr
 __tree_leaf(_NodePtr __x)
 {
     while (true)
     {
-        if (__x->__left_ != nullptr)
+        if (__x->__left_ != 0)
         {
             __x = __x->__left_;
             continue;
         }
-        if (__x->__right_ != nullptr)
+        if (__x->__right_ != 0)
         {
             __x = __x->__right_;
             continue;
@@ -188,14 +188,14 @@ __tree_leaf(_NodePtr __x)
 
 // Effects:  Makes __x->__right_ the subtree root with __x as its left child
 //           while preserving in-order order.
-// Precondition:  __x->__right_ != nullptr
+// Precondition:  __x->__right_ != 0
 template <class _NodePtr>
 void
 __tree_left_rotate(_NodePtr __x)
 {
     _NodePtr __y = __x->__right_;
     __x->__right_ = __y->__left_;
-    if (__x->__right_ != nullptr)
+    if (__x->__right_ != 0)
         __x->__right_->__parent_ = __x;
     __y->__parent_ = __x->__parent_;
     if (__tree_is_left_child(__x))
@@ -208,14 +208,14 @@ __tree_left_rotate(_NodePtr __x)
 
 // Effects:  Makes __x->__left_ the subtree root with __x as its right child
 //           while preserving in-order order.
-// Precondition:  __x->__left_ != nullptr
+// Precondition:  __x->__left_ != 0
 template <class _NodePtr>
 void
 __tree_right_rotate(_NodePtr __x)
 {
     _NodePtr __y = __x->__left_;
     __x->__left_ = __y->__right_;
-    if (__x->__left_ != nullptr)
+    if (__x->__left_ != 0)
         __x->__left_->__parent_ = __x;
     __y->__parent_ = __x->__parent_;
     if (__tree_is_left_child(__x))
@@ -227,11 +227,11 @@ __tree_right_rotate(_NodePtr __x)
 }
 
 // Effects:  Rebalances __root after attaching __x to a leaf.
-// Precondition:  __root != nulptr && __x != nullptr.
+// Precondition:  __root != nulptr && __x != 0.
 //                __x has no children.
 //                __x == __root or == a direct or indirect child of __root.
 //                If __x were to be unlinked from __root (setting __root to
-//                  nullptr if __root == __x), __tree_invariant(__root) == true.
+//                  0 if __root == __x), __tree_invariant(__root) == true.
 // Postcondition: __tree_invariant(end_node->__left_) == true.  end_node->__left_
 //                may be different than the value passed in as __root.
 template <class _NodePtr>
@@ -245,7 +245,7 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x)
         if (__tree_is_left_child(__x->__parent_))
         {
             _NodePtr __y = __x->__parent_->__parent_->__right_;
-            if (__y != nullptr && !__y->__is_black_)
+            if (__y != 0 && !__y->__is_black_)
             {
                 __x = __x->__parent_;
                 __x->__is_black_ = true;
@@ -271,7 +271,7 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x)
         else
         {
             _NodePtr __y = __x->__parent_->__parent_->__left_;
-            if (__y != nullptr && !__y->__is_black_)
+            if (__y != 0 && !__y->__is_black_)
             {
                 __x = __x->__parent_;
                 __x->__is_black_ = true;
@@ -297,7 +297,7 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x)
     }
 }
 
-// Precondition:  __root != nullptr && __z != nullptr.
+// Precondition:  __root != 0 && __z != 0.
 //                __tree_invariant(__root) == true.
 //                __z == __root or == a direct or indirect child of __root.
 // Effects:  unlinks __z from the tree rooted at __root, rebalancing as needed.
@@ -312,14 +312,14 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
     // __y is either __z, or if __z has two children, __tree_next(__z).
     // __y will have at most one child.
     // __y will be the initial hole in the tree (make the hole at a leaf)
-    _NodePtr __y = (__z->__left_ == nullptr || __z->__right_ == nullptr) ?
+    _NodePtr __y = (__z->__left_ == 0 || __z->__right_ == 0) ?
                     __z : __tree_next(__z);
     // __x is __y's possibly null single child
-    _NodePtr __x = __y->__left_ != nullptr ? __y->__left_ : __y->__right_;
+    _NodePtr __x = __y->__left_ != 0 ? __y->__left_ : __y->__right_;
     // __w is __x's possibly null uncle (will become __x's sibling)
-    _NodePtr __w = nullptr;
+    _NodePtr __w = 0;
     // link __x to __y's parent, and find __w
-    if (__x != nullptr)
+    if (__x != 0)
         __x->__parent_ = __y->__parent_;
     if (__tree_is_left_child(__y))
     {
@@ -327,7 +327,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
         if (__y != __root)
             __w = __y->__parent_->__right_;
         else
-            __root = __x;  // __w == nullptr
+            __root = __x;  // __w == 0
     }
     else
     {
@@ -340,7 +340,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
     //    but copy __z's color.  This does not impact __x or __w.
     if (__y != __z)
     {
-        // __z->__left_ != nulptr but __z->__right_ might == __x == nullptr
+        // __z->__left_ != nulptr but __z->__right_ might == __x == 0
         __y->__parent_ = __z->__parent_;
         if (__tree_is_left_child(__z))
             __y->__parent_->__left_ = __y;
@@ -349,7 +349,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
         __y->__left_ = __z->__left_;
         __y->__left_->__parent_ = __y;
         __y->__right_ = __z->__right_;
-        if (__y->__right_ != nullptr)
+        if (__y->__right_ != 0)
             __y->__right_->__parent_ = __y;
         __y->__is_black_ = __z->__is_black_;
         if (__root == __z)
@@ -357,7 +357,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
     }
     // There is no need to rebalance if we removed a red, or if we removed
     //     the last node.
-    if (__removed_black && __root != nullptr)
+    if (__removed_black && __root != 0)
     {
         // Rebalance:
         // __x has an implicit black color (transferred from the removed __y)
@@ -370,8 +370,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
         // Since __y was black and only had one child (which __x points to), __x
         //   is either red with no children, else null, otherwise __y would have
         //   different black heights under left and right pointers.
-        // if (__x == __root || __x != nullptr && !__x->__is_black_)
-        if (__x != nullptr)
+        // if (__x == __root || __x != 0 && !__x->__is_black_)
+        if (__x != 0)
             __x->__is_black_ = true;
         else
         {
@@ -397,8 +397,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
                         __w = __w->__left_->__right_;
                     }
                     // __w->__is_black_ is now true, __w may have null children
-                    if ((__w->__left_  == nullptr || __w->__left_->__is_black_) &&
-                        (__w->__right_ == nullptr || __w->__right_->__is_black_))
+                    if ((__w->__left_  == 0 || __w->__left_->__is_black_) &&
+                        (__w->__right_ == 0 || __w->__right_->__is_black_))
                     {
                         __w->__is_black_ = false;
                         __x = __w->__parent_;
@@ -416,7 +416,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
                     }
                     else  // __w has a red child
                     {
-                        if (__w->__right_ == nullptr || __w->__right_->__is_black_)
+                        if (__w->__right_ == 0 || __w->__right_->__is_black_)
                         {
                             // __w left child is non-null and red
                             __w->__left_->__is_black_ = true;
@@ -449,8 +449,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
                         __w = __w->__right_->__left_;
                     }
                     // __w->__is_black_ is now true, __w may have null children
-                    if ((__w->__left_  == nullptr || __w->__left_->__is_black_) &&
-                        (__w->__right_ == nullptr || __w->__right_->__is_black_))
+                    if ((__w->__left_  == 0 || __w->__left_->__is_black_) &&
+                        (__w->__right_ == 0 || __w->__right_->__is_black_))
                     {
                         __w->__is_black_ = false;
                         __x = __w->__parent_;
@@ -468,7 +468,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z)
                     }
                     else  // __w has a red child
                     {
-                        if (__w->__left_ == nullptr || __w->__left_->__is_black_)
+                        if (__w->__left_ == 0 || __w->__left_->__is_black_)
                         {
                             // __w right child is non-null and red
                             __w->__right_->__is_black_ = true;
@@ -970,39 +970,39 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__detach()
 {
     __node_pointer __cache = __begin_node();
     __begin_node() = __end_node();
-    __end_node()->__left_->__parent_ = nullptr;
-    __end_node()->__left_ = nullptr;
+    __end_node()->__left_->__parent_ = 0;
+    __end_node()->__left_ = 0;
     size() = 0;
-    // __cache->__left_ == nullptr
-    if (__cache->__right_ != nullptr)
+    // __cache->__left_ == 0
+    if (__cache->__right_ != 0)
         __cache = static_cast<__node_pointer>(__cache->__right_);
-    // __cache->__left_ == nullptr
-    // __cache->__right_ == nullptr
+    // __cache->__left_ == 0
+    // __cache->__right_ == 0
     return __cache;
 }
 
-// Precondition:  __cache != nullptr
-//    __cache->left_ == nullptr
-//    __cache->right_ == nullptr
+// Precondition:  __cache != 0
+//    __cache->left_ == 0
+//    __cache->right_ == 0
 //    This is no longer a red-black tree
 template <class _Tp, class _Compare, class _Allocator>
 typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_pointer
 RedBlackTree<_Tp, _Compare, _Allocator>::__detach(__node_pointer __cache)
 {
-    if (__cache->__parent_ == nullptr)
-        return nullptr;
+    if (__cache->__parent_ == 0)
+        return 0;
     if (__tree_is_left_child(__cache))
     {
-        __cache->__parent_->__left_ = nullptr;
+        __cache->__parent_->__left_ = 0;
         __cache = static_cast<__node_pointer>(__cache->__parent_);
-        if (__cache->__right_ == nullptr)
+        if (__cache->__right_ == 0)
             return __cache;
         return static_cast<__node_pointer>(__tree_leaf(__cache->__right_));
     }
     // __cache is right child
-    __cache->__parent_->__right_ = nullptr;
+    __cache->__parent_->__right_ = 0;
     __cache = static_cast<__node_pointer>(__cache->__parent_);
-    if (__cache->__left_ == nullptr)
+    if (__cache->__left_ == 0)
         return __cache;
     return static_cast<__node_pointer>(__tree_leaf(__cache->__left_));
 }
@@ -1028,16 +1028,16 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__assign_unique(_InputIterator __first,
     if (size() != 0)
     {
         __node_pointer __cache = __detach();
-            for (; __cache != nullptr && __first != __last; ++__first)
+            for (; __cache != 0 && __first != __last; ++__first)
             {
                 __cache->__value_ = *__first;
                 __node_pointer __next = __detach(__cache);
                 __node_insert_unique(__cache);
                 __cache = __next;
             }
-        if (__cache != nullptr)
+        if (__cache != 0)
         {
-            while (__cache->__parent_ != nullptr)
+            while (__cache->__parent_ != 0)
                 __cache = static_cast<__node_pointer>(__cache->__parent_);
             destroy(__cache);
         }
@@ -1054,16 +1054,16 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__assign_multi(_InputIterator __first, 
     if (size() != 0)
     {
         __node_pointer __cache = __detach();
-            for (; __cache != nullptr && __first != __last; ++__first)
+            for (; __cache != 0 && __first != __last; ++__first)
             {
                 __cache->__value_ = *__first;
                 __node_pointer __next = __detach(__cache);
                 __node_insert_multi(__cache);
                 __cache = __next;
             }
-        if (__cache != nullptr)
+        if (__cache != 0)
         {
-            while (__cache->__parent_ != nullptr)
+            while (__cache->__parent_ != 0)
                 __cache = static_cast<__node_pointer>(__cache->__parent_);
             destroy(__cache);
         }
@@ -1091,7 +1091,7 @@ template <class _Tp, class _Compare, class _Allocator>
 void
 RedBlackTree<_Tp, _Compare, _Allocator>::destroy(__node_pointer __nd)
 {
-    if (__nd != nullptr)
+    if (__nd != 0)
     {
         destroy(static_cast<__node_pointer>(__nd->__left_));
         destroy(static_cast<__node_pointer>(__nd->__right_));
@@ -1127,7 +1127,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::clear()
     destroy(__root());
     size() = 0;
     __begin_node() = __end_node();
-    __end_node()->__left_ = nullptr;
+    __end_node()->__left_ = 0;
 }
 
 // Find lower_bound place to insert
@@ -1139,13 +1139,13 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_low(typename __node_base::p
                                                    const value_type& __v)
 {
     __node_pointer __nd = __root();
-    if (__nd != nullptr)
+    if (__nd != 0)
     {
         while (true)
         {
             if (value_comp()(__nd->__value_, __v))
             {
-                if (__nd->__right_ != nullptr)
+                if (__nd->__right_ != 0)
                     __nd = static_cast<__node_pointer>(__nd->__right_);
                 else
                 {
@@ -1155,7 +1155,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_low(typename __node_base::p
             }
             else
             {
-                if (__nd->__left_ != nullptr)
+                if (__nd->__left_ != 0)
                     __nd = static_cast<__node_pointer>(__nd->__left_);
                 else
                 {
@@ -1178,13 +1178,13 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_high(typename __node_base::
                                                     const value_type& __v)
 {
     __node_pointer __nd = __root();
-    if (__nd != nullptr)
+    if (__nd != 0)
     {
         while (true)
         {
             if (value_comp()(__v, __nd->__value_))
             {
-                if (__nd->__left_ != nullptr)
+                if (__nd->__left_ != 0)
                     __nd = static_cast<__node_pointer>(__nd->__left_);
                 else
                 {
@@ -1194,7 +1194,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_high(typename __node_base::
             }
             else
             {
-                if (__nd->__right_ != nullptr)
+                if (__nd->__right_ != 0)
                     __nd = static_cast<__node_pointer>(__nd->__right_);
                 else
                 {
@@ -1227,7 +1227,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf(const_iterator __hint,
         if (__prior == begin() || !value_comp()(__v, *--__prior))
         {
             // *prev(__hint) <= __v <= *__hint
-            if (__hint.__ptr_->__left_ == nullptr)
+            if (__hint.__ptr_->__left_ == 0)
             {
                 __parent = const_cast<__node_pointer&>(__hint.__ptr_);
                 return __parent->__left_;
@@ -1256,13 +1256,13 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(typename __node_base::poin
                                                 const _Key& __v)
 {
     __node_pointer __nd = __root();
-    if (__nd != nullptr)
+    if (__nd != 0)
     {
         while (true)
         {
             if (value_comp()(__v, __nd->__value_))
             {
-                if (__nd->__left_ != nullptr)
+                if (__nd->__left_ != 0)
                     __nd = static_cast<__node_pointer>(__nd->__left_);
                 else
                 {
@@ -1272,7 +1272,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(typename __node_base::poin
             }
             else if (value_comp()(__nd->__value_, __v))
             {
-                if (__nd->__right_ != nullptr)
+                if (__nd->__right_ != 0)
                     __nd = static_cast<__node_pointer>(__nd->__right_);
                 else
                 {
@@ -1312,7 +1312,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
         if (__prior == begin() || value_comp()(*--__prior, __v))
         {
             // *prev(__hint) < __v < *__hint
-            if (__hint.__ptr_->__left_ == nullptr)
+            if (__hint.__ptr_->__left_ == 0)
             {
                 __parent = const_cast<__node_pointer&>(__hint.__ptr_);
                 return __parent->__left_;
@@ -1333,7 +1333,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
         if (__next == end() || value_comp()(__v, *__next))
         {
             // *__hint < __v < *_VSTD::next(__hint)
-            if (__hint.__ptr_->__right_ == nullptr)
+            if (__hint.__ptr_->__right_ == 0)
             {
                 __parent = const_cast<__node_pointer&>(__hint.__ptr_);
                 return __parent->__right_;
@@ -1358,11 +1358,11 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_node_at(__node_base_pointer __
                                                     __node_base_pointer& __child,
                                                     __node_base_pointer __new_node)
 {
-    __new_node->__left_   = nullptr;
-    __new_node->__right_  = nullptr;
+    __new_node->__left_   = 0;
+    __new_node->__right_  = 0;
     __new_node->__parent_ = __parent;
     __child = __new_node;
-    if (__begin_node()->__left_ != nullptr)
+    if (__begin_node()->__left_ != 0)
         __begin_node() = static_cast<__node_pointer>(__begin_node()->__left_);
     __tree_balance_after_insert(__end_node()->__left_, __child);
     ++size();
@@ -1376,7 +1376,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_unique(const value_type& __v)
     __node_base_pointer& __child = __find_equal(__parent, __v);
     __node_pointer __r = static_cast<__node_pointer>(__child);
     bool __inserted = false;
-    if (__child == nullptr)
+    if (__child == 0)
     {
         __node_holder __h = __construct_node(__v);
         __insert_node_at(__parent, __child, __h.get());
@@ -1393,7 +1393,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_unique(const_iterator __p, con
     __node_base_pointer __parent;
     __node_base_pointer& __child = __find_equal(__p, __parent, __v);
     __node_pointer __r = static_cast<__node_pointer>(__child);
-    if (__child == nullptr)
+    if (__child == 0)
     {
         __node_holder __h = __construct_node(__v);
         __insert_node_at(__parent, __child, __h.get());
@@ -1432,7 +1432,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_unique(__node_pointer __n
     __node_base_pointer& __child = __find_equal(__parent, __nd->__value_);
     __node_pointer __r = static_cast<__node_pointer>(__child);
     bool __inserted = false;
-    if (__child == nullptr)
+    if (__child == 0)
     {
         __insert_node_at(__parent, __child, __nd);
         __r = __nd;
@@ -1449,7 +1449,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_unique(const_iterator __p
     __node_base_pointer __parent;
     __node_base_pointer& __child = __find_equal(__p, __parent, __nd->__value_);
     __node_pointer __r = static_cast<__node_pointer>(__child);
-    if (__child == nullptr)
+    if (__child == 0)
     {
         __insert_node_at(__parent, __child, __nd);
         __r = __nd;
@@ -1558,7 +1558,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__count_unique(const _Key& __k) const
 {
     __node_const_pointer __result = __end_node();
     __node_const_pointer __rt = __root();
-    while (__rt != nullptr)
+    while (__rt != 0)
     {
         if (value_comp()(__k, __rt->__value_))
         {
@@ -1581,7 +1581,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__count_multi(const _Key& __k) const
     typedef pair<const_iterator, const_iterator> _Pp;
     __node_const_pointer __result = __end_node();
     __node_const_pointer __rt = __root();
-    while (__rt != nullptr)
+    while (__rt != 0)
     {
         if (value_comp()(__k, __rt->__value_))
         {
@@ -1606,7 +1606,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__lower_bound(const _Key& __v,
                                                  __node_pointer __root,
                                                  __node_pointer __result)
 {
-    while (__root != nullptr)
+    while (__root != 0)
     {
         if (!value_comp()(__root->__value_, __v))
         {
@@ -1626,7 +1626,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__lower_bound(const _Key& __v,
                                                  __node_const_pointer __root,
                                                  __node_const_pointer __result) const
 {
-    while (__root != nullptr)
+    while (__root != 0)
     {
         if (!value_comp()(__root->__value_, __v))
         {
@@ -1646,7 +1646,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__upper_bound(const _Key& __v,
                                                  __node_pointer __root,
                                                  __node_pointer __result)
 {
-    while (__root != nullptr)
+    while (__root != 0)
     {
         if (value_comp()(__v, __root->__value_))
         {
@@ -1666,7 +1666,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__upper_bound(const _Key& __v,
                                                  __node_const_pointer __root,
                                                  __node_const_pointer __result) const
 {
-    while (__root != nullptr)
+    while (__root != 0)
     {
         if (value_comp()(__v, __root->__value_))
         {
@@ -1688,7 +1688,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k)
     typedef pair<iterator, iterator> _Pp;
     __node_pointer __result = __end_node();
     __node_pointer __rt = __root();
-    while (__rt != nullptr)
+    while (__rt != 0)
     {
         if (value_comp()(__k, __rt->__value_))
         {
@@ -1700,7 +1700,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k)
         else
             return _Pp(iterator(__rt),
                       iterator(
-                          __rt->__right_ != nullptr ?
+                          __rt->__right_ != 0 ?
                               static_cast<__node_pointer>(__tree_min(__rt->__right_))
                             : __result));
     }
@@ -1716,7 +1716,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k) c
     typedef pair<const_iterator, const_iterator> _Pp;
     __node_const_pointer __result = __end_node();
     __node_const_pointer __rt = __root();
-    while (__rt != nullptr)
+    while (__rt != 0)
     {
         if (value_comp()(__k, __rt->__value_))
         {
@@ -1728,7 +1728,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k) c
         else
             return _Pp(const_iterator(__rt),
                       const_iterator(
-                          __rt->__right_ != nullptr ?
+                          __rt->__right_ != 0 ?
                               static_cast<__node_const_pointer>(__tree_min(__rt->__right_))
                             : __result));
     }
@@ -1744,7 +1744,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k)
     typedef pair<iterator, iterator> _Pp;
     __node_pointer __result = __end_node();
     __node_pointer __rt = __root();
-    while (__rt != nullptr)
+    while (__rt != 0)
     {
         if (value_comp()(__k, __rt->__value_))
         {
@@ -1769,7 +1769,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k) co
     typedef pair<const_iterator, const_iterator> _Pp;
     __node_const_pointer __result = __end_node();
     __node_const_pointer __rt = __root();
-    while (__rt != nullptr)
+    while (__rt != 0)
     {
         if (value_comp()(__k, __rt->__value_))
         {
@@ -1792,7 +1792,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::remove(const_iterator __p)
     __node_pointer __np = const_cast<__node_pointer>(__p.__ptr_);
     if (__begin_node() == __np)
     {
-        if (__np->__right_ != nullptr)
+        if (__np->__right_ != 0)
             __begin_node() = static_cast<__node_pointer>(__np->__right_);
         else
             __begin_node() = static_cast<__node_pointer>(__np->__parent_);

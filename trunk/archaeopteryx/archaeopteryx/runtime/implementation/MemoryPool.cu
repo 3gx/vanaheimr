@@ -47,6 +47,8 @@ __device__ MemoryPool::Address MemoryPool::allocate(uint64_t size)
 	}
 
 	_pages.insert(util::make_pair(address, Page(address, size)));
+	
+	return address;
 }
 
 __device__ MemoryPool::Address MemoryPool::translate(Address address)

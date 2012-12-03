@@ -23,6 +23,9 @@ public:
 	typedef uint64_t Address;
 
 public:
+	static const Address InvalidAddress = (Address)(-1);
+
+public:
 	__device__ bool allocate(uint64_t size, Address address);
 	__device__ Address allocate(uint64_t address);
 

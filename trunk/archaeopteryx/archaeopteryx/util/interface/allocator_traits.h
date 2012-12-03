@@ -24,7 +24,6 @@ allocator_arg_t allocator_arg = allocator_arg_t();
 template <class T, class Alloc> struct uses_allocator;
 
 // pointer_traits
-
 template <class _Tp>
 struct __has_element_type
 {
@@ -261,6 +260,19 @@ struct allocator_traits
     static allocator_type
         select_on_container_copy_construction(const allocator_type& a);
 };
+
+template <class _Tp>
+inline _Tp* __to_raw_pointer(_Tp* __p)
+{
+    return __p;
+}
+
+template <class _Pointer>
+inline typename pointer_traits<_Pointer>::element_type*
+__to_raw_pointer(_Pointer __p)
+{
+    return util::__to_raw_pointer(__p.operator->());
+}
 
 template <class T>
 class allocator

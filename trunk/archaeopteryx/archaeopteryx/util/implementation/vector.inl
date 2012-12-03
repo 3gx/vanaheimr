@@ -15,21 +15,21 @@ namespace util
 
 template <class T, class A>
 __device__ vector<T, A>::vector()
-: _begin(0), _end(0), _endCapacity(0)
+: _begin(0), _end(0), _capacityEnd(0)
 {
 
 }
 
 template <class T, class A>
 __device__ vector<T, A>::vector(const allocator_type& a)
-: _begin(0), _end(0), _endCapacity(0), _allocator(a)
+: _begin(0), _end(0), _capacityEnd(0), _allocator(a)
 {
 
 }
 
 template <class T, class A>
 __device__ vector<T, A>::vector(size_type n)
-: _begin(0), _end(0), _endCapacity(0)
+: _begin(0), _end(0), _capacityEnd(0)
 {
 	if(n > 0)
 	{
@@ -39,8 +39,9 @@ __device__ vector<T, A>::vector(size_type n)
 }
 
 template <class T, class A>
-__device__ vector<T, A>::vector(size_type n, const value_type& value, const allocator_type& a)
-: _begin(0), _end(0), _endCapacity(0), _allocator(a)
+__device__ vector<T, A>::vector(size_type n, const value_type& value,
+	const allocator_type& a)
+: _begin(0), _end(0), _capacityEnd(0), _allocator(a)
 {
 	if(n > 0)
 	{
@@ -53,7 +54,7 @@ template <class T, class A>
 template <class InputIterator>
 	__device__ vector<T, A>::vector(InputIterator first, InputIterator last,
 		const allocator_type& a)
-: _begin(0), _end(0), _endCapacity(0), _allocator(a)
+: _begin(0), _end(0), _capacityEnd(0), _allocator(a)
 {
 	for(; first != last; ++first)
 	{
@@ -63,7 +64,7 @@ template <class InputIterator>
 
 template <class T, class A>    
 __device__ vector<T, A>::vector(const vector& x)
-: _begin(0), _end(0), _endCapacity(0), _allocator(x.allocator())
+: _begin(0), _end(0), _capacityEnd(0), _allocator(x.allocator())
 {
 	size_t n = x.size();
 	
