@@ -369,6 +369,121 @@ inserter(_Container& __x, typename _Container::iterator __i)
     return insert_iterator<_Container>(__x, __i);
 }
 
+// move iterator
+template <class _Iter>
+class move_iterator
+{
+private:
+    _Iter __i;
+public:
+    typedef _Iter                                            iterator_type;
+    typedef typename iterator_traits<iterator_type>::iterator_category
+iterator_category;
+    typedef typename iterator_traits<iterator_type>::value_type value_type;
+    typedef typename iterator_traits<iterator_type>::difference_type
+difference_type;
+    typedef typename iterator_traits<iterator_type>::pointer pointer;
+    typedef typename iterator_traits<iterator_type>::reference reference;
+
+     move_iterator() : __i() {}
+     explicit move_iterator(_Iter __x) : __i(__x) {}
+    template <class _Up>  move_iterator(const
+move_iterator<_Up>& __u)
+        : __i(__u.base()) {}
+     _Iter base() const {return __i;}
+     reference operator*() const {
+      return static_cast<reference>(*__i);
+    }
+     pointer  operator->() const {
+      typename iterator_traits<iterator_type>::reference __ref = *__i;
+      return &__ref;
+    }
+     move_iterator& operator++() {++__i; return *this;}
+     move_iterator  operator++(int)
+        {move_iterator __tmp(*this); ++__i; return __tmp;}
+     move_iterator& operator--() {--__i; return *this;}
+     move_iterator  operator--(int)
+        {move_iterator __tmp(*this); --__i; return __tmp;}
+     move_iterator  operator+ (difference_type __n)
+const
+        {return move_iterator(__i + __n);}
+     move_iterator& operator+=(difference_type __n)
+        {__i += __n; return *this;}
+     move_iterator  operator- (difference_type __n)
+const
+        {return move_iterator(__i - __n);}
+     move_iterator& operator-=(difference_type __n)
+        {__i -= __n; return *this;}
+     reference         operator[](difference_type __n)
+const
+    {
+      return static_cast<reference>(__i[__n]);
+    }
+};
+
+template <class _Iter1, class _Iter2>
+inline bool
+operator==(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() == __y.base();
+}
+
+template <class _Iter1, class _Iter2>
+inline bool
+operator<(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() < __y.base();
+}
+
+template <class _Iter1, class _Iter2>
+inline bool
+operator!=(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() != __y.base();
+}
+
+template <class _Iter1, class _Iter2>
+inline bool
+operator>(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() > __y.base();
+}
+
+template <class _Iter1, class _Iter2>
+inline bool
+operator>=(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() >= __y.base();
+}
+
+template <class _Iter1, class _Iter2>
+inline bool
+operator<=(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() <= __y.base();
+}
+
+template <class _Iter1, class _Iter2>
+inline typename move_iterator<_Iter1>::difference_type
+operator-(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
+{
+    return __x.base() - __y.base();
+}
+
+template <class _Iter>
+inline move_iterator<_Iter>
+operator+(typename move_iterator<_Iter>::difference_type __n, const
+move_iterator<_Iter>& __x)
+{
+    return move_iterator<_Iter>(__x.base() + __n);
+}
+
+template <class _Iter>
+inline move_iterator<_Iter>
+make_move_iterator(const _Iter& __i)
+{
+    return move_iterator<_Iter>(__i);
+}
 
 // __wrap_iter
 
