@@ -92,7 +92,7 @@ def convertPTXToIncludeFile(target, source, env):
 	
 	for filename in source:
 		for line in open(filename.abspath, 'r'):
-			output.write("\"" + line.strip('\n').replace("\"", "\\\"") + "\"\n")
+			output.write("\"" + line.replace("\n", "\\n").replace("\"", "\\\"") + "\"\n")
 
 def generate(env):
   """
@@ -107,7 +107,7 @@ def generate(env):
   env['BUILDERS']['PTXFile'] = ptx_builder
 
   # create a builder that makes PTX libraries from .ptx files
-  ptx_lib_builder = SCons.Builder.Builder(action = 'cat $SOURCES > $TARGET',
+  ptx_lib_builder = SCons.Builder.Builder(action = 'OcelotLinker -i "$SOURCES" -o $TARGET',
                                       emitter = ptxEmitter,
                                       suffix = '.ptx',
                                       src_suffix = ['.ptx'])
