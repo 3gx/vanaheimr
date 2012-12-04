@@ -43,70 +43,70 @@ public:
 template <class _Tp>
 struct less : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x < __y;}
 };
 
 template <class _Tp>
 struct plus : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x + __y;}
 };
 
 template <class _Tp>
 struct minus : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x - __y;}
 };
 
 template <class _Tp>
 struct multiplies : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x * __y;}
 };
 
 template <class _Tp>
 struct divides : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x / __y;}
 };
 
 template <class _Tp>
 struct modulus : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x % __y;}
 };
 
 template <class _Tp>
 struct negate : unary_function<_Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x) const
+    __device__ _Tp operator()(const _Tp& __x) const
         {return -__x;}
 };
 
 template <class _Tp>
 struct equal_to : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x == __y;}
 };
 
 template <class _Tp>
 struct not_equal_to : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x != __y;}
 };
 
 template <class _Tp>
 struct greater : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x > __y;}
 };
 
@@ -115,56 +115,56 @@ struct greater : binary_function<_Tp, _Tp, bool>
 template <class _Tp>
 struct greater_equal : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x >= __y;}
 };
 
 template <class _Tp>
 struct less_equal : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x <= __y;}
 };
 
 template <class _Tp>
 struct logical_and : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x && __y;}
 };
 
 template <class _Tp>
 struct logical_or : binary_function<_Tp, _Tp, bool>
 {
-    bool operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ bool operator()(const _Tp& __x, const _Tp& __y) const
         {return __x || __y;}
 };
 
 template <class _Tp>
 struct logical_not : unary_function<_Tp, bool>
 {
-    bool operator()(const _Tp& __x) const
+    __device__ bool operator()(const _Tp& __x) const
         {return !__x;}
 };
 
 template <class _Tp>
 struct bit_and : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x & __y;}
 };
 
 template <class _Tp>
 struct bit_or : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x | __y;}
 };
 
 template <class _Tp>
 struct bit_xor : binary_function<_Tp, _Tp, _Tp>
 {
-    _Tp operator()(const _Tp& __x, const _Tp& __y) const
+    __device__ _Tp operator()(const _Tp& __x, const _Tp& __y) const
         {return __x ^ __y;}
 };
 
@@ -174,14 +174,14 @@ class unary_negate
 {
     _Predicate __pred_;
 public:
-    explicit unary_negate(const _Predicate& __pred)
+    __device__ explicit unary_negate(const _Predicate& __pred)
         : __pred_(__pred) {}
-    bool operator()(const typename _Predicate::argument_type& __x) const
+    __device__ bool operator()(const typename _Predicate::argument_type& __x) const
         {return !__pred_(__x);}
 };
 
 template <class _Predicate>
-inline unary_negate<_Predicate>
+__device__ inline unary_negate<_Predicate>
 not1(const _Predicate& __pred) {return unary_negate<_Predicate>(__pred);}
 
 template <class _Predicate>
@@ -192,15 +192,15 @@ class binary_negate
 {
     _Predicate __pred_;
 public:
-    explicit binary_negate(const _Predicate& __pred)
+    __device__ explicit binary_negate(const _Predicate& __pred)
         : __pred_(__pred) {}
-    bool operator()(const typename _Predicate::first_argument_type& __x,
+    __device__ bool operator()(const typename _Predicate::first_argument_type& __x,
                     const typename _Predicate::second_argument_type& __y) const
         {return !__pred_(__x, __y);}
 };
 
 template <class _Predicate>
-inline binary_negate<_Predicate>
+__device__ inline binary_negate<_Predicate>
 not2(const _Predicate& __pred) {return binary_negate<_Predicate>(__pred);}
 
 template <class __Operation>
@@ -212,19 +212,19 @@ protected:
     __Operation                               op;
     typename __Operation::first_argument_type value;
 public:
-    binder1st(const __Operation& __x,
+    __device__ binder1st(const __Operation& __x,
                                const typename __Operation::first_argument_type __y)
         : op(__x), value(__y) {}
-    typename __Operation::result_type operator()
+    __device__ typename __Operation::result_type operator()
         (typename __Operation::second_argument_type& __x) const
             {return op(value, __x);}
-    typename __Operation::result_type operator()
+    __device__ typename __Operation::result_type operator()
         (const typename __Operation::second_argument_type& __x) const
             {return op(value, __x);}
 };
 
 template <class __Operation, class _Tp>
-inline binder1st<__Operation>
+__device__ inline binder1st<__Operation>
 bind1st(const __Operation& __op, const _Tp& __x)
     {return binder1st<__Operation>(__op, __x);}
 
@@ -237,18 +237,18 @@ protected:
     __Operation                                op;
     typename __Operation::second_argument_type value;
 public:
-        binder2nd(const __Operation& __x, const typename __Operation::second_argument_type __y)
+    __device__ binder2nd(const __Operation& __x, const typename __Operation::second_argument_type __y)
         : op(__x), value(__y) {}
-    typename __Operation::result_type operator()
+    __device__ typename __Operation::result_type operator()
         (      typename __Operation::first_argument_type& __x) const
             {return op(__x, value);}
-    typename __Operation::result_type operator()
+    __device__ typename __Operation::result_type operator()
         (const typename __Operation::first_argument_type& __x) const
             {return op(__x, value);}
 };
 
 template <class __Operation, class _Tp>
-inline binder2nd<__Operation>
+__device__ inline binder2nd<__Operation>
 bind2nd(const __Operation& __op, const _Tp& __x)
     {return binder2nd<__Operation>(__op, __x);}
 
@@ -258,14 +258,14 @@ class pointer_to_unary_function
 {
     _Result (*__f_)(_Arg);
 public:
-    explicit pointer_to_unary_function(_Result (*__f)(_Arg))
+    __device__ explicit pointer_to_unary_function(_Result (*__f)(_Arg))
         : __f_(__f) {}
-    _Result operator()(_Arg __x) const
+    __device__ _Result operator()(_Arg __x) const
         {return __f_(__x);}
 };
 
 template <class _Arg, class _Result>
-inline pointer_to_unary_function<_Arg,_Result>
+__device__ inline pointer_to_unary_function<_Arg,_Result>
 ptr_fun(_Result (*__f)(_Arg))
     {return pointer_to_unary_function<_Arg,_Result>(__f);}
 
@@ -275,14 +275,14 @@ class pointer_to_binary_function
 {
     _Result (*__f_)(_Arg1, _Arg2);
 public:
-    explicit pointer_to_binary_function(_Result (*__f)(_Arg1, _Arg2))
+    __device__ explicit pointer_to_binary_function(_Result (*__f)(_Arg1, _Arg2))
         : __f_(__f) {}
-    _Result operator()(_Arg1 __x, _Arg2 __y) const
+    __device__ _Result operator()(_Arg1 __x, _Arg2 __y) const
         {return __f_(__x, __y);}
 };
 
 template <class _Arg1, class _Arg2, class _Result>
-inline pointer_to_binary_function<_Arg1,_Arg2,_Result>
+__device__ inline pointer_to_binary_function<_Arg1,_Arg2,_Result>
 ptr_fun(_Result (*__f)(_Arg1,_Arg2))
     {return pointer_to_binary_function<_Arg1,_Arg2,_Result>(__f);}
 
@@ -291,9 +291,9 @@ class mem_fun_t : public unary_function<_Tp*, _Sp>
 {
     _Sp (_Tp::*__p_)();
 public:
-    explicit mem_fun_t(_Sp (_Tp::*__p)())
+    __device__ explicit mem_fun_t(_Sp (_Tp::*__p)())
         : __p_(__p) {}
-    _Sp operator()(_Tp* __p) const
+    __device__ _Sp operator()(_Tp* __p) const
         {return (__p->*__p_)();}
 };
 
@@ -302,19 +302,19 @@ class mem_fun1_t : public binary_function<_Tp*, _Ap, _Sp>
 {
     _Sp (_Tp::*__p_)(_Ap);
 public:
-    explicit mem_fun1_t(_Sp (_Tp::*__p)(_Ap))
+    __device__ explicit mem_fun1_t(_Sp (_Tp::*__p)(_Ap))
         : __p_(__p) {}
-    _Sp operator()(_Tp* __p, _Ap __x) const
+    __device__ _Sp operator()(_Tp* __p, _Ap __x) const
         {return (__p->*__p_)(__x);}
 };
 
 template<class _Sp, class _Tp>
-inline mem_fun_t<_Sp,_Tp>
+__device__ inline mem_fun_t<_Sp,_Tp>
 mem_fun(_Sp (_Tp::*__f)())
     {return mem_fun_t<_Sp,_Tp>(__f);}
 
 template<class _Sp, class _Tp, class _Ap>
-inline mem_fun1_t<_Sp,_Tp,_Ap>
+__device__ inline mem_fun1_t<_Sp,_Tp,_Ap>
 mem_fun(_Sp (_Tp::*__f)(_Ap))
     {return mem_fun1_t<_Sp,_Tp,_Ap>(__f);}
 
@@ -323,9 +323,9 @@ class mem_fun_ref_t : public unary_function<_Tp, _Sp>
 {
     _Sp (_Tp::*__p_)();
 public:
-    explicit mem_fun_ref_t(_Sp (_Tp::*__p)())
+    __device__ explicit mem_fun_ref_t(_Sp (_Tp::*__p)())
         : __p_(__p) {}
-    _Sp operator()(_Tp& __p) const
+    __device__ _Sp operator()(_Tp& __p) const
         {return (__p.*__p_)();}
 };
 
@@ -334,19 +334,19 @@ class mem_fun1_ref_t : public binary_function<_Tp, _Ap, _Sp>
 {
     _Sp (_Tp::*__p_)(_Ap);
 public:
-    explicit mem_fun1_ref_t(_Sp (_Tp::*__p)(_Ap))
+    __device__ explicit mem_fun1_ref_t(_Sp (_Tp::*__p)(_Ap))
         : __p_(__p) {}
-    _Sp operator()(_Tp& __p, _Ap __x) const
+    __device__ _Sp operator()(_Tp& __p, _Ap __x) const
         {return (__p.*__p_)(__x);}
 };
 
 template<class _Sp, class _Tp>
-inline mem_fun_ref_t<_Sp,_Tp>
+__device__ inline mem_fun_ref_t<_Sp,_Tp>
 mem_fun_ref(_Sp (_Tp::*__f)())
     {return mem_fun_ref_t<_Sp,_Tp>(__f);}
 
 template<class _Sp, class _Tp, class _Ap>
-inline mem_fun1_ref_t<_Sp,_Tp,_Ap>
+__device__ inline mem_fun1_ref_t<_Sp,_Tp,_Ap>
 mem_fun_ref(_Sp (_Tp::*__f)(_Ap))
     {return mem_fun1_ref_t<_Sp,_Tp,_Ap>(__f);}
 
@@ -355,9 +355,9 @@ class const_mem_fun_t : public unary_function<const _Tp*, _Sp>
 {
     _Sp (_Tp::*__p_)() const;
 public:
-    explicit const_mem_fun_t(_Sp (_Tp::*__p)() const)
+    __device__ explicit const_mem_fun_t(_Sp (_Tp::*__p)() const)
         : __p_(__p) {}
-    _Sp operator()(const _Tp* __p) const
+    __device__ _Sp operator()(const _Tp* __p) const
         {return (__p->*__p_)();}
 };
 
@@ -366,19 +366,19 @@ class const_mem_fun1_t : public binary_function<const _Tp*, _Ap, _Sp>
 {
     _Sp (_Tp::*__p_)(_Ap) const;
 public:
-    explicit const_mem_fun1_t(_Sp (_Tp::*__p)(_Ap) const)
+    __device__ explicit const_mem_fun1_t(_Sp (_Tp::*__p)(_Ap) const)
         : __p_(__p) {}
-    _Sp operator()(const _Tp* __p, _Ap __x) const
+    __device__ _Sp operator()(const _Tp* __p, _Ap __x) const
         {return (__p->*__p_)(__x);}
 };
 
 template <class _Sp, class _Tp>
-inline const_mem_fun_t<_Sp,_Tp>
+__device__ inline const_mem_fun_t<_Sp,_Tp>
 mem_fun(_Sp (_Tp::*__f)() const)
     {return const_mem_fun_t<_Sp,_Tp>(__f);}
 
 template <class _Sp, class _Tp, class _Ap>
-inline const_mem_fun1_t<_Sp,_Tp,_Ap>
+__device__ inline const_mem_fun1_t<_Sp,_Tp,_Ap>
 mem_fun(_Sp (_Tp::*__f)(_Ap) const)
     {return const_mem_fun1_t<_Sp,_Tp,_Ap>(__f);}
 
@@ -387,9 +387,9 @@ class const_mem_fun_ref_t : public unary_function<_Tp, _Sp>
 {
     _Sp (_Tp::*__p_)() const;
 public:
-    explicit const_mem_fun_ref_t(_Sp (_Tp::*__p)() const)
+    __device__ explicit const_mem_fun_ref_t(_Sp (_Tp::*__p)() const)
         : __p_(__p) {}
-    _Sp operator()(const _Tp& __p) const
+    __device__ _Sp operator()(const _Tp& __p) const
         {return (__p.*__p_)();}
 };
 
@@ -399,19 +399,19 @@ class const_mem_fun1_ref_t
 {
     _Sp (_Tp::*__p_)(_Ap) const;
 public:
-    explicit const_mem_fun1_ref_t(_Sp (_Tp::*__p)(_Ap) const)
+    __device__ explicit const_mem_fun1_ref_t(_Sp (_Tp::*__p)(_Ap) const)
         : __p_(__p) {}
-    _Sp operator()(const _Tp& __p, _Ap __x) const
+    __device__ _Sp operator()(const _Tp& __p, _Ap __x) const
         {return (__p.*__p_)(__x);}
 };
 
 template <class _Sp, class _Tp>
-inline const_mem_fun_ref_t<_Sp,_Tp>
+__device__ inline const_mem_fun_ref_t<_Sp,_Tp>
 mem_fun_ref(_Sp (_Tp::*__f)() const)
     {return const_mem_fun_ref_t<_Sp,_Tp>(__f);}
 
 template <class _Sp, class _Tp, class _Ap>
-inline const_mem_fun1_ref_t<_Sp,_Tp,_Ap>
+__device__ inline const_mem_fun1_ref_t<_Sp,_Tp,_Ap>
 mem_fun_ref(_Sp (_Tp::*__f)(_Ap) const)
     {return const_mem_fun1_ref_t<_Sp,_Tp,_Ap>(__f);}
 
@@ -419,14 +419,14 @@ template <>
 struct hash<bool>
     : public unary_function<bool, size_t>
 {
-        size_t operator()(bool __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(bool __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<char>
     : public unary_function<char, size_t>
 {
-        size_t operator()(char __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(char __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
@@ -440,56 +440,56 @@ template <>
 struct hash<unsigned char>
     : public unary_function<unsigned char, size_t>
 {
-        size_t operator()(unsigned char __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(unsigned char __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<wchar_t>
     : public unary_function<wchar_t, size_t>
 {
-        size_t operator()(wchar_t __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(wchar_t __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<short>
     : public unary_function<short, size_t>
 {
-        size_t operator()(short __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(short __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<unsigned short>
     : public unary_function<unsigned short, size_t>
 {
-        size_t operator()(unsigned short __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(unsigned short __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<int>
     : public unary_function<int, size_t>
 {
-        size_t operator()(int __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(int __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<unsigned int>
     : public unary_function<unsigned int, size_t>
 {
-        size_t operator()(unsigned int __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(unsigned int __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<long>
     : public unary_function<long, size_t>
 {
-        size_t operator()(long __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(long __v) const {return static_cast<size_t>(__v);}
 };
 
 template <>
 struct hash<unsigned long>
     : public unary_function<unsigned long, size_t>
 {
-        size_t operator()(unsigned long __v) const {return static_cast<size_t>(__v);}
+        __device__ size_t operator()(unsigned long __v) const {return static_cast<size_t>(__v);}
 };
 
 }

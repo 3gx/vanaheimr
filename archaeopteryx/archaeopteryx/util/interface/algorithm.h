@@ -15,55 +15,55 @@ namespace util
 template <class _T1, class _T2 = _T1>
 struct __equal_to
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
-    bool operator()(const _T1& __x, const _T2& __y) const {return __x == __y;}
-    bool operator()(const _T2& __x, const _T1& __y) const {return __x == __y;}
-    bool operator()(const _T2& __x, const _T2& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T1& __x, const _T2& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T2& __x, const _T1& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T2& __x, const _T2& __y) const {return __x == __y;}
 };
 
 template <class _T1>
 struct __equal_to<_T1, _T1>
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
 };
 
 template <class _T1>
 struct __equal_to<const _T1, _T1>
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
 };
 
 template <class _T1>
 struct __equal_to<_T1, const _T1>
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x == __y;}
 };
 
 template <class _T1, class _T2 = _T1>
 struct __less
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
-    bool operator()(const _T1& __x, const _T2& __y) const {return __x < __y;}
-    bool operator()(const _T2& __x, const _T1& __y) const {return __x < __y;}
-    bool operator()(const _T2& __x, const _T2& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T1& __x, const _T2& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T2& __x, const _T1& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T2& __x, const _T2& __y) const {return __x < __y;}
 };
 
 template <class _T1>
 struct __less<_T1, _T1>
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
 };
 
 template <class _T1>
 struct __less<const _T1, _T1>
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
 };
 
 template <class _T1>
 struct __less<_T1, const _T1>
 {
-    bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
+    __device__ bool operator()(const _T1& __x, const _T1& __y) const {return __x < __y;}
 };
 
 template <class _Predicate>
@@ -72,63 +72,63 @@ class __negate
 private:
     _Predicate __p_;
 public:
-    __negate() {}
+    __device__ __negate() {}
 
-    explicit __negate(_Predicate __p) : __p_(__p) {}
+    __device__ explicit __negate(_Predicate __p) : __p_(__p) {}
 
     template <class _T1>
-    bool operator()(const _T1& __x) {return !__p_(__x);}
+    __device__ bool operator()(const _T1& __x) {return !__p_(__x);}
 
     template <class _T1, class _T2>
-    bool operator()(const _T1& __x, const _T2& __y) {return !__p_(__x, __y);}
+    __device__ bool operator()(const _T1& __x, const _T2& __y) {return !__p_(__x, __y);}
 };
 
 // Precondition:  __x != 0
-inline unsigned
+__device__ inline unsigned
 __ctz(unsigned __x)
 {
     return static_cast<unsigned>(__builtin_ctz(__x));
 }
 
-inline unsigned long
+__device__ inline unsigned long
 __ctz(unsigned long __x)
 {
     return static_cast<unsigned long>(__builtin_ctzl(__x));
 }
 
-inline unsigned long long
+__device__ inline unsigned long long
 __ctz(unsigned long long __x)
 {
     return static_cast<unsigned long long>(__builtin_ctzll(__x));
 }
 
 // Precondition:  __x != 0
-inline unsigned
+__device__ inline unsigned
 __clz(unsigned __x)
 {
     return static_cast<unsigned>(__builtin_clz(__x));
 }
 
-inline unsigned long
+__device__ inline unsigned long
 __clz(unsigned long __x)
 {
     return static_cast<unsigned long>(__builtin_clzl (__x));
 }
 
-inline unsigned long long
+__device__ inline unsigned long long
 __clz(unsigned long long __x)
 {
     return static_cast<unsigned long long>(__builtin_clzll(__x));
 }
 
-inline int __pop_count(unsigned           __x) {return __builtin_popcount  (__x);}
-inline int __pop_count(unsigned      long __x) {return __builtin_popcountl (__x);}
-inline int __pop_count(unsigned long long __x) {return __builtin_popcountll(__x);}
+__device__ inline int __pop_count(unsigned           __x) {return __builtin_popcount  (__x);}
+__device__ inline int __pop_count(unsigned      long __x) {return __builtin_popcountl (__x);}
+__device__ inline int __pop_count(unsigned long long __x) {return __builtin_popcountll(__x);}
 
 // all_of
 
 template <class _InputIterator, class _Predicate>
-inline bool
+__device__ inline bool
 all_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
@@ -140,7 +140,7 @@ all_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 // any_of
 
 template <class _InputIterator, class _Predicate>
-inline bool
+__device__ inline bool
 any_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
@@ -152,7 +152,7 @@ any_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 // none_of
 
 template <class _InputIterator, class _Predicate>
-inline bool
+__device__ inline bool
 none_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
@@ -164,7 +164,7 @@ none_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 // for_each
 
 template <class _InputIterator, class _Function>
-inline _Function
+__device__ inline _Function
 for_each(_InputIterator __first, _InputIterator __last, _Function __f)
 {
     for (; __first != __last; ++__first)
@@ -175,7 +175,7 @@ for_each(_InputIterator __first, _InputIterator __last, _Function __f)
 // find
 
 template <class _InputIterator, class _Tp>
-inline _InputIterator
+__device__ inline _InputIterator
 find(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
 {
     for (; __first != __last; ++__first)
@@ -187,7 +187,7 @@ find(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
 // find_if
 
 template <class _InputIterator, class _Predicate>
-inline _InputIterator
+__device__ inline _InputIterator
 find_if(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
@@ -199,7 +199,7 @@ find_if(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 // find_if_not
 
 template<class _InputIterator, class _Predicate>
-inline _InputIterator
+__device__ inline _InputIterator
 find_if_not(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
@@ -211,7 +211,7 @@ find_if_not(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 // find_end
 
 template <class _BinaryPredicate, class _ForwardIterator1, class _ForwardIterator2>
-_ForwardIterator1
+__device__ _ForwardIterator1
 __find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
            _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred,
            forward_iterator_tag, forward_iterator_tag)
@@ -253,7 +253,7 @@ __find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 }
 
 template <class _BinaryPredicate, class _BidirectionalIterator1, class _BidirectionalIterator2>
-_BidirectionalIterator1
+__device__ _BidirectionalIterator1
 __find_end(_BidirectionalIterator1 __first1, _BidirectionalIterator1 __last1,
            _BidirectionalIterator2 __first2, _BidirectionalIterator2 __last2, _BinaryPredicate __pred,
            bidirectional_iterator_tag, bidirectional_iterator_tag)
@@ -292,7 +292,7 @@ __find_end(_BidirectionalIterator1 __first1, _BidirectionalIterator1 __last1,
 }
 
 template <class _BinaryPredicate, class _RandomAccessIterator1, class _RandomAccessIterator2>
-_RandomAccessIterator1
+__device__ _RandomAccessIterator1
 __find_end(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
            _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate __pred,
            random_access_iterator_tag, random_access_iterator_tag)
@@ -333,7 +333,7 @@ __find_end(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
-inline _ForwardIterator1
+__device__ inline _ForwardIterator1
 find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
          _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred)
 {
@@ -344,7 +344,7 @@ find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2>
-inline _ForwardIterator1
+__device__ inline _ForwardIterator1
 find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
          _ForwardIterator2 __first2, _ForwardIterator2 __last2)
 {
@@ -356,7 +356,7 @@ find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 // find_first_of
 
 template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
-_ForwardIterator1
+__device__ _ForwardIterator1
 find_first_of(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
               _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred)
 {
@@ -368,7 +368,7 @@ find_first_of(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2>
-inline _ForwardIterator1
+__device__ inline _ForwardIterator1
 find_first_of(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
               _ForwardIterator2 __first2, _ForwardIterator2 __last2)
 {
@@ -380,7 +380,7 @@ find_first_of(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 // adjacent_find
 
 template <class _ForwardIterator, class _BinaryPredicate>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 adjacent_find(_ForwardIterator __first, _ForwardIterator __last, _BinaryPredicate __pred)
 {
     if (__first != __last)
@@ -397,7 +397,7 @@ adjacent_find(_ForwardIterator __first, _ForwardIterator __last, _BinaryPredicat
 }
 
 template <class _ForwardIterator>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 adjacent_find(_ForwardIterator __first, _ForwardIterator __last)
 {
     typedef typename iterator_traits<_ForwardIterator>::value_type __v;
@@ -407,7 +407,7 @@ adjacent_find(_ForwardIterator __first, _ForwardIterator __last)
 // count
 
 template <class _InputIterator, class _Tp>
-inline typename iterator_traits<_InputIterator>::difference_type
+__device__ inline typename iterator_traits<_InputIterator>::difference_type
 count(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
 {
     typename iterator_traits<_InputIterator>::difference_type __r(0);
@@ -420,7 +420,7 @@ count(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
 // count_if
 
 template <class _InputIterator, class _Predicate>
-inline typename iterator_traits<_InputIterator>::difference_type
+__device__ inline typename iterator_traits<_InputIterator>::difference_type
 count_if(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     typename iterator_traits<_InputIterator>::difference_type __r(0);
@@ -433,7 +433,7 @@ count_if(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 // mismatch
 
 template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
-inline pair<_InputIterator1, _InputIterator2>
+__device__ inline pair<_InputIterator1, _InputIterator2>
 mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
          _InputIterator2 __first2, _BinaryPredicate __pred)
 {
@@ -444,7 +444,7 @@ mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2>
-inline pair<_InputIterator1, _InputIterator2>
+__device__ inline pair<_InputIterator1, _InputIterator2>
 mismatch(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2)
 {
     typedef typename iterator_traits<_InputIterator1>::value_type __v1;
@@ -455,7 +455,7 @@ mismatch(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __fi
 // equal
 
 template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
-inline bool
+__device__ inline bool
 equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2, _BinaryPredicate __pred)
 {
     for (; __first1 != __last1; ++__first1, ++__first2)
@@ -465,7 +465,7 @@ equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first
 }
 
 template <class _InputIterator1, class _InputIterator2>
-inline bool
+__device__ inline bool
 equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2)
 {
     typedef typename iterator_traits<_InputIterator1>::value_type __v1;
@@ -476,7 +476,7 @@ equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first
 // is_permutation
 
 template<class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
-bool
+__device__ bool
 is_permutation(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
                _ForwardIterator2 __first2, _BinaryPredicate __pred)
 {
@@ -522,7 +522,7 @@ __next_iter:;
 }
 
 template<class _ForwardIterator1, class _ForwardIterator2>
-inline bool
+__device__ inline bool
 is_permutation(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
                _ForwardIterator2 __first2)
 {
@@ -534,7 +534,7 @@ is_permutation(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 // search
 
 template <class _BinaryPredicate, class _ForwardIterator1, class _ForwardIterator2>
-_ForwardIterator1
+__device__ _ForwardIterator1
 __search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
          _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred,
          forward_iterator_tag, forward_iterator_tag)
@@ -571,7 +571,7 @@ __search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 }
 
 template <class _BinaryPredicate, class _RandomAccessIterator1, class _RandomAccessIterator2>
-_RandomAccessIterator1
+__device__ _RandomAccessIterator1
 __search(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
            _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate __pred,
            random_access_iterator_tag, random_access_iterator_tag)
@@ -683,7 +683,7 @@ __search(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
-inline _ForwardIterator1
+__device__ inline _ForwardIterator1
 search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
        _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred)
 {
@@ -694,7 +694,7 @@ search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2>
-inline _ForwardIterator1
+__device__ inline _ForwardIterator1
 search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
        _ForwardIterator2 __first2, _ForwardIterator2 __last2)
 {
@@ -706,7 +706,7 @@ search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 // search_n
 
 template <class _BinaryPredicate, class _ForwardIterator, class _Size, class _Tp>
-_ForwardIterator
+__device__ _ForwardIterator
 __search_n(_ForwardIterator __first, _ForwardIterator __last,
            _Size __count, const _Tp& __value_, _BinaryPredicate __pred, forward_iterator_tag)
 {
@@ -743,7 +743,7 @@ __search_n(_ForwardIterator __first, _ForwardIterator __last,
 }
 
 template <class _BinaryPredicate, class _RandomAccessIterator, class _Size, class _Tp>
-_RandomAccessIterator
+__device__ _RandomAccessIterator
 __search_n(_RandomAccessIterator __first, _RandomAccessIterator __last,
            _Size __count, const _Tp& __value_, _BinaryPredicate __pred, random_access_iterator_tag)
 {
@@ -783,7 +783,7 @@ __search_n(_RandomAccessIterator __first, _RandomAccessIterator __last,
 }
 
 template <class _ForwardIterator, class _Size, class _Tp, class _BinaryPredicate>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 search_n(_ForwardIterator __first, _ForwardIterator __last,
          _Size __count, const _Tp& __value_, _BinaryPredicate __pred)
 {
@@ -792,7 +792,7 @@ search_n(_ForwardIterator __first, _ForwardIterator __last,
 }
 
 template <class _ForwardIterator, class _Size, class _Tp>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 search_n(_ForwardIterator __first, _ForwardIterator __last, _Size __count, const _Tp& __value_)
 {
     typedef typename iterator_traits<_ForwardIterator>::value_type __v;
@@ -820,14 +820,14 @@ struct __libcpp_is_trivial_iterator<__wrap_iter<_Iter> >
 };
 
 template <class _Iter>
-inline _Iter
+__device__ inline _Iter
 __unwrap_iter(_Iter __i)
 {
     return __i;
 }
 
 template <class _Tp>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_trivially_copy_assignable<_Tp>::value,
     _Tp*
@@ -838,7 +838,7 @@ __unwrap_iter(move_iterator<_Tp*> __i)
 }
 
 template <class _Tp>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_trivially_copy_assignable<_Tp>::value,
     _Tp*
@@ -849,7 +849,7 @@ __unwrap_iter(__wrap_iter<_Tp*> __i)
 }
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 __copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     for (; __first != __last; ++__first, ++__result)
@@ -858,7 +858,7 @@ __copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 }
 
 template <class _Tp, class _Up>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_same<typename remove_const<_Tp>::type, _Up>::value &&
     is_trivially_copy_assignable<_Up>::value,
@@ -872,7 +872,7 @@ __copy(_Tp* __first, _Tp* __last, _Up* __result)
 }
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     return util::__copy(__unwrap_iter(__first), __unwrap_iter(__last), __unwrap_iter(__result));
@@ -881,7 +881,7 @@ copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 // copy_backward
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 __copy_backward(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     while (__first != __last)
@@ -890,7 +890,7 @@ __copy_backward(_InputIterator __first, _InputIterator __last, _OutputIterator _
 }
 
 template <class _Tp, class _Up>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_same<typename remove_const<_Tp>::type, _Up>::value &&
     is_trivially_copy_assignable<_Up>::value,
@@ -905,7 +905,7 @@ __copy_backward(_Tp* __first, _Tp* __last, _Up* __result)
 }
 
 template <class _BidirectionalIterator1, class _BidirectionalIterator2>
-inline _BidirectionalIterator2
+__device__ inline _BidirectionalIterator2
 copy_backward(_BidirectionalIterator1 __first, _BidirectionalIterator1 __last,
               _BidirectionalIterator2 __result)
 {
@@ -915,7 +915,7 @@ copy_backward(_BidirectionalIterator1 __first, _BidirectionalIterator1 __last,
 // copy_if
 
 template<class _InputIterator, class _OutputIterator, class _Predicate>
-inline _OutputIterator
+__device__ inline _OutputIterator
 copy_if(_InputIterator __first, _InputIterator __last,
         _OutputIterator __result, _Predicate __pred)
 {
@@ -933,7 +933,7 @@ copy_if(_InputIterator __first, _InputIterator __last,
 // copy_n
 
 template<class _InputIterator, class _Size, class _OutputIterator>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     __is_input_iterator<_InputIterator>::value &&
    !__is_random_access_iterator<_InputIterator>::value,
@@ -956,7 +956,7 @@ copy_n(_InputIterator __first, _Size __n, _OutputIterator __result)
 }
 
 template<class _InputIterator, class _Size, class _OutputIterator>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     __is_random_access_iterator<_InputIterator>::value,
     _OutputIterator
@@ -969,7 +969,7 @@ copy_n(_InputIterator __first, _Size __n, _OutputIterator __result)
 // move
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 __move(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     for (; __first != __last; ++__first, ++__result)
@@ -978,7 +978,7 @@ __move(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 }
 
 template <class _Tp, class _Up>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_same<typename remove_const<_Tp>::type, _Up>::value &&
     is_trivially_copy_assignable<_Up>::value,
@@ -992,7 +992,7 @@ __move(_Tp* __first, _Tp* __last, _Up* __result)
 }
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 move(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     return util::__move(__unwrap_iter(__first), __unwrap_iter(__last), __unwrap_iter(__result));
@@ -1001,7 +1001,7 @@ move(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 // move_backward
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 __move_backward(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     while (__first != __last)
@@ -1010,7 +1010,7 @@ __move_backward(_InputIterator __first, _InputIterator __last, _OutputIterator _
 }
 
 template <class _Tp, class _Up>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_same<typename remove_const<_Tp>::type, _Up>::value &&
     is_trivially_copy_assignable<_Up>::value,
@@ -1025,7 +1025,7 @@ __move_backward(_Tp* __first, _Tp* __last, _Up* __result)
 }
 
 template <class _BidirectionalIterator1, class _BidirectionalIterator2>
-inline _BidirectionalIterator2
+__device__ inline _BidirectionalIterator2
 move_backward(_BidirectionalIterator1 __first, _BidirectionalIterator1 __last,
               _BidirectionalIterator2 __result)
 {
@@ -1039,7 +1039,7 @@ move_backward(_BidirectionalIterator1 __first, _BidirectionalIterator1 __last,
 // transform
 
 template <class _InputIterator, class _OutputIterator, class _UnaryOperation>
-inline _OutputIterator
+__device__ inline _OutputIterator
 transform(_InputIterator __first, _InputIterator __last, _OutputIterator __result, _UnaryOperation __op)
 {
     for (; __first != __last; ++__first, ++__result)
@@ -1048,7 +1048,7 @@ transform(_InputIterator __first, _InputIterator __last, _OutputIterator __resul
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator, class _BinaryOperation>
-inline _OutputIterator
+__device__ inline _OutputIterator
 transform(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
           _OutputIterator __result, _BinaryOperation __binary_op)
 {
@@ -1060,7 +1060,7 @@ transform(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __f
 // replace
 
 template <class _ForwardIterator, class _Tp>
-inline void
+__device__ inline void
 replace(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __old_value, const _Tp& __new_value)
 {
     for (; __first != __last; ++__first)
@@ -1071,7 +1071,7 @@ replace(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __old_valu
 // replace_if
 
 template <class _ForwardIterator, class _Predicate, class _Tp>
-inline void
+__device__ inline void
 replace_if(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred, const _Tp& __new_value)
 {
     for (; __first != __last; ++__first)
@@ -1082,7 +1082,7 @@ replace_if(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred,
 // replace_copy
 
 template <class _InputIterator, class _OutputIterator, class _Tp>
-inline _OutputIterator
+__device__ inline _OutputIterator
 replace_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result,
              const _Tp& __old_value, const _Tp& __new_value)
 {
@@ -1097,7 +1097,7 @@ replace_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __re
 // replace_copy_if
 
 template <class _InputIterator, class _OutputIterator, class _Predicate, class _Tp>
-inline _OutputIterator
+__device__ inline _OutputIterator
 replace_copy_if(_InputIterator __first, _InputIterator __last, _OutputIterator __result,
                 _Predicate __pred, const _Tp& __new_value)
 {
@@ -1112,7 +1112,7 @@ replace_copy_if(_InputIterator __first, _InputIterator __last, _OutputIterator _
 // fill_n
 
 template <class _OutputIterator, class _Size, class _Tp>
-inline _OutputIterator
+__device__ inline _OutputIterator
 __fill_n(_OutputIterator __first, _Size __n, const _Tp& __value_, false_type)
 {
     for (; __n > 0; ++__first, --__n)
@@ -1121,7 +1121,7 @@ __fill_n(_OutputIterator __first, _Size __n, const _Tp& __value_, false_type)
 }
 
 template <class _OutputIterator, class _Size, class _Tp>
-inline _OutputIterator
+__device__ inline _OutputIterator
 __fill_n(_OutputIterator __first, _Size __n, const _Tp& __value_, true_type)
 {
     if (__n > 0)
@@ -1130,7 +1130,7 @@ __fill_n(_OutputIterator __first, _Size __n, const _Tp& __value_, true_type)
 }
 
 template <class _OutputIterator, class _Size, class _Tp>
-inline _OutputIterator
+__device__ inline _OutputIterator
 fill_n(_OutputIterator __first, _Size __n, const _Tp& __value_)
 {
    return util::__fill_n(__first, __n, __value_, integral_constant<bool,
@@ -1142,7 +1142,7 @@ fill_n(_OutputIterator __first, _Size __n, const _Tp& __value_)
 // fill
 
 template <class _ForwardIterator, class _Tp>
-inline void
+__device__ inline void
 __fill(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, forward_iterator_tag)
 {
     for (; __first != __last; ++__first)
@@ -1150,14 +1150,14 @@ __fill(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, f
 }
 
 template <class _RandomAccessIterator, class _Tp>
-inline void
+__device__ inline void
 __fill(_RandomAccessIterator __first, _RandomAccessIterator __last, const _Tp& __value_, random_access_iterator_tag)
 {
     util::fill_n(__first, __last - __first, __value_);
 }
 
 template <class _ForwardIterator, class _Tp>
-inline void
+__device__ inline void
 fill(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 {
     util::__fill(__first, __last, __value_, typename iterator_traits<_ForwardIterator>::iterator_category());
@@ -1166,7 +1166,7 @@ fill(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 // generate
 
 template <class _ForwardIterator, class _Generator>
-inline void
+__device__ inline void
 generate(_ForwardIterator __first, _ForwardIterator __last, _Generator __gen)
 {
     for (; __first != __last; ++__first)
@@ -1176,7 +1176,7 @@ generate(_ForwardIterator __first, _ForwardIterator __last, _Generator __gen)
 // generate_n
 
 template <class _OutputIterator, class _Size, class _Generator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 generate_n(_OutputIterator __first, _Size __n, _Generator __gen)
 {
     for (; __n > 0; ++__first, --__n)
@@ -1187,7 +1187,7 @@ generate_n(_OutputIterator __first, _Size __n, _Generator __gen)
 // remove
 
 template <class _ForwardIterator, class _Tp>
-_ForwardIterator
+__device__ _ForwardIterator
 remove(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 {
     __first = util::find(__first, __last, __value_);
@@ -1209,7 +1209,7 @@ remove(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 // remove_if
 
 template <class _ForwardIterator, class _Predicate>
-_ForwardIterator
+__device__ _ForwardIterator
 remove_if(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred)
 {
     __first = util::find_if<_ForwardIterator, typename add_lvalue_reference<_Predicate>::type>
@@ -1232,7 +1232,7 @@ remove_if(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred)
 // remove_copy
 
 template <class _InputIterator, class _OutputIterator, class _Tp>
-inline _OutputIterator
+__device__ inline _OutputIterator
 remove_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result, const _Tp& __value_)
 {
     for (; __first != __last; ++__first)
@@ -1249,7 +1249,7 @@ remove_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __res
 // remove_copy_if
 
 template <class _InputIterator, class _OutputIterator, class _Predicate>
-inline _OutputIterator
+__device__ inline _OutputIterator
 remove_copy_if(_InputIterator __first, _InputIterator __last, _OutputIterator __result, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
@@ -1266,7 +1266,7 @@ remove_copy_if(_InputIterator __first, _InputIterator __last, _OutputIterator __
 // unique
 
 template <class _ForwardIterator, class _BinaryPredicate>
-_ForwardIterator
+__device__ _ForwardIterator
 unique(_ForwardIterator __first, _ForwardIterator __last, _BinaryPredicate __pred)
 {
     __first = util::adjacent_find<_ForwardIterator, typename add_lvalue_reference<_BinaryPredicate>::type>
@@ -1285,7 +1285,7 @@ unique(_ForwardIterator __first, _ForwardIterator __last, _BinaryPredicate __pre
 }
 
 template <class _ForwardIterator>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 unique(_ForwardIterator __first, _ForwardIterator __last)
 {
     typedef typename iterator_traits<_ForwardIterator>::value_type __v;
@@ -1295,7 +1295,7 @@ unique(_ForwardIterator __first, _ForwardIterator __last)
 // unique_copy
 
 template <class _BinaryPredicate, class _InputIterator, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __unique_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result, _BinaryPredicate __pred,
               input_iterator_tag, output_iterator_tag)
 {
@@ -1318,7 +1318,7 @@ __unique_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __r
 }
 
 template <class _BinaryPredicate, class _ForwardIterator, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __unique_copy(_ForwardIterator __first, _ForwardIterator __last, _OutputIterator __result, _BinaryPredicate __pred,
               forward_iterator_tag, output_iterator_tag)
 {
@@ -1341,7 +1341,7 @@ __unique_copy(_ForwardIterator __first, _ForwardIterator __last, _OutputIterator
 }
 
 template <class _BinaryPredicate, class _InputIterator, class _ForwardIterator>
-_ForwardIterator
+__device__ _ForwardIterator
 __unique_copy(_InputIterator __first, _InputIterator __last, _ForwardIterator __result, _BinaryPredicate __pred,
               input_iterator_tag, forward_iterator_tag)
 {
@@ -1357,7 +1357,7 @@ __unique_copy(_InputIterator __first, _InputIterator __last, _ForwardIterator __
 }
 
 template <class _InputIterator, class _OutputIterator, class _BinaryPredicate>
-inline _OutputIterator
+__device__ inline _OutputIterator
 unique_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result, _BinaryPredicate __pred)
 {
     return util::__unique_copy<typename add_lvalue_reference<_BinaryPredicate>::type>
@@ -1367,7 +1367,7 @@ unique_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __res
 }
 
 template <class _InputIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 unique_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __result)
 {
     typedef typename iterator_traits<_InputIterator>::value_type __v;
@@ -1377,7 +1377,7 @@ unique_copy(_InputIterator __first, _InputIterator __last, _OutputIterator __res
 // reverse
 
 template <class _BidirectionalIterator>
-inline void
+__device__ inline void
 __reverse(_BidirectionalIterator __first, _BidirectionalIterator __last, bidirectional_iterator_tag)
 {
     while (__first != __last)
@@ -1390,7 +1390,7 @@ __reverse(_BidirectionalIterator __first, _BidirectionalIterator __last, bidirec
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 __reverse(_RandomAccessIterator __first, _RandomAccessIterator __last, random_access_iterator_tag)
 {
     if (__first != __last)
@@ -1399,7 +1399,7 @@ __reverse(_RandomAccessIterator __first, _RandomAccessIterator __last, random_ac
 }
 
 template <class _BidirectionalIterator>
-inline void
+__device__ inline void
 reverse(_BidirectionalIterator __first, _BidirectionalIterator __last)
 {
     util::__reverse(__first, __last, typename iterator_traits<_BidirectionalIterator>::iterator_category());
@@ -1408,7 +1408,7 @@ reverse(_BidirectionalIterator __first, _BidirectionalIterator __last)
 // reverse_copy
 
 template <class _BidirectionalIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 reverse_copy(_BidirectionalIterator __first, _BidirectionalIterator __last, _OutputIterator __result)
 {
     for (; __first != __last; ++__result)
@@ -1419,7 +1419,7 @@ reverse_copy(_BidirectionalIterator __first, _BidirectionalIterator __last, _Out
 // rotate
 
 template <class _ForwardIterator>
-_ForwardIterator
+__device__ _ForwardIterator
 __rotate_left(_ForwardIterator __first, _ForwardIterator __last)
 {
     typedef typename iterator_traits<_ForwardIterator>::value_type value_type;
@@ -1430,7 +1430,7 @@ __rotate_left(_ForwardIterator __first, _ForwardIterator __last)
 }
 
 template <class _BidirectionalIterator>
-_BidirectionalIterator
+__device__ _BidirectionalIterator
 __rotate_right(_BidirectionalIterator __first, _BidirectionalIterator __last)
 {
     typedef typename iterator_traits<_BidirectionalIterator>::value_type value_type;
@@ -1442,7 +1442,7 @@ __rotate_right(_BidirectionalIterator __first, _BidirectionalIterator __last)
 }
 
 template <class _ForwardIterator>
-_ForwardIterator
+__device__ _ForwardIterator
 __rotate_forward(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterator __last)
 {
     _ForwardIterator __i = __middle;
@@ -1477,7 +1477,7 @@ __rotate_forward(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIt
 }
 
 template<typename _Integral>
-inline _Integral
+__device__ inline _Integral
 __gcd(_Integral __x, _Integral __y)
 {
     do
@@ -1490,7 +1490,7 @@ __gcd(_Integral __x, _Integral __y)
 }
 
 template<typename _RandomAccessIterator>
-_RandomAccessIterator
+__device__ _RandomAccessIterator
 __rotate_gcd(_RandomAccessIterator __first, _RandomAccessIterator __middle, _RandomAccessIterator __last)
 {
     typedef typename iterator_traits<_RandomAccessIterator>::difference_type difference_type;
@@ -1525,7 +1525,7 @@ __rotate_gcd(_RandomAccessIterator __first, _RandomAccessIterator __middle, _Ran
 }
 
 template <class _ForwardIterator>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 __rotate(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterator __last,
          util::forward_iterator_tag)
 {
@@ -1539,7 +1539,7 @@ __rotate(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterator _
 }
 
 template <class _BidirectionalIterator>
-inline _BidirectionalIterator
+__device__ inline _BidirectionalIterator
 __rotate(_BidirectionalIterator __first, _BidirectionalIterator __middle, _BidirectionalIterator __last,
          util::bidirectional_iterator_tag)
 {
@@ -1555,7 +1555,7 @@ __rotate(_BidirectionalIterator __first, _BidirectionalIterator __middle, _Bidir
 }
 
 template <class _RandomAccessIterator>
-inline _RandomAccessIterator
+__device__ inline _RandomAccessIterator
 __rotate(_RandomAccessIterator __first, _RandomAccessIterator __middle, _RandomAccessIterator __last,
          util::random_access_iterator_tag)
 {
@@ -1572,7 +1572,7 @@ __rotate(_RandomAccessIterator __first, _RandomAccessIterator __middle, _RandomA
 }
 
 template <class _ForwardIterator>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 rotate(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterator __last)
 {
     if (__first == __middle)
@@ -1586,7 +1586,7 @@ rotate(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterator __l
 // rotate_copy
 
 template <class _ForwardIterator, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 rotate_copy(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterator __last, _OutputIterator __result)
 {
     return util::copy(__first, __middle, util::copy(__middle, __last, __result));
@@ -1595,7 +1595,7 @@ rotate_copy(_ForwardIterator __first, _ForwardIterator __middle, _ForwardIterato
 // min_element
 
 template <class _ForwardIterator, class _Compare>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 min_element(_ForwardIterator __first, _ForwardIterator __last, _Compare __comp)
 {
     if (__first != __last)
@@ -1619,14 +1619,14 @@ min_element(_ForwardIterator __first, _ForwardIterator __last)
 // min
 
 template <class _Tp, class _Compare>
-inline const _Tp&
+__device__ inline const _Tp&
 min(const _Tp& __a, const _Tp& __b, _Compare __comp)
 {
     return __comp(__b, __a) ? __b : __a;
 }
 
 template <class _Tp>
-inline const _Tp&
+__device__ inline const _Tp&
 min(const _Tp& __a, const _Tp& __b)
 {
     return util::min(__a, __b, __less<_Tp>());
@@ -1635,7 +1635,7 @@ min(const _Tp& __a, const _Tp& __b)
 // max_element
 
 template <class _ForwardIterator, class _Compare>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 max_element(_ForwardIterator __first, _ForwardIterator __last, _Compare __comp)
 {
     if (__first != __last)
@@ -1649,7 +1649,7 @@ max_element(_ForwardIterator __first, _ForwardIterator __last, _Compare __comp)
 }
 
 template <class _ForwardIterator>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 max_element(_ForwardIterator __first, _ForwardIterator __last)
 {
     return util::max_element(__first, __last,
@@ -1659,14 +1659,14 @@ max_element(_ForwardIterator __first, _ForwardIterator __last)
 // max
 
 template <class _Tp, class _Compare>
-inline const _Tp&
+__device__ inline const _Tp&
 max(const _Tp& __a, const _Tp& __b, _Compare __comp)
 {
     return __comp(__a, __b) ? __b : __a;
 }
 
 template <class _Tp>
-inline const _Tp&
+__device__ inline const _Tp&
 max(const _Tp& __a, const _Tp& __b)
 {
     return util::max(__a, __b, __less<_Tp>());
@@ -1675,7 +1675,7 @@ max(const _Tp& __a, const _Tp& __b)
 // minmax_element
 
 template <class _ForwardIterator, class _Compare>
-util::pair<_ForwardIterator, _ForwardIterator>
+__device__ util::pair<_ForwardIterator, _ForwardIterator>
 minmax_element(_ForwardIterator __first, _ForwardIterator __last, _Compare __comp)
 {
   util::pair<_ForwardIterator, _ForwardIterator> __result(__first, __first);
@@ -1722,7 +1722,7 @@ minmax_element(_ForwardIterator __first, _ForwardIterator __last, _Compare __com
 }
 
 template <class _ForwardIterator>
-inline util::pair<_ForwardIterator, _ForwardIterator>
+__device__ inline util::pair<_ForwardIterator, _ForwardIterator>
 minmax_element(_ForwardIterator __first, _ForwardIterator __last)
 {
     return util::minmax_element(__first, __last, __less<typename iterator_traits<_ForwardIterator>::value_type>());
@@ -1731,7 +1731,7 @@ minmax_element(_ForwardIterator __first, _ForwardIterator __last)
 // minmax
 
 template<class _Tp, class _Compare>
-inline pair<const _Tp&, const _Tp&>
+__device__ inline pair<const _Tp&, const _Tp&>
 minmax(const _Tp& __a, const _Tp& __b, _Compare __comp)
 {
     return __comp(__b, __a) ? pair<const _Tp&, const _Tp&>(__b, __a) :
@@ -1739,7 +1739,7 @@ minmax(const _Tp& __a, const _Tp& __b, _Compare __comp)
 }
 
 template<class _Tp>
-inline pair<const _Tp&, const _Tp&>
+__device__ inline pair<const _Tp&, const _Tp&>
 minmax(const _Tp& __a, const _Tp& __b)
 {
     return util::minmax(__a, __b, __less<_Tp>());
@@ -1748,7 +1748,7 @@ minmax(const _Tp& __a, const _Tp& __b)
 // partition
 
 template <class _Predicate, class _ForwardIterator>
-_ForwardIterator
+__device__ _ForwardIterator
 __partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred, forward_iterator_tag)
 {
     while (true)
@@ -1771,7 +1771,7 @@ __partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred
 }
 
 template <class _Predicate, class _BidirectionalIterator>
-_BidirectionalIterator
+__device__ _BidirectionalIterator
 __partition(_BidirectionalIterator __first, _BidirectionalIterator __last, _Predicate __pred,
             bidirectional_iterator_tag)
 {
@@ -1796,7 +1796,7 @@ __partition(_BidirectionalIterator __first, _BidirectionalIterator __last, _Pred
 }
 
 template <class _ForwardIterator, class _Predicate>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred)
 {
     return util::__partition<typename add_lvalue_reference<_Predicate>::type>
@@ -1807,7 +1807,7 @@ partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred)
 
 template <class _InputIterator, class _OutputIterator1,
           class _OutputIterator2, class _Predicate>
-pair<_OutputIterator1, _OutputIterator2>
+__device__ pair<_OutputIterator1, _OutputIterator2>
 partition_copy(_InputIterator __first, _InputIterator __last,
                _OutputIterator1 __out_true, _OutputIterator2 __out_false,
                _Predicate __pred)
@@ -1831,7 +1831,7 @@ partition_copy(_InputIterator __first, _InputIterator __last,
 // partition_point
 
 template<class _ForwardIterator, class _Predicate>
-_ForwardIterator
+__device__ _ForwardIterator
 partition_point(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred)
 {
     typedef typename iterator_traits<_ForwardIterator>::difference_type difference_type;
@@ -1855,7 +1855,7 @@ partition_point(_ForwardIterator __first, _ForwardIterator __last, _Predicate __
 // stable_partition
 
 template <class _Predicate, class _ForwardIterator, class _Distance, class _Pair>
-_ForwardIterator
+__device__ _ForwardIterator
 __stable_partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred,
                    _Distance __len, _Pair __p, forward_iterator_tag __fit)
 {
@@ -1947,7 +1947,7 @@ struct __return_temporary_buffer
 };
 
 template <class _Predicate, class _ForwardIterator>
-_ForwardIterator
+__device__ _ForwardIterator
 __stable_partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred,
                    forward_iterator_tag)
 {
@@ -1978,7 +1978,7 @@ __stable_partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate
 }
 
 template <class _Predicate, class _BidirectionalIterator, class _Distance, class _Pair>
-_BidirectionalIterator
+__device__ _BidirectionalIterator
 __stable_partition(_BidirectionalIterator __first, _BidirectionalIterator __last, _Predicate __pred,
                    _Distance __len, _Pair __p, bidirectional_iterator_tag __bit)
 {
@@ -2086,7 +2086,7 @@ __second_half_done:
 }
 
 template <class _Predicate, class _BidirectionalIterator>
-_BidirectionalIterator
+__device__ _BidirectionalIterator
 __stable_partition(_BidirectionalIterator __first, _BidirectionalIterator __last, _Predicate __pred,
                    bidirectional_iterator_tag)
 {
@@ -2126,7 +2126,7 @@ __stable_partition(_BidirectionalIterator __first, _BidirectionalIterator __last
 }
 
 template <class _ForwardIterator, class _Predicate>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 stable_partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate __pred)
 {
     return __stable_partition<typename add_lvalue_reference<_Predicate>::type>
@@ -2136,7 +2136,7 @@ stable_partition(_ForwardIterator __first, _ForwardIterator __last, _Predicate _
 // is_sorted_until
 
 template <class _ForwardIterator, class _Compare>
-_ForwardIterator
+__device__ _ForwardIterator
 is_sorted_until(_ForwardIterator __first, _ForwardIterator __last, _Compare __comp)
 {
     if (__first != __last)
@@ -2153,7 +2153,7 @@ is_sorted_until(_ForwardIterator __first, _ForwardIterator __last, _Compare __co
 }
 
 template<class _ForwardIterator>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 is_sorted_until(_ForwardIterator __first, _ForwardIterator __last)
 {
     return util::is_sorted_until(__first, __last, __less<typename iterator_traits<_ForwardIterator>::value_type>());
@@ -2162,14 +2162,14 @@ is_sorted_until(_ForwardIterator __first, _ForwardIterator __last)
 // is_sorted
 
 template <class _ForwardIterator, class _Compare>
-inline bool
+__device__ inline bool
 is_sorted(_ForwardIterator __first, _ForwardIterator __last, _Compare __comp)
 {
     return util::is_sorted_until(__first, __last, __comp) == __last;
 }
 
 template<class _ForwardIterator>
-inline bool
+__device__ inline bool
 is_sorted(_ForwardIterator __first, _ForwardIterator __last)
 {
     return util::is_sorted(__first, __last, __less<typename iterator_traits<_ForwardIterator>::value_type>());
@@ -2180,7 +2180,7 @@ is_sorted(_ForwardIterator __first, _ForwardIterator __last)
 // stable, 2-3 compares, 0-2 swaps
 
 template <class _Compare, class _ForwardIterator>
-unsigned
+__device__ unsigned
 __sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
 {
     unsigned __r = 0;
@@ -2217,7 +2217,7 @@ __sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compa
 // stable, 3-6 compares, 0-5 swaps
 
 template <class _Compare, class _ForwardIterator>
-unsigned
+__device__ unsigned
 __sort4(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
             _ForwardIterator __x4, _Compare __c)
 {
@@ -2243,7 +2243,7 @@ __sort4(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
 // stable, 4-10 compares, 0-9 swaps
 
 template <class _Compare, class _ForwardIterator>
-unsigned
+__device__ unsigned
 __sort5(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
             _ForwardIterator __x4, _ForwardIterator __x5, _Compare __c)
 {
@@ -2273,7 +2273,7 @@ __sort5(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
 
 // Assumes size > 0
 template <class _Compare, class _BirdirectionalIterator>
-void
+__device__ void
 __selection_sort(_BirdirectionalIterator __first, _BirdirectionalIterator __last, _Compare __comp)
 {
     _BirdirectionalIterator __lm1 = __last;
@@ -2288,7 +2288,7 @@ __selection_sort(_BirdirectionalIterator __first, _BirdirectionalIterator __last
 }
 
 template <class _Compare, class _BirdirectionalIterator>
-void
+__device__ void
 __insertion_sort(_BirdirectionalIterator __first, _BirdirectionalIterator __last, _Compare __comp)
 {
     typedef typename iterator_traits<_BirdirectionalIterator>::value_type value_type;
@@ -2307,7 +2307,7 @@ __insertion_sort(_BirdirectionalIterator __first, _BirdirectionalIterator __last
 }
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __insertion_sort_3(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     typedef typename iterator_traits<_RandomAccessIterator>::value_type value_type;
@@ -2332,7 +2332,7 @@ __insertion_sort_3(_RandomAccessIterator __first, _RandomAccessIterator __last, 
 }
 
 template <class _Compare, class _RandomAccessIterator>
-bool
+__device__ bool
 __insertion_sort_incomplete(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     switch (__last - __first)
@@ -2381,7 +2381,7 @@ __insertion_sort_incomplete(_RandomAccessIterator __first, _RandomAccessIterator
 }
 
 template <class _Compare, class _BirdirectionalIterator>
-void
+__device__ void
 __insertion_sort_move(_BirdirectionalIterator __first1, _BirdirectionalIterator __last1,
                       typename iterator_traits<_BirdirectionalIterator>::value_type* __first2, _Compare __comp)
 {
@@ -2416,7 +2416,7 @@ __insertion_sort_move(_BirdirectionalIterator __first1, _BirdirectionalIterator 
 }
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     // _Compare is known to be a reference type
@@ -2610,7 +2610,7 @@ __sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __c
 
 // This forwarder keeps the top call and the recursive calls using the same instantiation, forcing a reference _Compare
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -2624,28 +2624,28 @@ sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __com
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 sort(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     util::sort(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
 }
 
 template <class _Tp>
-inline void
+__device__ inline void
 sort(_Tp** __first, _Tp** __last)
 {
     util::sort((size_t*)__first, (size_t*)__last, __less<size_t>());
 }
 
 template <class _Tp>
-inline void
+__device__ inline void
 sort(__wrap_iter<_Tp*> __first, __wrap_iter<_Tp*> __last)
 {
     util::sort(__first.base(), __last.base());
 }
 
 template <class _Tp, class _Compare>
-inline void
+__device__ inline void
 sort(__wrap_iter<_Tp*> __first, __wrap_iter<_Tp*> __last, _Compare __comp)
 {
     typedef typename add_lvalue_reference<_Compare>::type _Comp_ref;
@@ -2698,7 +2698,7 @@ _LIBCPP_EXTERN_TEMPLATE(unsigned __sort5<__less<long double>&, long double*>(lon
 // lower_bound
 
 template <class _Compare, class _ForwardIterator, class _Tp>
-_ForwardIterator
+__device__ _ForwardIterator
 __lower_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
     typedef typename iterator_traits<_ForwardIterator>::difference_type difference_type;
@@ -2720,7 +2720,7 @@ __lower_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __va
 }
 
 template <class _ForwardIterator, class _Tp, class _Compare>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 lower_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -2734,7 +2734,7 @@ lower_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __valu
 }
 
 template <class _ForwardIterator, class _Tp>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 lower_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 {
     return util::lower_bound(__first, __last, __value_,
@@ -2744,7 +2744,7 @@ lower_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __valu
 // upper_bound
 
 template <class _Compare, class _ForwardIterator, class _Tp>
-_ForwardIterator
+__device__ _ForwardIterator
 __upper_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
     typedef typename iterator_traits<_ForwardIterator>::difference_type difference_type;
@@ -2766,7 +2766,7 @@ __upper_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __va
 }
 
 template <class _ForwardIterator, class _Tp, class _Compare>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 upper_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -2780,7 +2780,7 @@ upper_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __valu
 }
 
 template <class _ForwardIterator, class _Tp>
-inline _ForwardIterator
+__device__ inline _ForwardIterator
 upper_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 {
     return util::upper_bound(__first, __last, __value_,
@@ -2790,7 +2790,7 @@ upper_bound(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __valu
 // equal_range
 
 template <class _Compare, class _ForwardIterator, class _Tp>
-pair<_ForwardIterator, _ForwardIterator>
+__device__ pair<_ForwardIterator, _ForwardIterator>
 __equal_range(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
     typedef typename iterator_traits<_ForwardIterator>::difference_type difference_type;
@@ -2824,7 +2824,7 @@ __equal_range(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __va
 }
 
 template <class _ForwardIterator, class _Tp, class _Compare>
-inline pair<_ForwardIterator, _ForwardIterator>
+__device__ inline pair<_ForwardIterator, _ForwardIterator>
 equal_range(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -2838,7 +2838,7 @@ equal_range(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __valu
 }
 
 template <class _ForwardIterator, class _Tp>
-inline pair<_ForwardIterator, _ForwardIterator>
+__device__ inline pair<_ForwardIterator, _ForwardIterator>
 equal_range(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 {
     return util::equal_range(__first, __last, __value_,
@@ -2848,7 +2848,7 @@ equal_range(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __valu
 // binary_search
 
 template <class _Compare, class _ForwardIterator, class _Tp>
-inline bool
+__device__ inline bool
 __binary_search(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
     __first = __lower_bound<_Compare>(__first, __last, __value_, __comp);
@@ -2856,7 +2856,7 @@ __binary_search(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __
 }
 
 template <class _ForwardIterator, class _Tp, class _Compare>
-inline bool
+__device__ inline bool
 binary_search(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -2870,7 +2870,7 @@ binary_search(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __va
 }
 
 template <class _ForwardIterator, class _Tp>
-inline bool
+__device__ inline bool
 binary_search(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __value_)
 {
     return util::binary_search(__first, __last, __value_,
@@ -2880,7 +2880,7 @@ binary_search(_ForwardIterator __first, _ForwardIterator __last, const _Tp& __va
 // merge
 
 template <class _Compare, class _InputIterator1, class _InputIterator2, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __merge(_InputIterator1 __first1, _InputIterator1 __last1,
         _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -2903,7 +2903,7 @@ __merge(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator, class _Compare>
-inline _OutputIterator
+__device__ inline _OutputIterator
 merge(_InputIterator1 __first1, _InputIterator1 __last1,
       _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -2918,7 +2918,7 @@ merge(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 merge(_InputIterator1 __first1, _InputIterator1 __last1,
       _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result)
 {
@@ -2930,7 +2930,7 @@ merge(_InputIterator1 __first1, _InputIterator1 __last1,
 // inplace_merge
 
 template <class _Compare, class _BidirectionalIterator>
-void
+__device__ void
 __buffered_inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator __middle, _BidirectionalIterator __last,
                 _Compare __comp, typename iterator_traits<_BidirectionalIterator>::difference_type __len1,
                                  typename iterator_traits<_BidirectionalIterator>::difference_type __len2,
@@ -2966,7 +2966,7 @@ __buffered_inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator 
 }
 
 template <class _Compare, class _BidirectionalIterator>
-void
+__device__ void
 __inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator __middle, _BidirectionalIterator __last,
                 _Compare __comp, typename iterator_traits<_BidirectionalIterator>::difference_type __len1,
                                  typename iterator_traits<_BidirectionalIterator>::difference_type __len2,
@@ -3063,7 +3063,7 @@ struct __inplace_merge_switch
 };
 
 template <class _BidirectionalIterator, class _Compare>
-inline void
+__device__ inline void
 inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator __middle, _BidirectionalIterator __last,
               _Compare __comp)
 {
@@ -3092,7 +3092,7 @@ inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator __middle, _
 }
 
 template <class _BidirectionalIterator>
-inline void
+__device__ inline void
 inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator __middle, _BidirectionalIterator __last)
 {
     util::inplace_merge(__first, __middle, __last,
@@ -3102,7 +3102,7 @@ inplace_merge(_BidirectionalIterator __first, _BidirectionalIterator __middle, _
 // stable_sort
 
 template <class _Compare, class _InputIterator1, class _InputIterator2>
-void
+__device__ void
 __merge_move_construct(_InputIterator1 __first1, _InputIterator1 __last1,
         _InputIterator2 __first2, _InputIterator2 __last2,
         typename iterator_traits<_InputIterator1>::value_type* __result, _Compare __comp)
@@ -3142,7 +3142,7 @@ __merge_move_construct(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _Compare, class _InputIterator1, class _InputIterator2, class _OutputIterator>
-void
+__device__ void
 __merge_move_assign(_InputIterator1 __first1, _InputIterator1 __last1,
         _InputIterator2 __first2, _InputIterator2 __last2,
         _OutputIterator __result, _Compare __comp)
@@ -3171,13 +3171,13 @@ __merge_move_assign(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp,
               typename iterator_traits<_RandomAccessIterator>::difference_type __len,
               typename iterator_traits<_RandomAccessIterator>::value_type* __buff, ptrdiff_t __buff_size);
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __stable_sort_move(_RandomAccessIterator __first1, _RandomAccessIterator __last1, _Compare __comp,
                    typename iterator_traits<_RandomAccessIterator>::difference_type __len,
                    typename iterator_traits<_RandomAccessIterator>::value_type* __first2)
@@ -3229,7 +3229,7 @@ struct __stable_sort_switch
 };
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp,
               typename iterator_traits<_RandomAccessIterator>::difference_type __len,
               typename iterator_traits<_RandomAccessIterator>::value_type* __buff, ptrdiff_t __buff_size)
@@ -3275,7 +3275,7 @@ __stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Comp
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     typedef typename iterator_traits<_RandomAccessIterator>::value_type value_type;
@@ -3299,7 +3299,7 @@ stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compar
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     util::stable_sort(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3308,7 +3308,7 @@ stable_sort(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // is_heap_until
 
 template <class _RandomAccessIterator, class _Compare>
-_RandomAccessIterator
+__device__ _RandomAccessIterator
 is_heap_until(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     typedef typename util::iterator_traits<_RandomAccessIterator>::difference_type difference_type;
@@ -3335,7 +3335,7 @@ is_heap_until(_RandomAccessIterator __first, _RandomAccessIterator __last, _Comp
 }
 
 template<class _RandomAccessIterator>
-inline _RandomAccessIterator
+__device__ inline _RandomAccessIterator
 is_heap_until(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     return util::is_heap_until(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3344,14 +3344,14 @@ is_heap_until(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // is_heap
 
 template <class _RandomAccessIterator, class _Compare>
-inline bool
+__device__ inline bool
 is_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     return util::is_heap_until(__first, __last, __comp) == __last;
 }
 
 template<class _RandomAccessIterator>
-inline bool
+__device__ inline bool
 is_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     return util::is_heap(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3360,7 +3360,7 @@ is_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // push_heap
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __push_heap_front(_RandomAccessIterator __first, _RandomAccessIterator, _Compare __comp,
                   typename iterator_traits<_RandomAccessIterator>::difference_type __len)
 {
@@ -3401,7 +3401,7 @@ __push_heap_front(_RandomAccessIterator __first, _RandomAccessIterator, _Compare
 }
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __push_heap_back(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp,
                  typename iterator_traits<_RandomAccessIterator>::difference_type __len)
 {
@@ -3429,7 +3429,7 @@ __push_heap_back(_RandomAccessIterator __first, _RandomAccessIterator __last, _C
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -3443,7 +3443,7 @@ push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare 
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     util::push_heap(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3452,7 +3452,7 @@ push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // pop_heap
 
 template <class _Compare, class _RandomAccessIterator>
-inline void
+__device__ inline void
 __pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp,
            typename iterator_traits<_RandomAccessIterator>::difference_type __len)
 {
@@ -3464,7 +3464,7 @@ __pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -3478,7 +3478,7 @@ pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare _
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     util::pop_heap(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3487,7 +3487,7 @@ pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // make_heap
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     typedef typename iterator_traits<_RandomAccessIterator>::difference_type difference_type;
@@ -3502,7 +3502,7 @@ __make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compar
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -3516,7 +3516,7 @@ make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare 
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     util::make_heap(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3525,7 +3525,7 @@ make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // sort_heap
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
     typedef typename iterator_traits<_RandomAccessIterator>::difference_type difference_type;
@@ -3534,7 +3534,7 @@ __sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compar
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -3548,7 +3548,7 @@ sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare 
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
     util::sort_heap(__first, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3557,7 +3557,7 @@ sort_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // partial_sort
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __partial_sort(_RandomAccessIterator __first, _RandomAccessIterator __middle, _RandomAccessIterator __last,
              _Compare __comp)
 {
@@ -3575,7 +3575,7 @@ __partial_sort(_RandomAccessIterator __first, _RandomAccessIterator __middle, _R
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 partial_sort(_RandomAccessIterator __first, _RandomAccessIterator __middle, _RandomAccessIterator __last,
              _Compare __comp)
 {
@@ -3590,7 +3590,7 @@ partial_sort(_RandomAccessIterator __first, _RandomAccessIterator __middle, _Ran
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 partial_sort(_RandomAccessIterator __first, _RandomAccessIterator __middle, _RandomAccessIterator __last)
 {
     util::partial_sort(__first, __middle, __last,
@@ -3600,7 +3600,7 @@ partial_sort(_RandomAccessIterator __first, _RandomAccessIterator __middle, _Ran
 // partial_sort_copy
 
 template <class _Compare, class _InputIterator, class _RandomAccessIterator>
-_RandomAccessIterator
+__device__ _RandomAccessIterator
 __partial_sort_copy(_InputIterator __first, _InputIterator __last,
                     _RandomAccessIterator __result_first, _RandomAccessIterator __result_last, _Compare __comp)
 {
@@ -3623,7 +3623,7 @@ __partial_sort_copy(_InputIterator __first, _InputIterator __last,
 }
 
 template <class _InputIterator, class _RandomAccessIterator, class _Compare>
-inline _RandomAccessIterator
+__device__ inline _RandomAccessIterator
 partial_sort_copy(_InputIterator __first, _InputIterator __last,
                   _RandomAccessIterator __result_first, _RandomAccessIterator __result_last, _Compare __comp)
 {
@@ -3638,7 +3638,7 @@ partial_sort_copy(_InputIterator __first, _InputIterator __last,
 }
 
 template <class _InputIterator, class _RandomAccessIterator>
-inline _RandomAccessIterator
+__device__ inline _RandomAccessIterator
 partial_sort_copy(_InputIterator __first, _InputIterator __last,
                   _RandomAccessIterator __result_first, _RandomAccessIterator __result_last)
 {
@@ -3649,7 +3649,7 @@ partial_sort_copy(_InputIterator __first, _InputIterator __last,
 // nth_element
 
 template <class _Compare, class _RandomAccessIterator>
-void
+__device__ void
 __nth_element(_RandomAccessIterator __first, _RandomAccessIterator __nth, _RandomAccessIterator __last, _Compare __comp)
 {
     // _Compare is known to be a reference type
@@ -3836,7 +3836,7 @@ not_sorted:
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline void
+__device__ inline void
 nth_element(_RandomAccessIterator __first, _RandomAccessIterator __nth, _RandomAccessIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -3850,7 +3850,7 @@ nth_element(_RandomAccessIterator __first, _RandomAccessIterator __nth, _RandomA
 }
 
 template <class _RandomAccessIterator>
-inline void
+__device__ inline void
 nth_element(_RandomAccessIterator __first, _RandomAccessIterator __nth, _RandomAccessIterator __last)
 {
     util::nth_element(__first, __nth, __last, __less<typename iterator_traits<_RandomAccessIterator>::value_type>());
@@ -3859,7 +3859,7 @@ nth_element(_RandomAccessIterator __first, _RandomAccessIterator __nth, _RandomA
 // includes
 
 template <class _Compare, class _InputIterator1, class _InputIterator2>
-bool
+__device__ bool
 __includes(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2, _InputIterator2 __last2,
            _Compare __comp)
 {
@@ -3874,7 +3874,7 @@ __includes(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __
 }
 
 template <class _InputIterator1, class _InputIterator2, class _Compare>
-inline bool
+__device__ inline bool
 includes(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2, _InputIterator2 __last2,
          _Compare __comp)
 {
@@ -3889,7 +3889,7 @@ includes(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __fi
 }
 
 template <class _InputIterator1, class _InputIterator2>
-inline bool
+__device__ inline bool
 includes(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2, _InputIterator2 __last2)
 {
     return util::includes(__first1, __last1, __first2, __last2,
@@ -3900,7 +3900,7 @@ includes(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __fi
 // set_union
 
 template <class _Compare, class _InputIterator1, class _InputIterator2, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __set_union(_InputIterator1 __first1, _InputIterator1 __last1,
             _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -3925,7 +3925,7 @@ __set_union(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator, class _Compare>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_union(_InputIterator1 __first1, _InputIterator1 __last1,
           _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -3940,7 +3940,7 @@ set_union(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_union(_InputIterator1 __first1, _InputIterator1 __last1,
           _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result)
 {
@@ -3952,7 +3952,7 @@ set_union(_InputIterator1 __first1, _InputIterator1 __last1,
 // set_intersection
 
 template <class _Compare, class _InputIterator1, class _InputIterator2, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __set_intersection(_InputIterator1 __first1, _InputIterator1 __last1,
                    _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -3975,7 +3975,7 @@ __set_intersection(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator, class _Compare>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_intersection(_InputIterator1 __first1, _InputIterator1 __last1,
                  _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -3990,7 +3990,7 @@ set_intersection(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_intersection(_InputIterator1 __first1, _InputIterator1 __last1,
                  _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result)
 {
@@ -4002,7 +4002,7 @@ set_intersection(_InputIterator1 __first1, _InputIterator1 __last1,
 // set_difference
 
 template <class _Compare, class _InputIterator1, class _InputIterator2, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __set_difference(_InputIterator1 __first1, _InputIterator1 __last1,
                  _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -4027,7 +4027,7 @@ __set_difference(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator, class _Compare>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_difference(_InputIterator1 __first1, _InputIterator1 __last1,
                _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -4042,7 +4042,7 @@ set_difference(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_difference(_InputIterator1 __first1, _InputIterator1 __last1,
                _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result)
 {
@@ -4054,7 +4054,7 @@ set_difference(_InputIterator1 __first1, _InputIterator1 __last1,
 // set_symmetric_difference
 
 template <class _Compare, class _InputIterator1, class _InputIterator2, class _OutputIterator>
-_OutputIterator
+__device__ _OutputIterator
 __set_symmetric_difference(_InputIterator1 __first1, _InputIterator1 __last1,
                            _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -4084,7 +4084,7 @@ __set_symmetric_difference(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator, class _Compare>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_symmetric_difference(_InputIterator1 __first1, _InputIterator1 __last1,
                          _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result, _Compare __comp)
 {
@@ -4099,7 +4099,7 @@ set_symmetric_difference(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _OutputIterator>
-inline _OutputIterator
+__device__ inline _OutputIterator
 set_symmetric_difference(_InputIterator1 __first1, _InputIterator1 __last1,
                          _InputIterator2 __first2, _InputIterator2 __last2, _OutputIterator __result)
 {
@@ -4111,7 +4111,7 @@ set_symmetric_difference(_InputIterator1 __first1, _InputIterator1 __last1,
 // lexicographical_compare
 
 template <class _Compare, class _InputIterator1, class _InputIterator2>
-bool
+__device__ bool
 __lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
                           _InputIterator2 __first2, _InputIterator2 __last2, _Compare __comp)
 {
@@ -4126,7 +4126,7 @@ __lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2, class _Compare>
-inline bool
+__device__ inline bool
 lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
                         _InputIterator2 __first2, _InputIterator2 __last2, _Compare __comp)
 {
@@ -4141,7 +4141,7 @@ lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
 }
 
 template <class _InputIterator1, class _InputIterator2>
-inline bool
+__device__ inline bool
 lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
                         _InputIterator2 __first2, _InputIterator2 __last2)
 {
@@ -4153,7 +4153,7 @@ lexicographical_compare(_InputIterator1 __first1, _InputIterator1 __last1,
 // next_permutation
 
 template <class _Compare, class _BidirectionalIterator>
-bool
+__device__ bool
 __next_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last, _Compare __comp)
 {
     _BidirectionalIterator __i = __last;
@@ -4180,7 +4180,7 @@ __next_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last
 }
 
 template <class _BidirectionalIterator, class _Compare>
-inline bool
+__device__ inline bool
 next_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -4194,7 +4194,7 @@ next_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last, 
 }
 
 template <class _BidirectionalIterator>
-inline bool
+__device__ inline bool
 next_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last)
 {
     return util::next_permutation(__first, __last,
@@ -4204,7 +4204,7 @@ next_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last)
 // prev_permutation
 
 template <class _Compare, class _BidirectionalIterator>
-bool
+__device__ bool
 __prev_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last, _Compare __comp)
 {
     _BidirectionalIterator __i = __last;
@@ -4231,7 +4231,7 @@ __prev_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last
 }
 
 template <class _BidirectionalIterator, class _Compare>
-inline bool
+__device__ inline bool
 prev_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last, _Compare __comp)
 {
 #ifdef _LIBCPP_DEBUG2
@@ -4245,7 +4245,7 @@ prev_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last, 
 }
 
 template <class _BidirectionalIterator>
-inline bool
+__device__ inline bool
 prev_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last)
 {
     return util::prev_permutation(__first, __last,
@@ -4253,7 +4253,7 @@ prev_permutation(_BidirectionalIterator __first, _BidirectionalIterator __last)
 }
 
 template <class _Tp>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_integral<_Tp>::value,
     _Tp
@@ -4266,7 +4266,7 @@ __rotate_left(_Tp __t, _Tp __n = 1)
 }
 
 template <class _Tp>
-inline typename enable_if
+__device__ inline typename enable_if
 <
     is_integral<_Tp>::value,
     _Tp

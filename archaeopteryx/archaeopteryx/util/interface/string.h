@@ -6,8 +6,14 @@
 
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/allocator_traits.h>
+#include <archaeopteryx/util/interface/cstring.h>
 
 #pragma once
+
+#include <iosfwd>
+#include <cstring>
+#include <cstdio>  // For EOF.
+#include <cwchar>
 
 namespace archaeopteryx
 {
@@ -15,8 +21,19 @@ namespace archaeopteryx
 namespace util
 {
 
-typedef unsigned int streamoff;
-typedef unsigned int streampos;
+
+template<class _CharT>  struct char_traits;
+template<class _Tp>     class allocator;
+
+template <class _CharT,             // for <stdexcept>
+          class _Traits = char_traits<_CharT>,
+          class _Allocator = allocator<_CharT> >
+    class basic_string;
+typedef basic_string<char, char_traits<char>, allocator<char> > string;
+typedef basic_string<wchar_t, char_traits<wchar_t>, allocator<wchar_t> > wstring;
+
+typedef std::streamoff streamoff;
+typedef std::streampos streampos;
 
 // fpos
 
@@ -27,31 +44,31 @@ private:
     _StateT __st_;
     streamoff __off_;
 public:
-    fpos(streamoff __off = streamoff()) : __st_(), __off_(__off) {}
+    __device__ fpos(streamoff __off = streamoff()) : __st_(), __off_(__off) {}
 
-    operator streamoff() const {return __off_;}
+    __device__ operator streamoff() const {return __off_;}
 
-    _StateT state() const {return __st_;}
-    void state(_StateT __st) {__st_ = __st;}
+    __device__ _StateT state() const {return __st_;}
+    __device__ void state(_StateT __st) {__st_ = __st;}
 
-    fpos& operator+=(streamoff __off) {__off_ += __off; return *this;}
-    fpos  operator+ (streamoff __off) const {fpos __t(*this); __t += __off; return __t;}
-    fpos& operator-=(streamoff __off) {__off_ -= __off; return *this;}
-    fpos  operator- (streamoff __off) const {fpos __t(*this); __t -= __off; return __t;}
+    __device__ fpos& operator+=(streamoff __off) {__off_ += __off; return *this;}
+    __device__ fpos  operator+ (streamoff __off) const {fpos __t(*this); __t += __off; return __t;}
+    __device__ fpos& operator-=(streamoff __off) {__off_ -= __off; return *this;}
+    __device__ fpos  operator- (streamoff __off) const {fpos __t(*this); __t -= __off; return __t;}
 };
 
 template <class _StateT>
-inline
+__device__ inline
 streamoff operator-(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
     {return streamoff(__x) - streamoff(__y);}
 
 template <class _StateT>
-inline
+__device__ inline
 bool operator==(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
     {return streamoff(__x) == streamoff(__y);}
 
 template <class _StateT>
-inline
+__device__ inline
 bool operator!=(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
     {return streamoff(__x) != streamoff(__y);}
 
@@ -67,41 +84,41 @@ struct char_traits
     typedef mbstate_t state_type;
 
    
-    static void assign(char_type& __c1, const char_type& __c2)
+    __device__ static void assign(char_type& __c1, const char_type& __c2)
         {__c1 = __c2;}
    
-    static bool eq(char_type __c1, char_type __c2)
+    __device__ static bool eq(char_type __c1, char_type __c2)
         {return __c1 == __c2;}
    
-    static bool lt(char_type __c1, char_type __c2)
+    __device__ static bool lt(char_type __c1, char_type __c2)
         {return __c1 < __c2;}
 
-    static int              compare(const char_type* __s1, const char_type* __s2, size_t __n);
-    static size_t           length(const char_type* __s);
-    static const char_type* find(const char_type* __s, size_t __n, const char_type& __a);
-    static char_type*       move(char_type* __s1, const char_type* __s2, size_t __n);
-    static char_type*       copy(char_type* __s1, const char_type* __s2, size_t __n);
-    static char_type*       assign(char_type* __s, size_t __n, char_type __a);
+    __device__ static int              compare(const char_type* __s1, const char_type* __s2, size_t __n);
+    __device__ static size_t           length(const char_type* __s);
+    __device__ static const char_type* find(const char_type* __s, size_t __n, const char_type& __a);
+    __device__ static char_type*       move(char_type* __s1, const char_type* __s2, size_t __n);
+    __device__ static char_type*       copy(char_type* __s1, const char_type* __s2, size_t __n);
+    __device__ static char_type*       assign(char_type* __s, size_t __n, char_type __a);
 
    
-    static int_type  not_eof(int_type __c)
+    __device__ static int_type  not_eof(int_type __c)
         {return eq_int_type(__c, eof()) ? ~eof() : __c;}
    
-    static char_type to_char_type(int_type __c)
+    __device__ static char_type to_char_type(int_type __c)
         {return char_type(__c);}
    
-    static int_type  to_int_type(char_type __c)
+    __device__ static int_type  to_int_type(char_type __c)
         {return int_type(__c);}
    
-    static bool      eq_int_type(int_type __c1, int_type __c2)
+    __device__ static bool      eq_int_type(int_type __c1, int_type __c2)
         {return __c1 == __c2;}
    
-    static int_type  eof()
+    __device__ static int_type  eof()
         {return int_type(EOF);}
 };
 
 template <class _CharT>
-int
+__device__ int
 char_traits<_CharT>::compare(const char_type* __s1, const char_type* __s2, size_t __n)
 {
     for (; __n; --__n, ++__s1, ++__s2)
@@ -115,7 +132,7 @@ char_traits<_CharT>::compare(const char_type* __s1, const char_type* __s2, size_
 }
 
 template <class _CharT>
-inline
+__device__ inline
 size_t
 char_traits<_CharT>::length(const char_type* __s)
 {
@@ -126,7 +143,7 @@ char_traits<_CharT>::length(const char_type* __s)
 }
 
 template <class _CharT>
-inline
+__device__ inline
 const _CharT*
 char_traits<_CharT>::find(const char_type* __s, size_t __n, const char_type& __a)
 {
@@ -140,7 +157,7 @@ char_traits<_CharT>::find(const char_type* __s, size_t __n, const char_type& __a
 }
 
 template <class _CharT>
-_CharT*
+__device__ _CharT*
 char_traits<_CharT>::move(char_type* __s1, const char_type* __s2, size_t __n)
 {
     char_type* __r = __s1;
@@ -160,7 +177,7 @@ char_traits<_CharT>::move(char_type* __s1, const char_type* __s2, size_t __n)
 }
 
 template <class _CharT>
-inline
+__device__ inline
 _CharT*
 char_traits<_CharT>::copy(char_type* __s1, const char_type* __s2, size_t __n)
 {
@@ -171,7 +188,7 @@ char_traits<_CharT>::copy(char_type* __s1, const char_type* __s2, size_t __n)
 }
 
 template <class _CharT>
-inline
+__device__ inline
 _CharT*
 char_traits<_CharT>::assign(char_type* __s, size_t __n, char_type __a)
 {
@@ -192,47 +209,47 @@ struct char_traits<char>
     typedef streampos pos_type;
     typedef mbstate_t state_type;
    
-    static void assign(char_type& __c1, const char_type& __c2)
+    __device__ static void assign(char_type& __c1, const char_type& __c2)
         {__c1 = __c2;}
    
-    static bool eq(char_type __c1, char_type __c2)
+    __device__ static bool eq(char_type __c1, char_type __c2)
             {return __c1 == __c2;}
    
-    static bool lt(char_type __c1, char_type __c2)
+   __device__  static bool lt(char_type __c1, char_type __c2)
         {return (unsigned char)__c1 < (unsigned char)__c2;}
 
    
-    static int compare(const char_type* __s1, const char_type* __s2, size_t __n)
-        {return memcmp(__s1, __s2, __n);}
+    __device__ static int compare(const char_type* __s1, const char_type* __s2, size_t __n)
+        {return util::memcmp(__s1, __s2, __n);}
    
-    static size_t length(const char_type* __s) {return strlen(__s);}
+    __device__ static size_t length(const char_type* __s) {return util::strlen(__s);}
    
-    static const char_type* find(const char_type* __s, size_t __n, const char_type& __a)
-        {return (const char_type*)memchr(__s, to_int_type(__a), __n);}
+    __device__ static const char_type* find(const char_type* __s, size_t __n, const char_type& __a)
+        {return (const char_type*)util::memchr(__s, to_int_type(__a), __n);}
    
-    static char_type* move(char_type* __s1, const char_type* __s2, size_t __n)
-        {return (char_type*)memmove(__s1, __s2, __n);}
+    __device__ static char_type* move(char_type* __s1, const char_type* __s2, size_t __n)
+        {return (char_type*)util::memmove(__s1, __s2, __n);}
    
-    static char_type* copy(char_type* __s1, const char_type* __s2, size_t __n)
-        {return (char_type*)memcpy(__s1, __s2, __n);}
+    __device__ static char_type* copy(char_type* __s1, const char_type* __s2, size_t __n)
+        {return (char_type*)util::memcpy(__s1, __s2, __n);}
    
-    static char_type* assign(char_type* __s, size_t __n, char_type __a)
-        {return (char_type*)memset(__s, to_int_type(__a), __n);}
+    __device__ static char_type* assign(char_type* __s, size_t __n, char_type __a)
+        {return (char_type*)util::memset(__s, to_int_type(__a), __n);}
 
    
-    static int_type  not_eof(int_type __c)
+    __device__ static int_type  not_eof(int_type __c)
         {return eq_int_type(__c, eof()) ? ~eof() : __c;}
    
-    static char_type to_char_type(int_type __c)
+    __device__ static char_type to_char_type(int_type __c)
         {return char_type(__c);}
    
-    static int_type to_int_type(char_type __c)
+    __device__ static int_type to_int_type(char_type __c)
         {return int_type((unsigned char)__c);}
    
-    static bool eq_int_type(int_type __c1, int_type __c2)
+    __device__ static bool eq_int_type(int_type __c1, int_type __c2)
         {return __c1 == __c2;}
    
-    static int_type  eof()
+    __device__ static int_type  eof()
         {return int_type(EOF);}
 };
 
@@ -240,22 +257,22 @@ template <bool>
 class __basic_string_common
 {
 protected:
-    void __throw_length_error() const;
-    void __throw_out_of_range() const;
+    __device__ void __throw_length_error() const;
+    __device__ void __throw_out_of_range() const;
 };
 
 template <bool __b>
-void
+__device__ void
 __basic_string_common<__b>::__throw_length_error() const
 {
-    assert(!"basic_string length_error");
+    //assert(!"basic_string length_error");
 }
 
 template <bool __b>
-void
+__device__ void
 __basic_string_common<__b>::__throw_out_of_range() const
 {
-    assert(!"basic_string out_of_range");
+    //assert(!"basic_string out_of_range");
 }
 
 template<class _CharT, class _Traits, class _Allocator>
@@ -276,8 +293,8 @@ public:
     typedef typename __alloc_traits::const_pointer       const_pointer;
     typedef pointer                                      iterator;
     typedef const_pointer                                const_iterator;
-    typedef _VSTD::reverse_iterator<iterator>             reverse_iterator;
-    typedef _VSTD::reverse_iterator<const_iterator>       const_reverse_iterator;
+    typedef util::reverse_iterator<iterator>             reverse_iterator;
+    typedef util::reverse_iterator<const_iterator>       const_reverse_iterator;
 
 private:
     struct __long
@@ -324,115 +341,114 @@ private:
         };
     };
 
-    __compressed_pair<__rep, allocator_type> __r_;
+    pair<__rep, allocator_type> __r_;
 
 public:
-    static const size_type npos = -1;
+    static const size_type npos = (size_type)-1;
 
-    basic_string()
-       _(is_nothrow_default_constructible<allocator_type>::value);
-    explicit basic_string(const allocator_type& __a);
-    basic_string(const basic_string& __str);
-    basic_string(const basic_string& __str, const allocator_type& __a);
-    basic_string(const_pointer __s);
+    __device__ basic_string();
+    __device__ explicit basic_string(const allocator_type& __a);
+    __device__ basic_string(const basic_string& __str);
+    __device__ basic_string(const basic_string& __str, const allocator_type& __a);
+    __device__ basic_string(const_pointer __s);
    
-    basic_string(const_pointer __s, const allocator_type& __a);
+    __device__ basic_string(const_pointer __s, const allocator_type& __a);
    
-    basic_string(const_pointer __s, size_type __n);
+    __device__ basic_string(const_pointer __s, size_type __n);
    
-    basic_string(const_pointer __s, size_type __n, const allocator_type& __a);
+    __device__ basic_string(const_pointer __s, size_type __n, const allocator_type& __a);
    
-    basic_string(size_type __n, value_type __c);
+    __device__ basic_string(size_type __n, value_type __c);
    
-    basic_string(size_type __n, value_type __c, const allocator_type& __a);
-    basic_string(const basic_string& __str, size_type __pos, size_type __n = npos,
+    __device__ basic_string(size_type __n, value_type __c, const allocator_type& __a);
+    __device__ basic_string(const basic_string& __str, size_type __pos, size_type __n = npos,
                  const allocator_type& __a = allocator_type());
     template<class _InputIterator>
        
-        basic_string(_InputIterator __first, _InputIterator __last);
+        __device__ basic_string(_InputIterator __first, _InputIterator __last);
     template<class _InputIterator>
        
-        basic_string(_InputIterator __first, _InputIterator __last, const allocator_type& __a);
+        __device__ basic_string(_InputIterator __first, _InputIterator __last, const allocator_type& __a);
 
-    ~basic_string();
+    __device__ ~basic_string();
 
-    basic_string& operator=(const basic_string& __str);
+    __device__ basic_string& operator=(const basic_string& __str);
 
-    basic_string& operator=(const_pointer __s) {return assign(__s);}
-    basic_string& operator=(value_type __c);
+    __device__ basic_string& operator=(const_pointer __s) {return assign(__s);}
+    __device__ basic_string& operator=(value_type __c);
 
-    iterator begin()
+    __device__ iterator begin()
         {return iterator(__get_pointer());}
    
-    const_iterator begin() const
+    __device__ const_iterator begin() const
         {return const_iterator(data());}
    
-    iterator end()
+    __device__ iterator end()
         {return iterator(__get_pointer() + size());}
    
-    const_iterator end() const
+    __device__ const_iterator end() const
         {return const_iterator(data() + size());}
    
-    reverse_iterator rbegin()
+    __device__ reverse_iterator rbegin()
         {return reverse_iterator(end());}
    
-    const_reverse_iterator rbegin() const
+    __device__ const_reverse_iterator rbegin() const
         {return const_reverse_iterator(end());}
    
-    reverse_iterator rend()
+    __device__ reverse_iterator rend()
         {return reverse_iterator(begin());}
    
-    const_reverse_iterator rend() const
+    __device__ const_reverse_iterator rend() const
         {return const_reverse_iterator(begin());}
 
    
-    const_iterator cbegin() const
+    __device__ const_iterator cbegin() const
         {return begin();}
    
-    const_iterator cend() const
+    __device__ const_iterator cend() const
         {return end();}
    
-    const_reverse_iterator crbegin() const
+    __device__ const_reverse_iterator crbegin() const
         {return rbegin();}
    
-    const_reverse_iterator crend() const
+    __device__ const_reverse_iterator crend() const
         {return rend();}
 
-    size_type size() const
+    __device__ size_type size() const
         {return __is_long() ? __get_long_size() : __get_short_size();}
-    size_type length() const {return size();}
+    __device__ size_type length() const {return size();}
 
-    size_type max_size() const;
-    size_type capacity() const
+    __device__ size_type max_size() const;
+    __device__ size_type capacity() const
         {return (__is_long() ? __get_long_cap() : __min_cap) - 1;}
 
-    void resize(size_type __n, value_type __c);
-    void resize(size_type __n) {resize(__n, value_type());}
+    __device__ void resize(size_type __n, value_type __c);
+    __device__ void resize(size_type __n) {resize(__n, value_type());}
 
-    void reserve(size_type res_arg = 0);
+    __device__ void reserve(size_type res_arg = 0);
    
-    void shrink_to_fit() {reserve();}
+    __device__ void shrink_to_fit() {reserve();}
    
-    void clear();
-    bool empty() const {return size() == 0;}
+    __device__ void clear();
+    __device__ bool empty() const {return size() == 0;}
 
-    const_reference operator[](size_type __pos) const;
-    reference       operator[](size_type __pos);
+    __device__ const_reference operator[](size_type __pos) const;
+    __device__ reference       operator[](size_type __pos);
 
-    const_reference at(size_type __n) const;
-    reference       at(size_type __n);
+    __device__ const_reference at(size_type __n) const;
+    __device__ reference       at(size_type __n);
 
-    basic_string& operator+=(const basic_string& __str) {return append(__str);}
-    basic_string& operator+=(const_pointer __s)         {return append(__s);}
-    basic_string& operator+=(value_type __c)            {push_back(__c); return *this;}
+    __device__ basic_string& operator+=(const basic_string& __str) {return append(__str);}
+    __device__ basic_string& operator+=(const_pointer __s)         {return append(__s);}
+    __device__ basic_string& operator+=(value_type __c)            {push_back(__c); return *this;}
    
-    basic_string& append(const basic_string& __str);
-    basic_string& append(const basic_string& __str, size_type __pos, size_type __n);
-    basic_string& append(const_pointer __s, size_type __n);
-    basic_string& append(const_pointer __s);
-    basic_string& append(size_type __n, value_type __c);
+    __device__ basic_string& append(const basic_string& __str);
+    __device__ basic_string& append(const basic_string& __str, size_type __pos, size_type __n);
+    __device__ basic_string& append(const_pointer __s, size_type __n);
+    __device__ basic_string& append(const_pointer __s);
+    __device__ basic_string& append(size_type __n, value_type __c);
     template<class _InputIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
              __is_input_iterator  <_InputIterator>::value &&
             !__is_forward_iterator<_InputIterator>::value,
@@ -440,29 +456,29 @@ public:
         >::type
         append(_InputIterator __first, _InputIterator __last);
     template<class _ForwardIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_forward_iterator<_ForwardIterator>::value,
             basic_string&
         >::type
         append(_ForwardIterator __first, _ForwardIterator __last);
 
-    void push_back(value_type __c);
+    __device__ void push_back(value_type __c);
    
-    void pop_back();
-    reference       front();
-    const_reference front() const;
-    reference       back();
-    const_reference back() const;
+    __device__ void pop_back();
+    __device__ reference       front();
+    __device__ const_reference front() const;
+    __device__ reference       back();
+    __device__ const_reference back() const;
 
    
-    basic_string& assign(const basic_string& __str);
-    basic_string& assign(const basic_string& __str, size_type __pos, size_type __n);
-    basic_string& assign(const_pointer __s, size_type __n);
-    basic_string& assign(const_pointer __s);
-    basic_string& assign(size_type __n, value_type __c);
+    __device__ basic_string& assign(const basic_string& __str);
+    __device__ basic_string& assign(const basic_string& __str, size_type __pos, size_type __n);
+    __device__ basic_string& assign(const_pointer __s, size_type __n);
+    __device__ basic_string& assign(const_pointer __s);
+    __device__ basic_string& assign(size_type __n, value_type __c);
     template<class _InputIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
              __is_input_iterator  <_InputIterator>::value &&
             !__is_forward_iterator<_InputIterator>::value,
@@ -470,23 +486,23 @@ public:
         >::type
         assign(_InputIterator __first, _InputIterator __last);
     template<class _ForwardIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_forward_iterator<_ForwardIterator>::value,
             basic_string&
         >::type
         assign(_ForwardIterator __first, _ForwardIterator __last);
   
-    basic_string& insert(size_type __pos1, const basic_string& __str);
-    basic_string& insert(size_type __pos1, const basic_string& __str, size_type __pos2, size_type __n);
-    basic_string& insert(size_type __pos, const_pointer __s, size_type __n);
-    basic_string& insert(size_type __pos, const_pointer __s);
-    basic_string& insert(size_type __pos, size_type __n, value_type __c);
-    iterator      insert(const_iterator __pos, value_type __c);
+    __device__ basic_string& insert(size_type __pos1, const basic_string& __str);
+    __device__ basic_string& insert(size_type __pos1, const basic_string& __str, size_type __pos2, size_type __n);
+    __device__ basic_string& insert(size_type __pos, const_pointer __s, size_type __n);
+    __device__ basic_string& insert(size_type __pos, const_pointer __s);
+    __device__ basic_string& insert(size_type __pos, size_type __n, value_type __c);
+    __device__ iterator      insert(const_iterator __pos, value_type __c);
    
-    iterator      insert(const_iterator __pos, size_type __n, value_type __c);
+    __device__ iterator      insert(const_iterator __pos, size_type __n, value_type __c);
     template<class _InputIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
              __is_input_iterator  <_InputIterator>::value &&
             !__is_forward_iterator<_InputIterator>::value,
@@ -494,227 +510,225 @@ public:
         >::type
         insert(const_iterator __pos, _InputIterator __first, _InputIterator __last);
     template<class _ForwardIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_forward_iterator<_ForwardIterator>::value,
             iterator
         >::type
         insert(const_iterator __pos, _ForwardIterator __first, _ForwardIterator __last);
 
-    basic_string& erase(size_type __pos = 0, size_type __n = npos);
+    __device__ basic_string& erase(size_type __pos = 0, size_type __n = npos);
    
-    iterator      erase(const_iterator __pos);
+    __device__ iterator      erase(const_iterator __pos);
    
-    iterator      erase(const_iterator __first, const_iterator __last);
+    __device__ iterator      erase(const_iterator __first, const_iterator __last);
 
    
-    basic_string& replace(size_type __pos1, size_type __n1, const basic_string& __str);
-    basic_string& replace(size_type __pos1, size_type __n1, const basic_string& __str, size_type __pos2, size_type __n2);
-    basic_string& replace(size_type __pos, size_type __n1, const_pointer __s, size_type __n2);
-    basic_string& replace(size_type __pos, size_type __n1, const_pointer __s);
-    basic_string& replace(size_type __pos, size_type __n1, size_type __n2, value_type __c);
+    __device__ basic_string& replace(size_type __pos1, size_type __n1, const basic_string& __str);
+    __device__ basic_string& replace(size_type __pos1, size_type __n1, const basic_string& __str, size_type __pos2, size_type __n2);
+    __device__ basic_string& replace(size_type __pos, size_type __n1, const_pointer __s, size_type __n2);
+    __device__ basic_string& replace(size_type __pos, size_type __n1, const_pointer __s);
+    __device__ basic_string& replace(size_type __pos, size_type __n1, size_type __n2, value_type __c);
    
-    basic_string& replace(const_iterator __i1, const_iterator __i2, const basic_string& __str);
+    __device__ basic_string& replace(const_iterator __i1, const_iterator __i2, const basic_string& __str);
    
-    basic_string& replace(const_iterator __i1, const_iterator __i2, const_pointer __s, size_type __n);
+    __device__ basic_string& replace(const_iterator __i1, const_iterator __i2, const_pointer __s, size_type __n);
    
-    basic_string& replace(const_iterator __i1, const_iterator __i2, const_pointer __s);
+    __device__ basic_string& replace(const_iterator __i1, const_iterator __i2, const_pointer __s);
    
-    basic_string& replace(const_iterator __i1, const_iterator __i2, size_type __n, value_type __c);
+   __device__  basic_string& replace(const_iterator __i1, const_iterator __i2, size_type __n, value_type __c);
     template<class _InputIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_input_iterator<_InputIterator>::value,
             basic_string&
         >::type
         replace(const_iterator __i1, const_iterator __i2, _InputIterator __j1, _InputIterator __j2);
 
-    size_type copy(pointer __s, size_type __n, size_type __pos = 0) const;
+    __device__ size_type copy(pointer __s, size_type __n, size_type __pos = 0) const;
    
-    basic_string substr(size_type __pos = 0, size_type __n = npos) const;
+    __device__ basic_string substr(size_type __pos = 0, size_type __n = npos) const;
 
    
-    void swap(basic_string& __str)
-       _(!__alloc_traits::propagate_on_container_swap::value ||
-                   __is_nothrow_swappable<allocator_type>::value);
+    __device__ void swap(basic_string& __str);
 
    
-    const_pointer c_str() const {return data();}
+    __device__ const_pointer c_str() const {return data();}
    
-    const_pointer data() const  {return __get_pointer();}
+    __device__ const_pointer data() const  {return __get_pointer();}
 
    
-    allocator_type get_allocator() const {return __alloc();}
+    __device__ allocator_type get_allocator() const {return __alloc();}
 
    
-    size_type find(const basic_string& __str, size_type __pos = 0) const;
-    size_type find(const_pointer __s, size_type __pos, size_type __n) const;
+    __device__ size_type find(const basic_string& __str, size_type __pos = 0) const;
+    __device__ size_type find(const_pointer __s, size_type __pos, size_type __n) const;
    
-    size_type find(const_pointer __s, size_type __pos = 0) const;
-    size_type find(value_type __c, size_type __pos = 0) const;
+    __device__ size_type find(const_pointer __s, size_type __pos = 0) const;
+    __device__ size_type find(value_type __c, size_type __pos = 0) const;
 
    
-    size_type rfind(const basic_string& __str, size_type __pos = npos) const;
-    size_type rfind(const_pointer __s, size_type __pos, size_type __n) const;
+    __device__ size_type rfind(const basic_string& __str, size_type __pos = npos) const;
+    __device__ size_type rfind(const_pointer __s, size_type __pos, size_type __n) const;
    
-    size_type rfind(const_pointer __s, size_type __pos = npos) const;
-    size_type rfind(value_type __c, size_type __pos = npos) const;
+    __device__ size_type rfind(const_pointer __s, size_type __pos = npos) const;
+    __device__ size_type rfind(value_type __c, size_type __pos = npos) const;
 
    
-    size_type find_first_of(const basic_string& __str, size_type __pos = 0) const;
-    size_type find_first_of(const_pointer __s, size_type __pos, size_type __n) const;
+    __device__ size_type find_first_of(const basic_string& __str, size_type __pos = 0) const;
+    __device__ size_type find_first_of(const_pointer __s, size_type __pos, size_type __n) const;
    
-    size_type find_first_of(const_pointer __s, size_type __pos = 0) const;
+    __device__ size_type find_first_of(const_pointer __s, size_type __pos = 0) const;
    
-    size_type find_first_of(value_type __c, size_type __pos = 0) const;
+    __device__ size_type find_first_of(value_type __c, size_type __pos = 0) const;
 
    
-    size_type find_last_of(const basic_string& __str, size_type __pos = npos) const;
-    size_type find_last_of(const_pointer __s, size_type __pos, size_type __n) const;
+    __device__ size_type find_last_of(const basic_string& __str, size_type __pos = npos) const;
+    __device__ size_type find_last_of(const_pointer __s, size_type __pos, size_type __n) const;
    
-    size_type find_last_of(const_pointer __s, size_type __pos = npos) const;
+    __device__ size_type find_last_of(const_pointer __s, size_type __pos = npos) const;
    
-    size_type find_last_of(value_type __c, size_type __pos = npos) const;
+    __device__ size_type find_last_of(value_type __c, size_type __pos = npos) const;
 
    
-    size_type find_first_not_of(const basic_string& __str, size_type __pos = 0) const;
-    size_type find_first_not_of(const_pointer __s, size_type __pos, size_type __n) const;
+    __device__ size_type find_first_not_of(const basic_string& __str, size_type __pos = 0) const;
+    __device__ size_type find_first_not_of(const_pointer __s, size_type __pos, size_type __n) const;
    
-    size_type find_first_not_of(const_pointer __s, size_type __pos = 0) const;
+    __device__ size_type find_first_not_of(const_pointer __s, size_type __pos = 0) const;
    
-    size_type find_first_not_of(value_type __c, size_type __pos = 0) const;
+    __device__ size_type find_first_not_of(value_type __c, size_type __pos = 0) const;
 
    
-    size_type find_last_not_of(const basic_string& __str, size_type __pos = npos) const;
-    size_type find_last_not_of(const_pointer __s, size_type __pos, size_type __n) const;
+    __device__ size_type find_last_not_of(const basic_string& __str, size_type __pos = npos) const;
+    __device__ size_type find_last_not_of(const_pointer __s, size_type __pos, size_type __n) const;
    
-    size_type find_last_not_of(const_pointer __s, size_type __pos = npos) const;
+    __device__ size_type find_last_not_of(const_pointer __s, size_type __pos = npos) const;
    
-    size_type find_last_not_of(value_type __c, size_type __pos = npos) const;
+    __device__ size_type find_last_not_of(value_type __c, size_type __pos = npos) const;
 
    
-    int compare(const basic_string& __str) const;
+    __device__ int compare(const basic_string& __str) const;
    
-    int compare(size_type __pos1, size_type __n1, const basic_string& __str) const;
-    int compare(size_type __pos1, size_type __n1, const basic_string& __str, size_type __pos2, size_type __n2) const;
-    int compare(const_pointer __s) const;
-    int compare(size_type __pos1, size_type __n1, const_pointer __s) const;
-    int compare(size_type __pos1, size_type __n1, const_pointer __s, size_type __n2) const;
+    __device__ int compare(size_type __pos1, size_type __n1, const basic_string& __str) const;
+    __device__ int compare(size_type __pos1, size_type __n1, const basic_string& __str, size_type __pos2, size_type __n2) const;
+    __device__ int compare(const_pointer __s) const;
+    __device__ int compare(size_type __pos1, size_type __n1, const_pointer __s) const;
+    __device__ int compare(size_type __pos1, size_type __n1, const_pointer __s, size_type __n2) const;
 
-    bool __invariants() const;
+    __device__ bool __invariants() const;
 private:
    
-    allocator_type& __alloc()
-        {return __r_.second();}
+    __device__ allocator_type& __alloc()
+        {return __r_.second;}
    
-    const allocator_type& __alloc() const
-        {return __r_.second();}
+    __device__ const allocator_type& __alloc() const
+        {return __r_.second;}
 
    
-    bool __is_long() const
-        {return bool(__r_.first().__s.__size_ & __short_mask);}
+    __device__ bool __is_long() const
+        {return bool(__r_.first.__s.__size_ & __short_mask);}
 
    
-    void __set_short_size(size_type __s)
-        {__r_.first().__s.__size_ = (unsigned char)(__s << 1);}
+    __device__ void __set_short_size(size_type __s)
+        {__r_.first.__s.__size_ = (unsigned char)(__s << 1);}
    
-    size_type __get_short_size() const
-        {return __r_.first().__s.__size_ >> 1;}
+    __device__ size_type __get_short_size() const
+        {return __r_.first.__s.__size_ >> 1;}
    
-    void __set_long_size(size_type __s)
-        {__r_.first().__l.__size_ = __s;}
+    __device__ void __set_long_size(size_type __s)
+        {__r_.first.__l.__size_ = __s;}
    
-    size_type __get_long_size() const
-        {return __r_.first().__l.__size_;}
+    __device__ size_type __get_long_size() const
+        {return __r_.first.__l.__size_;}
    
-    void __set_size(size_type __s)
+    __device__ void __set_size(size_type __s)
         {if (__is_long()) __set_long_size(__s); else __set_short_size(__s);}
 
    
-    void __set_long_cap(size_type __s)
-        {__r_.first().__l.__cap_  = __long_mask | __s;}
+    __device__ void __set_long_cap(size_type __s)
+        {__r_.first.__l.__cap_  = __long_mask | __s;}
    
-    size_type __get_long_cap() const
-        {return __r_.first().__l.__cap_ & size_type(~__long_mask);}
+    __device__ size_type __get_long_cap() const
+        {return __r_.first.__l.__cap_ & size_type(~__long_mask);}
 
    
-    void __set_long_pointer(pointer __p)
-        {__r_.first().__l.__data_ = __p;}
+    __device__ void __set_long_pointer(pointer __p)
+        {__r_.first.__l.__data_ = __p;}
    
-    pointer __get_long_pointer()
-        {return __r_.first().__l.__data_;}
+    __device__ pointer __get_long_pointer()
+        {return __r_.first.__l.__data_;}
    
-    const_pointer __get_long_pointer() const
-        {return __r_.first().__l.__data_;}
+    __device__ const_pointer __get_long_pointer() const
+        {return __r_.first.__l.__data_;}
    
-    pointer __get_short_pointer()
-        {return __r_.first().__s.__data_;}
+    __device__ pointer __get_short_pointer()
+        {return __r_.first.__s.__data_;}
    
-    const_pointer __get_short_pointer() const
-        {return __r_.first().__s.__data_;}
+    __device__ const_pointer __get_short_pointer() const
+        {return __r_.first.__s.__data_;}
    
-    pointer __get_pointer()
+    __device__ pointer __get_pointer()
         {return __is_long() ? __get_long_pointer() : __get_short_pointer();}
    
-    const_pointer __get_pointer() const
+    __device__ const_pointer __get_pointer() const
         {return __is_long() ? __get_long_pointer() : __get_short_pointer();}
 
    
-    void __zero()
+    __device__ void __zero()
         {
-            size_type (&__a)[__n_words] = __r_.first().__r.__words;
+            size_type (&__a)[__n_words] = __r_.first.__r.__words;
             for (unsigned __i = 0; __i < __n_words; ++__i)
                 __a[__i] = 0;
         }
 
     template <size_type __a> static
        
-        size_type __align(size_type __s)
+        __device__ size_type __align(size_type __s)
             {return __s + (__a-1) & ~(__a-1);}
     enum {__alignment = 16};
     static
-    size_type __recommend(size_type __s)
+    __device__ size_type __recommend(size_type __s)
         {return (__s < __min_cap ? __min_cap :
                  __align<sizeof(value_type) < __alignment ?
                             __alignment/sizeof(value_type) : 1 > (__s+1)) - 1;}
 
-    void __init(const_pointer __s, size_type __sz, size_type __reserve);
-    void __init(const_pointer __s, size_type __sz);
-    void __init(size_type __n, value_type __c);
+    __device__ void __init(const_pointer __s, size_type __sz, size_type __reserve);
+    __device__ void __init(const_pointer __s, size_type __sz);
+    __device__ void __init(size_type __n, value_type __c);
 
     template <class _InputIterator>
-    typename enable_if
-    <
-         __is_input_iterator  <_InputIterator>::value &&
-        !__is_forward_iterator<_InputIterator>::value,
-        void
-    >::type
-    __init(_InputIterator __first, _InputIterator __last);
+		__device__ typename enable_if
+		<
+		     __is_input_iterator  <_InputIterator>::value &&
+		    !__is_forward_iterator<_InputIterator>::value,
+		    void
+		>::type
+		__init(_InputIterator __first, _InputIterator __last);
 
     template <class _ForwardIterator>
-    typename enable_if
-    <
-        __is_forward_iterator<_ForwardIterator>::value,
-        void
-    >::type
-    __init(_ForwardIterator __first, _ForwardIterator __last);
+		__device__ typename enable_if
+		<
+			__is_forward_iterator<_ForwardIterator>::value,
+			void
+		>::type
+		__init(_ForwardIterator __first, _ForwardIterator __last);
 
-    void __grow_by(size_type __old_cap, size_type __delta_cap, size_type __old_sz,
+    __device__ void __grow_by(size_type __old_cap, size_type __delta_cap, size_type __old_sz,
                    size_type __n_copy,  size_type __n_del,     size_type __n_add = 0);
-    void __grow_by_and_replace(size_type __old_cap, size_type __delta_cap, size_type __old_sz,
+    __device__ void __grow_by_and_replace(size_type __old_cap, size_type __delta_cap, size_type __old_sz,
                                size_type __n_copy,  size_type __n_del,
                                size_type __n_add, const_pointer __p_new_stuff);
 
    
-    void __erase_to_end(size_type __pos);
+    __device__ void __erase_to_end(size_type __pos);
 
    
-    void __copy_assign_alloc(const basic_string& __str)
+    __device__ void __copy_assign_alloc(const basic_string& __str)
         {__copy_assign_alloc(__str, integral_constant<bool,
                       __alloc_traits::propagate_on_container_copy_assignment::value>());}
 
    
-    void __copy_assign_alloc(const basic_string& __str, true_type)
+    __device__ void __copy_assign_alloc(const basic_string& __str, true_type)
         {
             if (__alloc() != __str.__alloc())
             {
@@ -725,55 +739,48 @@ private:
         }
 
    
-    void __copy_assign_alloc(const basic_string&, false_type)
+    __device__ void __copy_assign_alloc(const basic_string&, false_type)
         {}
    
-    void
+    __device__ void
     __move_assign_alloc(basic_string& __str)
-       _(
-            !__alloc_traits::propagate_on_container_move_assignment::value ||
-            is_nothrow_move_assignable<allocator_type>::value)
     {__move_assign_alloc(__str, integral_constant<bool,
                       __alloc_traits::propagate_on_container_move_assignment::value>());}
 
    
-    void __move_assign_alloc(basic_string& __c, true_type)
-       _(is_nothrow_move_assignable<allocator_type>::value)
+    __device__ void __move_assign_alloc(basic_string& __c, true_type)
         {
-            __alloc() = _VSTD::move(__c.__alloc());
+            __alloc() = util::move(__c.__alloc());
         }
 
    
-    void __move_assign_alloc(basic_string&, false_type)
+    __device__ void __move_assign_alloc(basic_string&, false_type)
        
         {}
 
    
-    static void __swap_alloc(allocator_type& __x, allocator_type& __y)
-       _(!__alloc_traits::propagate_on_container_swap::value ||
-                   __is_nothrow_swappable<allocator_type>::value)
+    __device__ static void __swap_alloc(allocator_type& __x, allocator_type& __y)
         {__swap_alloc(__x, __y, integral_constant<bool,
                       __alloc_traits::propagate_on_container_swap::value>());}
 
    
-    static void __swap_alloc(allocator_type& __x, allocator_type& __y, true_type)
-       _(__is_nothrow_swappable<allocator_type>::value)
+    __device__ static void __swap_alloc(allocator_type& __x, allocator_type& __y, true_type)
         {
-            using _VSTD::swap;
+            using util::swap;
             swap(__x, __y);
         }
    
-    static void __swap_alloc(allocator_type&, allocator_type&, false_type)
+    __device__ static void __swap_alloc(allocator_type&, allocator_type&, false_type)
         {}
 
-    void __invalidate_all_iterators();
-    void __invalidate_iterators_past(size_type);
+    __device__ void __invalidate_all_iterators();
+    __device__ void __invalidate_iterators_past(size_type);
 
-    friend basic_string operator+<>(const basic_string&, const basic_string&);
-    friend basic_string operator+<>(const value_type*, const basic_string&);
-    friend basic_string operator+<>(value_type, const basic_string&);
-    friend basic_string operator+<>(const basic_string&, const value_type*);
-    friend basic_string operator+<>(const basic_string&, value_type);
+    friend __device__ basic_string operator+<>(const basic_string&, const basic_string&);
+    friend __device__ basic_string operator+<>(const value_type*, const basic_string&);
+    friend __device__ basic_string operator+<>(value_type, const basic_string&);
+    friend __device__ basic_string operator+<>(const basic_string&, const value_type*);
+    friend __device__ basic_string operator+<>(const basic_string&, value_type);
 };
 
 
@@ -781,37 +788,36 @@ private:
 // basic_string
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const basic_string<_CharT, _Traits, _Allocator>& __x,
           const basic_string<_CharT, _Traits, _Allocator>& __y);
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const _CharT* __x, const basic_string<_CharT,_Traits,_Allocator>& __y);
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(_CharT __x, const basic_string<_CharT,_Traits,_Allocator>& __y);
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const basic_string<_CharT, _Traits, _Allocator>& __x, const _CharT* __y);
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const basic_string<_CharT, _Traits, _Allocator>& __x, _CharT __y);
 
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string()
-   _(is_nothrow_default_constructible<allocator_type>::value)
 {
     __zero();
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const allocator_type& __a)
     : __r_(__a)
 {
@@ -819,7 +825,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const allocator_type& __
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::__init(const_pointer __s, size_type __sz, size_type __reserve)
 {
     if (__reserve > max_size())
@@ -843,7 +849,7 @@ basic_string<_CharT, _Traits, _Allocator>::__init(const_pointer __s, size_type _
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::__init(const_pointer __s, size_type __sz)
 {
     if (__sz > max_size())
@@ -867,7 +873,7 @@ basic_string<_CharT, _Traits, _Allocator>::__init(const_pointer __s, size_type _
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s)
 {
     assert(__s != 0);
@@ -875,7 +881,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, const allocator_type& __a)
     : __r_(__a)
 {
@@ -884,7 +890,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_type __n)
 {
     assert(__s != 0);
@@ -892,7 +898,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_type __n, const allocator_type& __a)
     : __r_(__a)
 {
@@ -901,27 +907,27 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str)
-    : __r_(__alloc_traits::select_on_container_copy_construction(__str.__alloc()))
+__device__ basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str)
+    : __r_(__rep(), __alloc_traits::select_on_container_copy_construction(__str.__alloc()))
 {
     if (!__str.__is_long())
-        __r_.first().__r = __str.__r_.first().__r;
+        __r_.first.__r = __str.__r_.first.__r;
     else
         __init(__str.__get_long_pointer(), __str.__get_long_size());
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str, const allocator_type& __a)
+__device__ basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str, const allocator_type& __a)
     : __r_(__a)
 {
     if (!__str.__is_long())
-        __r_.first().__r = __str.__r_.first().__r;
+        __r_.first.__r = __str.__r_.first.__r;
     else
         __init(__str.__get_long_pointer(), __str.__get_long_size());
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::__init(size_type __n, value_type __c)
 {
     if (__n > max_size())
@@ -945,14 +951,14 @@ basic_string<_CharT, _Traits, _Allocator>::__init(size_type __n, value_type __c)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(size_type __n, value_type __c)
 {
     __init(__n, __c);
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(size_type __n, value_type __c, const allocator_type& __a)
     : __r_(__a)
 {
@@ -960,19 +966,19 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(size_type __n, value_typ
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str, size_type __pos, size_type __n,
+__device__ basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str, size_type __pos, size_type __n,
                                                         const allocator_type& __a)
     : __r_(__a)
 {
     size_type __str_sz = __str.size();
     if (__pos > __str_sz)
         this->__throw_out_of_range();
-    __init(__str.data() + __pos, _VSTD::min(__n, __str_sz - __pos));
+    __init(__str.data() + __pos, util::min(__n, __str_sz - __pos));
 }
 
 template <class _CharT, class _Traits, class _Allocator>
 template <class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
      __is_input_iterator  <_InputIterator>::value &&
     !__is_forward_iterator<_InputIterator>::value,
@@ -987,14 +993,14 @@ basic_string<_CharT, _Traits, _Allocator>::__init(_InputIterator __first, _Input
 
 template <class _CharT, class _Traits, class _Allocator>
 template <class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     void
 >::type
 basic_string<_CharT, _Traits, _Allocator>::__init(_ForwardIterator __first, _ForwardIterator __last)
 {
-    size_type __sz = static_cast<size_type>(_VSTD::distance(__first, __last));
+    size_type __sz = static_cast<size_type>(util::distance(__first, __last));
     if (__sz > max_size())
         this->__throw_length_error();
     pointer __p;
@@ -1018,7 +1024,7 @@ basic_string<_CharT, _Traits, _Allocator>::__init(_ForwardIterator __first, _For
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _InputIterator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(_InputIterator __first, _InputIterator __last)
 {
     __init(__first, __last);
@@ -1026,7 +1032,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(_InputIterator __first, 
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _InputIterator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(_InputIterator __first, _InputIterator __last,
                                                         const allocator_type& __a)
     : __r_(__a)
@@ -1035,7 +1041,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(_InputIterator __first, 
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>::~basic_string()
+__device__ basic_string<_CharT, _Traits, _Allocator>::~basic_string()
 {
     __invalidate_all_iterators();
     if (__is_long())
@@ -1043,7 +1049,7 @@ basic_string<_CharT, _Traits, _Allocator>::~basic_string()
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::__grow_by_and_replace
     (size_type __old_cap, size_type __delta_cap, size_type __old_sz,
      size_type __n_copy,  size_type __n_del,     size_type __n_add, const_pointer __p_new_stuff)
@@ -1053,7 +1059,7 @@ basic_string<_CharT, _Traits, _Allocator>::__grow_by_and_replace
         this->__throw_length_error();
     pointer __old_p = __get_pointer();
     size_type __cap = __old_cap < __ms / 2 - __alignment ?
-                          __recommend(_VSTD::max(__old_cap + __delta_cap, 2 * __old_cap)) :
+                          __recommend(util::max(__old_cap + __delta_cap, 2 * __old_cap)) :
                           __ms - 1;
     pointer __p = __alloc_traits::allocate(__alloc(), __cap+1);
     __invalidate_all_iterators();
@@ -1074,7 +1080,7 @@ basic_string<_CharT, _Traits, _Allocator>::__grow_by_and_replace
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::__grow_by(size_type __old_cap, size_type __delta_cap, size_type __old_sz,
                                                      size_type __n_copy,  size_type __n_del,     size_type __n_add)
 {
@@ -1083,7 +1089,7 @@ basic_string<_CharT, _Traits, _Allocator>::__grow_by(size_type __old_cap, size_t
         this->__throw_length_error();
     pointer __old_p = __get_pointer();
     size_type __cap = __old_cap < __ms / 2 - __alignment ?
-                          __recommend(_VSTD::max(__old_cap + __delta_cap, 2 * __old_cap)) :
+                          __recommend(util::max(__old_cap + __delta_cap, 2 * __old_cap)) :
                           __ms - 1;
     pointer __p = __alloc_traits::allocate(__alloc(), __cap+1);
     __invalidate_all_iterators();
@@ -1101,7 +1107,7 @@ basic_string<_CharT, _Traits, _Allocator>::__grow_by(size_type __old_cap, size_t
 // assign
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(const_pointer __s, size_type __n)
 {
     assert(__s != 0);
@@ -1123,7 +1129,7 @@ basic_string<_CharT, _Traits, _Allocator>::assign(const_pointer __s, size_type _
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(size_type __n, value_type __c)
 {
     size_type __cap = capacity();
@@ -1142,7 +1148,7 @@ basic_string<_CharT, _Traits, _Allocator>::assign(size_type __n, value_type __c)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::operator=(value_type __c)
 {
     pointer __p;
@@ -1163,7 +1169,7 @@ basic_string<_CharT, _Traits, _Allocator>::operator=(value_type __c)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::operator=(const basic_string& __str)
 {
     if (this != &__str)
@@ -1176,7 +1182,7 @@ basic_string<_CharT, _Traits, _Allocator>::operator=(const basic_string& __str)
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
      __is_input_iterator  <_InputIterator>::value &&
     !__is_forward_iterator<_InputIterator>::value,
@@ -1192,14 +1198,14 @@ basic_string<_CharT, _Traits, _Allocator>::assign(_InputIterator __first, _Input
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     basic_string<_CharT, _Traits, _Allocator>&
 >::type
 basic_string<_CharT, _Traits, _Allocator>::assign(_ForwardIterator __first, _ForwardIterator __last)
 {
-    size_type __n = static_cast<size_type>(_VSTD::distance(__first, __last));
+    size_type __n = static_cast<size_type>(util::distance(__first, __last));
     size_type __cap = capacity();
     if (__cap < __n)
     {
@@ -1217,7 +1223,7 @@ basic_string<_CharT, _Traits, _Allocator>::assign(_ForwardIterator __first, _For
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(const basic_string& __str)
 {
@@ -1225,17 +1231,17 @@ basic_string<_CharT, _Traits, _Allocator>::assign(const basic_string& __str)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(const basic_string& __str, size_type __pos, size_type __n)
 {
     size_type __sz = __str.size();
     if (__pos > __sz)
         this->__throw_out_of_range();
-    return assign(__str.data() + __pos, _VSTD::min(__n, __sz - __pos));
+    return assign(__str.data() + __pos, util::min(__n, __sz - __pos));
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(const_pointer __s)
 {
     assert(__s != 0);
@@ -1245,7 +1251,7 @@ basic_string<_CharT, _Traits, _Allocator>::assign(const_pointer __s)
 // append
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(const_pointer __s, size_type __n)
 {
     assert(__s != 0);
@@ -1268,7 +1274,7 @@ basic_string<_CharT, _Traits, _Allocator>::append(const_pointer __s, size_type _
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(size_type __n, value_type __c)
 {
     if (__n)
@@ -1287,7 +1293,7 @@ basic_string<_CharT, _Traits, _Allocator>::append(size_type __n, value_type __c)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::push_back(value_type __c)
 {
     size_type __cap = capacity();
@@ -1302,7 +1308,7 @@ basic_string<_CharT, _Traits, _Allocator>::push_back(value_type __c)
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
      __is_input_iterator  <_InputIterator>::value &&
     !__is_forward_iterator<_InputIterator>::value,
@@ -1317,7 +1323,7 @@ basic_string<_CharT, _Traits, _Allocator>::append(_InputIterator __first, _Input
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     basic_string<_CharT, _Traits, _Allocator>&
@@ -1326,7 +1332,7 @@ basic_string<_CharT, _Traits, _Allocator>::append(_ForwardIterator __first, _For
 {
     size_type __sz = size();
     size_type __cap = capacity();
-    size_type __n = static_cast<size_type>(_VSTD::distance(__first, __last));
+    size_type __n = static_cast<size_type>(util::distance(__first, __last));
     if (__n)
     {
         if (__cap - __sz < __n)
@@ -1341,7 +1347,7 @@ basic_string<_CharT, _Traits, _Allocator>::append(_ForwardIterator __first, _For
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(const basic_string& __str)
 {
@@ -1349,17 +1355,17 @@ basic_string<_CharT, _Traits, _Allocator>::append(const basic_string& __str)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(const basic_string& __str, size_type __pos, size_type __n)
 {
     size_type __sz = __str.size();
     if (__pos > __sz)
         this->__throw_out_of_range();
-    return append(__str.data() + __pos, _VSTD::min(__n, __sz - __pos));
+    return append(__str.data() + __pos, util::min(__n, __sz - __pos));
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(const_pointer __s)
 {
     assert(__s != 0);
@@ -1369,7 +1375,7 @@ basic_string<_CharT, _Traits, _Allocator>::append(const_pointer __s)
 // insert
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const_pointer __s, size_type __n)
 {
     assert(__s != 0);
@@ -1401,7 +1407,7 @@ basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const_pointer
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, size_type __n, value_type __c)
 {
     size_type __sz = size();
@@ -1433,7 +1439,7 @@ basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, size_type __n
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
      __is_input_iterator  <_InputIterator>::value &&
     !__is_forward_iterator<_InputIterator>::value,
@@ -1446,13 +1452,13 @@ basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, _InputIt
     for (; __first != __last; ++__first)
         push_back(*__first);
     pointer __p = __get_pointer();
-    _VSTD::rotate(__p + __ip, __p + __old_sz, __p + size());
+    util::rotate(__p + __ip, __p + __old_sz, __p + size());
     return iterator(__p + __ip);
 }
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     typename basic_string<_CharT, _Traits, _Allocator>::iterator
@@ -1462,7 +1468,7 @@ basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, _Forward
     size_type __ip = static_cast<size_type>(__pos - begin());
     size_type __sz = size();
     size_type __cap = capacity();
-    size_type __n = static_cast<size_type>(_VSTD::distance(__first, __last));
+    size_type __n = static_cast<size_type>(util::distance(__first, __last));
     if (__n)
     {
         pointer __p;
@@ -1488,7 +1494,7 @@ basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, _Forward
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos1, const basic_string& __str)
 {
@@ -1496,18 +1502,18 @@ basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos1, const basic_
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos1, const basic_string& __str,
                                                   size_type __pos2, size_type __n)
 {
     size_type __str_sz = __str.size();
     if (__pos2 > __str_sz)
         this->__throw_out_of_range();
-    return insert(__pos1, __str.data() + __pos2, _VSTD::min(__n, __str_sz - __pos2));
+    return insert(__pos1, __str.data() + __pos2, util::min(__n, __str_sz - __pos2));
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const_pointer __s)
 {
     assert(__s != 0);
@@ -1515,7 +1521,7 @@ basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const_pointer
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::iterator
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::iterator
 basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, value_type __c)
 {
     size_type __ip = static_cast<size_type>(__pos - begin());
@@ -1541,7 +1547,7 @@ basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, value_ty
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::iterator
 basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, size_type __n, value_type __c)
 {
@@ -1553,14 +1559,14 @@ basic_string<_CharT, _Traits, _Allocator>::insert(const_iterator __pos, size_typ
 // replace
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __n1, const_pointer __s, size_type __n2)
 {
     assert(__s != 0);
     size_type __sz = size();
     if (__pos > __sz)
         this->__throw_out_of_range();
-    __n1 = _VSTD::min(__n1, __sz - __pos);
+    __n1 = util::min(__n1, __sz - __pos);
     size_type __cap = capacity();
     if (__cap - __sz + __n1 >= __n2)
     {
@@ -1605,13 +1611,13 @@ __finish:
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __n1, size_type __n2, value_type __c)
 {
     size_type __sz = size();
     if (__pos > __sz)
         this->__throw_out_of_range();
-    __n1 = _VSTD::min(__n1, __sz - __pos);
+    __n1 = util::min(__n1, __sz - __pos);
     size_type __cap = capacity();
     pointer __p;
     if (__cap - __sz + __n1 >= __n2)
@@ -1639,7 +1645,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __
 
 template <class _CharT, class _Traits, class _Allocator>
 template<class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_input_iterator<_InputIterator>::value,
     basic_string<_CharT, _Traits, _Allocator>&
@@ -1666,7 +1672,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_it
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos1, size_type __n1, const basic_string& __str)
 {
@@ -1674,18 +1680,18 @@ basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos1, size_type _
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos1, size_type __n1, const basic_string& __str,
                                                    size_type __pos2, size_type __n2)
 {
     size_type __str_sz = __str.size();
     if (__pos2 > __str_sz)
         this->__throw_out_of_range();
-    return replace(__pos1, __n1, __str.data() + __pos2, _VSTD::min(__n2, __str_sz - __pos2));
+    return replace(__pos1, __n1, __str.data() + __pos2, util::min(__n2, __str_sz - __pos2));
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __n1, const_pointer __s)
 {
     assert(__s != 0);
@@ -1693,7 +1699,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_iterator __i2, const basic_string& __str)
 {
@@ -1702,7 +1708,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_it
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_iterator __i2, const_pointer __s, size_type __n)
 {
@@ -1710,7 +1716,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_it
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_iterator __i2, const_pointer __s)
 {
@@ -1718,7 +1724,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_it
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_iterator __i2, size_type __n, value_type __c)
 {
@@ -1728,7 +1734,7 @@ basic_string<_CharT, _Traits, _Allocator>::replace(const_iterator __i1, const_it
 // erase
 
 template <class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>&
+__device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::erase(size_type __pos, size_type __n)
 {
     size_type __sz = size();
@@ -1737,7 +1743,7 @@ basic_string<_CharT, _Traits, _Allocator>::erase(size_type __pos, size_type __n)
     if (__n)
     {
         pointer __p = __get_pointer();
-        __n = _VSTD::min(__n, __sz - __pos);
+        __n = util::min(__n, __sz - __pos);
         size_type __n_move = __sz - __pos - __n;
         if (__n_move != 0)
             traits_type::move(__p + __pos, __p + __pos + __n, __n_move);
@@ -1750,7 +1756,7 @@ basic_string<_CharT, _Traits, _Allocator>::erase(size_type __pos, size_type __n)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::iterator
 basic_string<_CharT, _Traits, _Allocator>::erase(const_iterator __pos)
 {
@@ -1761,7 +1767,7 @@ basic_string<_CharT, _Traits, _Allocator>::erase(const_iterator __pos)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::iterator
 basic_string<_CharT, _Traits, _Allocator>::erase(const_iterator __first, const_iterator __last)
 {
@@ -1772,7 +1778,7 @@ basic_string<_CharT, _Traits, _Allocator>::erase(const_iterator __first, const_i
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 void
 basic_string<_CharT, _Traits, _Allocator>::pop_back()
 {
@@ -1794,7 +1800,7 @@ basic_string<_CharT, _Traits, _Allocator>::pop_back()
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 void
 basic_string<_CharT, _Traits, _Allocator>::clear()
 {
@@ -1812,7 +1818,7 @@ basic_string<_CharT, _Traits, _Allocator>::clear()
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 void
 basic_string<_CharT, _Traits, _Allocator>::__erase_to_end(size_type __pos)
 {
@@ -1830,7 +1836,7 @@ basic_string<_CharT, _Traits, _Allocator>::__erase_to_end(size_type __pos)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::resize(size_type __n, value_type __c)
 {
     size_type __sz = size();
@@ -1841,7 +1847,7 @@ basic_string<_CharT, _Traits, _Allocator>::resize(size_type __n, value_type __c)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::max_size() const
 {
@@ -1850,14 +1856,14 @@ basic_string<_CharT, _Traits, _Allocator>::max_size() const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-void
+__device__ void
 basic_string<_CharT, _Traits, _Allocator>::reserve(size_type __res_arg)
 {
     if (__res_arg > max_size())
         this->__throw_length_error();
     size_type __cap = capacity();
     size_type __sz = size();
-    __res_arg = _VSTD::max(__res_arg, __sz);
+    __res_arg = util::max(__res_arg, __sz);
     __res_arg = __recommend(__res_arg);
     if (__res_arg != __cap)
     {
@@ -1901,7 +1907,7 @@ basic_string<_CharT, _Traits, _Allocator>::reserve(size_type __res_arg)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::operator[](size_type __pos) const
 {
@@ -1910,7 +1916,7 @@ basic_string<_CharT, _Traits, _Allocator>::operator[](size_type __pos) const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::operator[](size_type __pos)
 {
@@ -1919,7 +1925,7 @@ basic_string<_CharT, _Traits, _Allocator>::operator[](size_type __pos)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::const_reference
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::at(size_type __n) const
 {
     if (__n >= size())
@@ -1928,7 +1934,7 @@ basic_string<_CharT, _Traits, _Allocator>::at(size_type __n) const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::reference
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::at(size_type __n)
 {
     if (__n >= size())
@@ -1937,7 +1943,7 @@ basic_string<_CharT, _Traits, _Allocator>::at(size_type __n)
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::front()
 {
@@ -1946,7 +1952,7 @@ basic_string<_CharT, _Traits, _Allocator>::front()
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::front() const
 {
@@ -1955,7 +1961,7 @@ basic_string<_CharT, _Traits, _Allocator>::front() const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::back()
 {
@@ -1964,7 +1970,7 @@ basic_string<_CharT, _Traits, _Allocator>::back()
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::back() const
 {
@@ -1973,19 +1979,19 @@ basic_string<_CharT, _Traits, _Allocator>::back() const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::copy(pointer __s, size_type __n, size_type __pos) const
 {
     size_type __sz = size();
     if (__pos > __sz)
         this->__throw_out_of_range();
-    size_type __rlen = _VSTD::min(__n, __sz - __pos);
+    size_type __rlen = util::min(__n, __sz - __pos);
     traits_type::copy(__s, data() + __pos, __rlen);
     return __rlen;
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 basic_string<_CharT, _Traits, _Allocator>
 basic_string<_CharT, _Traits, _Allocator>::substr(size_type __pos, size_type __n) const
 {
@@ -1993,29 +1999,27 @@ basic_string<_CharT, _Traits, _Allocator>::substr(size_type __pos, size_type __n
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 void
 basic_string<_CharT, _Traits, _Allocator>::swap(basic_string& __str)
-       _(!__alloc_traits::propagate_on_container_swap::value ||
-                   __is_nothrow_swappable<allocator_type>::value)
 {
-    _VSTD::swap(__r_.first(), __str.__r_.first());
+    util::swap(__r_.first, __str.__r_.first);
     __swap_alloc(__alloc(), __str.__alloc());
 }
 
 // find
 
 template <class _Traits>
-struct _LIBCPP_HIDDEN __traits_eq
+struct __traits_eq
 {
     typedef typename _Traits::char_type char_type;
    
-    bool operator()(const char_type& __x, const char_type& __y)
+    __device__ bool operator()(const char_type& __x, const char_type& __y)
         {return _Traits::eq(__x, __y);}
 };
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
                                                 size_type __pos,
                                                 size_type __n) const
@@ -2027,7 +2031,7 @@ basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
     if (__n == 0)
         return __pos;
     const_pointer __p = data();
-    const_pointer __r = _VSTD::search(__p + __pos, __p + __sz, __s, __s + __n,
+    const_pointer __r = util::search(__p + __pos, __p + __sz, __s, __s + __n,
                                      __traits_eq<traits_type>());
     if (__r == __p + __sz)
         return npos;
@@ -2035,7 +2039,7 @@ basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find(const basic_string& __str,
                                                 size_type __pos) const
@@ -2044,7 +2048,7 @@ basic_string<_CharT, _Traits, _Allocator>::find(const basic_string& __str,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
                                                 size_type __pos) const
@@ -2054,7 +2058,7 @@ basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find(value_type __c,
                                                 size_type __pos) const
 {
@@ -2071,20 +2075,20 @@ basic_string<_CharT, _Traits, _Allocator>::find(value_type __c,
 // rfind
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::rfind(const_pointer __s,
                                                  size_type __pos,
                                                  size_type __n) const
 {
     assert(__s != 0);
     size_type __sz = size();
-    __pos = _VSTD::min(__pos, __sz);
+    __pos = util::min(__pos, __sz);
     if (__n < __sz - __pos)
         __pos += __n;
     else
         __pos = __sz;
     const_pointer __p = data();
-    const_pointer __r = _VSTD::find_end(__p, __p + __pos, __s, __s + __n,
+    const_pointer __r = util::find_end(__p, __p + __pos, __s, __s + __n,
                                        __traits_eq<traits_type>());
     if (__n > 0 && __r == __p + __pos)
         return npos;
@@ -2092,7 +2096,7 @@ basic_string<_CharT, _Traits, _Allocator>::rfind(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::rfind(const basic_string& __str,
                                                  size_type __pos) const
@@ -2101,7 +2105,7 @@ basic_string<_CharT, _Traits, _Allocator>::rfind(const basic_string& __str,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::rfind(const_pointer __s,
                                                  size_type __pos) const
@@ -2111,7 +2115,7 @@ basic_string<_CharT, _Traits, _Allocator>::rfind(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::rfind(value_type __c,
                                                  size_type __pos) const
 {
@@ -2135,7 +2139,7 @@ basic_string<_CharT, _Traits, _Allocator>::rfind(value_type __c,
 // find_first_of
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
                                                          size_type __pos,
                                                          size_type __n) const
@@ -2145,7 +2149,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
     if (__pos >= __sz || __n == 0)
         return npos;
     const_pointer __p = data();
-    const_pointer __r = _VSTD::find_first_of(__p + __pos, __p + __sz, __s,
+    const_pointer __r = util::find_first_of(__p + __pos, __p + __sz, __s,
                                             __s + __n, __traits_eq<traits_type>());
     if (__r == __p + __sz)
         return npos;
@@ -2153,7 +2157,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_of(const basic_string& __str,
                                                          size_type __pos) const
@@ -2162,7 +2166,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_of(const basic_string& __s
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
                                                          size_type __pos) const
@@ -2172,7 +2176,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_of(value_type __c,
                                                          size_type __pos) const
@@ -2183,7 +2187,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_of(value_type __c,
 // find_last_of
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_of(const_pointer __s,
                                                         size_type __pos,
                                                         size_type __n) const
@@ -2208,7 +2212,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_of(const basic_string& __str,
                                                         size_type __pos) const
@@ -2217,7 +2221,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_of(const basic_string& __st
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_of(const_pointer __s,
                                                         size_type __pos) const
@@ -2227,7 +2231,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_of(value_type __c,
                                                         size_type __pos) const
@@ -2238,7 +2242,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_of(value_type __c,
 // find_first_not_of
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const_pointer __s,
                                                              size_type __pos,
                                                              size_type __n) const
@@ -2257,7 +2261,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const basic_string& __str,
                                                              size_type __pos) const
@@ -2266,7 +2270,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const basic_string&
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const_pointer __s,
                                                              size_type __pos) const
@@ -2276,7 +2280,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(value_type __c,
                                                              size_type __pos) const
@@ -2296,7 +2300,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(value_type __c,
 // find_last_not_of
 
 template<class _CharT, class _Traits, class _Allocator>
-typename basic_string<_CharT, _Traits, _Allocator>::size_type
+__device__ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const_pointer __s,
                                                             size_type __pos,
                                                             size_type __n) const
@@ -2315,7 +2319,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const basic_string& __str,
                                                             size_type __pos) const
@@ -2324,7 +2328,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const basic_string& 
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const_pointer __s,
                                                             size_type __pos) const
@@ -2334,7 +2338,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const_pointer __s,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(value_type __c,
                                                             size_type __pos) const
@@ -2354,14 +2358,14 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(value_type __c,
 // compare
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 int
 basic_string<_CharT, _Traits, _Allocator>::compare(const basic_string& __str) const
 {
     size_t __lhs_sz = size();
     size_t __rhs_sz = __str.size();
     int __result = traits_type::compare(data(), __str.data(),
-                                        _VSTD::min(__lhs_sz, __rhs_sz));
+                                        util::min(__lhs_sz, __rhs_sz));
     if (__result != 0)
         return __result;
     if (__lhs_sz < __rhs_sz)
@@ -2372,7 +2376,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(const basic_string& __str) co
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 int
 basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
                                                    size_type __n1,
@@ -2382,7 +2386,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-int
+__device__ int
 basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
                                                    size_type __n1,
                                                    const basic_string& __str,
@@ -2392,12 +2396,12 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
     size_type __sz = __str.size();
     if (__pos2 > __sz)
         this->__throw_out_of_range();
-    return compare(__pos1, __n1, __str.data() + __pos2, _VSTD::min(__n2,
+    return compare(__pos1, __n1, __str.data() + __pos2, util::min(__n2,
                                                                   __sz - __pos2));
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-int
+__device__ int
 basic_string<_CharT, _Traits, _Allocator>::compare(const_pointer __s) const
 {
     assert(__s != 0);
@@ -2405,7 +2409,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(const_pointer __s) const
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-int
+__device__ int
 basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
                                                    size_type __n1,
                                                    const_pointer __s) const
@@ -2415,7 +2419,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-int
+__device__ int
 basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
                                                    size_type __n1,
                                                    const_pointer __s,
@@ -2425,8 +2429,8 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
     size_type __sz = size();
     if (__pos1 > __sz || __n2 == npos)
         this->__throw_out_of_range();
-    size_type __rlen = _VSTD::min(__n1, __sz - __pos1);
-    int __r = traits_type::compare(data() + __pos1, __s, _VSTD::min(__rlen, __n2));
+    size_type __rlen = util::min(__n1, __sz - __pos1);
+    int __r = traits_type::compare(data() + __pos1, __s, util::min(__rlen, __n2));
     if (__r == 0)
     {
         if (__rlen < __n2)
@@ -2440,7 +2444,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
 // __invariants
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 basic_string<_CharT, _Traits, _Allocator>::__invariants() const
 {
@@ -2458,7 +2462,7 @@ basic_string<_CharT, _Traits, _Allocator>::__invariants() const
 // operator==
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator==(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2469,7 +2473,7 @@ operator==(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator==(const _CharT* __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2478,7 +2482,7 @@ operator==(const _CharT* __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator==(const basic_string<_CharT,_Traits,_Allocator>& __lhs,
            const _CharT* __rhs)
@@ -2489,7 +2493,7 @@ operator==(const basic_string<_CharT,_Traits,_Allocator>& __lhs,
 // operator!=
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator!=(const basic_string<_CharT,_Traits,_Allocator>& __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2498,7 +2502,7 @@ operator!=(const basic_string<_CharT,_Traits,_Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator!=(const _CharT* __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2507,7 +2511,7 @@ operator!=(const _CharT* __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator!=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const _CharT* __rhs)
@@ -2518,7 +2522,7 @@ operator!=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 // operator<
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator< (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2527,7 +2531,7 @@ operator< (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator< (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const _CharT* __rhs)
@@ -2536,7 +2540,7 @@ operator< (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator< (const _CharT* __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2547,7 +2551,7 @@ operator< (const _CharT* __lhs,
 // operator>
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator> (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2556,7 +2560,7 @@ operator> (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator> (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const _CharT* __rhs)
@@ -2565,7 +2569,7 @@ operator> (const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator> (const _CharT* __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2576,7 +2580,7 @@ operator> (const _CharT* __lhs,
 // operator<=
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator<=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2585,7 +2589,7 @@ operator<=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator<=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const _CharT* __rhs)
@@ -2594,7 +2598,7 @@ operator<=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator<=(const _CharT* __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2605,7 +2609,7 @@ operator<=(const _CharT* __lhs,
 // operator>=
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator>=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2614,7 +2618,7 @@ operator>=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator>=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
            const _CharT* __rhs)
@@ -2623,7 +2627,7 @@ operator>=(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 bool
 operator>=(const _CharT* __lhs,
            const basic_string<_CharT, _Traits, _Allocator>& __rhs)
@@ -2634,7 +2638,7 @@ operator>=(const _CharT* __lhs,
 // operator +
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
           const basic_string<_CharT, _Traits, _Allocator>& __rhs)
 {
@@ -2647,7 +2651,7 @@ operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const _CharT* __lhs , const basic_string<_CharT,_Traits,_Allocator>& __rhs)
 {
     basic_string<_CharT, _Traits, _Allocator> __r(__rhs.get_allocator());
@@ -2659,7 +2663,7 @@ operator+(const _CharT* __lhs , const basic_string<_CharT,_Traits,_Allocator>& _
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(_CharT __lhs, const basic_string<_CharT,_Traits,_Allocator>& __rhs)
 {
     basic_string<_CharT, _Traits, _Allocator> __r(__rhs.get_allocator());
@@ -2670,7 +2674,7 @@ operator+(_CharT __lhs, const basic_string<_CharT,_Traits,_Allocator>& __rhs)
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs, const _CharT* __rhs)
 {
     basic_string<_CharT, _Traits, _Allocator> __r(__lhs.get_allocator());
@@ -2682,7 +2686,7 @@ operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs, const _CharT* 
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+__device__ basic_string<_CharT, _Traits, _Allocator>
 operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs, _CharT __rhs)
 {
     basic_string<_CharT, _Traits, _Allocator> __r(__lhs.get_allocator());
@@ -2695,15 +2699,15 @@ operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs, _CharT __rhs)
 // swap
 
 template<class _CharT, class _Traits, class _Allocator>
-inline
+__device__ inline
 void
 swap(basic_string<_CharT, _Traits, _Allocator>& __lhs,
      basic_string<_CharT, _Traits, _Allocator>& __rhs)
-    _(_NOEXCEPT_(__lhs.swap(__rhs)))
 {
     __lhs.swap(__rhs);
 }
 
+typedef basic_string<char>    string;
 
 }
 

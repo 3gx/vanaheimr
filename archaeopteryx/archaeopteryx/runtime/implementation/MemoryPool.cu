@@ -10,7 +10,7 @@
 namespace archaeopteryx
 {
 
-namespace runtime
+namespace rt
 {
 
 __device__ bool MemoryPool::allocate(uint64_t size, Address address)

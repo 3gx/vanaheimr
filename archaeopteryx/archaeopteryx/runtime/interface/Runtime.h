@@ -56,7 +56,7 @@ public:
 public:
 	__device__ static void launchSimulation();
 
-private:
+public:
 	__device__ static size_t findFunctionsPC(const char* functionName);
 	__device__ static ir::Binary* getSelectedBinary();
 

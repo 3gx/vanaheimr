@@ -53,7 +53,7 @@ __root, have a non-null __parent_ field.
 // Returns:  true if __x is a left child of its parent, else false
 // Precondition:  __x != 0.
 template <class _NodePtr>
-inline bool
+__device__ inline bool
 __tree_is_left_child(_NodePtr __x)
 {
     return __x == __x->__parent_->__left_;
@@ -63,7 +63,7 @@ __tree_is_left_child(_NodePtr __x)
 //    __x is a proper subtree, returns the black height (null counts as 1).  If
 //    __x is an improper subtree, returns 0.
 template <class _NodePtr>
-unsigned
+__device__ unsigned
 __tree_sub_invariant(_NodePtr __x)
 {
     if (__x == 0)
@@ -98,7 +98,7 @@ __tree_sub_invariant(_NodePtr __x)
 //    __root == 0 is a proper tree.  Returns true is __root is a proper
 //    red black tree, else returns false.
 template <class _NodePtr>
-bool
+__device__ bool
 __tree_invariant(_NodePtr __root)
 {
     if (__root == 0)
@@ -118,7 +118,7 @@ __tree_invariant(_NodePtr __root)
 // Returns:  pointer to the left-most node under __x.
 // Precondition:  __x != 0.
 template <class _NodePtr>
-inline _NodePtr
+__device__ inline _NodePtr
 __tree_min(_NodePtr __x)
 {
     while (__x->__left_ != 0)
@@ -129,7 +129,7 @@ __tree_min(_NodePtr __x)
 // Returns:  pointer to the right-most node under __x.
 // Precondition:  __x != 0.
 template <class _NodePtr>
-inline _NodePtr
+__device__ inline _NodePtr
 __tree_max(_NodePtr __x)
 {
     while (__x->__right_ != 0)
@@ -140,7 +140,7 @@ __tree_max(_NodePtr __x)
 // Returns:  pointer to the next in-order node after __x.
 // Precondition:  __x != 0.
 template <class _NodePtr>
-_NodePtr
+__device__ _NodePtr
 __tree_next(_NodePtr __x)
 {
     if (__x->__right_ != 0)
@@ -153,7 +153,7 @@ __tree_next(_NodePtr __x)
 // Returns:  pointer to the previous in-order node before __x.
 // Precondition:  __x != 0.
 template <class _NodePtr>
-_NodePtr
+__device__ _NodePtr
 __tree_prev(_NodePtr __x)
 {
     if (__x->__left_ != 0)
@@ -166,7 +166,7 @@ __tree_prev(_NodePtr __x)
 // Returns:  pointer to a node which has no children
 // Precondition:  __x != 0.
 template <class _NodePtr>
-_NodePtr
+__device__ _NodePtr
 __tree_leaf(_NodePtr __x)
 {
     while (true)
@@ -190,7 +190,7 @@ __tree_leaf(_NodePtr __x)
 //           while preserving in-order order.
 // Precondition:  __x->__right_ != 0
 template <class _NodePtr>
-void
+__device__ void
 __tree_left_rotate(_NodePtr __x)
 {
     _NodePtr __y = __x->__right_;
@@ -210,7 +210,7 @@ __tree_left_rotate(_NodePtr __x)
 //           while preserving in-order order.
 // Precondition:  __x->__left_ != 0
 template <class _NodePtr>
-void
+__device__ void
 __tree_right_rotate(_NodePtr __x)
 {
     _NodePtr __y = __x->__left_;
@@ -235,7 +235,7 @@ __tree_right_rotate(_NodePtr __x)
 // Postcondition: __tree_invariant(end_node->__left_) == true.  end_node->__left_
 //                may be different than the value passed in as __root.
 template <class _NodePtr>
-void
+__device__ void
 __tree_balance_after_insert(_NodePtr __root, _NodePtr __x)
 {
     __x->__is_black_ = __x == __root;
@@ -305,7 +305,7 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x)
 //                nor any of its children refer to __z.  end_node->__left_
 //                may be different than the value passed in as __root.
 template <class _NodePtr>
-void
+__device__ void
 __tree_remove(_NodePtr __root, _NodePtr __z)
 {
     // __z will be removed from the tree.  Client still needs to destruct/deallocate it
@@ -505,20 +505,20 @@ private:
 
     allocator_type& __na_;
 
-    __tree_node_destructor& operator=(const __tree_node_destructor&);
+    __device__ __tree_node_destructor& operator=(const __tree_node_destructor&);
 
 public:
     bool __value_constructed;
 
-        explicit __tree_node_destructor(allocator_type& __na)
+    __device__ explicit __tree_node_destructor(allocator_type& __na)
         : __na_(__na),
           __value_constructed(false)
         {}
 
-        void operator()(pointer __p)
+    __device__ void operator()(pointer __p)
     {
         if (__value_constructed)
-            __alloc_traits::destroy(__na_, _VSTD::addressof(__p->__value_));
+            __alloc_traits::destroy(__na_, util::addressof(__p->__value_));
         if (__p)
             __alloc_traits::deallocate(__na_, __p, 1);
     }
@@ -535,7 +535,7 @@ public:
     typedef _Pointer pointer;
     pointer __left_;
 
-        __tree_end_node() : __left_() {}
+        __device__ __tree_end_node() : __left_() {}
 };
 
 template <class _VoidPtr>
@@ -546,8 +546,8 @@ class __tree_node_base
                      rebind<__tree_node_base<_VoidPtr> >::other
              >
 {
-    __tree_node_base(const __tree_node_base&);
-    __tree_node_base& operator=(const __tree_node_base&);
+    __device__ __tree_node_base(const __tree_node_base&);
+    __device__ __tree_node_base& operator=(const __tree_node_base&);
 public:
     typedef typename pointer_traits<_VoidPtr>::template
             rebind<__tree_node_base>::other
@@ -561,7 +561,7 @@ public:
     pointer __parent_;
     bool __is_black_;
 
-        __tree_node_base()
+    __device__ __tree_node_base()
         : __right_(), __parent_(), __is_black_(false) {}
 };
 
@@ -575,7 +575,7 @@ public:
 
     value_type __value_;
 
-    explicit __tree_node(const value_type& __v)
+    __device__ explicit __tree_node(const value_type& __v)
         : __value_(__v) {}
 };
 
@@ -601,35 +601,35 @@ public:
     typedef typename pointer_traits<__node_pointer>::template
             rebind<value_type>::other         pointer;
 
-    __tree_iterator() {}
+    __device__ __tree_iterator() {}
 
-    reference operator*() const {return __ptr_->__value_;}
-    pointer operator->() const {return &__ptr_->__value_;}
+    __device__ reference operator*() const {return __ptr_->__value_;}
+    __device__ pointer operator->() const {return &__ptr_->__value_;}
 
-        __tree_iterator& operator++()
+    __device__ __tree_iterator& operator++()
         {__ptr_ = static_cast<__node_pointer>(__tree_next(static_cast<__node_base_pointer>(__ptr_)));
          return *this;}
-        __tree_iterator operator++(int)
+    __device__ __tree_iterator operator++(int)
         {__tree_iterator __t(*this); ++(*this); return __t;}
 
-        __tree_iterator& operator--()
+    __device__ __tree_iterator& operator--()
         {__ptr_ = static_cast<__node_pointer>(__tree_prev(static_cast<__node_base_pointer>(__ptr_)));
          return *this;}
-        __tree_iterator operator--(int)
+    __device__ __tree_iterator operator--(int)
         {__tree_iterator __t(*this); --(*this); return __t;}
 
     friend
-        bool operator==(const __tree_iterator& __x, const __tree_iterator& __y)
+        __device__ bool operator==(const __tree_iterator& __x, const __tree_iterator& __y)
         {return __x.__ptr_ == __y.__ptr_;}
-    friend         bool operator!=(const __tree_iterator& __x, const __tree_iterator& __y)
+    friend         __device__ bool operator!=(const __tree_iterator& __x, const __tree_iterator& __y)
         {return !(__x == __y);}
 
 private:
-        explicit __tree_iterator(__node_pointer __p) : __ptr_(__p) {}
+       __device__ explicit __tree_iterator(__node_pointer __p) : __ptr_(__p) {}
     template <class, class, class> friend class __tree;
     template <class, class, class> friend class __tree_const_iterator;
     template <class> friend class __map_iterator;
-    template <class, class, class, class> friend class map;
+    template <class, class, class> friend class RedBlackTree;
     template <class, class, class, class> friend class multimap;
     template <class, class, class> friend class set;
     template <class, class, class> friend class multiset;
@@ -659,7 +659,7 @@ public:
 
                                        pointer;
 
-    __tree_const_iterator() {}
+    __device__ __tree_const_iterator() {}
 private:
     typedef typename remove_const<__node>::type  __non_const_node;
     typedef typename pointer_traits<__node_pointer>::template
@@ -669,31 +669,31 @@ private:
     typedef __tree_iterator<value_type, __non_const_node_pointer, difference_type>
                                                  __non_const_iterator;
 public:
-        __tree_const_iterator(__non_const_iterator __p)
+   __device__  __tree_const_iterator(__non_const_iterator __p)
         : __ptr_(__p.__ptr_) {}
 
-    reference operator*() const {return __ptr_->__value_;}
-    pointer operator->() const {return &__ptr_->__value_;}
+    __device__ reference operator*() const {return __ptr_->__value_;}
+    __device__ pointer operator->() const {return &__ptr_->__value_;}
 
-        __tree_const_iterator& operator++()
+    __device__ __tree_const_iterator& operator++()
         {__ptr_ = static_cast<__node_pointer>(__tree_next(static_cast<__node_base_pointer>(__ptr_)));
          return *this;}
-        __tree_const_iterator operator++(int)
+    __device__ __tree_const_iterator operator++(int)
         {__tree_const_iterator __t(*this); ++(*this); return __t;}
 
-        __tree_const_iterator& operator--()
+    __device__ __tree_const_iterator& operator--()
         {__ptr_ = static_cast<__node_pointer>(__tree_prev(static_cast<__node_base_pointer>(__ptr_)));
          return *this;}
-        __tree_const_iterator operator--(int)
+    __device__ __tree_const_iterator operator--(int)
         {__tree_const_iterator __t(*this); --(*this); return __t;}
 
-    friend         bool operator==(const __tree_const_iterator& __x, const __tree_const_iterator& __y)
+    friend         __device__ bool operator==(const __tree_const_iterator& __x, const __tree_const_iterator& __y)
         {return __x.__ptr_ == __y.__ptr_;}
-    friend         bool operator!=(const __tree_const_iterator& __x, const __tree_const_iterator& __y)
+    friend         __device__ bool operator!=(const __tree_const_iterator& __x, const __tree_const_iterator& __y)
         {return !(__x == __y);}
 
 private:
-        explicit __tree_const_iterator(__node_pointer __p)
+        __device__ explicit __tree_const_iterator(__node_pointer __p)
         : __ptr_(__p) {}
     template <class, class, class> friend class __tree;
     template <class, class, class, class> friend class map;
@@ -741,211 +741,213 @@ private:
     pair<size_type, value_compare>        __pair3_;
 
 public:
-        __node_pointer __end_node()
+    __device__ __node_pointer __end_node()
     {
         return static_cast<__node_pointer>
                (
-                   pointer_traits<__end_node_ptr>::pointer_to(__pair1_.first())
+                   pointer_traits<__end_node_ptr>::pointer_to(__pair1_.first)
                );
     }
-        __node_const_pointer __end_node() const
+    __device__ __node_const_pointer __end_node() const
     {
         return static_cast<__node_const_pointer>
                (
-                   pointer_traits<__end_node_const_ptr>::pointer_to(__pair1_.first())
+                   pointer_traits<__end_node_const_ptr>::pointer_to(__pair1_.first)
                );
     }
-              __node_allocator& __node_alloc() {return __pair1_.second();}
+
+	__device__ __node_allocator& __node_alloc() {return __pair1_.second;}
+
 private:
-        const __node_allocator& __node_alloc() const
+        __device__ const __node_allocator& __node_alloc() const
         {return __pair1_.second();}
-              __node_pointer& __begin_node() {return __begin_node_;}
-        const __node_pointer& __begin_node() const {return __begin_node_;}
+              __device__ __node_pointer& __begin_node() {return __begin_node_;}
+        __device__ const __node_pointer& __begin_node() const {return __begin_node_;}
 public:
-        allocator_type __alloc() const
-        {return allocator_type(__node_alloc());}
+        __device__ allocator_type __alloc() const
+        	{return allocator_type(__node_alloc());}
 private:
-              size_type& size() {return __pair3_.first();}
+              __device__ size_type& size() {return __pair3_.first;}
 public:
-        const size_type& size() const {return __pair3_.first();}
-              value_compare& value_comp() {return __pair3_.second();}
-        const value_compare& value_comp() const
-        {return __pair3_.second();}
+        __device__ const size_type& size() const {return __pair3_.first;}
+		__device__ value_compare& value_comp() {return __pair3_.second;}
+        __device__ const value_compare& value_comp() const
+        	{return __pair3_.second();}
 public:
-        __node_pointer __root()
+		__device__ __node_pointer __root()
         {return static_cast<__node_pointer>      (__end_node()->__left_);}
-        __node_const_pointer __root() const
+		__device__ __node_const_pointer __root() const
         {return static_cast<__node_const_pointer>(__end_node()->__left_);}
 
     typedef __tree_iterator<value_type, __node_pointer, difference_type>             iterator;
     typedef __tree_const_iterator<value_type, __node_const_pointer, difference_type> const_iterator;
 
-    explicit RedBlackTree(const value_compare& __comp);
-    explicit RedBlackTree(const allocator_type& __a);
-    RedBlackTree(const value_compare& __comp, const allocator_type& __a);
-    RedBlackTree(const RedBlackTree& __t);
-    RedBlackTree& operator=(const RedBlackTree& __t);
+    __device__ explicit RedBlackTree(const value_compare& __comp);
+    __device__ explicit RedBlackTree(const allocator_type& __a);
+    __device__ RedBlackTree(const value_compare& __comp, const allocator_type& __a);
+    __device__ RedBlackTree(const RedBlackTree& __t);
+    __device__ RedBlackTree& operator=(const RedBlackTree& __t);
     template <class _InputIterator>
-        void __assign_unique(_InputIterator __first, _InputIterator __last);
+        __device__ void __assign_unique(_InputIterator __first, _InputIterator __last);
     template <class _InputIterator>
-        void __assign_multi(_InputIterator __first, _InputIterator __last);
+        __device__ void __assign_multi(_InputIterator __first, _InputIterator __last);
 
-    ~RedBlackTree();
+    __device__ ~RedBlackTree();
 
-              iterator begin()  {return       iterator(__begin_node());}
-        const_iterator begin() const {return const_iterator(__begin_node());}
-              iterator end() {return       iterator(__end_node());}
-        const_iterator end() const {return const_iterator(__end_node());}
+	__device__ iterator begin()  {return       iterator(__begin_node());}
+	__device__ const_iterator begin() const {return const_iterator(__begin_node());}
+	__device__ iterator end() {return       iterator(__end_node());}
+	__device__ const_iterator end() const {return const_iterator(__end_node());}
 
-        size_type max_size() const
+	__device__ size_type max_size() const
         {return __node_traits::max_size(__node_alloc());}
 
-    void clear();
+    __device__ void clear();
 
-    void swap(RedBlackTree& __t);
+    __device__ void swap(RedBlackTree& __t);
 
-    pair<iterator, bool> __insert_unique(const value_type& __v);
-    iterator __insert_unique(const_iterator __p, const value_type& __v);
-    iterator __insert_multi(const value_type& __v);
-    iterator __insert_multi(const_iterator __p, const value_type& __v);
+    __device__ pair<iterator, bool> __insert_unique(const value_type& __v);
+    __device__ iterator __insert_unique(const_iterator __p, const value_type& __v);
+    __device__ iterator __insert_multi(const value_type& __v);
+    __device__ iterator __insert_multi(const_iterator __p, const value_type& __v);
 
-    pair<iterator, bool> __node_insert_unique(__node_pointer __nd);
-    iterator             __node_insert_unique(const_iterator __p,
+    __device__ pair<iterator, bool> __node_insert_unique(__node_pointer __nd);
+    __device__ iterator             __node_insert_unique(const_iterator __p,
                                               __node_pointer __nd);
 
-    iterator __node_insert_multi(__node_pointer __nd);
-    iterator __node_insert_multi(const_iterator __p, __node_pointer __nd);
+    __device__ iterator __node_insert_multi(__node_pointer __nd);
+    __device__ iterator __node_insert_multi(const_iterator __p, __node_pointer __nd);
 
-    iterator erase(const_iterator __p);
-    iterator erase(const_iterator __f, const_iterator __l);
+    __device__ iterator erase(const_iterator __p);
+    __device__ iterator erase(const_iterator __f, const_iterator __l);
     template <class _Key>
-        size_type __erase_unique(const _Key& __k);
+        __device__ size_type __erase_unique(const _Key& __k);
     template <class _Key>
-        size_type __erase_multi(const _Key& __k);
+        __device__ size_type __erase_multi(const _Key& __k);
 
-    void __insert_node_at(__node_base_pointer __parent,
+    __device__ void __insert_node_at(__node_base_pointer __parent,
                           __node_base_pointer& __child,
                           __node_base_pointer __new_node);
 
     template <class _Key>
-        iterator find(const _Key& __v);
+        __device__ iterator find(const _Key& __v);
     template <class _Key>
-        const_iterator find(const _Key& __v) const;
+        __device__ const_iterator find(const _Key& __v) const;
 
     template <class _Key>
-        size_type __count_unique(const _Key& __k) const;
+        __device__ size_type __count_unique(const _Key& __k) const;
     template <class _Key>
-        size_type __count_multi(const _Key& __k) const;
+        __device__ size_type __count_multi(const _Key& __k) const;
 
     template <class _Key>
-                iterator lower_bound(const _Key& __v)
+    	__device__ iterator lower_bound(const _Key& __v)
             {return __lower_bound(__v, __root(), __end_node());}
     template <class _Key>
-        iterator __lower_bound(const _Key& __v,
+    	__device__ iterator __lower_bound(const _Key& __v,
                                __node_pointer __root,
                                __node_pointer __result);
     template <class _Key>
-                const_iterator lower_bound(const _Key& __v) const
+   		__device__ const_iterator lower_bound(const _Key& __v) const
             {return __lower_bound(__v, __root(), __end_node());}
     template <class _Key>
-        const_iterator __lower_bound(const _Key& __v,
+    	__device__ const_iterator __lower_bound(const _Key& __v,
                                      __node_const_pointer __root,
                                      __node_const_pointer __result) const;
     template <class _Key>
-                iterator upper_bound(const _Key& __v)
+    	__device__ iterator upper_bound(const _Key& __v)
             {return __upper_bound(__v, __root(), __end_node());}
     template <class _Key>
-        iterator __upper_bound(const _Key& __v,
+    	__device__ iterator __upper_bound(const _Key& __v,
                                __node_pointer __root,
                                __node_pointer __result);
     template <class _Key>
-                const_iterator upper_bound(const _Key& __v) const
+    	__device__ const_iterator upper_bound(const _Key& __v) const
             {return __upper_bound(__v, __root(), __end_node());}
     template <class _Key>
-        const_iterator __upper_bound(const _Key& __v,
+    	__device__ const_iterator __upper_bound(const _Key& __v,
                                      __node_const_pointer __root,
                                      __node_const_pointer __result) const;
     template <class _Key>
-        pair<iterator, iterator>
+    	__device__ pair<iterator, iterator>
         __equal_range_unique(const _Key& __k);
     template <class _Key>
-        pair<const_iterator, const_iterator>
+    	__device__ pair<const_iterator, const_iterator>
         __equal_range_unique(const _Key& __k) const;
 
     template <class _Key>
-        pair<iterator, iterator>
+    	__device__ pair<iterator, iterator>
         __equal_range_multi(const _Key& __k);
     template <class _Key>
-        pair<const_iterator, const_iterator>
+    	__device__ pair<const_iterator, const_iterator>
         __equal_range_multi(const _Key& __k) const;
 
     typedef __tree_node_destructor<__node_allocator> _Dp;
     typedef unique_ptr<__node, _Dp> __node_holder;
 
-    __node_holder remove(const_iterator __p);
+    __device__ __node_holder remove(const_iterator __p);
 private:
-    typename __node_base::pointer&
+    __device__ typename __node_base::pointer&
         __find_leaf_low(typename __node_base::pointer& __parent, const value_type& __v);
-    typename __node_base::pointer&
+    __device__ typename __node_base::pointer&
         __find_leaf_high(typename __node_base::pointer& __parent, const value_type& __v);
-    typename __node_base::pointer&
+    __device__ typename __node_base::pointer&
         __find_leaf(const_iterator __hint,
                     typename __node_base::pointer& __parent, const value_type& __v);
     template <class _Key>
-        typename __node_base::pointer&
+        __device__ typename __node_base::pointer&
         __find_equal(typename __node_base::pointer& __parent, const _Key& __v);
     template <class _Key>
-        typename __node_base::pointer&
+        __device__ typename __node_base::pointer&
         __find_equal(const_iterator __hint, typename __node_base::pointer& __parent,
                      const _Key& __v);
 
-    __node_holder __construct_node(const value_type& __v);
+    __device__ __node_holder __construct_node(const value_type& __v);
 
-    void destroy(__node_pointer __nd);
+    __device__ void destroy(__node_pointer __nd);
 
-        void __copy_assign_alloc(const RedBlackTree& __t)
+    __device__ void __copy_assign_alloc(const RedBlackTree& __t)
         {__copy_assign_alloc(__t, integral_constant<bool,
              __node_traits::propagate_on_container_copy_assignment::value>());}
 
-        void __copy_assign_alloc(const RedBlackTree& __t, true_type)
+    __device__ void __copy_assign_alloc(const RedBlackTree& __t, true_type)
         {__node_alloc() = __t.__node_alloc();}
         void __copy_assign_alloc(const RedBlackTree& __t, false_type) {}
 
-    void __move_assign(RedBlackTree& __t, false_type);
-    void __move_assign(RedBlackTree& __t, true_type);
+    __device__ void __move_assign(RedBlackTree& __t, false_type);
+    __device__ void __move_assign(RedBlackTree& __t, true_type);
 
-    void __move_assign_alloc(RedBlackTree& __t)
+    __device__ void __move_assign_alloc(RedBlackTree& __t)
     {__move_assign_alloc(__t, integral_constant<bool,
          __node_traits::propagate_on_container_move_assignment::value>());}
 
-    void __move_assign_alloc(RedBlackTree& __t, true_type)
-    {__node_alloc() = _VSTD::move(__t.__node_alloc());}
-    void __move_assign_alloc(RedBlackTree& __t, false_type) {}
+    __device__ void __move_assign_alloc(RedBlackTree& __t, true_type)
+    {__node_alloc() = util::move(__t.__node_alloc());}
+    __device__ void __move_assign_alloc(RedBlackTree& __t, false_type) {}
 
-    static void __swap_alloc(__node_allocator& __x, __node_allocator& __y)
+    __device__ static void __swap_alloc(__node_allocator& __x, __node_allocator& __y)
     {__swap_alloc(__x, __y, integral_constant<bool,
                   __node_traits::propagate_on_container_swap::value>());}
-    static void __swap_alloc(__node_allocator& __x, __node_allocator& __y, true_type)
+    __device__ static void __swap_alloc(__node_allocator& __x, __node_allocator& __y, true_type)
     {
-        using _VSTD::swap;
+        using util::swap;
         swap(__x, __y);
     }
-    static void __swap_alloc(__node_allocator& __x, __node_allocator& __y, false_type)
+    __device__ static void __swap_alloc(__node_allocator& __x, __node_allocator& __y, false_type)
     {}
 
-    __node_pointer __detach();
-    static __node_pointer __detach(__node_pointer);
+    __device__ __node_pointer __detach();
+    __device__ static __node_pointer __detach(__node_pointer);
 };
 
 template <class _Tp, class _Compare, class _Allocator>
-RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const value_compare& __comp)
+__device__ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const value_compare& __comp)
     : __pair3_(0, __comp)
 {
     __begin_node() = __end_node();
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const allocator_type& __a)
+__device__ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const allocator_type& __a)
     : __pair1_(__node_allocator(__a)),
       __begin_node_(__node_pointer()),
       __pair3_(0)
@@ -954,7 +956,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const allocator_type& __a)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const value_compare& __comp,
+__device__ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const value_compare& __comp,
                                            const allocator_type& __a)
     : __pair1_(__node_allocator(__a)),
       __begin_node_(__node_pointer()),
@@ -965,7 +967,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const value_compare& __com
 
 // Precondition:  size() != 0
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_pointer
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_pointer
 RedBlackTree<_Tp, _Compare, _Allocator>::__detach()
 {
     __node_pointer __cache = __begin_node();
@@ -986,7 +988,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__detach()
 //    __cache->right_ == 0
 //    This is no longer a red-black tree
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_pointer
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_pointer
 RedBlackTree<_Tp, _Compare, _Allocator>::__detach(__node_pointer __cache)
 {
     if (__cache->__parent_ == 0)
@@ -1008,7 +1010,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__detach(__node_pointer __cache)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-RedBlackTree<_Tp, _Compare, _Allocator>&
+__device__ RedBlackTree<_Tp, _Compare, _Allocator>&
 RedBlackTree<_Tp, _Compare, _Allocator>::operator=(const RedBlackTree& __t)
 {
     if (this != &__t)
@@ -1022,7 +1024,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::operator=(const RedBlackTree& __t)
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _InputIterator>
-void
+__device__ void
 RedBlackTree<_Tp, _Compare, _Allocator>::__assign_unique(_InputIterator __first, _InputIterator __last)
 {
     if (size() != 0)
@@ -1048,7 +1050,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__assign_unique(_InputIterator __first,
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _InputIterator>
-void
+__device__ void
 RedBlackTree<_Tp, _Compare, _Allocator>::__assign_multi(_InputIterator __first, _InputIterator __last)
 {
     if (size() != 0)
@@ -1073,7 +1075,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__assign_multi(_InputIterator __first, 
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const RedBlackTree& __t)
+__device__ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const RedBlackTree& __t)
     : __begin_node_(__node_pointer()),
       __pair1_(__node_traits::select_on_container_copy_construction(__t.__node_alloc())),
       __pair3_(0, __t.value_comp())
@@ -1082,13 +1084,13 @@ RedBlackTree<_Tp, _Compare, _Allocator>::RedBlackTree(const RedBlackTree& __t)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-RedBlackTree<_Tp, _Compare, _Allocator>::~RedBlackTree()
+__device__ RedBlackTree<_Tp, _Compare, _Allocator>::~RedBlackTree()
 {
     destroy(__root());
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-void
+__device__ void
 RedBlackTree<_Tp, _Compare, _Allocator>::destroy(__node_pointer __nd)
 {
     if (__nd != 0)
@@ -1096,16 +1098,16 @@ RedBlackTree<_Tp, _Compare, _Allocator>::destroy(__node_pointer __nd)
         destroy(static_cast<__node_pointer>(__nd->__left_));
         destroy(static_cast<__node_pointer>(__nd->__right_));
         __node_allocator& __na = __node_alloc();
-        __node_traits::destroy(__na, _VSTD::addressof(__nd->__value_));
+        __node_traits::destroy(__na, util::addressof(__nd->__value_));
         __node_traits::deallocate(__na, __nd, 1);
     }
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-void
+__device__ void
 RedBlackTree<_Tp, _Compare, _Allocator>::swap(RedBlackTree& __t)
 {
-    using _VSTD::swap;
+    using util::swap;
     swap(__begin_node_, __t.__begin_node_);
     swap(__pair1_.first(), __t.__pair1_.first());
     __swap_alloc(__node_alloc(), __t.__node_alloc());
@@ -1121,7 +1123,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::swap(RedBlackTree& __t)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-void
+__device__ void
 RedBlackTree<_Tp, _Compare, _Allocator>::clear()
 {
     destroy(__root());
@@ -1134,7 +1136,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::clear()
 // Set __parent to parent of null leaf
 // Return reference to null leaf
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
 RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_low(typename __node_base::pointer& __parent,
                                                    const value_type& __v)
 {
@@ -1173,7 +1175,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_low(typename __node_base::p
 // Set __parent to parent of null leaf
 // Return reference to null leaf
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
 RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_high(typename __node_base::pointer& __parent,
                                                     const value_type& __v)
 {
@@ -1215,7 +1217,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf_high(typename __node_base::
 // Set __parent to parent of null leaf
 // Return reference to null leaf
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
 RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf(const_iterator __hint,
                                                typename __node_base::pointer& __parent,
                                                const value_type& __v)
@@ -1251,7 +1253,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_leaf(const_iterator __hint,
 // If __v exists, set parent to node of __v and return reference to node of __v
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
 RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(typename __node_base::pointer& __parent,
                                                 const _Key& __v)
 {
@@ -1300,7 +1302,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(typename __node_base::poin
 // If __v exists, set parent to node of __v and return reference to node of __v
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_base::pointer&
 RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
                                                 typename __node_base::pointer& __parent,
                                                 const _Key& __v)
@@ -1329,10 +1331,10 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
     else if (value_comp()(*__hint, __v))  // check after
     {
         // *__hint < __v
-        const_iterator __next = _VSTD::next(__hint);
+        const_iterator __next = util::next(__hint);
         if (__next == end() || value_comp()(__v, *__next))
         {
-            // *__hint < __v < *_VSTD::next(__hint)
+            // *__hint < __v < *util::next(__hint)
             if (__hint.__ptr_->__right_ == 0)
             {
                 __parent = const_cast<__node_pointer&>(__hint.__ptr_);
@@ -1353,7 +1355,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-void
+__device__ void
 RedBlackTree<_Tp, _Compare, _Allocator>::__insert_node_at(__node_base_pointer __parent,
                                                     __node_base_pointer& __child,
                                                     __node_base_pointer __new_node)
@@ -1369,7 +1371,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_node_at(__node_base_pointer __
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator, bool>
+__device__ pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator, bool>
 RedBlackTree<_Tp, _Compare, _Allocator>::__insert_unique(const value_type& __v)
 {
     __node_base_pointer __parent;
@@ -1387,7 +1389,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_unique(const value_type& __v)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__insert_unique(const_iterator __p, const value_type& __v)
 {
     __node_base_pointer __parent;
@@ -1403,7 +1405,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_unique(const_iterator __p, con
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__insert_multi(const value_type& __v)
 {
     __node_base_pointer __parent;
@@ -1414,7 +1416,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_multi(const value_type& __v)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__insert_multi(const_iterator __p, const value_type& __v)
 {
     __node_base_pointer __parent;
@@ -1425,7 +1427,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__insert_multi(const_iterator __p, cons
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator, bool>
+__device__ pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator, bool>
 RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_unique(__node_pointer __nd)
 {
     __node_base_pointer __parent;
@@ -1442,7 +1444,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_unique(__node_pointer __n
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_unique(const_iterator __p,
                                                         __node_pointer __nd)
 {
@@ -1458,7 +1460,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_unique(const_iterator __p
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_multi(__node_pointer __nd)
 {
     __node_base_pointer __parent;
@@ -1468,7 +1470,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_multi(__node_pointer __nd
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_multi(const_iterator __p,
                                                        __node_pointer __nd)
 {
@@ -1479,7 +1481,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__node_insert_multi(const_iterator __p,
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::erase(const_iterator __p)
 {
     __node_pointer __np = const_cast<__node_pointer>(__p.__ptr_);
@@ -1489,7 +1491,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::erase(const_iterator __p)
         __begin_node() = __r.__ptr_;
     --size();
     __node_allocator& __na = __node_alloc();
-    __node_traits::destroy(__na, const_cast<value_type*>(_VSTD::addressof(*__p)));
+    __node_traits::destroy(__na, const_cast<value_type*>(util::addressof(*__p)));
     __tree_remove(__end_node()->__left_,
                   static_cast<__node_base_pointer>(__np));
     __node_traits::deallocate(__na, __np, 1);
@@ -1497,7 +1499,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::erase(const_iterator __p)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::erase(const_iterator __f, const_iterator __l)
 {
     while (__f != __l)
@@ -1507,7 +1509,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::erase(const_iterator __f, const_iterato
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
 RedBlackTree<_Tp, _Compare, _Allocator>::__erase_unique(const _Key& __k)
 {
     iterator __i = find(__k);
@@ -1519,7 +1521,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__erase_unique(const _Key& __k)
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
 RedBlackTree<_Tp, _Compare, _Allocator>::__erase_multi(const _Key& __k)
 {
     pair<iterator, iterator> __p = __equal_range_multi(__k);
@@ -1531,7 +1533,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__erase_multi(const _Key& __k)
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::find(const _Key& __v)
 {
     iterator __p = __lower_bound(__v, __root(), __end_node());
@@ -1542,7 +1544,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::find(const _Key& __v)
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::find(const _Key& __v) const
 {
     const_iterator __p = __lower_bound(__v, __root(), __end_node());
@@ -1553,7 +1555,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::find(const _Key& __v) const
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
 RedBlackTree<_Tp, _Compare, _Allocator>::__count_unique(const _Key& __k) const
 {
     __node_const_pointer __result = __end_node();
@@ -1575,7 +1577,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__count_unique(const _Key& __k) const
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::size_type
 RedBlackTree<_Tp, _Compare, _Allocator>::__count_multi(const _Key& __k) const
 {
     typedef pair<const_iterator, const_iterator> _Pp;
@@ -1591,7 +1593,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__count_multi(const _Key& __k) const
         else if (value_comp()(__rt->__value_, __k))
             __rt = static_cast<__node_const_pointer>(__rt->__right_);
         else
-            return _VSTD::distance(
+            return util::distance(
                 __lower_bound(__k, static_cast<__node_const_pointer>(__rt->__left_), __rt),
                 __upper_bound(__k, static_cast<__node_const_pointer>(__rt->__right_), __result)
             );
@@ -1601,7 +1603,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__count_multi(const _Key& __k) const
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__lower_bound(const _Key& __v,
                                                  __node_pointer __root,
                                                  __node_pointer __result)
@@ -1621,7 +1623,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__lower_bound(const _Key& __v,
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__lower_bound(const _Key& __v,
                                                  __node_const_pointer __root,
                                                  __node_const_pointer __result) const
@@ -1641,7 +1643,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__lower_bound(const _Key& __v,
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__upper_bound(const _Key& __v,
                                                  __node_pointer __root,
                                                  __node_pointer __result)
@@ -1661,7 +1663,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__upper_bound(const _Key& __v,
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator
 RedBlackTree<_Tp, _Compare, _Allocator>::__upper_bound(const _Key& __v,
                                                  __node_const_pointer __root,
                                                  __node_const_pointer __result) const
@@ -1681,7 +1683,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__upper_bound(const _Key& __v,
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator,
+__device__ pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator,
      typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator>
 RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k)
 {
@@ -1709,7 +1711,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k)
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator,
+__device__ pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator,
      typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator>
 RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k) const
 {
@@ -1737,7 +1739,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_unique(const _Key& __k) c
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator,
+__device__ pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator,
      typename RedBlackTree<_Tp, _Compare, _Allocator>::iterator>
 RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k)
 {
@@ -1762,7 +1764,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k)
 
 template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
-pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator,
+__device__ pair<typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator,
      typename RedBlackTree<_Tp, _Compare, _Allocator>::const_iterator>
 RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k) const
 {
@@ -1786,7 +1788,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k) co
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_holder
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_holder
 RedBlackTree<_Tp, _Compare, _Allocator>::remove(const_iterator __p)
 {
     __node_pointer __np = const_cast<__node_pointer>(__p.__ptr_);
@@ -1804,7 +1806,7 @@ RedBlackTree<_Tp, _Compare, _Allocator>::remove(const_iterator __p)
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-inline void
+__device__ inline void
 swap(RedBlackTree<_Tp, _Compare, _Allocator>& __x,
      RedBlackTree<_Tp, _Compare, _Allocator>& __y)
 {

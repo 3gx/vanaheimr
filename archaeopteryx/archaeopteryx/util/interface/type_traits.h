@@ -277,10 +277,65 @@ template <class _Tp> struct __libcpp_abstract<_Tp, false> : public false_type {}
 
 template <class _Tp> struct is_abstract : public __libcpp_abstract<_Tp> {};
 
+// move
+template <class _Tp>
+__device__ inline _Tp&
+move(_Tp& __t)
+{
+    return __t;
+}
+
+template <class _Tp>
+__device__ inline const _Tp&
+move(const _Tp& __t)
+{
+    return __t;
+}
+
+// swap
+
+template <class _Tp>
+__device__ void
+swap(_Tp& __x, _Tp& __y)
+{
+    _Tp __t(util::move(__x));
+    __x = util::move(__y);
+    __y = util::move(__t);
+}
+
+template <class _ForwardIterator1, class _ForwardIterator2>
+__device__ inline void
+iter_swap(_ForwardIterator1 __a, _ForwardIterator2 __b)
+{
+    swap(*__a, *__b);
+}
+
 // is_base_of
 template <class _Bp, class _Dp>
 struct is_base_of
     : public integral_constant<bool, __is_base_of(_Bp, _Dp)> {};
+
+
+// is_empty
+
+template <class _Tp>
+struct __is_empty1
+    : public _Tp
+{
+    double __lx;
+};
+
+struct __is_empty2
+{
+    double __lx;
+};
+
+template <class _Tp, bool = is_class<_Tp>::value>
+struct __libcpp_empty : public integral_constant<bool, sizeof(__is_empty1<_Tp>) == sizeof(__is_empty2)> {};
+
+template <class _Tp> struct __libcpp_empty<_Tp, false> : public false_type {};
+
+template <class _Tp> struct is_empty : public __libcpp_empty<_Tp> {};
 
 
 // is_convertible

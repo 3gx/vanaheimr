@@ -83,6 +83,8 @@ public:
 	typedef PageDataType** page_iterator;
 
 public:
+	/*! \brief Construct a binary from a file name */
+	__device__ Binary(const char* filename);
 	/*! \brief Construct a binary from an open file */
 	__device__ Binary(File* file);
 	/*! \brief Destroy the binary, free all memory */
@@ -94,6 +96,10 @@ public:
 	/*! \brief Get a pointer to a particular data page */
 	__device__ PageDataType* getDataPage(page_iterator page);
 
+	
+	/*! \brief Does a named funtion exist? */
+	__device__ bool containsFunction(const char* name);
+	
 	/*! \brief Find a symbol by name */
 	__device__ SymbolTableEntry* findSymbol(const char* name);
 	/*! \brief Find a function by name */
