@@ -7,6 +7,9 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/StlFunctions.h>
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -22,15 +25,7 @@ __host__ __device__ Type max(Type a, Type b)
 	return a > b ? a : b;
 }
 
-__host__ __device__ size_t strlen(const char* str)
-{
-	unsigned int size = 0;
-	
-	while(*str != '\0') { ++size; ++str; }
-	
-	return size;
 }
 
 }
-
 

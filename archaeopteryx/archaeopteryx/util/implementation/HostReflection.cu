@@ -7,6 +7,7 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/HostReflection.h>
 #include <archaeopteryx/util/interface/ThreadId.h>
+#include <archaeopteryx/util/interface/cstring.h>
 #include <archaeopteryx/util/interface/StlFunctions.h>
 #include <archaeopteryx/util/interface/debug.h>
 
@@ -14,6 +15,8 @@
 #include <cstring>
 #include <cassert>
 #include <fstream>
+
+
 
 // Forward Declarations
 
@@ -28,6 +31,9 @@ namespace ocelot
 #endif
 
 #define REPORT_BASE 0
+
+namespace archaeopteryx
+{
 
 namespace util
 {
@@ -929,6 +935,8 @@ __host__ void HostReflection::BootUp::_runThread(BootUp* booter)
 }
 
 HostReflection::BootUp* HostReflection::_booter = 0;
+
+}
 
 }
 

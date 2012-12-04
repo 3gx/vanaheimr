@@ -10,11 +10,15 @@
 #include <ocelot/cuda/interface/cuda_runtime.h>
 
 // Autogen files
-#include <TestFileAccessesKernel.inc>
+const char TestFileAccessesKernel[] = {
+	#include <.release_build/TestFileAccessesKernel.inc>
+};
+
 
 // Standard Library Includes
 #include <string>
 #include <iostream>
+#include <sstream>
 
 namespace test
 {
@@ -31,7 +35,8 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 	char* hostFilename = 0;
 	char* deviceFilename = 0;
-	cudaHostAlloc((void**)&hostFilename, filename.size() + 1, cudaHostAllocMapped);
+	cudaHostAlloc((void**)&hostFilename, filename.size() + 1,
+		cudaHostAllocMapped);
 	cudaHostGetDevicePointer((void**)&deviceFilename, hostFilename, 0);
 
 	strcpy(hostFilename, filename.c_str());
@@ -61,10 +66,7 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 	std::stringstream stream(TestFileAccessesKernel);
 
 	ocelot::registerPTXModule(stream, "TestPTXModule");
-	ocelot::launch("TestPTXModule", "main");
-
-	kernelTestReadWriteFile<<<1, 1>>>(deviceFilename, deviceResult,
-		deviceData, size);
+	ocelot::launch("TestPTXModule", "deviceMain");
 	
 	bool pass = std::memcmp(hostData, hostResult, size) == 0;
 

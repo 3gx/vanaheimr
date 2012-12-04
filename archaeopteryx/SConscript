@@ -42,14 +42,18 @@ for dir in directories:
 # Create the archaeopteryx library
 libarchaeopteryx = env.PTXLibrary('archaeopteryx', sources)
 
-testFileAccesses = env.PTXFile('TestFileAccess.ptx',
-	['archaeopteryx/util/test/TestFileAccess.cu', libarchaeopteryx])
+testFileAccessesKernel = env.PTXFile('TestFileAccess.ptx',
+	['archaeopteryx/util/test/TestFileAccessKernel.cu'])
+testFileAccessesLib = env.PTXLibrary('libTestFileAccess',
+	[libarchaeopteryx, testFileAccessesKernel])
+testFileAccessesInc = env.PTXInclude('TestFileAccessesKernel.inc',
+	testFileAccessesLib)
 
 # Create the archaeopteryx unit tests
 tests = []
 
-#tests.append(('TestFileAccesses',
-#	'archaeopteryx/util/test/TestFileAccess.cpp', 'basic'))
+tests.append(('TestFileAccesses',
+	'archaeopteryx/util/test/TestFileAccess.cpp', 'basic'))
 #tests.append(('TestRuntime',
 #	'archaeopteryx/runtime/test/TestRuntime.cpp', 'basic'))
 

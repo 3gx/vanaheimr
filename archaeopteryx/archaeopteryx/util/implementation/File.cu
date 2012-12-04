@@ -13,6 +13,9 @@
 // Standard Library Includes
 #include <cstdio>
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -352,6 +355,8 @@ __device__ size_t File::ReadReply::payloadSize() const
 __device__ HostReflection::HandlerId File::ReadReply::handler() const
 {
 	return HostReflection::FileReadReplyHandler;
+}
+
 }
 
 }

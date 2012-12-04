@@ -4,6 +4,11 @@
 	\brief  The source file for global thread id utility functions.
 */
 
+#include <archaeopteryx/util/interface/ThreadId.h>
+
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -24,4 +29,5 @@ __device__ unsigned int threadId()
 
 }
 
+}
 

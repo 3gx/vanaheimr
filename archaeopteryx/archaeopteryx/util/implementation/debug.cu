@@ -10,6 +10,9 @@
 // Standard Library Includes
 #include <cstdio> 
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -21,6 +24,8 @@ __device__ void _assert(bool condition, const char* expression,
 		printf("%s:%i - assertion '%s' failed!\n", filename, line, expression);
 		asm("trap;");
 	}
+}
+
 }
 
 }

@@ -56,6 +56,9 @@
 		device_report(__VA_ARGS__);\
 	}
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -64,4 +67,5 @@ __device__ void _assert(bool condition, const char* expression,
 
 }
 
+}
 
