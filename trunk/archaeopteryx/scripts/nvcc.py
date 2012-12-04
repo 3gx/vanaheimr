@@ -79,8 +79,20 @@ def ptxEmitter(target, source, env):
 		name, extension = os.path.splitext(str(s)) 
 		if extension == '.cu':
 			newSources.append(env.PTXFile(s))
+		else:
+			newSources.append(s)
 	
 	return target, newSources
+
+def convertPTXToIncludeFile(target, source, env):
+	if len(target) != 1:
+		raise RuntimeError("one target needed for ptx->include file builder")
+
+	output = open(target[0].abspath, 'w')
+	
+	for filename in source:
+		for line in open(filename.abspath, 'r'):
+			output.write("\"" + line.strip('\n').replace("\"", "\\\"") + "\"\n")
 
 def generate(env):
   """
@@ -100,6 +112,14 @@ def generate(env):
                                       suffix = '.ptx',
                                       src_suffix = ['.ptx'])
   env['BUILDERS']['PTXLibrary'] = ptx_lib_builder
+  
+  # create a builder that makes PTX include files from .ptx files
+  ptx_inc_builder = SCons.Builder.Builder(action = convertPTXToIncludeFile,
+                                      emitter = ptxEmitter,
+                                      suffix = '.inc',
+                                      src_suffix = ['.ptx'])
+  env['BUILDERS']['PTXInclude'] = ptx_inc_builder
+  
   
   # create builders that make static & shared objects from .cu files
   static_obj, shared_obj = SCons.Tool.createObjBuilders(env)

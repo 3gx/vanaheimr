@@ -9,6 +9,9 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/HostReflection.h>
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -199,6 +202,8 @@ private:
 	size_t _put;
 	size_t _get;
 };
+
+}
 
 }
 

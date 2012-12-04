@@ -17,6 +17,9 @@
 #define KERNEL_PAYLOAD_BYTES        32
 #define KERNEL_PAYLOAD_PARAMETERS    5
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -286,6 +289,8 @@ private:
 	static BootUp* _booter;
 
 };
+
+}
 
 }
 

@@ -6,10 +6,15 @@
 
 #pragma once
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
 __device__ unsigned int threadId();
+
+}
 
 }
 
