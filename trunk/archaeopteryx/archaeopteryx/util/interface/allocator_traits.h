@@ -17,6 +17,30 @@ namespace archaeopteryx
 namespace util
 {
 
+template <class _Tp> class allocator;
+
+template <>
+class allocator<void>
+{
+public:
+    typedef void*             pointer;
+    typedef const void*       const_pointer;
+    typedef void              value_type;
+
+    template <class _Up> struct rebind {typedef allocator<_Up> other;};
+};
+
+template <>
+class allocator<const void>
+{
+public:
+    typedef const void*       pointer;
+    typedef const void*       const_pointer;
+    typedef const void        value_type;
+
+    template <class _Up> struct rebind {typedef allocator<_Up> other;};
+};
+
 struct allocator_arg_t { };
 
 allocator_arg_t allocator_arg = allocator_arg_t();
@@ -199,7 +223,7 @@ struct pointer_traits
 private:
     struct __nat {};
 public:
-    static pointer pointer_to(typename conditional<is_void<element_type>::value,
+    __device__ static pointer pointer_to(typename conditional<is_void<element_type>::value,
                                            __nat, element_type>::type& __r)
         {return pointer::pointer_to(__r);}
 };
@@ -216,162 +240,27 @@ struct pointer_traits<_Tp*>
 private:
     struct __nat {};
 public:
-    static pointer pointer_to(typename conditional<is_void<element_type>::value,
+    __device__ static pointer pointer_to(typename conditional<is_void<element_type>::value,
                                       __nat, element_type>::type& __r)
         {return addressof(__r);}
 };
 
 // allocator traits
 
-template <class Alloc>
-struct allocator_traits
-{
-    typedef Alloc                        allocator_type;
-    typedef typename allocator_type::value_type
-                                         value_type;
-
-    typedef value_type* pointer;
-    
-    typedef const value_type* const_pointer;
-    typedef void*             void_pointer;
-    typedef const void*       const_void_pointer;
-    
-    typedef typename pointer_traits<pointer>::difference_type
-                                         difference_type;
-    typedef typename make_unsigned<difference_type>::type
-                                         size_type;
-    
-    template <class U> struct rebind_alloc {typedef typename Alloc::template rebind<U>::other other;};
-    template <class U> struct rebind_traits {typedef allocator_traits<U> other;};
-
-    static pointer allocate(allocator_type& a, size_type n);
-    static pointer allocate(allocator_type& a, size_type n, const_void_pointer hint);
-
-    static void deallocate(allocator_type& a, pointer p, size_type n);
-
-    template <class T>
-        static void construct(allocator_type& a, T* p);
-
-    template <class T>
-        static void destroy(allocator_type& a, T* p);
-
-    static size_type max_size(const allocator_type& a);
-
-    static allocator_type
-        select_on_container_copy_construction(const allocator_type& a);
-};
-
-template <class _Tp>
-inline _Tp* __to_raw_pointer(_Tp* __p)
-{
-    return __p;
-}
-
-template <class _Pointer>
-inline typename pointer_traits<_Pointer>::element_type*
-__to_raw_pointer(_Pointer __p)
-{
-    return util::__to_raw_pointer(__p.operator->());
-}
-
-template <class T>
-class allocator
-{
-public:
-    typedef size_t                                size_type;
-    typedef ptrdiff_t                             difference_type;
-    typedef T*                                    pointer;
-    typedef const T*                              const_pointer;
-    typedef typename add_lvalue_reference<T>::type       reference;
-    typedef typename add_lvalue_reference<const T>::type const_reference;
-    typedef T                                     value_type;
-
-    template <class U> struct rebind {typedef allocator<U> other;};
-
-    allocator();
-    allocator(const allocator&);
-    template <class U> allocator(const allocator<U>&);
-    ~allocator();
-    pointer address(reference x) const;
-    const_pointer address(const_reference x) const;
-    pointer allocate(size_type, const void* hint = 0);
-    void deallocate(pointer p, size_type n);
-    size_type max_size() const;
-    template<class U>
-        void construct(U* p);
-    template <class U>
-        void destroy(U* p);
-};
-
-template <>
-class allocator<void>
-{
-public:
-    typedef void*                                 pointer;
-    typedef const void*                           const_pointer;
-    typedef void                                  value_type;
-
-    template <class _Up> struct rebind {typedef allocator<_Up> other;};
-};
-
-template <class T, class U>
-bool operator==(const allocator<T>&, const allocator<U>&);
-
-template <class T, class U>
-bool operator!=(const allocator<T>&, const allocator<U>&);
-
-template <class OutputIterator, class T>
-class raw_storage_iterator
-    : public iterator<output_iterator_tag,
-                      T,                               // purposefully not C++03
-                      ptrdiff_t,                       // purposefully not C++03
-                      T*,                              // purposefully not C++03
-                      raw_storage_iterator<OutputIterator, T>&>           // purposefully not C++03
-{
-public:
-    explicit raw_storage_iterator(OutputIterator x);
-    raw_storage_iterator& operator*();
-    raw_storage_iterator& operator=(const T& element);
-    raw_storage_iterator& operator++();
-    raw_storage_iterator  operator++(int);
-};
-
-template <class T> pair<T*,ptrdiff_t> get_temporary_buffer(ptrdiff_t n);
-template <class T> void               return_temporary_buffer(T* p);
-
-template <class T> T* addressof(T& r);
-
-template <class InputIterator, class ForwardIterator>
-ForwardIterator
-uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result);
-
-template <class InputIterator, class Size, class ForwardIterator>
-ForwardIterator
-uninitialized_copy_n(InputIterator first, Size n, ForwardIterator result);
-
-template <class ForwardIterator, class T>
-void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x);
-
-template <class ForwardIterator, class Size, class T>
-ForwardIterator
-uninitialized_fill_n(ForwardIterator first, Size n, const T& x);
-
-// Unique Ptr
-
-namespace __pointer_type_imp
-{
-
 namespace __has_pointer_type_imp
 {
+    template <class _Up> static __two test(...);
     template <class _Up> static char test(typename _Up::pointer* = 0);
 }
 
 template <class _Tp>
 struct __has_pointer_type
-    : public integral_constant<bool,
-      sizeof(__has_pointer_type_imp::test<_Tp>(0)) == 1>
+    : public integral_constant<bool, sizeof(__has_pointer_type_imp::test<_Tp>(0)) == 1>
 {
 };
+
+namespace __pointer_type_imp
+{
 
 template <class _Tp, class _Dp, bool = __has_pointer_type<_Dp>::value>
 struct __pointer_type
@@ -390,18 +279,534 @@ struct __pointer_type<_Tp, _Dp, false>
 template <class _Tp, class _Dp>
 struct __pointer_type
 {
-    typedef typename __pointer_type_imp::__pointer_type<_Tp,
-    	typename remove_reference<_Dp>::type>::type type;
+    typedef typename __pointer_type_imp::__pointer_type<_Tp, typename remove_reference<_Dp>::type>::type type;
+};
+
+template <class _Tp>
+struct __has_const_pointer
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::const_pointer* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Tp, class _Ptr, class _Alloc, bool = __has_const_pointer<_Alloc>::value>
+struct __const_pointer
+{
+    typedef typename _Alloc::const_pointer type;
+};
+
+template <class _Tp, class _Ptr, class _Alloc>
+struct __const_pointer<_Tp, _Ptr, _Alloc, false>
+{
+    typedef typename pointer_traits<_Ptr>::template rebind<const _Tp>::other type;
+};
+
+template <class _Tp>
+struct __has_void_pointer
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::void_pointer* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Ptr, class _Alloc, bool = __has_void_pointer<_Alloc>::value>
+struct __void_pointer
+{
+    typedef typename _Alloc::void_pointer type;
+};
+
+template <class _Ptr, class _Alloc>
+struct __void_pointer<_Ptr, _Alloc, false>
+{
+    typedef typename pointer_traits<_Ptr>::template rebind<void>::other type;
+};
+
+template <class _Tp>
+struct __has_const_void_pointer
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::const_void_pointer* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Ptr, class _Alloc, bool = __has_const_void_pointer<_Alloc>::value>
+struct __const_void_pointer
+{
+    typedef typename _Alloc::const_void_pointer type;
+};
+
+template <class _Ptr, class _Alloc>
+struct __const_void_pointer<_Ptr, _Alloc, false>
+{
+    typedef typename pointer_traits<_Ptr>::template rebind<const void>::other type;
+};
+
+template <class _Tp>
+__device__ inline _Tp*
+__to_raw_pointer(_Tp* __p)
+{
+    return __p;
+}
+
+template <class _Pointer>
+__device__ inline typename pointer_traits<_Pointer>::element_type*
+__to_raw_pointer(_Pointer __p)
+{
+    return util::__to_raw_pointer(__p.operator->());
+}
+
+template <class _Tp>
+struct __has_size_type
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::size_type* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Alloc, class _DiffType, bool = __has_size_type<_Alloc>::value>
+struct __size_type
+{
+    typedef typename make_unsigned<_DiffType>::type type;
+};
+
+template <class _Alloc, class _DiffType>
+struct __size_type<_Alloc, _DiffType, true>
+{
+    typedef typename _Alloc::size_type type;
+};
+
+template <class _Tp>
+struct __has_propagate_on_container_copy_assignment
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::propagate_on_container_copy_assignment* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Alloc, bool = __has_propagate_on_container_copy_assignment<_Alloc>::value>
+struct __propagate_on_container_copy_assignment
+{
+    typedef false_type type;
+};
+
+template <class _Alloc>
+struct __propagate_on_container_copy_assignment<_Alloc, true>
+{
+    typedef typename _Alloc::propagate_on_container_copy_assignment type;
+};
+
+template <class _Tp>
+struct __has_propagate_on_container_move_assignment
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::propagate_on_container_move_assignment* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Alloc, bool = __has_propagate_on_container_move_assignment<_Alloc>::value>
+struct __propagate_on_container_move_assignment
+{
+    typedef false_type type;
+};
+
+template <class _Alloc>
+struct __propagate_on_container_move_assignment<_Alloc, true>
+{
+    typedef typename _Alloc::propagate_on_container_move_assignment type;
+};
+
+template <class _Tp>
+struct __has_propagate_on_container_swap
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Up> static __two __test(...);
+    template <class _Up> static char __test(typename _Up::propagate_on_container_swap* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Alloc, bool = __has_propagate_on_container_swap<_Alloc>::value>
+struct __propagate_on_container_swap
+{
+    typedef false_type type;
+};
+
+template <class _Alloc>
+struct __propagate_on_container_swap<_Alloc, true>
+{
+    typedef typename _Alloc::propagate_on_container_swap type;
+};
+
+template <class _Tp, class _Up, bool = __has_rebind<_Tp, _Up>::value>
+struct __has_rebind_other
+{
+private:
+    struct __two {char __lx; char __lxx;};
+    template <class _Xp> static __two __test(...);
+    template <class _Xp> static char __test(typename _Xp::template rebind<_Up>::other* = 0);
+public:
+    static const bool value = sizeof(__test<_Tp>(0)) == 1;
+};
+
+template <class _Tp, class _Up>
+struct __has_rebind_other<_Tp, _Up, false>
+{
+    static const bool value = false;
+};
+
+template <class _Tp, class _Up, bool = __has_rebind_other<_Tp, _Up>::value>
+struct __allocator_traits_rebind
+{
+    typedef typename _Tp::template rebind<_Up>::other type;
+};
+
+template <template <class> class _Alloc, class _Tp, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp>, _Up, true>
+{
+    typedef typename _Alloc<_Tp>::template rebind<_Up>::other type;
+};
+
+template <template <class> class _Alloc, class _Tp, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp>, _Up, false>
+{
+    typedef _Alloc<_Up> type;
+};
+
+template <template <class, class> class _Alloc, class _Tp, class _A0, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp, _A0>, _Up, true>
+{
+    typedef typename _Alloc<_Tp, _A0>::template rebind<_Up>::other type;
+};
+
+template <template <class, class> class _Alloc, class _Tp, class _A0, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp, _A0>, _Up, false>
+{
+    typedef _Alloc<_Up, _A0> type;
+};
+
+template <template <class, class, class> class _Alloc, class _Tp, class _A0,
+                                         class _A1, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp, _A0, _A1>, _Up, true>
+{
+    typedef typename _Alloc<_Tp, _A0, _A1>::template rebind<_Up>::other type;
+};
+
+template <template <class, class, class> class _Alloc, class _Tp, class _A0,
+                                         class _A1, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp, _A0, _A1>, _Up, false>
+{
+    typedef _Alloc<_Up, _A0, _A1> type;
+};
+
+template <template <class, class, class, class> class _Alloc, class _Tp, class _A0,
+                                                class _A1, class _A2, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp, _A0, _A1, _A2>, _Up, true>
+{
+    typedef typename _Alloc<_Tp, _A0, _A1, _A2>::template rebind<_Up>::other type;
+};
+
+template <template <class, class, class, class> class _Alloc, class _Tp, class _A0,
+                                                class _A1, class _A2, class _Up>
+struct __allocator_traits_rebind<_Alloc<_Tp, _A0, _A1, _A2>, _Up, false>
+{
+    typedef _Alloc<_Up, _A0, _A1, _A2> type;
+};
+
+template <class _Alloc, class _SizeType, class _ConstVoidPtr>
+struct __has_allocate_hint
+    : true_type
+{
+};
+
+template <class _Alloc, class _Pointer, class _Args>
+struct __has_construct
+    : false_type
+{
 };
 
 
+template <class _Alloc, class _Pointer>
+struct __has_destroy
+    : false_type
+{
+};
+
+template <class _Alloc>
+struct __has_max_size
+    : true_type
+{
+};
+
+template <class _Alloc>
+struct __has_select_on_container_copy_construction
+    : false_type
+{
+};
+
+
+template <class _Alloc, class _Ptr, bool = __has_difference_type<_Alloc>::value>
+struct __alloc_traits_difference_type
+{
+    typedef typename pointer_traits<_Ptr>::difference_type type;
+};
+
+template <class _Alloc, class _Ptr>
+struct __alloc_traits_difference_type<_Alloc, _Ptr, true>
+{
+    typedef typename _Alloc::difference_type type;
+};
+
+template <class _Alloc>
+struct allocator_traits
+{
+    typedef _Alloc                              allocator_type;
+    typedef typename allocator_type::value_type value_type;
+
+    typedef typename __pointer_type<value_type, allocator_type>::type pointer;
+    typedef typename __const_pointer<value_type, pointer, allocator_type>::type const_pointer;
+    typedef typename __void_pointer<pointer, allocator_type>::type void_pointer;
+    typedef typename __const_void_pointer<pointer, allocator_type>::type const_void_pointer;
+
+    typedef typename __alloc_traits_difference_type<allocator_type, pointer>::type difference_type;
+    typedef typename __size_type<allocator_type, difference_type>::type size_type;
+
+    typedef typename __propagate_on_container_copy_assignment<allocator_type>::type
+                     propagate_on_container_copy_assignment;
+    typedef typename __propagate_on_container_move_assignment<allocator_type>::type
+                     propagate_on_container_move_assignment;
+    typedef typename __propagate_on_container_swap<allocator_type>::type
+                     propagate_on_container_swap;
+
+    template <class _Tp> struct rebind_alloc
+        {typedef typename __allocator_traits_rebind<allocator_type, _Tp>::type other;};
+    template <class _Tp> struct rebind_traits
+        {typedef allocator_traits<typename rebind_alloc<_Tp>::other> other;};
+
+    __device__ static pointer allocate(allocator_type& __a, size_type __n)
+        	{return __a.allocate(__n);}
+    __device__ static pointer allocate(allocator_type& __a, size_type __n, const_void_pointer __hint)
+        	{return allocate(__a, __n, __hint,
+            __has_allocate_hint<allocator_type, size_type, const_void_pointer>());}
+
+    __device__ static void deallocate(allocator_type& __a, pointer __p, size_type __n)
+        {__a.deallocate(__p, __n);}
+
+    template <class _Tp>
+                __device__ static void construct(allocator_type& __a, _Tp* __p)
+            {
+                ::new ((void*)__p) _Tp();
+            }
+    template <class _Tp, class _A0>
+                __device__ static void construct(allocator_type& __a, _Tp* __p, const _A0& __a0)
+            {
+                ::new ((void*)__p) _Tp(__a0);
+            }
+    template <class _Tp, class _A0, class _A1>
+                __device__ static void construct(allocator_type& __a, _Tp* __p, const _A0& __a0,
+                              const _A1& __a1)
+            {
+                ::new ((void*)__p) _Tp(__a0, __a1);
+            }
+    template <class _Tp, class _A0, class _A1, class _A2>
+                __device__ static void construct(allocator_type& __a, _Tp* __p, const _A0& __a0,
+                              const _A1& __a1, const _A2& __a2)
+            {
+                ::new ((void*)__p) _Tp(__a0, __a1, __a2);
+            }
+
+    template <class _Tp>
+                __device__ static void destroy(allocator_type& __a, _Tp* __p)
+            {__destroy(__has_destroy<allocator_type, _Tp*>(), __a, __p);}
+
+       __device__  static size_type max_size(const allocator_type& __a)
+        	{return __max_size(__has_max_size<const allocator_type>(), __a);}
+
+        __device__ static allocator_type
+        	select_on_container_copy_construction(const allocator_type& __a)
+            {return select_on_container_copy_construction(
+                __has_select_on_container_copy_construction<const allocator_type>(),
+                __a);}
+
+    template <class _Ptr>
+        __device__ static void
+        __construct_forward(allocator_type& __a, _Ptr __begin1, _Ptr __end1, _Ptr& __begin2)
+        {
+            for (; __begin1 != __end1; ++__begin1, ++__begin2)
+                construct(__a, util::__to_raw_pointer(__begin2), util::move_if_noexcept(*__begin1));
+        }
+
+    template <class _Tp>
+                __device__ static
+        typename enable_if
+        <
+            (is_same<allocator_type, allocator<_Tp> >::value
+                || !__has_construct<allocator_type, _Tp*, _Tp>::value) &&
+             is_trivially_move_constructible<_Tp>::value,
+            void
+        >::type
+        __construct_forward(allocator_type& __a, _Tp* __begin1, _Tp* __end1, _Tp*& __begin2)
+        {
+            ptrdiff_t _Np = __end1 - __begin1;
+            util::memcpy(__begin2, __begin1, _Np * sizeof(_Tp));
+            __begin2 += _Np;
+        }
+
+    template <class _Ptr>
+                __device__ static
+        void
+        __construct_backward(allocator_type& __a, _Ptr __begin1, _Ptr __end1, _Ptr& __end2)
+        {
+            while (__end1 != __begin1)
+                construct(__a, util::__to_raw_pointer(--__end2), util::move_if_noexcept(*--__end1));
+        }
+
+    template <class _Tp>
+                __device__ static
+        typename enable_if
+        <
+            (is_same<allocator_type, allocator<_Tp> >::value
+                || !__has_construct<allocator_type, _Tp*, _Tp>::value) &&
+             is_trivially_move_constructible<_Tp>::value,
+            void
+        >::type
+        __construct_backward(allocator_type& __a, _Tp* __begin1, _Tp* __end1, _Tp*& __end2)
+        {
+            ptrdiff_t _Np = __end1 - __begin1;
+            __end2 -= _Np;
+            util::memcpy(__end2, __begin1, _Np * sizeof(_Tp));
+        }
+
+private:
+
+        __device__ static pointer allocate(allocator_type& __a, size_type __n,
+        	const_void_pointer __hint, true_type)
+       		{return __a.allocate(__n, __hint);}
+        __device__ static pointer allocate(allocator_type& __a, size_type __n,
+		    const_void_pointer, false_type)
+		    {return __a.allocate(__n);}
+
+    template <class _Tp>
+                __device__ static void __destroy(true_type, allocator_type& __a, _Tp* __p)
+            {__a.destroy(__p);}
+    template <class _Tp>
+                __device__ static void __destroy(false_type, allocator_type&, _Tp* __p)
+            {
+                __p->~_Tp();
+            }
+
+        __device__ static size_type __max_size(true_type, const allocator_type& __a)
+            {return __a.max_size();}
+        __device__ static size_type __max_size(false_type, const allocator_type&)
+            {return numeric_limits<size_type>::max();}
+
+        __device__ static allocator_type
+		    select_on_container_copy_construction(true_type, const allocator_type& __a)
+		        {return __a.select_on_container_copy_construction();}
+        __device__ static allocator_type
+		    select_on_container_copy_construction(false_type, const allocator_type& __a)
+		        {return __a;}
+};
+
+
+template <class T>
+class allocator
+{
+public:
+    typedef size_t                                size_type;
+    typedef ptrdiff_t                             difference_type;
+    typedef T*                                    pointer;
+    typedef const T*                              const_pointer;
+    typedef typename add_lvalue_reference<T>::type       reference;
+    typedef typename add_lvalue_reference<const T>::type const_reference;
+    typedef T                                     value_type;
+
+    template <class U> struct rebind {typedef allocator<U> other;};
+
+    __device__ allocator();
+    __device__ allocator(const allocator&);
+    template <class U> __device__ allocator(const allocator<U>&);
+    __device__ ~allocator();
+    __device__ pointer address(reference x) const;
+    __device__ const_pointer address(const_reference x) const;
+    __device__ pointer allocate(size_type, const void* hint = 0);
+    __device__ void deallocate(pointer p, size_type n);
+    __device__ size_type max_size() const;
+    template<class U>
+        __device__ void construct(U* p);
+    template <class U>
+        __device__ void destroy(U* p);
+};
+
+template <class T, class U>
+__device__ bool operator==(const allocator<T>&, const allocator<U>&);
+
+template <class T, class U>
+__device__ bool operator!=(const allocator<T>&, const allocator<U>&);
+
+template <class OutputIterator, class T>
+class raw_storage_iterator
+    : public iterator<output_iterator_tag,
+                      T,                               // purposefully not C++03
+                      ptrdiff_t,                       // purposefully not C++03
+                      T*,                              // purposefully not C++03
+                      raw_storage_iterator<OutputIterator, T>&>           // purposefully not C++03
+{
+public:
+    __device__ explicit raw_storage_iterator(OutputIterator x);
+    __device__ raw_storage_iterator& operator*();
+    __device__ raw_storage_iterator& operator=(const T& element);
+    __device__ raw_storage_iterator& operator++();
+    __device__ raw_storage_iterator  operator++(int);
+};
+
+template <class T> __device__ pair<T*,ptrdiff_t> get_temporary_buffer(ptrdiff_t n);
+template <class T> __device__ void               return_temporary_buffer(T* p);
+
+template <class T> __device__ T* addressof(T& r);
+
+template <class InputIterator, class ForwardIterator>
+__device__ ForwardIterator
+uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result);
+
+template <class InputIterator, class Size, class ForwardIterator>
+__device__ ForwardIterator
+uninitialized_copy_n(InputIterator first, Size n, ForwardIterator result);
+
+template <class ForwardIterator, class T>
+__device__ void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x);
+
+template <class ForwardIterator, class Size, class T>
+__device__ ForwardIterator
+uninitialized_fill_n(ForwardIterator first, Size n, const T& x);
+
+// Unique Ptr
 template <class _Tp>
 struct default_delete
 {
-    default_delete() {}
+    __device__ default_delete() {}
     template <class _Up>
-        default_delete(const default_delete<_Up>&) {}
-    void operator() (_Tp* __ptr) const
+        __device__ default_delete(const default_delete<_Up>&) {}
+    __device__ void operator() (_Tp* __ptr) const
     {
         delete __ptr;
     }
@@ -411,11 +816,11 @@ template <class _Tp>
 struct default_delete<_Tp[]>
 {
 public:
-    default_delete() {}
+    __device__ default_delete() {}
     template <class _Up>
-        default_delete(const default_delete<_Up[]>&) {}
+        __device__ default_delete(const default_delete<_Up[]>&) {}
     template <class _Up>
-        void operator() (_Up* __ptr) const
+        __device__ void operator() (_Up* __ptr) const
         {
             delete [] __ptr;
         }
@@ -436,56 +841,56 @@ private:
     typedef       typename remove_reference<deleter_type>::type& _Dp_reference;
     typedef const typename remove_reference<deleter_type>::type& _Dp_const_reference;
 public:
-    unique_ptr()
+    __device__ unique_ptr()
         : __ptr_(pointer())
         {
         }
         
-    explicit unique_ptr(pointer __p)
+    __device__ explicit unique_ptr(pointer __p)
         : __ptr_(move(__p))
         {
         }
 
     template <class _Up, class _Ep>
-    unique_ptr& operator=(unique_ptr<_Up, _Ep> __u)
+    __device__ unique_ptr& operator=(unique_ptr<_Up, _Ep> __u)
     {
         reset(__u.release());
         __ptr_.second() = forward<deleter_type>(__u.get_deleter());
         return *this;
     }
 
-    unique_ptr(pointer __p, deleter_type __d)
+    __device__ unique_ptr(pointer __p, deleter_type __d)
         : __ptr_(move(__p), move(__d)) {}
 
-    ~unique_ptr() {reset();}
+    __device__ ~unique_ptr() {reset();}
 
-    typename add_lvalue_reference<_Tp>::type operator*() const
+    __device__ typename add_lvalue_reference<_Tp>::type operator*() const
         {return *__ptr_.first();}
-    pointer operator->() const {return __ptr_.first();}
-    pointer get() const {return __ptr_.first();}
+    __device__ pointer operator->() const {return __ptr_.first;}
+    __device__ pointer get() const {return __ptr_.first;}
           _Dp_reference get_deleter()
-        {return __ptr_.second();}
-    _Dp_const_reference get_deleter() const
-        {return __ptr_.second();}
-    operator bool() const
-        {return __ptr_.first() != nullptr;}
+        {return __ptr_.second;}
+    __device__ _Dp_const_reference get_deleter() const
+        {return __ptr_.second;}
+    __device__ operator bool() const
+        {return __ptr_.first != nullptr;}
 
-    pointer release()
+    __device__ pointer release()
     {
-        pointer __t = __ptr_.first();
-        __ptr_.first() = pointer();
+        pointer __t = __ptr_.first;
+        __ptr_.first = pointer();
         return __t;
     }
 
-    void reset(pointer __p = pointer())
+    __device__ void reset(pointer __p = pointer())
     {
-        pointer __tmp = __ptr_.first();
-        __ptr_.first() = __p;
+        pointer __tmp = __ptr_.first;
+        __ptr_.first = __p;
         if (__tmp)
-            __ptr_.second()(__tmp);
+            __ptr_.second(__tmp);
     }
 
-    void swap(unique_ptr& __u)
+    __device__ void swap(unique_ptr& __u)
         {__ptr_.swap(__u.__ptr_);}
 };
 
@@ -504,43 +909,43 @@ private:
     typedef       typename remove_reference<deleter_type>::type& _Dp_reference;
     typedef const typename remove_reference<deleter_type>::type& _Dp_const_reference;
 public:
-    unique_ptr()
+    __device__ unique_ptr()
         : __ptr_(pointer())
         {
             static_assert(!is_pointer<deleter_type>::value,
                 "unique_ptr constructed with null function pointer deleter");
         }
 
-    explicit unique_ptr(pointer __p)
+    __device__ explicit unique_ptr(pointer __p)
         : __ptr_(__p)
         {
             static_assert(!is_pointer<deleter_type>::value,
                 "unique_ptr constructed with null function pointer deleter");
         }
 
-    unique_ptr(pointer __p, deleter_type __d)
+    __device__ unique_ptr(pointer __p, deleter_type __d)
         : __ptr_(__p, forward<deleter_type>(__d)) {}
 
-    ~unique_ptr() {reset();}
+    __device__ ~unique_ptr() {reset();}
 
-    typename add_lvalue_reference<_Tp>::type operator[](size_t __i) const
+    __device__ typename add_lvalue_reference<_Tp>::type operator[](size_t __i) const
         {return __ptr_.first()[__i];}
-    pointer get() const {return __ptr_.first();}
+    __device__ pointer get() const {return __ptr_.first();}
           _Dp_reference get_deleter()
         {return __ptr_.second();}
-    _Dp_const_reference get_deleter() const
+    __device__ _Dp_const_reference get_deleter() const
         {return __ptr_.second();}
-    operator bool() const
+    __device__ operator bool() const
         {return __ptr_.first() != nullptr;}
 
-    pointer release()
+    __device__ pointer release()
     {
         pointer __t = __ptr_.first();
         __ptr_.first() = pointer();
         return __t;
     }
 
-    void reset(pointer __p = pointer())
+    __device__ void reset(pointer __p = pointer())
     {
         pointer __tmp = __ptr_.first();
         __ptr_.first() = __p;
@@ -548,23 +953,23 @@ public:
             __ptr_.second()(__tmp);
     }
 
-    void swap(unique_ptr& __u) {__ptr_.swap(__u.__ptr_);}
+    __device__ void swap(unique_ptr& __u) {__ptr_.swap(__u.__ptr_);}
 };
 
 template <class _Tp, class _Dp>
-inline void
+__device__ inline void
 swap(unique_ptr<_Tp, _Dp>& __x, unique_ptr<_Tp, _Dp>& __y) {__x.swap(__y);}
 
 template <class _T1, class _D1, class _T2, class _D2>
-inline bool
+__device__ inline bool
 operator==(const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y) {return __x.get() == __y.get();}
 
 template <class _T1, class _D1, class _T2, class _D2>
-inline bool
+__device__ inline bool
 operator!=(const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y) {return !(__x == __y);}
 
 template <class _T1, class _D1, class _T2, class _D2>
-inline bool
+__device__ inline bool
 operator< (const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y)
 {
     typedef typename unique_ptr<_T1, _D1>::pointer _P1;
@@ -574,19 +979,19 @@ operator< (const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y)
 }
 
 template <class _T1, class _D1, class _T2, class _D2>
-inline bool
+__device__ inline bool
 operator> (const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y) {return __y < __x;}
 
 template <class _T1, class _D1, class _T2, class _D2>
-inline bool
+__device__ inline bool
 operator<=(const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y) {return !(__y < __x);}
 
 template <class _T1, class _D1, class _T2, class _D2>
-inline bool
+__device__ inline bool
 operator>=(const unique_ptr<_T1, _D1>& __x, const unique_ptr<_T2, _D2>& __y) {return !(__x < __y);}
 
 template <class _Tp, class _Dp>
-inline unique_ptr<_Tp, _Dp>
+__device__ inline unique_ptr<_Tp, _Dp>
 move(unique_ptr<_Tp, _Dp>& __t)
 {
     return unique_ptr<_Tp, _Dp>(__rv<unique_ptr<_Tp, _Dp> >(__t));

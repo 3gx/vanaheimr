@@ -24,21 +24,21 @@ template <bool>
 class __vector_base_common
 {
 protected:
-    __vector_base_common() {}
-    void __throw_length_error() const;
-    void __throw_out_of_range() const;
+    __device__ __vector_base_common() {}
+    __device__ void __throw_length_error() const;
+    __device__ void __throw_out_of_range() const;
 };
 
 template <bool __b>
 void
-__vector_base_common<__b>::__throw_length_error() const
+__device__ __vector_base_common<__b>::__throw_length_error() const
 {
     //assert(!"vector length_error");
 }
 
 template <bool __b>
 void
-__vector_base_common<__b>::__throw_out_of_range() const
+__device__ __vector_base_common<__b>::__throw_out_of_range() const
 {
    // assert(!"vector out_of_range");
 }
@@ -64,41 +64,41 @@ protected:
     pointer                                         __end_;
     pair<pointer, allocator_type> __end_cap_;
 
-    allocator_type& __alloc()
+    __device__ allocator_type& __alloc()
         {return __end_cap_.second;}
-    const allocator_type& __alloc() const
+    __device__ const allocator_type& __alloc() const
         {return __end_cap_.second;}
-    pointer& __end_cap()
+    __device__ pointer& __end_cap()
         {return __end_cap_.first;}
-    const pointer& __end_cap() const
+    __device__ const pointer& __end_cap() const
         {return __end_cap_.first;}
 
-    __vector_base();
-    __vector_base(const allocator_type& __a);
-    ~__vector_base();
+    __device__ __vector_base();
+    __device__ __vector_base(const allocator_type& __a);
+    __device__ ~__vector_base();
 
-    void clear() {__destruct_at_end(__begin_);}
-    size_type capacity() const
+    __device__ void clear() {__destruct_at_end(__begin_);}
+    __device__ size_type capacity() const
         {return static_cast<size_type>(__end_cap() - __begin_);}
 
-    void __destruct_at_end(const_pointer __new_last)
+    __device__ void __destruct_at_end(const_pointer __new_last)
         {__destruct_at_end(__new_last, false_type());}
-    void __destruct_at_end(const_pointer __new_last, false_type);
-    void __destruct_at_end(const_pointer __new_last, true_type);
+    __device__ void __destruct_at_end(const_pointer __new_last, false_type);
+    __device__ void __destruct_at_end(const_pointer __new_last, true_type);
 
-    void __copy_assign_alloc(const __vector_base& __c)
+    __device__ void __copy_assign_alloc(const __vector_base& __c)
         {__copy_assign_alloc(__c, integral_constant<bool,
                       __alloc_traits::propagate_on_container_copy_assignment::value>());}
 
-    void __move_assign_alloc(__vector_base& __c)
+    __device__ void __move_assign_alloc(__vector_base& __c)
         {__move_assign_alloc(__c, integral_constant<bool,
                       __alloc_traits::propagate_on_container_move_assignment::value>());}
 
-    static void __swap_alloc(allocator_type& __x, allocator_type& __y)
+    __device__ static void __swap_alloc(allocator_type& __x, allocator_type& __y)
         {__swap_alloc(__x, __y, integral_constant<bool,
                       __alloc_traits::propagate_on_container_swap::value>());}
 private:
-    void __copy_assign_alloc(const __vector_base& __c, true_type)
+    __device__ void __copy_assign_alloc(const __vector_base& __c, true_type)
         {
             if (__alloc() != __c.__alloc())
             {
@@ -109,29 +109,29 @@ private:
             __alloc() = __c.__alloc();
         }
 
-    void __copy_assign_alloc(const __vector_base&, false_type)
+    __device__ void __copy_assign_alloc(const __vector_base&, false_type)
         {}
 
-    void __move_assign_alloc(__vector_base& __c, true_type)
+    __device__ void __move_assign_alloc(__vector_base& __c, true_type)
         {
-            __alloc() = _VSTD::move(__c.__alloc());
+            __alloc() = util::move(__c.__alloc());
         }
 
-    void __move_assign_alloc(__vector_base&, false_type)
+    __device__ void __move_assign_alloc(__vector_base&, false_type)
        
         {}
 
-    static void __swap_alloc(allocator_type& __x, allocator_type& __y, true_type)
+    __device__ static void __swap_alloc(allocator_type& __x, allocator_type& __y, true_type)
         {
             util::swap(__x, __y);
         }
-    static void __swap_alloc(allocator_type&, allocator_type&, false_type)
+    __device__ static void __swap_alloc(allocator_type&, allocator_type&, false_type)
        
         {}
 };
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 __vector_base<_Tp, _Allocator>::__destruct_at_end(const_pointer __new_last, false_type)
 {
@@ -140,7 +140,7 @@ __vector_base<_Tp, _Allocator>::__destruct_at_end(const_pointer __new_last, fals
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 __vector_base<_Tp, _Allocator>::__destruct_at_end(const_pointer __new_last, true_type)
 {
@@ -148,7 +148,7 @@ __vector_base<_Tp, _Allocator>::__destruct_at_end(const_pointer __new_last, true
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 __vector_base<_Tp, _Allocator>::__vector_base()
     : __begin_(0),
       __end_(0),
@@ -157,7 +157,7 @@ __vector_base<_Tp, _Allocator>::__vector_base()
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 __vector_base<_Tp, _Allocator>::__vector_base(const allocator_type& __a)
     : __begin_(0),
       __end_(0),
@@ -166,7 +166,7 @@ __vector_base<_Tp, _Allocator>::__vector_base(const allocator_type& __a)
 }
 
 template <class _Tp, class _Allocator>
-__vector_base<_Tp, _Allocator>::~__vector_base()
+__device__ __vector_base<_Tp, _Allocator>::~__vector_base()
 {
     if (__begin_ != 0)
     {
@@ -197,39 +197,39 @@ public:
     typedef util::reverse_iterator<iterator>         reverse_iterator;
     typedef util::reverse_iterator<const_iterator>   const_reverse_iterator;
 
-    vector()
+    __device__ vector()
         {
 
         }
-    explicit vector(const allocator_type& __a)
+    __device__ explicit vector(const allocator_type& __a)
         : __base(__a)
     {
 
     }
-    explicit vector(size_type __n);
-    vector(size_type __n, const_reference __x);
-    vector(size_type __n, const_reference __x, const allocator_type& __a);
+    __device__ explicit vector(size_type __n);
+    __device__ vector(size_type __n, const_reference __x);
+    __device__ vector(size_type __n, const_reference __x, const allocator_type& __a);
     template <class _InputIterator>
-        vector(_InputIterator __first, _InputIterator __last,
+        __device__ vector(_InputIterator __first, _InputIterator __last,
                typename enable_if<__is_input_iterator  <_InputIterator>::value &&
                                  !__is_forward_iterator<_InputIterator>::value>::type* = 0);
     template <class _InputIterator>
-        vector(_InputIterator __first, _InputIterator __last, const allocator_type& __a,
+        __device__ vector(_InputIterator __first, _InputIterator __last, const allocator_type& __a,
                typename enable_if<__is_input_iterator  <_InputIterator>::value &&
                                  !__is_forward_iterator<_InputIterator>::value>::type* = 0);
     template <class _ForwardIterator>
-        vector(_ForwardIterator __first, _ForwardIterator __last,
+        __device__ vector(_ForwardIterator __first, _ForwardIterator __last,
                typename enable_if<__is_forward_iterator<_ForwardIterator>::value>::type* = 0);
     template <class _ForwardIterator>
-        vector(_ForwardIterator __first, _ForwardIterator __last, const allocator_type& __a,
+        __device__ vector(_ForwardIterator __first, _ForwardIterator __last, const allocator_type& __a,
                typename enable_if<__is_forward_iterator<_ForwardIterator>::value>::type* = 0);
 
-    vector(const vector& __x);
-    vector(const vector& __x, const allocator_type& __a);
-    vector& operator=(const vector& __x);
+    __device__ vector(const vector& __x);
+    __device__ vector(const vector& __x, const allocator_type& __a);
+    __device__ vector& operator=(const vector& __x);
 
     template <class _InputIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
              __is_input_iterator  <_InputIterator>::value &&
             !__is_forward_iterator<_InputIterator>::value,
@@ -237,88 +237,88 @@ public:
         >::type
         assign(_InputIterator __first, _InputIterator __last);
     template <class _ForwardIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_forward_iterator<_ForwardIterator>::value,
             void
         >::type
         assign(_ForwardIterator __first, _ForwardIterator __last);
 
-    void assign(size_type __n, const_reference __u);
+    __device__ void assign(size_type __n, const_reference __u);
 
-    allocator_type get_allocator() const
+    __device__ allocator_type get_allocator() const
         {return this->__alloc();}
 
-    iterator               begin();
-    const_iterator         begin()   const;
-    iterator               end();
-    const_iterator         end()     const;
+    __device__ iterator               begin();
+    __device__ const_iterator         begin()   const;
+    __device__ iterator               end();
+    __device__ const_iterator         end()     const;
 
-    reverse_iterator       rbegin()
+    __device__ reverse_iterator       rbegin()
         {return       reverse_iterator(end());}
-    const_reverse_iterator rbegin()  const
+    __device__ const_reverse_iterator rbegin()  const
         {return const_reverse_iterator(end());}
-    reverse_iterator       rend()
+    __device__ reverse_iterator       rend()
         {return       reverse_iterator(begin());}
-    const_reverse_iterator rend()    const
+    __device__ const_reverse_iterator rend()    const
         {return const_reverse_iterator(begin());}
 
-    const_iterator         cbegin()  const
+    __device__ const_iterator         cbegin()  const
         {return begin();}
-    const_iterator         cend()    const
+    __device__ const_iterator         cend()    const
         {return end();}
-    const_reverse_iterator crbegin() const
+    __device__ const_reverse_iterator crbegin() const
         {return rbegin();}
-    const_reverse_iterator crend()   const
+    __device__ const_reverse_iterator crend()   const
         {return rend();}
 
-    size_type size() const
+    __device__ size_type size() const
         {return static_cast<size_type>(this->__end_ - this->__begin_);}
-    size_type capacity() const
+    __device__ size_type capacity() const
         {return __base::capacity();}
-    bool empty() const
+    __device__ bool empty() const
         {return this->__begin_ == this->__end_;}
-    size_type max_size() const;
-    void reserve(size_type __n);
-    void shrink_to_fit();
+    __device__ size_type max_size() const;
+    __device__ void reserve(size_type __n);
+    __device__ void shrink_to_fit();
 
-    reference       operator[](size_type __n);
-    const_reference operator[](size_type __n) const;
-    reference       at(size_type __n);
-    const_reference at(size_type __n) const;
+    __device__ reference       operator[](size_type __n);
+    __device__ const_reference operator[](size_type __n) const;
+    __device__ reference       at(size_type __n);
+    __device__ const_reference at(size_type __n) const;
 
-    reference       front()
+    __device__ reference       front()
     {
         return *this->__begin_;
     }
-    const_reference front() const
+    __device__ const_reference front() const
     {
         return *this->__begin_;
     }
-    reference       back()
+    __device__ reference       back()
     {
         return *(this->__end_ - 1);
     }
 
-    const_reference back()  const
+    __device__ const_reference back()  const
     {
         return *(this->__end_ - 1);
     }
 
-    value_type*       data()
-        {return _VSTD::__to_raw_pointer(this->__begin_);}
-    const value_type* data() const
-        {return _VSTD::__to_raw_pointer(this->__begin_);}
+    __device__ value_type*       data()
+        {return util::__to_raw_pointer(this->__begin_);}
+    __device__ const value_type* data() const
+        {return util::__to_raw_pointer(this->__begin_);}
 
-    void push_back(const_reference __x);
-	void pop_back();
+    __device__ void push_back(const_reference __x);
+	__device__ void pop_back();
 
-    iterator insert(const_iterator __position, size_type __n, const_reference __x);
+    __device__ iterator insert(const_iterator __position, size_type __n, const_reference __x);
     
-    iterator insert(const_iterator __position, const_reference __x);
+    __device__ iterator insert(const_iterator __position, const_reference __x);
     
     template <class _InputIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
              __is_input_iterator  <_InputIterator>::value &&
             !__is_forward_iterator<_InputIterator>::value,
@@ -326,84 +326,84 @@ public:
         >::type
         insert(const_iterator __position, _InputIterator __first, _InputIterator __last);
     template <class _ForwardIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_forward_iterator<_ForwardIterator>::value,
             iterator
         >::type
         insert(const_iterator __position, _ForwardIterator __first, _ForwardIterator __last);
 
-    iterator erase(const_iterator __position);
-    iterator erase(const_iterator __first, const_iterator __last);
+    __device__ iterator erase(const_iterator __position);
+    __device__ iterator erase(const_iterator __first, const_iterator __last);
 
-    void clear()
+    __device__ void clear()
     {
         __base::clear();
         __invalidate_all_iterators();
     }
 
-    void resize(size_type __sz);
-    void resize(size_type __sz, const_reference __x);
+    __device__ void resize(size_type __sz);
+    __device__ void resize(size_type __sz, const_reference __x);
 
-    void swap(vector&);
+    __device__ void swap(vector&);
 
-    bool __invariants() const;
+    __device__ bool __invariants() const;
 
 private:
-    void __invalidate_all_iterators();
-    void allocate(size_type __n);
-    void deallocate();
-    size_type __recommend(size_type __new_size) const;
-    void __construct_at_end(size_type __n);
-    void __construct_at_end(size_type __n, const_reference __x);
+    __device__ void __invalidate_all_iterators();
+    __device__ void allocate(size_type __n);
+    __device__ void deallocate();
+    __device__ size_type __recommend(size_type __new_size) const;
+    __device__ void __construct_at_end(size_type __n);
+    __device__ void __construct_at_end(size_type __n, const_reference __x);
     template <class _ForwardIterator>
-        typename enable_if
+        __device__ typename enable_if
         <
             __is_forward_iterator<_ForwardIterator>::value,
             void
         >::type
         __construct_at_end(_ForwardIterator __first, _ForwardIterator __last);
-    void __move_construct_at_end(pointer __first, pointer __last);
-    void __append(size_type __n);
-    void __append(size_type __n, const_reference __x);
-    iterator       __make_iter(pointer __p);
-    const_iterator __make_iter(const_pointer __p) const;
-    void __swap_out_circular_buffer(__split_buffer<value_type, allocator_type&>& __v);
-    pointer __swap_out_circular_buffer(__split_buffer<value_type, allocator_type&>& __v, pointer __p);
-    void __move_range(pointer __from_s, pointer __from_e, pointer __to);
-    void __move_assign(vector& __c, true_type);
-    void __move_assign(vector& __c, false_type);
-    void __destruct_at_end(const_pointer __new_last)
-    {
-        __base::__destruct_at_end(__new_last);
-    }
+    __device__ void __move_construct_at_end(pointer __first, pointer __last);
+    __device__ void __append(size_type __n);
+    __device__ void __append(size_type __n, const_reference __x);
+    __device__ iterator       __make_iter(pointer __p);
+    __device__ const_iterator __make_iter(const_pointer __p) const;
+    __device__ void __swap_out_circular_buffer(__split_buffer<value_type, allocator_type&>& __v);
+    __device__ pointer __swap_out_circular_buffer(__split_buffer<value_type, allocator_type&>& __v, pointer __p);
+    __device__ void __move_range(pointer __from_s, pointer __from_e, pointer __to);
+    __device__ void __move_assign(vector& __c, true_type);
+    __device__ void __move_assign(vector& __c, false_type);
+    __device__ void __destruct_at_end(const_pointer __new_last)
+		{
+		    __base::__destruct_at_end(__new_last);
+		}
     template <class _Up>
-        void
+        __device__ void
         __push_back_slow_path(_Up& __x);
 };
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::__swap_out_circular_buffer(__split_buffer<value_type, allocator_type&>& __v)
 {
     __alloc_traits::__construct_backward(this->__alloc(), this->__begin_, this->__end_, __v.__begin_);
-    _VSTD::swap(this->__begin_, __v.__begin_);
-    _VSTD::swap(this->__end_, __v.__end_);
-    _VSTD::swap(this->__end_cap(), __v.__end_cap());
+    util::swap(this->__begin_, __v.__begin_);
+    util::swap(this->__end_, __v.__end_);
+    util::swap(this->__end_cap(), __v.__end_cap());
     __v.__first_ = __v.__begin_;
     __invalidate_all_iterators();
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::pointer
+__device__ typename vector<_Tp, _Allocator>::pointer
 vector<_Tp, _Allocator>::__swap_out_circular_buffer(__split_buffer<value_type, allocator_type&>& __v, pointer __p)
 {
     pointer __r = __v.__begin_;
     __alloc_traits::__construct_backward(this->__alloc(), this->__begin_, __p, __v.__begin_);
     __alloc_traits::__construct_forward(this->__alloc(), __p, this->__end_, __v.__end_);
-    _VSTD::swap(this->__begin_, __v.__begin_);
-    _VSTD::swap(this->__end_, __v.__end_);
-    _VSTD::swap(this->__end_cap(), __v.__end_cap());
+    util::swap(this->__begin_, __v.__begin_);
+    util::swap(this->__end_, __v.__end_);
+    util::swap(this->__end_cap(), __v.__end_cap());
     __v.__first_ = __v.__begin_;
     __invalidate_all_iterators();
     return __r;
@@ -417,7 +417,7 @@ vector<_Tp, _Allocator>::__swap_out_circular_buffer(__split_buffer<value_type, a
 //  Postcondition:  capacity() == __n
 //  Postcondition:  size() == 0
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::allocate(size_type __n)
 {
     if (__n > max_size())
@@ -427,7 +427,7 @@ vector<_Tp, _Allocator>::allocate(size_type __n)
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::deallocate()
 {
     if (this->__begin_ != 0)
@@ -439,7 +439,7 @@ vector<_Tp, _Allocator>::deallocate()
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::size_type
+__device__ typename vector<_Tp, _Allocator>::size_type
 vector<_Tp, _Allocator>::max_size() const
 {
     return util::min<size_type>(__alloc_traits::max_size(this->__alloc()),
@@ -448,7 +448,7 @@ vector<_Tp, _Allocator>::max_size() const
 
 //  Precondition:  __new_size > capacity()
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::size_type
 vector<_Tp, _Allocator>::__recommend(size_type __new_size) const
 {
@@ -458,7 +458,7 @@ vector<_Tp, _Allocator>::__recommend(size_type __new_size) const
     const size_type __cap = capacity();
     if (__cap >= __ms / 2)
         return __ms;
-    return _VSTD::max<size_type>(2*__cap, __new_size);
+    return util::max<size_type>(2*__cap, __new_size);
 }
 
 //  Default constructs __n objects starting at __end_
@@ -467,7 +467,7 @@ vector<_Tp, _Allocator>::__recommend(size_type __new_size) const
 //  Precondition:  size() + __n <= capacity()
 //  Postcondition:  size() == size() + __n
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::__construct_at_end(size_type __n)
 {
     allocator_type& __a = this->__alloc();
@@ -486,7 +486,7 @@ vector<_Tp, _Allocator>::__construct_at_end(size_type __n)
 //  Postcondition:  size() == old size() + __n
 //  Postcondition:  [i] == __x for all i in [size() - __n, __n)
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 vector<_Tp, _Allocator>::__construct_at_end(size_type __n, const_reference __x)
 {
@@ -502,7 +502,7 @@ vector<_Tp, _Allocator>::__construct_at_end(size_type __n, const_reference __x)
 
 template <class _Tp, class _Allocator>
 template <class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     void
@@ -518,7 +518,7 @@ vector<_Tp, _Allocator>::__construct_at_end(_ForwardIterator __first, _ForwardIt
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::__move_construct_at_end(pointer __first, pointer __last)
 {
     allocator_type& __a = this->__alloc();
@@ -535,7 +535,7 @@ vector<_Tp, _Allocator>::__move_construct_at_end(pointer __first, pointer __last
 //  Postcondition:  size() == size() + __n
 //  Exception safety: strong.
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::__append(size_type __n)
 {
     if (static_cast<size_type>(this->__end_cap() - this->__end_) >= __n)
@@ -554,7 +554,7 @@ vector<_Tp, _Allocator>::__append(size_type __n)
 //  Postcondition:  size() == size() + __n
 //  Exception safety: strong.
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::__append(size_type __n, const_reference __x)
 {
     if (static_cast<size_type>(this->__end_cap() - this->__end_) >= __n)
@@ -569,7 +569,7 @@ vector<_Tp, _Allocator>::__append(size_type __n, const_reference __x)
 }
 
 template <class _Tp, class _Allocator>
-vector<_Tp, _Allocator>::vector(size_type __n)
+__device__ vector<_Tp, _Allocator>::vector(size_type __n)
 {
     if (__n > 0)
     {
@@ -579,7 +579,7 @@ vector<_Tp, _Allocator>::vector(size_type __n)
 }
 
 template <class _Tp, class _Allocator>
-vector<_Tp, _Allocator>::vector(size_type __n, const_reference __x)
+__device__ vector<_Tp, _Allocator>::vector(size_type __n, const_reference __x)
 {
     if (__n > 0)
     {
@@ -589,7 +589,7 @@ vector<_Tp, _Allocator>::vector(size_type __n, const_reference __x)
 }
 
 template <class _Tp, class _Allocator>
-vector<_Tp, _Allocator>::vector(size_type __n, const_reference __x, const allocator_type& __a)
+__device__ vector<_Tp, _Allocator>::vector(size_type __n, const_reference __x, const allocator_type& __a)
     : __base(__a)
 {
     if (__n > 0)
@@ -601,7 +601,7 @@ vector<_Tp, _Allocator>::vector(size_type __n, const_reference __x, const alloca
 
 template <class _Tp, class _Allocator>
 template <class _InputIterator>
-vector<_Tp, _Allocator>::vector(_InputIterator __first, _InputIterator __last,
+__device__ vector<_Tp, _Allocator>::vector(_InputIterator __first, _InputIterator __last,
        typename enable_if<__is_input_iterator  <_InputIterator>::value &&
                          !__is_forward_iterator<_InputIterator>::value>::type*)
 {
@@ -611,7 +611,7 @@ vector<_Tp, _Allocator>::vector(_InputIterator __first, _InputIterator __last,
 
 template <class _Tp, class _Allocator>
 template <class _InputIterator>
-vector<_Tp, _Allocator>::vector(_InputIterator __first, _InputIterator __last, const allocator_type& __a,
+__device__ vector<_Tp, _Allocator>::vector(_InputIterator __first, _InputIterator __last, const allocator_type& __a,
        typename enable_if<__is_input_iterator  <_InputIterator>::value &&
                          !__is_forward_iterator<_InputIterator>::value>::type*)
     : __base(__a)
@@ -622,10 +622,10 @@ vector<_Tp, _Allocator>::vector(_InputIterator __first, _InputIterator __last, c
 
 template <class _Tp, class _Allocator>
 template <class _ForwardIterator>
-vector<_Tp, _Allocator>::vector(_ForwardIterator __first, _ForwardIterator __last,
+__device__ vector<_Tp, _Allocator>::vector(_ForwardIterator __first, _ForwardIterator __last,
                                 typename enable_if<__is_forward_iterator<_ForwardIterator>::value>::type*)
 {
-    size_type __n = static_cast<size_type>(_VSTD::distance(__first, __last));
+    size_type __n = static_cast<size_type>(util::distance(__first, __last));
     if (__n > 0)
     {
         allocate(__n);
@@ -635,11 +635,11 @@ vector<_Tp, _Allocator>::vector(_ForwardIterator __first, _ForwardIterator __las
 
 template <class _Tp, class _Allocator>
 template <class _ForwardIterator>
-vector<_Tp, _Allocator>::vector(_ForwardIterator __first, _ForwardIterator __last, const allocator_type& __a,
+__device__ vector<_Tp, _Allocator>::vector(_ForwardIterator __first, _ForwardIterator __last, const allocator_type& __a,
                                 typename enable_if<__is_forward_iterator<_ForwardIterator>::value>::type*)
     : __base(__a)
 {
-    size_type __n = static_cast<size_type>(_VSTD::distance(__first, __last));
+    size_type __n = static_cast<size_type>(util::distance(__first, __last));
     if (__n > 0)
     {
         allocate(__n);
@@ -648,7 +648,7 @@ vector<_Tp, _Allocator>::vector(_ForwardIterator __first, _ForwardIterator __las
 }
 
 template <class _Tp, class _Allocator>
-vector<_Tp, _Allocator>::vector(const vector& __x)
+__device__ vector<_Tp, _Allocator>::vector(const vector& __x)
     : __base(__alloc_traits::select_on_container_copy_construction(__x.__alloc()))
 {
     size_type __n = __x.size();
@@ -660,7 +660,7 @@ vector<_Tp, _Allocator>::vector(const vector& __x)
 }
 
 template <class _Tp, class _Allocator>
-vector<_Tp, _Allocator>::vector(const vector& __x, const allocator_type& __a)
+__device__ vector<_Tp, _Allocator>::vector(const vector& __x, const allocator_type& __a)
     : __base(__a)
 {
     size_type __n = __x.size();
@@ -672,7 +672,7 @@ vector<_Tp, _Allocator>::vector(const vector& __x, const allocator_type& __a)
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 vector<_Tp, _Allocator>&
 vector<_Tp, _Allocator>::operator=(const vector& __x)
 {
@@ -686,7 +686,7 @@ vector<_Tp, _Allocator>::operator=(const vector& __x)
 
 template <class _Tp, class _Allocator>
 template <class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
      __is_input_iterator  <_InputIterator>::value &&
     !__is_forward_iterator<_InputIterator>::value,
@@ -701,14 +701,14 @@ vector<_Tp, _Allocator>::assign(_InputIterator __first, _InputIterator __last)
 
 template <class _Tp, class _Allocator>
 template <class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     void
 >::type
 vector<_Tp, _Allocator>::assign(_ForwardIterator __first, _ForwardIterator __last)
 {
-    typename iterator_traits<_ForwardIterator>::difference_type __new_size = _VSTD::distance(__first, __last);
+    typename iterator_traits<_ForwardIterator>::difference_type __new_size = util::distance(__first, __last);
     if (static_cast<size_type>(__new_size) <= capacity())
     {
         _ForwardIterator __mid = __last;
@@ -717,9 +717,9 @@ vector<_Tp, _Allocator>::assign(_ForwardIterator __first, _ForwardIterator __las
         {
             __growing = true;
             __mid =  __first;
-            _VSTD::advance(__mid, size());
+            util::advance(__mid, size());
         }
-        pointer __m = _VSTD::copy(__first, __mid, this->__begin_);
+        pointer __m = util::copy(__first, __mid, this->__begin_);
         if (__growing)
             __construct_at_end(__mid, __last);
         else
@@ -734,13 +734,13 @@ vector<_Tp, _Allocator>::assign(_ForwardIterator __first, _ForwardIterator __las
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::assign(size_type __n, const_reference __u)
 {
     if (__n <= capacity())
     {
         size_type __s = size();
-        _VSTD::fill_n(this->__begin_, _VSTD::min(__n, __s), __u);
+        util::fill_n(this->__begin_, util::min(__n, __s), __u);
         if (__n > __s)
             __construct_at_end(__n - __s, __u);
         else
@@ -755,7 +755,7 @@ vector<_Tp, _Allocator>::assign(size_type __n, const_reference __u)
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::__make_iter(pointer __p)
 {
@@ -763,7 +763,7 @@ vector<_Tp, _Allocator>::__make_iter(pointer __p)
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::const_iterator
 vector<_Tp, _Allocator>::__make_iter(const_pointer __p) const
 {
@@ -771,7 +771,7 @@ vector<_Tp, _Allocator>::__make_iter(const_pointer __p) const
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::begin()
 {
@@ -779,7 +779,7 @@ vector<_Tp, _Allocator>::begin()
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::const_iterator
 vector<_Tp, _Allocator>::begin() const
 {
@@ -787,7 +787,7 @@ vector<_Tp, _Allocator>::begin() const
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::end()
 {
@@ -795,7 +795,7 @@ vector<_Tp, _Allocator>::end()
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::const_iterator
 vector<_Tp, _Allocator>::end() const
 {
@@ -803,7 +803,7 @@ vector<_Tp, _Allocator>::end() const
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::reference
 vector<_Tp, _Allocator>::operator[](size_type __n)
 {
@@ -811,7 +811,7 @@ vector<_Tp, _Allocator>::operator[](size_type __n)
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::const_reference
 vector<_Tp, _Allocator>::operator[](size_type __n) const
 {
@@ -819,7 +819,7 @@ vector<_Tp, _Allocator>::operator[](size_type __n) const
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::reference
+__device__ typename vector<_Tp, _Allocator>::reference
 vector<_Tp, _Allocator>::at(size_type __n)
 {
     if (__n >= size())
@@ -828,7 +828,7 @@ vector<_Tp, _Allocator>::at(size_type __n)
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::const_reference
+__device__ typename vector<_Tp, _Allocator>::const_reference
 vector<_Tp, _Allocator>::at(size_type __n) const
 {
     if (__n >= size())
@@ -837,7 +837,7 @@ vector<_Tp, _Allocator>::at(size_type __n) const
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::reserve(size_type __n)
 {
     if (__n > capacity())
@@ -849,7 +849,7 @@ vector<_Tp, _Allocator>::reserve(size_type __n)
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::shrink_to_fit()
 {
     if (capacity() > size())
@@ -862,24 +862,24 @@ vector<_Tp, _Allocator>::shrink_to_fit()
 
 template <class _Tp, class _Allocator>
 template <class _Up>
-void
+__device__ void
 vector<_Tp, _Allocator>::__push_back_slow_path(_Up& __x)
 {
     allocator_type& __a = this->__alloc();
     __split_buffer<value_type, allocator_type&> __v(__recommend(size() + 1), size(), __a);
-    __alloc_traits::construct(__a, _VSTD::__to_raw_pointer(__v.__end_++), _VSTD::forward<_Up>(__x));
+    __alloc_traits::construct(__a, util::__to_raw_pointer(__v.__end_++), util::forward<_Up>(__x));
     __swap_out_circular_buffer(__v);
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 vector<_Tp, _Allocator>::push_back(const_reference __x)
 {
     if (this->__end_ != this->__end_cap())
     {
         __alloc_traits::construct(this->__alloc(),
-                                  _VSTD::__to_raw_pointer(this->__end_), __x);
+                                  util::__to_raw_pointer(this->__end_), __x);
         ++this->__end_;
     }
     else
@@ -887,7 +887,7 @@ vector<_Tp, _Allocator>::push_back(const_reference __x)
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 vector<_Tp, _Allocator>::pop_back()
 {
@@ -895,41 +895,41 @@ vector<_Tp, _Allocator>::pop_back()
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::erase(const_iterator __position)
 {
     pointer __p = const_cast<pointer>(&*__position);
     iterator __r = __make_iter(__p);
-    this->__destruct_at_end(_VSTD::move(__p + 1, this->__end_, __p));
+    this->__destruct_at_end(util::move(__p + 1, this->__end_, __p));
     return __r;
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::iterator
+__device__ typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::erase(const_iterator __first, const_iterator __last)
 {
     pointer __p = this->__begin_ + (__first - begin());
     iterator __r = __make_iter(__p);
-    this->__destruct_at_end(_VSTD::move(__p + (__last - __first), this->__end_, __p));
+    this->__destruct_at_end(util::move(__p + (__last - __first), this->__end_, __p));
     return __r;
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::__move_range(pointer __from_s, pointer __from_e, pointer __to)
 {
     pointer __old_last = this->__end_;
     difference_type __n = __old_last - __to;
     for (pointer __i = __from_s + __n; __i < __from_e; ++__i, ++this->__end_)
         __alloc_traits::construct(this->__alloc(),
-                                  _VSTD::__to_raw_pointer(this->__end_),
-                                  _VSTD::move(*__i));
-    _VSTD::move_backward(__from_s, __from_s + __n, __old_last);
+                                  util::__to_raw_pointer(this->__end_),
+                                  util::move(*__i));
+    util::move_backward(__from_s, __from_s + __n, __old_last);
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::iterator
+__device__ typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::insert(const_iterator __position, const_reference __x)
 {
     pointer __p = this->__begin_ + (__position - begin());
@@ -938,7 +938,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, const_reference __x)
         if (__p == this->__end_)
         {
             __alloc_traits::construct(this->__alloc(),
-                                  _VSTD::__to_raw_pointer(this->__end_), __x);
+                                  util::__to_raw_pointer(this->__end_), __x);
             ++this->__end_;
         }
         else
@@ -962,7 +962,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, const_reference __x)
 }
 
 template <class _Tp, class _Allocator>
-typename vector<_Tp, _Allocator>::iterator
+__device__ typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::insert(const_iterator __position, size_type __n, const_reference __x)
 {
     pointer __p = this->__begin_ + (__position - begin());
@@ -984,7 +984,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, size_type __n, const_
                 const_pointer __xr = pointer_traits<const_pointer>::pointer_to(__x);
                 if (__p <= __xr && __xr < this->__end_)
                     __xr += __old_n;
-                _VSTD::fill_n(__p, __n, *__xr);
+                util::fill_n(__p, __n, *__xr);
             }
         }
         else
@@ -1000,7 +1000,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, size_type __n, const_
 
 template <class _Tp, class _Allocator>
 template <class _InputIterator>
-typename enable_if
+__device__ typename enable_if
 <
      __is_input_iterator  <_InputIterator>::value &&
     !__is_forward_iterator<_InputIterator>::value,
@@ -1014,7 +1014,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, _InputIterator __firs
     pointer __old_last = this->__end_;
     for (; this->__end_ != this->__end_cap() && __first != __last; ++__first)
     {
-        __alloc_traits::construct(__a, _VSTD::__to_raw_pointer(this->__end_),
+        __alloc_traits::construct(__a, util::__to_raw_pointer(this->__end_),
                                   *__first);
         ++this->__end_;
     }
@@ -1028,7 +1028,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, _InputIterator __firs
         __p = this->__begin_ + __old_p;
         __old_last = this->__begin_ + __old_size;
     }
-    __p = _VSTD::rotate(__p, __old_last, this->__end_);
+    __p = util::rotate(__p, __old_last, this->__end_);
     insert(__make_iter(__p), make_move_iterator(__v.begin()),
                                     make_move_iterator(__v.end()));
     return begin() + __off;
@@ -1036,7 +1036,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, _InputIterator __firs
 
 template <class _Tp, class _Allocator>
 template <class _ForwardIterator>
-typename enable_if
+__device__ typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
     typename vector<_Tp, _Allocator>::iterator
@@ -1044,7 +1044,7 @@ typename enable_if
 vector<_Tp, _Allocator>::insert(const_iterator __position, _ForwardIterator __first, _ForwardIterator __last)
 {
     pointer __p = this->__begin_ + (__position - begin());
-    difference_type __n = _VSTD::distance(__first, __last);
+    difference_type __n = util::distance(__first, __last);
     if (__n > 0)
     {
         if (__n <= this->__end_cap() - this->__end_)
@@ -1056,14 +1056,14 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, _ForwardIterator __fi
             if (__n > __dx)
             {
                 __m = __first;
-                _VSTD::advance(__m, this->__end_ - __p);
+                util::advance(__m, this->__end_ - __p);
                 __construct_at_end(__m, __last);
                 __n = __dx;
             }
             if (__n > 0)
             {
                 __move_range(__p, __old_last, __p + __old_n);
-                _VSTD::copy(__first, __m, __p);
+                util::copy(__first, __m, __p);
             }
         }
         else
@@ -1078,7 +1078,7 @@ vector<_Tp, _Allocator>::insert(const_iterator __position, _ForwardIterator __fi
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::resize(size_type __sz)
 {
     size_type __cs = size();
@@ -1089,7 +1089,7 @@ vector<_Tp, _Allocator>::resize(size_type __sz)
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::resize(size_type __sz, const_reference __x)
 {
     size_type __cs = size();
@@ -1100,17 +1100,17 @@ vector<_Tp, _Allocator>::resize(size_type __sz, const_reference __x)
 }
 
 template <class _Tp, class _Allocator>
-void
+__device__ void
 vector<_Tp, _Allocator>::swap(vector& __x)
 {
-    _VSTD::swap(this->__begin_, __x.__begin_);
-    _VSTD::swap(this->__end_, __x.__end_);
-    _VSTD::swap(this->__end_cap(), __x.__end_cap());
+    util::swap(this->__begin_, __x.__begin_);
+    util::swap(this->__end_, __x.__end_);
+    util::swap(this->__end_cap(), __x.__end_cap());
     __base::__swap_alloc(this->__alloc(), __x.__alloc());
 }
 
 template <class _Tp, class _Allocator>
-bool
+__device__ bool
 vector<_Tp, _Allocator>::__invariants() const
 {
     if (this->__begin_ == 0)
@@ -1131,7 +1131,7 @@ vector<_Tp, _Allocator>::__invariants() const
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 vector<_Tp, _Allocator>::__invalidate_all_iterators()
 {
@@ -1141,16 +1141,16 @@ vector<_Tp, _Allocator>::__invalidate_all_iterators()
 
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 bool
 operator==(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __y)
 {
     const typename vector<_Tp, _Allocator>::size_type __sz = __x.size();
-    return __sz == __y.size() && _VSTD::equal(__x.begin(), __x.end(), __y.begin());
+    return __sz == __y.size() && util::equal(__x.begin(), __x.end(), __y.begin());
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 bool
 operator!=(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __y)
 {
@@ -1158,15 +1158,15 @@ operator!=(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 bool
 operator< (const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __y)
 {
-    return _VSTD::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
+    return util::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 bool
 operator> (const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __y)
 {
@@ -1174,7 +1174,7 @@ operator> (const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 bool
 operator>=(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __y)
 {
@@ -1182,7 +1182,7 @@ operator>=(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 bool
 operator<=(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __y)
 {
@@ -1190,7 +1190,7 @@ operator<=(const vector<_Tp, _Allocator>& __x, const vector<_Tp, _Allocator>& __
 }
 
 template <class _Tp, class _Allocator>
-inline
+__device__ inline
 void
 swap(vector<_Tp, _Allocator>& __x, vector<_Tp, _Allocator>& __y)
 {

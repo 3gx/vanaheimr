@@ -6,6 +6,9 @@
 
 #pragma once
 
+namespace archaeopteryx
+{
+
 namespace util
 {
 
@@ -25,6 +28,17 @@ __device__ void strlcpy(char* destination, const char* source, size_t max);
 	\return 0 if all bytes match, some random int otherwise
 */
 __device__ int strcmp(const char* left, const char* right);
+
+__device__ int memcmp(const void* s1, const void* s2, size_t n);
+__device__ size_t strlen(const char* s);
+__device__ const void* memchr(const void* s, int c, size_t n);
+__device__ void* memchr(      void* s, int c, size_t n);
+__device__ void* memmove(void* s1, const void* s2, size_t n);
+
+__device__ void* memcpy(void* s1, const void* s2, size_t n);
+__device__ void* memset(void* s, int c, size_t n);
+
+}
 
 }
 

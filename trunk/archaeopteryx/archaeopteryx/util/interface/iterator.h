@@ -107,7 +107,7 @@ struct iterator
 };
 
 template <class _InputIter>
-inline void __advance(_InputIter& __i,
+__device__ inline void __advance(_InputIter& __i,
              typename iterator_traits<_InputIter>::difference_type __n, input_iterator_tag)
 {
     for (; __n > 0; --__n)
@@ -115,7 +115,7 @@ inline void __advance(_InputIter& __i,
 }
 
 template <class _BiDirIter>
-inline void __advance(_BiDirIter& __i,
+__device__ inline void __advance(_BiDirIter& __i,
              typename iterator_traits<_BiDirIter>::difference_type __n, bidirectional_iterator_tag)
 {
     if (__n >= 0)
@@ -127,21 +127,21 @@ inline void __advance(_BiDirIter& __i,
 }
 
 template <class _RandIter>
-inline void __advance(_RandIter& __i,
+__device__ inline void __advance(_RandIter& __i,
              typename iterator_traits<_RandIter>::difference_type __n, random_access_iterator_tag)
 {
    __i += __n;
 }
 
 template <class _InputIter>
-inline void advance(_InputIter& __i,
+__device__ inline void advance(_InputIter& __i,
              typename iterator_traits<_InputIter>::difference_type __n)
 {
     __advance(__i, __n, typename iterator_traits<_InputIter>::iterator_category());
 }
 
 template <class _InputIter>
-inline typename iterator_traits<_InputIter>::difference_type
+__device__ inline typename iterator_traits<_InputIter>::difference_type
 __distance(_InputIter __first, _InputIter __last, input_iterator_tag)
 {
     typename iterator_traits<_InputIter>::difference_type __r(0);
@@ -151,36 +151,36 @@ __distance(_InputIter __first, _InputIter __last, input_iterator_tag)
 }
 
 template <class _RandIter>
-inline typename iterator_traits<_RandIter>::difference_type
+__device__ inline typename iterator_traits<_RandIter>::difference_type
 __distance(_RandIter __first, _RandIter __last, random_access_iterator_tag)
 {
     return __last - __first;
 }
 
 template <class _InputIter>
-inline typename iterator_traits<_InputIter>::difference_type
+__device__ inline typename iterator_traits<_InputIter>::difference_type
 distance(_InputIter __first, _InputIter __last)
 {
     return __distance(__first, __last, typename iterator_traits<_InputIter>::iterator_category());
 }
 
 template <class _ForwardIter>
-inline _ForwardIter
+__device__ inline _ForwardIter
 next(_ForwardIter __x,
      typename iterator_traits<_ForwardIter>::difference_type __n = 1,
      typename enable_if<__is_forward_iterator<_ForwardIter>::value>::type* = 0)
 {
-    _VSTD::advance(__x, __n);
+    util::advance(__x, __n);
     return __x;
 }
 
 template <class _BidiretionalIter>
-inline _BidiretionalIter
+__device__ inline _BidiretionalIter
 prev(_BidiretionalIter __x,
      typename iterator_traits<_BidiretionalIter>::difference_type __n = 1,
      typename enable_if<__is_bidirectional_iterator<_BidiretionalIter>::value>::type* = 0)
 {
-    _VSTD::advance(__x, -__n);
+    util::advance(__x, -__n);
     return __x;
 }
 
@@ -202,82 +202,82 @@ public:
     typedef typename iterator_traits<_Iter>::reference       reference;
     typedef typename iterator_traits<_Iter>::pointer         pointer;
 
-    reverse_iterator() : current() {}
-    explicit reverse_iterator(_Iter __x) : __t(__x), current(__x) {}
-    template <class _Up> reverse_iterator(const reverse_iterator<_Up>& __u)
+    __device__ reverse_iterator() : current() {}
+    __device__ explicit reverse_iterator(_Iter __x) : __t(__x), current(__x) {}
+    template <class _Up> __device__ reverse_iterator(const reverse_iterator<_Up>& __u)
         : __t(__u.base()), current(__u.base()) {}
-    _Iter base() const {return current;}
-    reference operator*() const {__t = current; return *--__t;}
-    pointer  operator->() const {return &(operator*());}
-    reverse_iterator& operator++() {--current; return *this;}
-    reverse_iterator  operator++(int)
+    __device__ _Iter base() const {return current;}
+    __device__ reference operator*() const {__t = current; return *--__t;}
+    __device__ pointer  operator->() const {return &(operator*());}
+    __device__ reverse_iterator& operator++() {--current; return *this;}
+    __device__ reverse_iterator  operator++(int)
         {reverse_iterator __tmp(*this); --current; return __tmp;}
-    reverse_iterator& operator--() {++current; return *this;}
-    reverse_iterator  operator--(int)
+    __device__ reverse_iterator& operator--() {++current; return *this;}
+    __device__ reverse_iterator  operator--(int)
         {reverse_iterator __tmp(*this); ++current; return __tmp;}
-    reverse_iterator  operator+ (difference_type __n) const
+    __device__ reverse_iterator  operator+ (difference_type __n) const
         {return reverse_iterator(current - __n);}
-    reverse_iterator& operator+=(difference_type __n)
+    __device__ reverse_iterator& operator+=(difference_type __n)
         {current -= __n; return *this;}
-    reverse_iterator  operator- (difference_type __n) const
+    __device__ reverse_iterator  operator- (difference_type __n) const
         {return reverse_iterator(current + __n);}
-    reverse_iterator& operator-=(difference_type __n)
+    __device__ reverse_iterator& operator-=(difference_type __n)
         {current += __n; return *this;}
-    reference         operator[](difference_type __n) const
+    __device__ reference         operator[](difference_type __n) const
         {return current[-__n-1];}
 };
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator==(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __x.base() == __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator<(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __x.base() > __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator!=(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __x.base() != __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator>(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __x.base() < __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator>=(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __x.base() <= __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator<=(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __x.base() >= __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline typename reverse_iterator<_Iter1>::difference_type
+__device__ inline typename reverse_iterator<_Iter1>::difference_type
 operator-(const reverse_iterator<_Iter1>& __x, const reverse_iterator<_Iter2>& __y)
 {
     return __y.base() - __x.base();
 }
 
 template <class _Iter>
-inline reverse_iterator<_Iter>
+__device__ inline reverse_iterator<_Iter>
 operator+(typename reverse_iterator<_Iter>::difference_type __n, const reverse_iterator<_Iter>& __x)
 {
     return reverse_iterator<_Iter>(__x.base() - __n);
@@ -296,16 +296,16 @@ protected:
 public:
     typedef _Container container_type;
 
-    explicit back_insert_iterator(_Container& __x) : container(&__x) {}
-    back_insert_iterator& operator=(const typename _Container::value_type& __value_)
+    __device__ explicit back_insert_iterator(_Container& __x) : container(&__x) {}
+    __device__ back_insert_iterator& operator=(const typename _Container::value_type& __value_)
         {container->push_back(__value_); return *this;}
-    back_insert_iterator& operator*()     {return *this;}
-    back_insert_iterator& operator++()    {return *this;}
-    back_insert_iterator  operator++(int) {return *this;}
+    __device__ back_insert_iterator& operator*()     {return *this;}
+    __device__ back_insert_iterator& operator++()    {return *this;}
+    __device__ back_insert_iterator  operator++(int) {return *this;}
 };
 
 template <class _Container>
-inline back_insert_iterator<_Container>
+__device__ inline back_insert_iterator<_Container>
 back_inserter(_Container& __x)
 {
     return back_insert_iterator<_Container>(__x);
@@ -324,16 +324,16 @@ protected:
 public:
     typedef _Container container_type;
 
-    explicit front_insert_iterator(_Container& __x) : container(&__x) {}
-    front_insert_iterator& operator=(const typename _Container::value_type& __value_)
+    __device__ explicit front_insert_iterator(_Container& __x) : container(&__x) {}
+    __device__ front_insert_iterator& operator=(const typename _Container::value_type& __value_)
         {container->push_front(__value_); return *this;}
-    front_insert_iterator& operator*()     {return *this;}
-    front_insert_iterator& operator++()    {return *this;}
-    front_insert_iterator  operator++(int) {return *this;}
+    __device__ front_insert_iterator& operator*()     {return *this;}
+    __device__ front_insert_iterator& operator++()    {return *this;}
+    __device__ front_insert_iterator  operator++(int) {return *this;}
 };
 
 template <class _Container>
-inline front_insert_iterator<_Container>
+__device__ inline front_insert_iterator<_Container>
 front_inserter(_Container& __x)
 {
     return front_insert_iterator<_Container>(__x);
@@ -353,17 +353,17 @@ protected:
 public:
     typedef _Container container_type;
 
-    insert_iterator(_Container& __x, typename _Container::iterator __i)
+    __device__ insert_iterator(_Container& __x, typename _Container::iterator __i)
         : container(&__x), iter(__i) {}
-    insert_iterator& operator=(const typename _Container::value_type& __value_)
+    __device__ insert_iterator& operator=(const typename _Container::value_type& __value_)
         {iter = container->insert(iter, __value_); ++iter; return *this;}
-    insert_iterator& operator*()        {return *this;}
-    insert_iterator& operator++()       {return *this;}
-    insert_iterator& operator++(int)    {return *this;}
+    __device__ insert_iterator& operator*()        {return *this;}
+    __device__ insert_iterator& operator++()       {return *this;}
+    __device__ insert_iterator& operator++(int)    {return *this;}
 };
 
 template <class _Container>
-inline insert_iterator<_Container>
+__device__ inline insert_iterator<_Container>
 inserter(_Container& __x, typename _Container::iterator __i)
 {
     return insert_iterator<_Container>(__x, __i);
@@ -385,36 +385,36 @@ difference_type;
     typedef typename iterator_traits<iterator_type>::pointer pointer;
     typedef typename iterator_traits<iterator_type>::reference reference;
 
-     move_iterator() : __i() {}
-     explicit move_iterator(_Iter __x) : __i(__x) {}
-    template <class _Up>  move_iterator(const
-move_iterator<_Up>& __u)
+     __device__ move_iterator() : __i() {}
+     __device__ explicit move_iterator(_Iter __x) : __i(__x) {}
+    template <class _Up> 
+    	__device__ move_iterator(const move_iterator<_Up>& __u)
         : __i(__u.base()) {}
-     _Iter base() const {return __i;}
-     reference operator*() const {
+     __device__ _Iter base() const {return __i;}
+     __device__ reference operator*() const {
       return static_cast<reference>(*__i);
     }
-     pointer  operator->() const {
+     __device__ pointer  operator->() const {
       typename iterator_traits<iterator_type>::reference __ref = *__i;
       return &__ref;
     }
-     move_iterator& operator++() {++__i; return *this;}
-     move_iterator  operator++(int)
+     __device__ move_iterator& operator++() {++__i; return *this;}
+     __device__ move_iterator  operator++(int)
         {move_iterator __tmp(*this); ++__i; return __tmp;}
-     move_iterator& operator--() {--__i; return *this;}
-     move_iterator  operator--(int)
+     __device__ move_iterator& operator--() {--__i; return *this;}
+     __device__ move_iterator  operator--(int)
         {move_iterator __tmp(*this); --__i; return __tmp;}
-     move_iterator  operator+ (difference_type __n)
+     __device__ move_iterator  operator+ (difference_type __n)
 const
         {return move_iterator(__i + __n);}
-     move_iterator& operator+=(difference_type __n)
+     __device__ move_iterator& operator+=(difference_type __n)
         {__i += __n; return *this;}
-     move_iterator  operator- (difference_type __n)
+     __device__ move_iterator  operator- (difference_type __n)
 const
         {return move_iterator(__i - __n);}
-     move_iterator& operator-=(difference_type __n)
+     __device__ move_iterator& operator-=(difference_type __n)
         {__i -= __n; return *this;}
-     reference         operator[](difference_type __n)
+     __device__ reference         operator[](difference_type __n)
 const
     {
       return static_cast<reference>(__i[__n]);
@@ -422,56 +422,56 @@ const
 };
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator==(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() == __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator<(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() < __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator!=(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() != __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator>(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() > __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator>=(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() >= __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator<=(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() <= __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline typename move_iterator<_Iter1>::difference_type
+__device__ inline typename move_iterator<_Iter1>::difference_type
 operator-(const move_iterator<_Iter1>& __x, const move_iterator<_Iter2>& __y)
 {
     return __x.base() - __y.base();
 }
 
 template <class _Iter>
-inline move_iterator<_Iter>
+__device__ inline move_iterator<_Iter>
 operator+(typename move_iterator<_Iter>::difference_type __n, const
 move_iterator<_Iter>& __x)
 {
@@ -479,7 +479,7 @@ move_iterator<_Iter>& __x)
 }
 
 template <class _Iter>
-inline move_iterator<_Iter>
+__device__ inline move_iterator<_Iter>
 make_move_iterator(const _Iter& __i)
 {
     return move_iterator<_Iter>(__i);
@@ -490,44 +490,44 @@ make_move_iterator(const _Iter& __i)
 template <class _Iter> class __wrap_iter;
 
 template <class _Iter1, class _Iter2>
-bool
+__device__ bool
 operator==(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter1, class _Iter2>
-bool
+__device__ bool
 operator<(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter1, class _Iter2>
-bool
+__device__ bool
 operator!=(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter1, class _Iter2>
-bool
+__device__ bool
 operator>(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter1, class _Iter2>
-bool
+__device__ bool
 operator>=(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter1, class _Iter2>
-bool
+__device__ bool
 operator<=(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter1, class _Iter2>
-typename __wrap_iter<_Iter1>::difference_type
+__device__ typename __wrap_iter<_Iter1>::difference_type
 operator-(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
 template <class _Iter>
-__wrap_iter<_Iter>
+__device__ __wrap_iter<_Iter>
 operator+(typename __wrap_iter<_Iter>::difference_type, __wrap_iter<_Iter>);
 
-template <class _Ip, class _Op> _Op copy(_Ip, _Ip, _Op);
-template <class _B1, class _B2> _B2 copy_backward(_B1, _B1, _B2);
-template <class _Ip, class _Op> _Op move(_Ip, _Ip, _Op);
-template <class _B1, class _B2> _B2 move_backward(_B1, _B1, _B2);
+template <class _Ip, class _Op> __device__ _Op copy(_Ip, _Ip, _Op);
+template <class _B1, class _B2> __device__ _B2 copy_backward(_B1, _B1, _B2);
+template <class _Ip, class _Op> __device__ _Op move(_Ip, _Ip, _Op);
+template <class _B1, class _B2> __device__ _B2 move_backward(_B1, _B1, _B2);
 
 template <class _Tp>
-typename enable_if
+__device__ typename enable_if
 <
     is_trivially_copy_assignable<_Tp>::value,
     _Tp*
@@ -547,53 +547,53 @@ public:
 private:
     iterator_type __i;
 public:
-    __wrap_iter()
+    __device__ __wrap_iter()
     {
     }
-    template <class _Up> __wrap_iter(const __wrap_iter<_Up>& __u,
+    template <class _Up> __device__ __wrap_iter(const __wrap_iter<_Up>& __u,
         typename enable_if<is_convertible<_Up, iterator_type>::value>::type* = 0)
         : __i(__u.base())
     {
     }
-    reference operator*() const
+    __device__ reference operator*() const
     {
         return *__i;
     }
-    pointer  operator->() const {return &(operator*());}
-    __wrap_iter& operator++()
+    __device__ pointer  operator->() const {return &(operator*());}
+    __device__ __wrap_iter& operator++()
     {
         ++__i;
         return *this;
     }
-    __wrap_iter  operator++(int)
+    __device__ __wrap_iter  operator++(int)
         {__wrap_iter __tmp(*this); ++(*this); return __tmp;}
-    __wrap_iter& operator--()
+    __device__ __wrap_iter& operator--()
     {
         --__i;
         return *this;
     }
-    __wrap_iter  operator--(int)
+    __device__ __wrap_iter  operator--(int)
         {__wrap_iter __tmp(*this); --(*this); return __tmp;}
-    __wrap_iter  operator+ (difference_type __n) const
+    __device__ __wrap_iter  operator+ (difference_type __n) const
         {__wrap_iter __w(*this); __w += __n; return __w;}
-    __wrap_iter& operator+=(difference_type __n)
+    __device__ __wrap_iter& operator+=(difference_type __n)
     {
         __i += __n;
         return *this;
     }
-    __wrap_iter  operator- (difference_type __n) const
+    __device__ __wrap_iter  operator- (difference_type __n) const
         {return *this + (-__n);}
-    __wrap_iter& operator-=(difference_type __n)
+    __device__ __wrap_iter& operator-=(difference_type __n)
         {*this += -__n; return *this;}
-    reference        operator[](difference_type __n) const
+    __device__ reference        operator[](difference_type __n) const
     {
         return __i[__n];
     }
 
-    iterator_type base() const {return __i;}
+    __device__ iterator_type base() const {return __i;}
 
 private:
-    __wrap_iter(iterator_type __x) : __i(__x) {}
+    __device__ __wrap_iter(iterator_type __x) : __i(__x) {}
 
     template <class _Up> friend class __wrap_iter;
     template <class _CharT, class _Traits, class _Alloc> friend class basic_string;
@@ -601,52 +601,52 @@ private:
 
     template <class _Iter1, class _Iter2>
     friend
-    bool
+    __device__ bool
     operator==(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1, class _Iter2>
     friend
-    bool
+    __device__ bool
     operator<(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1, class _Iter2>
     friend
-    bool
+    __device__ bool
     operator!=(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1, class _Iter2>
     friend
-    bool
+    __device__ bool
     operator>(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1, class _Iter2>
     friend
-    bool
+    __device__ bool
     operator>=(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1, class _Iter2>
     friend
-    bool
+    __device__ bool
     operator<=(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1, class _Iter2>
     friend
-    typename __wrap_iter<_Iter1>::difference_type
+    __device__ typename __wrap_iter<_Iter1>::difference_type
     operator-(const __wrap_iter<_Iter1>&, const __wrap_iter<_Iter2>&);
 
     template <class _Iter1>
     friend
-    __wrap_iter<_Iter1>
+    __device__ __wrap_iter<_Iter1>
     operator+(typename __wrap_iter<_Iter1>::difference_type, __wrap_iter<_Iter1>);
 
-    template <class _Ip, class _Op> friend _Op copy(_Ip, _Ip, _Op);
-    template <class _B1, class _B2> friend _B2 copy_backward(_B1, _B1, _B2);
-    template <class _Ip, class _Op> friend _Op move(_Ip, _Ip, _Op);
-    template <class _B1, class _B2> friend _B2 move_backward(_B1, _B1, _B2);
+    template <class _Ip, class _Op> friend __device__ _Op copy(_Ip, _Ip, _Op);
+    template <class _B1, class _B2> friend __device__ _B2 copy_backward(_B1, _B1, _B2);
+    template <class _Ip, class _Op> friend __device__ _Op move(_Ip, _Ip, _Op);
+    template <class _B1, class _B2> friend __device__ _B2 move_backward(_B1, _B1, _B2);
 
     template <class _Tp>
     friend
-    typename enable_if
+    __device__ typename enable_if
     <
         is_trivially_copy_assignable<_Tp>::value,
         _Tp*
@@ -655,84 +655,84 @@ private:
 };
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator==(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return __x.base() == __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator<(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return __x.base() < __y.base();
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator!=(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return !(__x == __y);
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator>(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return __y < __x;
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator>=(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return !(__x < __y);
 }
 
 template <class _Iter1, class _Iter2>
-inline bool
+__device__ inline bool
 operator<=(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return !(__y < __x);
 }
 
 template <class _Iter1>
-inline bool
+__device__ inline bool
 operator!=(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter1>& __y)
 {
     return !(__x == __y);
 }
 
 template <class _Iter1>
-inline bool
+__device__ inline bool
 operator>(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter1>& __y)
 {
     return __y < __x;
 }
 
 template <class _Iter1>
-inline bool
+__device__ inline bool
 operator>=(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter1>& __y)
 {
     return !(__x < __y);
 }
 
 template <class _Iter1>
-inline bool
+__device__ inline bool
 operator<=(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter1>& __y)
 {
     return !(__y < __x);
 }
 
 template <class _Iter1, class _Iter2>
-inline typename __wrap_iter<_Iter1>::difference_type
+__device__ inline typename __wrap_iter<_Iter1>::difference_type
 operator-(const __wrap_iter<_Iter1>& __x, const __wrap_iter<_Iter2>& __y)
 {
     return __x.base() - __y.base();
 }
 
 template <class _Iter>
-inline __wrap_iter<_Iter>
+__device__ inline __wrap_iter<_Iter>
 operator+(typename __wrap_iter<_Iter>::difference_type __n,
           __wrap_iter<_Iter> __x)
 {
@@ -744,42 +744,42 @@ operator+(typename __wrap_iter<_Iter>::difference_type __n,
 
 
 template <class _Cp>
-inline typename _Cp::iterator
+__device__ inline typename _Cp::iterator
 begin(_Cp& __c)
 {
     return __c.begin();
 }
 
 template <class _Cp>
-inline typename _Cp::const_iterator
+__device__ inline typename _Cp::const_iterator
 begin(const _Cp& __c)
 {
     return __c.begin();
 }
 
 template <class _Cp>
-inline typename _Cp::iterator
+__device__ inline typename _Cp::iterator
 end(_Cp& __c)
 {
     return __c.end();
 }
 
 template <class _Cp>
-inline typename _Cp::const_iterator
+__device__ inline typename _Cp::const_iterator
 end(const _Cp& __c)
 {
     return __c.end();
 }
 
 template <class _Tp, size_t _Np>
-inline _Tp*
+__device__ inline _Tp*
 begin(_Tp (&__array)[_Np])
 {
     return __array;
 }
 
 template <class _Tp, size_t _Np>
-inline _Tp*
+__device__ inline _Tp*
 end(_Tp (&__array)[_Np])
 {
     return __array + _Np;

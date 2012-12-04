@@ -14,7 +14,7 @@
 namespace archaeopteryx
 {
 
-namespace runtime
+namespace rt
 {
 
 class MemoryPool
@@ -27,7 +27,8 @@ public:
 
 public:
 	__device__ bool allocate(uint64_t size, Address address);
-	__device__ Address allocate(uint64_t address);
+	__device__ Address allocate(Address address);
+	__device__ void deallocate(Address address);
 
 	__device__ Address translate(Address address);
 

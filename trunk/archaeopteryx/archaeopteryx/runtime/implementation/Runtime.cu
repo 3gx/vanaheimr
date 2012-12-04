@@ -12,6 +12,8 @@
 #include <archaeopteryx/runtime/interface/Runtime.h>
 #include <archaeopteryx/runtime/interface/MemoryPool.h>
 
+#include <archaeopteryx/util/interface/Knob.h>
+
 namespace archaeopteryx
 {
 
@@ -46,11 +48,11 @@ __device__ void Runtime::create()
 {
 	state = new RuntimeState;
 
-	state->parameterMemoryAddress = allocateMemoryWhereAvailable(
-		util::KnobDatabase::getKnob<size_t>("parameter-memory-size"),
-		parameterMemory);
+	state->parameterMemoryAddress =
+		mmap(util::KnobDatabase::getKnob<size_t>("parameter-memory-size"));
 
-	unsigned int ctas = util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
+	unsigned int ctas =
+		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
 	state->hardwareCTAs.resize(ctas);
 }
 
@@ -69,19 +71,20 @@ __device__ bool Runtime::mmap(size_t bytes, Address address)
 	return state->memory.allocate(bytes, address);
 }
 
-__device__ Runtime::Address Runtime::mmap(size_t bytes)
+__device__ Runtime::Address Runtime::mmap(uint64_t bytes)
 {
 	return state->memory.allocate(bytes);
 }
 
-__device__ void Runtime::munmap(size_t address)
+__device__ void Runtime::munmap(Address address)
 {
-	state->memory->deallocate(address);
+	state->memory.deallocate(address);
 }
 
-__device__ void* Runtime::translateCudaAddressToSimulatedAddress(void* cudaAddress)
+__device__ Runtime::Address
+	Runtime::translateVirtualToPhysicalAddress(Address virtualAddress)
 {
-	return state->memory.translateAddress((size_t) simAddress);
+	return state->memory.translate((size_t) virtualAddress);
 }
 
 // The Runtime class owns all of the simulator state, it should have allocated it in the constructor
@@ -100,20 +103,23 @@ __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas, unsigned int 
 }
 
 // Similar to the previous call, this sets the memory sizes
-__device__ void Runtime::setupMemoryConfig(unsigned int localMemoryPerThread, unsigned int sharedMemoryPerCta)
+__device__ void Runtime::setupMemoryConfig(unsigned int threadStackSize)
 {
+	unsigned int sharedMemoryPerCta =
+		util::KnobDatabase::getKnob<unsigned int>("shared-memory-per-cta");
+
 	// TODO: run in a kernel 
     for(RuntimeState::CTAVector::iterator cta = state->hardwareCTAs.begin();
 		cta != state->hardwareCTAs.end(); ++cta)
     {
-        cta->setMemoryState(localMemoryPerThread, sharedMemoryPerCta);
+        cta->setMemoryState(threadStackSize, sharedMemoryPerCta);
     }
 }
 
 __device__ void Runtime::setupArgument(const void* data, size_t size, size_t offset)
 {
 	char* parameterBase =
-		(char*)translateCudaAddressToSimulatedAddress(state->parameterMemoryAddress);
+		(char*)translateVirtualToPhysicalAddress(state->parameterMemoryAddress);
 	
 	std::memcpy(parameterBase + offset, data, size);
 }
@@ -125,6 +131,12 @@ __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
     state->programEntryPointAddress = findFunctionsPC(functionName);    
 }
 
+__global__ void launchSimulationInParallel()
+{
+    state->kernel.launchKernel(state->simulatedBlockCount, 	
+        &state->hardwareCTAs[0], Runtime::getSelectedBinary());
+}
+
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
 __device__ void Runtime::launchSimulation()
 {
@@ -134,12 +146,6 @@ __device__ void Runtime::launchSimulation()
 	launchSimulationInParallel<<<ctas, threads>>>();
 }
 
-__global__ void Runtime::launchSimulationInParallel()
-{
-    state->kernel.launchKernel(state->simulatedBlockCount, 	
-        state->hardwareCTAs, getSelectedBinary());
-}
-
 __device__ void Runtime::unloadBinaries()
 {
 	state->binaries.clear();
@@ -147,15 +153,15 @@ __device__ void Runtime::unloadBinaries()
 
 __device__ size_t Runtime::findFunctionsPC(const char* functionName)
 {
-	for(State::BinaryMap::iterator binary = state->binaries.begin();
+	for(RuntimeState::BinaryMap::iterator binary = state->binaries.begin();
 		binary != state->binaries.end(); ++binary)
 	{
-		if(!binary->second.containsFunctin(functionName)) continue;
+		if(!binary->second.containsFunction(functionName)) continue;
 
 		return binary->second.findFunctionsPC(functionName);
 	}
 
-	assertM(false, "Function name not found.");
+	//assertM(false, "Function name not found.");
 
 	return 0;
 }
@@ -163,7 +169,7 @@ __device__ size_t Runtime::findFunctionsPC(const char* functionName)
 __device__ ir::Binary* Runtime::getSelectedBinary()
 {
 	//TODO support multiple binaries (requires linking)
-	return &state->binaries->begin()->second;
+	return &state->binaries.begin()->second;
 }
 
 }
