@@ -39,6 +39,50 @@ __device__ int strcmp(const char* left, const char* right)
 	return 0;
 }
 
+__device__ int memcmp(const void* s1, const void* s2, size_t n)
+{
+	if(n)
+	{
+		const unsigned char* p1 = (const unsigned char*)s1;
+		const unsigned char* p2 = (const unsigned char*)s2;
+
+		do
+		{
+			if(*p1++ != *p2++)
+			{
+				return (*--p1 - *--p2);
+			}
+		}
+		while (--n);
+	}
+	
+	return 0;
+}
+
+__device__ void* memcpy(void* s1, const void* s2, size_t n)
+{
+	      unsigned char* p1 =       (unsigned char*)s1;
+	const unsigned char* p2 = (const unsigned char*)s2;
+
+	while(n--)
+	{
+		*p1 = *p1;
+		++p1;
+		++p2;
+	}
+	
+	return p1;
+}
+
+__device__ size_t strlen(const char* s)
+{
+	size_t size = 0;
+	
+	while(*s++ != '\0') ++size;
+
+	return size;
+}
+
 }
 
 }

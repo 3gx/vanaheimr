@@ -695,7 +695,7 @@ public:
 private:
         __device__ explicit __tree_const_iterator(__node_pointer __p)
         : __ptr_(__p) {}
-    template <class, class, class> friend class __tree;
+    template <class, class, class> friend class RedBlackTree;
     template <class, class, class, class> friend class map;
     template <class, class, class, class> friend class multimap;
     template <class, class, class> friend class set;

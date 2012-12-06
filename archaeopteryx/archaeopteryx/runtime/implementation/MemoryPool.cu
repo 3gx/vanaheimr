@@ -51,6 +51,15 @@ __device__ MemoryPool::Address MemoryPool::allocate(uint64_t size)
 	return address;
 }
 
+__device__ void MemoryPool::deallocate(Address address)
+{
+	PageMap::iterator page = _pages.find(address);
+
+	if(page == _pages.end()) return;
+
+	_pages.erase(page);
+}
+
 __device__ MemoryPool::Address MemoryPool::translate(Address address)
 {
 	PageMap::iterator page = _pages.lower_bound(address);
