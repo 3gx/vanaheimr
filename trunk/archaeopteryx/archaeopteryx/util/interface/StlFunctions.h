@@ -22,3 +22,5 @@ __host__ __device__ Type max(Type a, Type b);
 
 }
 
+#include <archaeopteryx/util/implementation/StlFunctions.inc>
+
