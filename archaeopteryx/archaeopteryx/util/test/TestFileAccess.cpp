@@ -11,7 +11,7 @@
 
 // Autogen files
 const char TestFileAccessesKernel[] = {
-	#include <.release_build/TestFileAccessesKernel.inc>
+	#include <TestFileAccessesKernel.inc>
 };
 
 

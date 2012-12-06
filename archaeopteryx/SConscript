@@ -26,6 +26,13 @@ except:
   
 libs = env['EXTRA_LIBS']
 
+# set the build root if a higher level script didn't already do it
+if not 'ARCHAEOPTERYX_BUILD_ROOT' in env:
+	env.Replace(ARCHAEOPTERYX_BUILD_ROOT = env['BUILD_ROOT'])
+
+# include the build directory in case of generated files
+env.AppendUnique(CPPPATH = env['ARCHAEOPTERYX_BUILD_ROOT'])
+
 # find all source files in the source tree
 sources = []
 intermediate_headers = []
@@ -44,10 +51,10 @@ libarchaeopteryx = env.PTXLibrary('archaeopteryx', sources)
 
 testFileAccessesKernel = env.PTXFile('TestFileAccess.ptx',
 	['archaeopteryx/util/test/TestFileAccessKernel.cu'])
-testFileAccessesLib = env.PTXLibrary('libTestFileAccess',
+testFileAccessesKernelBin = env.PTXBinary('libTestFileAccess',
 	[libarchaeopteryx, testFileAccessesKernel])
 testFileAccessesInc = env.PTXInclude('TestFileAccessesKernel.inc',
-	testFileAccessesLib)
+	testFileAccessesKernelBin)
 
 # Create the archaeopteryx unit tests
 tests = []

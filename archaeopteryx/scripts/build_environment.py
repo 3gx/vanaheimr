@@ -246,6 +246,9 @@ def Environment():
 	env.AppendUnique(CPPPATH = [os.path.abspath(os.path.join(thisDir,
 		'../../vanaheimr'))])
 	
+	# set the build path
+	env.Replace(BUILD_ROOT = str(env.Dir('.')))
+
 	# get ocelot paths
 	(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
 		ocelot_lflags,ocelot_libs) = getOcelotPaths()

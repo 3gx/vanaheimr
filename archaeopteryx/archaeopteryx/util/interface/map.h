@@ -327,15 +327,15 @@ public:
 
 public:
 	// Iteration
-          __device__ iterator begin() {return __tree_.begin();}
-   __device__  const_iterator begin() const {return __tree_.begin();}
-          __device__ iterator end() {return __tree_.end();}
+    __device__ iterator begin() {return __tree_.begin();}
+    __device__  const_iterator begin() const {return __tree_.begin();}
+    __device__ iterator end() {return __tree_.end();}
     __device__ const_iterator end() const {return __tree_.end();}
 
-          __device__ reverse_iterator rbegin() {return reverse_iterator(end());}
+    __device__ reverse_iterator rbegin() {return reverse_iterator(end());}
     __device__ const_reverse_iterator rbegin() const
         {return const_reverse_iterator(end());}
-          __device__ reverse_iterator rend()
+    __device__ reverse_iterator rend()
             {return       reverse_iterator(begin());}
     __device__ const_reverse_iterator rend() const
         {return const_reverse_iterator(begin());}

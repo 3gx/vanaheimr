@@ -112,6 +112,13 @@ def generate(env):
                                       suffix = '.ptx',
                                       src_suffix = ['.ptx'])
   env['BUILDERS']['PTXLibrary'] = ptx_lib_builder
+
+  # create a builder that makes PTX binaries from .ptx files
+  ptx_bin_builder = SCons.Builder.Builder(action = 'OcelotLinker -r -i "$SOURCES" -o $TARGET',
+                                      emitter = ptxEmitter,
+                                      suffix = '.ptx',
+                                      src_suffix = ['.ptx'])
+  env['BUILDERS']['PTXBinary'] = ptx_bin_builder
   
   # create a builder that makes PTX include files from .ptx files
   ptx_inc_builder = SCons.Builder.Builder(action = convertPTXToIncludeFile,
