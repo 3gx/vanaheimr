@@ -9,6 +9,9 @@
 #include <ocelot/api/interface/ocelot.h>
 #include <ocelot/cuda/interface/cuda_runtime.h>
 
+// Archaeopteryx Includes
+#include <archaeopteryx/util/interface/Host.h>
+
 // Autogen files
 const char TestFileAccessesKernel[] = {
 	#include <TestFileAccessesKernel.inc>
@@ -97,6 +100,9 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 int main(int argc, char** argv)
 {
+	
+	archaeopteryx::util::startupHostReflection();
+
 	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1000))
 	{
 		std::cout << "Pass/Fail: Pass\n";
@@ -105,6 +111,9 @@ int main(int argc, char** argv)
 	{
 		std::cout << "Pass/Fail: Fail\n";
 	}
+
+	archaeopteryx::util::teardownHostReflection();
+
 }
 
 

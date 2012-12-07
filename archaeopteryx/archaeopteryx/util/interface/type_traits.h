@@ -292,6 +292,22 @@ move(const _Tp& __t)
     return __t;
 }
 
+template <class _Tp>
+__device__ inline _Tp& forward(typename util::remove_reference<_Tp>::type& __t)
+{
+    return __t;
+}
+
+template <class _Tp>
+class __rv
+{
+    typedef typename remove_reference<_Tp>::type _Trr;
+    _Trr& t_;
+public:
+    __device__ _Trr* operator->() {return &t_;}
+    __device__ explicit __rv(_Trr& __t) : t_(__t) {}
+};
+
 // swap
 
 template <class _Tp>

@@ -1789,6 +1789,17 @@ RedBlackTree<_Tp, _Compare, _Allocator>::__equal_range_multi(const _Key& __k) co
 
 template <class _Tp, class _Compare, class _Allocator>
 __device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_holder
+RedBlackTree<_Tp, _Compare, _Allocator>::__construct_node(const value_type& __v)
+{
+    __node_allocator& __na = __node_alloc();
+    __node_holder __h(__node_traits::allocate(__na, 1), _Dp(__na));
+    __node_traits::construct(__na, util::addressof(__h->__value_), __v);
+    __h.get_deleter().__value_constructed = true;
+    return util::move(__h);
+}
+
+template <class _Tp, class _Compare, class _Allocator>
+__device__ typename RedBlackTree<_Tp, _Compare, _Allocator>::__node_holder
 RedBlackTree<_Tp, _Compare, _Allocator>::remove(const_iterator __p)
 {
     __node_pointer __np = const_cast<__node_pointer>(__p.__ptr_);

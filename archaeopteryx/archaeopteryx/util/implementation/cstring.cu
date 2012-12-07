@@ -83,6 +83,18 @@ __device__ size_t strlen(const char* s)
 	return size;
 }
 
+__device__ void* memset(void* s, int c, size_t n)
+{
+	unsigned char* p1 = (unsigned char*)s;
+	
+	for(unsigned int i = 0; i < n; ++i, ++p1)
+	{
+		*p1 = c;
+	}
+	
+	return p1;
+}
+
 }
 
 }
