@@ -38,7 +38,8 @@ sources = []
 intermediate_headers = []
 directories = ['archaeopteryx/executive/implementation',
 	'archaeopteryx/util/implementation',
-	'archaeopteryx/runtime/implementation']
+	'archaeopteryx/runtime/implementation',
+	'archaeopteryx/ir/implementation']
 extensions = ['*.cu']
 
 for dir in directories:
@@ -56,6 +57,21 @@ testFileAccessesKernelBin = env.PTXBinary('libTestFileAccess',
 testFileAccessesInc = env.PTXInclude('TestFileAccessesKernel.inc',
 	testFileAccessesKernelBin)
 
+# find all host source files in the source tree
+host_sources = []
+directories = ['archaeopteryx/util/host-implementation']
+extensions = ['*.cu']
+
+for dir in directories:
+	for ext in extensions:
+		regexp = os.path.join(dir, ext)
+		host_sources.extend(env.Glob(regexp))
+
+# Create the archaeopteryx host library
+libarchaeopteryxHost = env.SharedLibrary('archaeopteryxHost', host_sources)
+
+libs.append('-larchaeopteryxHost')
+
 # Create the archaeopteryx unit tests
 tests = []
 
@@ -65,7 +81,8 @@ tests.append(('TestFileAccesses',
 #	'archaeopteryx/runtime/test/TestRuntime.cpp', 'basic'))
 
 for test in tests:
-	env.Program(test[0], [test[1]], LIBS=libs)
+	program = env.Program(test[0], [test[1]], LIBS=libs)
+	env.Depends(program, libarchaeopteryxHost)
 
 if env['test_level'] != 'none':
 	print 'Adding unit tests to the build...'

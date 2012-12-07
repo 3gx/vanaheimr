@@ -275,6 +275,8 @@ def Environment():
 	# get linker switches
 	env.AppendUnique(LINKFLAGS = getLINKFLAGS(env['mode'], env.subst('$LINK')))
 
+	env.AppendUnique(LIBPATH = os.path.abspath(env['BUILD_ROOT']))
+		
 	# set extra libraries
 	env.AppendUnique(EXTRA_LIBS=getLIBS())
 

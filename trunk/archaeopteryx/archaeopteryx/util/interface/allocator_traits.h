@@ -727,35 +727,164 @@ private:
 		        {return __a;}
 };
 
+// addressof
 
-template <class T>
+template <class _Tp>
+__device__ inline _Tp*
+addressof(_Tp& __x)
+{
+    return (_Tp*)&(char&)__x;
+}
+
+// allocator
+
+template <class _Tp>
 class allocator
 {
 public:
-    typedef size_t                                size_type;
-    typedef ptrdiff_t                             difference_type;
-    typedef T*                                    pointer;
-    typedef const T*                              const_pointer;
-    typedef typename add_lvalue_reference<T>::type       reference;
-    typedef typename add_lvalue_reference<const T>::type const_reference;
-    typedef T                                     value_type;
+    typedef size_t            size_type;
+    typedef ptrdiff_t         difference_type;
+    typedef _Tp*              pointer;
+    typedef const _Tp*        const_pointer;
+    typedef _Tp&              reference;
+    typedef const _Tp&        const_reference;
+    typedef _Tp               value_type;
 
-    template <class U> struct rebind {typedef allocator<U> other;};
+    typedef true_type propagate_on_container_move_assignment;
 
-    __device__ allocator();
-    __device__ allocator(const allocator&);
-    template <class U> __device__ allocator(const allocator<U>&);
-    __device__ ~allocator();
-    __device__ pointer address(reference x) const;
-    __device__ const_pointer address(const_reference x) const;
-    __device__ pointer allocate(size_type, const void* hint = 0);
-    __device__ void deallocate(pointer p, size_type n);
-    __device__ size_type max_size() const;
-    template<class U>
-        __device__ void construct(U* p);
-    template <class U>
-        __device__ void destroy(U* p);
+    template <class _Up> struct rebind {typedef allocator<_Up> other;};
+
+    __device__ allocator() {}
+    template <class _Up> allocator(const allocator<_Up>&) {}
+    __device__ pointer address(reference __x) const
+        {return util::addressof(__x);}
+    __device__ const_pointer address(const_reference __x) const
+        {return util::addressof(__x);}
+    __device__ pointer allocate(size_type __n, allocator<void>::const_pointer = 0)
+        {return static_cast<pointer>(::operator new(__n * sizeof(_Tp)));}
+    __device__ void deallocate(pointer __p, size_type)
+        {::operator delete((void*)__p);}
+    __device__ size_type max_size() const
+        {return size_type(~0) / sizeof(_Tp);}
+        __device__ void
+        construct(pointer __p)
+        {
+            ::new((void*)__p) _Tp();
+        }
+
+    template <class _A0>
+        __device__ void
+        construct(pointer __p, _A0& __a0)
+        {
+            ::new((void*)__p) _Tp(__a0);
+        }
+    template <class _A0>
+        __device__ void
+        construct(pointer __p, const _A0& __a0)
+        {
+            ::new((void*)__p) _Tp(__a0);
+        }
+        
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, _A0& __a0, _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, const _A0& __a0, _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, _A0& __a0, const _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, const _A0& __a0, const _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    __device__ void destroy(pointer __p) {__p->~_Tp();}
 };
+
+template <class _Tp>
+class allocator<const _Tp>
+{
+public:
+    typedef size_t            size_type;
+    typedef ptrdiff_t         difference_type;
+    typedef const _Tp*        pointer;
+    typedef const _Tp*        const_pointer;
+    typedef const _Tp&        reference;
+    typedef const _Tp&        const_reference;
+    typedef _Tp               value_type;
+
+    typedef true_type propagate_on_container_move_assignment;
+
+    template <class _Up> struct rebind {typedef allocator<_Up> other;};
+
+    __device__ allocator() {}
+    template <class _Up> allocator(const allocator<_Up>&) {}
+    __device__ const_pointer address(const_reference __x) const
+        {return util::addressof(__x);}
+    __device__ pointer allocate(size_type __n, allocator<void>::const_pointer = 0)
+        {return static_cast<pointer>(::operator new(__n * sizeof(_Tp)));}
+    __device__ void deallocate(pointer __p, size_type)
+        {::operator delete((void*)__p);}
+    __device__ size_type max_size() const
+        {return size_type(~0) / sizeof(_Tp);}
+        
+        __device__ void
+        construct(pointer __p)
+        {
+            ::new((void*)__p) _Tp();
+        }
+
+    template <class _A0>
+        __device__ void
+        construct(pointer __p, _A0& __a0)
+        {
+            ::new((void*)__p) _Tp(__a0);
+        }
+    template <class _A0>
+        __device__ void
+        construct(pointer __p, const _A0& __a0)
+        {
+            ::new((void*)__p) _Tp(__a0);
+        }
+        
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, _A0& __a0, _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, const _A0& __a0, _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, _A0& __a0, const _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    template <class _A0, class _A1>
+        __device__ void
+        construct(pointer __p, const _A0& __a0, const _A1& __a1)
+        {
+            ::new((void*)__p) _Tp(__a0, __a1);
+        }
+    __device__ void destroy(pointer __p) {__p->~_Tp();}
+};
+
 
 template <class T, class U>
 __device__ bool operator==(const allocator<T>&, const allocator<U>&);
@@ -847,20 +976,28 @@ public:
         }
         
     __device__ explicit unique_ptr(pointer __p)
-        : __ptr_(move(__p))
+        : __ptr_(__p)
         {
         }
+
+    __device__ operator __rv<unique_ptr>()
+    {
+        return __rv<unique_ptr>(*this);
+    }
+
+    __device__ unique_ptr(__rv<unique_ptr> __u)
+        : __ptr_(__u->release(), util::forward<deleter_type>(__u->get_deleter())) {}
 
     template <class _Up, class _Ep>
     __device__ unique_ptr& operator=(unique_ptr<_Up, _Ep> __u)
     {
         reset(__u.release());
-        __ptr_.second() = forward<deleter_type>(__u.get_deleter());
+        __ptr_.second = util::forward<deleter_type>(__u.get_deleter());
         return *this;
     }
 
     __device__ unique_ptr(pointer __p, deleter_type __d)
-        : __ptr_(move(__p), move(__d)) {}
+        : __ptr_(util::move(__p), util::move(__d)) {}
 
     __device__ ~unique_ptr() {reset();}
 
@@ -868,7 +1005,7 @@ public:
         {return *__ptr_.first();}
     __device__ pointer operator->() const {return __ptr_.first;}
     __device__ pointer get() const {return __ptr_.first;}
-          _Dp_reference get_deleter()
+    __device__ _Dp_reference get_deleter()
         {return __ptr_.second;}
     __device__ _Dp_const_reference get_deleter() const
         {return __ptr_.second;}
@@ -912,26 +1049,39 @@ public:
     __device__ unique_ptr()
         : __ptr_(pointer())
         {
-            static_assert(!is_pointer<deleter_type>::value,
-                "unique_ptr constructed with null function pointer deleter");
         }
+
 
     __device__ explicit unique_ptr(pointer __p)
         : __ptr_(__p)
         {
-            static_assert(!is_pointer<deleter_type>::value,
-                "unique_ptr constructed with null function pointer deleter");
         }
 
     __device__ unique_ptr(pointer __p, deleter_type __d)
-        : __ptr_(__p, forward<deleter_type>(__d)) {}
+        : __ptr_(__p, util::forward<deleter_type>(__d)) {}
 
+    __device__ operator __rv<unique_ptr>()
+    {
+        return __rv<unique_ptr>(*this);
+    }
+
+    __device__ unique_ptr(__rv<unique_ptr> __u)
+        : __ptr_(__u->release(), util::forward<deleter_type>(__u->get_deleter())) {}
+
+    __device__ unique_ptr& operator=(__rv<unique_ptr> __u)
+    {
+        reset(__u->release());
+        __ptr_.second() = util::forward<deleter_type>(__u->get_deleter());
+        return *this;
+    }
+    
     __device__ ~unique_ptr() {reset();}
 
     __device__ typename add_lvalue_reference<_Tp>::type operator[](size_t __i) const
         {return __ptr_.first()[__i];}
     __device__ pointer get() const {return __ptr_.first();}
-          _Dp_reference get_deleter()
+    
+    __device__ _Dp_reference get_deleter()
         {return __ptr_.second();}
     __device__ _Dp_const_reference get_deleter() const
         {return __ptr_.second();}

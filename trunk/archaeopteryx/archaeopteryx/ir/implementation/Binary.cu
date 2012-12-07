@@ -6,13 +6,16 @@
 
 // Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Binary.h>
-#include <archaeopteryx/ir/interface/Instruction.h>
 
 #include <archaeopteryx/util/interface/File.h>
 #include <archaeopteryx/util/interface/StlFunctions.h>
 
 #include <archaeopteryx/util/interface/debug.h>
-#include <archaeopteryx/util/interface/string.h>
+#include <archaeopteryx/util/interface/cstring.h>
+
+// Vanaheimr Includes
+#include <vanaheimr/asm/interface/Instruction.h>
+
 
 #ifdef REPORT_BASE
 #undef REPORT_BASE
@@ -20,11 +23,22 @@
 
 #define REPORT_BASE 1
 
+namespace archaeopteryx
+{
+
 namespace ir
 {
 
+__device__ Binary::Binary(const char* filename)
+: _file(0), _ownedFile(0)
+{
+	_ownedFile = new util::File(filename);
+	
+	_file = _ownedFile;
+}
+
 __device__ Binary::Binary(File* file)
-: _file(file)
+: _file(file), _ownedFile(0)
 {
 	Header header;
 
@@ -40,8 +54,8 @@ __device__ Binary::Binary(File* file)
 	symbolTable = 0;
 	stringTable = 0;
 
-	std::memset(dataSection, 0, dataPages * sizeof(PageDataType*));
-	std::memset(codeSection, 0, codePages * sizeof(PageDataType*));
+	util::memset(dataSection, 0, dataPages * sizeof(PageDataType*));
+	util::memset(codeSection, 0, codePages * sizeof(PageDataType*));
 
 	device_report("Loaded binary (%d data pages, %d code pages, "
 		"%d symbols, %d strings)\n", dataPages, codePages, symbolTableEntries, 
@@ -64,6 +78,8 @@ __device__ Binary::~Binary()
 	delete[] symbolTable;
 	delete[] codeSection;
 	delete[] dataSection;
+	
+	delete _ownedFile;
 }
 
 __device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
@@ -118,6 +134,15 @@ __device__ Binary::SymbolTableEntry* Binary::findSymbol(const char* name)
 	return 0;
 }
 
+__device__ bool Binary::containsFunction(const char* name)
+{
+	SymbolTableEntry* symbol = findSymbol(name);
+	
+	if(symbol == 0) return false;
+	
+	return symbol->type == FunctionSymbolType;
+}
+
 __device__ void Binary::findFunction(page_iterator& page, unsigned int& offset,
 	const char* name)
 {
@@ -164,7 +189,7 @@ __device__ Binary::PC Binary::findFunctionsPC(const char* name)
 	findFunction(page, offset, name);
 	
 	const size_t instructionsPerPage = sizeof(PageDataType) /
-		sizeof(ir::InstructionContainer);
+		sizeof(InstructionContainer);
 	
 	return instructionsPerPage * (page - code_begin()) + offset;
 }
@@ -189,11 +214,11 @@ __device__ Binary::page_iterator Binary::data_end()
 	return dataSection + dataPages;
 }
 
-__device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
+__device__ void Binary::copyCode(InstructionContainer* code, PC pc,
 	unsigned int instructions)
 {
 	const size_t instructionsPerPage = sizeof(PageDataType) /
-		sizeof(ir::InstructionContainer);
+		sizeof(InstructionContainer);
 	
 	size_t page       = pc / instructionsPerPage;
 	size_t pageOffset = pc % instructionsPerPage;
@@ -210,11 +235,11 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 		PageDataType* pageData = getCodePage(code_begin() + page);
 		device_assert(pageData != 0);
 
-		ir::InstructionContainer* container =
-			reinterpret_cast<ir::InstructionContainer*>(pageData);
+		InstructionContainer* container =
+			reinterpret_cast<InstructionContainer*>(pageData);
 	
 		std::memcpy(code, container + pageOffset,
-			sizeof(ir::InstructionContainer) * instructionsInThisPage);
+			sizeof(InstructionContainer) * instructionsInThisPage);
 	
 		instructions -= instructionsInThisPage;
 		pageOffset    = 0;
@@ -224,18 +249,18 @@ __device__ void Binary::copyCode(ir::InstructionContainer* code, PC pc,
 	}
 }
 
-size_t Binary::_getCodePageOffset(page_iterator page)
+__device__ size_t Binary::_getCodePageOffset(page_iterator page)
 {
 	return _getDataPageOffset(data_begin() + dataPages) +
 		(page - code_begin()) * sizeof(PageDataType);
 }
 
-size_t Binary::_getDataPageOffset(page_iterator page)
+__device__ size_t Binary::_getDataPageOffset(page_iterator page)
 {
 	return sizeof(Header) + (page - data_begin()) * sizeof(PageDataType);
 }
 
-void Binary::_loadSymbolTable()
+__device__ void Binary::_loadSymbolTable()
 {
 	if(symbolTableEntries == 0) return;
 	if(symbolTable != 0)        return;
@@ -272,4 +297,5 @@ void Binary::_loadSymbolTable()
 
 }
 
+}
 

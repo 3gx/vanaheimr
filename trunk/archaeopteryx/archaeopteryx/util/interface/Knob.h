@@ -18,14 +18,14 @@ namespace util
 class KnobBase
 {
 public:
-	KnobBase(const util::string& name);
-	~KnobBase();
+	__device__ KnobBase(const util::string& name);
+	__device__ ~KnobBase();
 
 public:
-	const util::string& name() const;
+	__device__ const util::string& name() const;
 
 private:
-	util::string* _name;
+	util::string _name;
 
 };
 
@@ -40,7 +40,6 @@ public:
 	__device__ Knob(const util::string& name, const value_type&);
 
 public:
-	__device__ Knob& operator=(const Knob&);
 	__device__ Knob& operator=(const value_type&);
 
 public:
@@ -51,16 +50,27 @@ public:
 class KnobDatabase
 {
 public:
-	__device__ static void addKnob(const KnobBase& base);
+	__device__ static void addKnob(KnobBase* base);
 	__device__ static void removeKnob(const KnobBase& base);
 
 	template<typename T>
 	__device__ static const T& getKnob(const util::string& name);
+	
+	__device__ static const KnobBase& getKnobBase(const util::string& name);
 
 public:
-	static __device__ void loadDatabase();
+	__device__ static void loadDatabase();
 
 };
+
+template<typename T>
+__device__ const T& KnobDatabase::getKnob(const util::string& name)
+{
+	const KnobBase& knob = getKnobBase(name);
+	
+	return static_cast<const Knob<T>&>(knob).value;
+}
+	
 
 }
 

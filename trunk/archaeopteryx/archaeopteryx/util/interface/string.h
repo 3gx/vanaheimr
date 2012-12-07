@@ -7,6 +7,8 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/allocator_traits.h>
 #include <archaeopteryx/util/interface/cstring.h>
+#include <archaeopteryx/util/interface/algorithm.h>
+#include <archaeopteryx/util/interface/debug.h>
 
 #pragma once
 
@@ -265,14 +267,14 @@ template <bool __b>
 __device__ void
 __basic_string_common<__b>::__throw_length_error() const
 {
-    //assert(!"basic_string length_error");
+    //device_assert(!"basic_string length_error");
 }
 
 template <bool __b>
 __device__ void
 __basic_string_common<__b>::__throw_out_of_range() const
 {
-    //assert(!"basic_string out_of_range");
+    //device_assert(!"basic_string out_of_range");
 }
 
 template<class _CharT, class _Traits, class _Allocator>
@@ -783,7 +785,11 @@ private:
     friend __device__ basic_string operator+<>(const basic_string&, value_type);
 };
 
-
+template <class _CharT, class _Traits, class _Allocator>
+__device__ inline void
+basic_string<_CharT, _Traits, _Allocator>::__invalidate_all_iterators()
+{
+}
 
 // basic_string
 
@@ -876,7 +882,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     __init(__s, traits_type::length(__s));
 }
 
@@ -885,7 +891,7 @@ __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, const allocator_type& __a)
     : __r_(__a)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     __init(__s, traits_type::length(__s));
 }
 
@@ -893,7 +899,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_type __n)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     __init(__s, __n);
 }
 
@@ -902,7 +908,7 @@ __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_type __n, const allocator_type& __a)
     : __r_(__a)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     __init(__s, __n);
 }
 
@@ -1110,7 +1116,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(const_pointer __s, size_type __n)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __cap = capacity();
     if (__cap >= __n)
     {
@@ -1244,7 +1250,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::assign(const_pointer __s)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return assign(__s, traits_type::length(__s));
 }
 
@@ -1254,7 +1260,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(const_pointer __s, size_type __n)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __cap = capacity();
     size_type __sz = size();
     if (__cap - __sz >= __n)
@@ -1368,7 +1374,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::append(const_pointer __s)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return append(__s, traits_type::length(__s));
 }
 
@@ -1378,7 +1384,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const_pointer __s, size_type __n)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos > __sz)
         this->__throw_out_of_range();
@@ -1516,7 +1522,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const_pointer __s)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return insert(__pos, __s, traits_type::length(__s));
 }
 
@@ -1562,7 +1568,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __n1, const_pointer __s, size_type __n2)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos > __sz)
         this->__throw_out_of_range();
@@ -1694,7 +1700,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>&
 basic_string<_CharT, _Traits, _Allocator>::replace(size_type __pos, size_type __n1, const_pointer __s)
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return replace(__pos, __n1, __s, traits_type::length(__s));
 }
 
@@ -1782,7 +1788,7 @@ __device__ inline
 void
 basic_string<_CharT, _Traits, _Allocator>::pop_back()
 {
-    assert(!empty());
+    device_assert(!empty());
     size_type __sz;
     if (__is_long())
     {
@@ -1911,7 +1917,7 @@ __device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::operator[](size_type __pos) const
 {
-    assert(__pos <= size());
+    device_assert(__pos <= size());
     return *(data() + __pos);
 }
 
@@ -1920,7 +1926,7 @@ __device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::operator[](size_type __pos)
 {
-    assert(__pos < size());
+    device_assert(__pos < size());
     return *(__get_pointer() + __pos);
 }
 
@@ -1947,7 +1953,7 @@ __device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::front()
 {
-    assert(!empty());
+    device_assert(!empty());
     return *__get_pointer();
 }
 
@@ -1956,7 +1962,7 @@ __device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::front() const
 {
-    assert(!empty());
+    device_assert(!empty());
     return *data();
 }
 
@@ -1965,7 +1971,7 @@ __device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::reference
 basic_string<_CharT, _Traits, _Allocator>::back()
 {
-    assert(!empty());
+    device_assert(!empty());
     return *(__get_pointer() + size() - 1);
 }
 
@@ -1974,7 +1980,7 @@ __device__ inline
 typename basic_string<_CharT, _Traits, _Allocator>::const_reference
 basic_string<_CharT, _Traits, _Allocator>::back() const
 {
-    assert(!empty());
+    device_assert(!empty());
     return *(data() + size() - 1);
 }
 
@@ -2024,7 +2030,7 @@ basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
                                                 size_type __pos,
                                                 size_type __n) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos > __sz || __sz - __pos < __n)
         return npos;
@@ -2053,7 +2059,7 @@ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find(const_pointer __s,
                                                 size_type __pos) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return find(__s, __pos, traits_type::length(__s));
 }
 
@@ -2080,7 +2086,7 @@ basic_string<_CharT, _Traits, _Allocator>::rfind(const_pointer __s,
                                                  size_type __pos,
                                                  size_type __n) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     __pos = util::min(__pos, __sz);
     if (__n < __sz - __pos)
@@ -2110,7 +2116,7 @@ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::rfind(const_pointer __s,
                                                  size_type __pos) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return rfind(__s, __pos, traits_type::length(__s));
 }
 
@@ -2144,7 +2150,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
                                                          size_type __pos,
                                                          size_type __n) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos >= __sz || __n == 0)
         return npos;
@@ -2171,7 +2177,7 @@ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_of(const_pointer __s,
                                                          size_type __pos) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return find_first_of(__s, __pos, traits_type::length(__s));
 }
 
@@ -2192,7 +2198,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_of(const_pointer __s,
                                                         size_type __pos,
                                                         size_type __n) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     if (__n != 0)
     {
         size_type __sz = size();
@@ -2226,7 +2232,7 @@ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_of(const_pointer __s,
                                                         size_type __pos) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return find_last_of(__s, __pos, traits_type::length(__s));
 }
 
@@ -2247,7 +2253,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const_pointer __s,
                                                              size_type __pos,
                                                              size_type __n) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos < __sz)
     {
@@ -2275,7 +2281,7 @@ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_first_not_of(const_pointer __s,
                                                              size_type __pos) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return find_first_not_of(__s, __pos, traits_type::length(__s));
 }
 
@@ -2305,7 +2311,7 @@ basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const_pointer __s,
                                                             size_type __pos,
                                                             size_type __n) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos < __sz)
         ++__pos;
@@ -2333,7 +2339,7 @@ typename basic_string<_CharT, _Traits, _Allocator>::size_type
 basic_string<_CharT, _Traits, _Allocator>::find_last_not_of(const_pointer __s,
                                                             size_type __pos) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return find_last_not_of(__s, __pos, traits_type::length(__s));
 }
 
@@ -2404,7 +2410,7 @@ template <class _CharT, class _Traits, class _Allocator>
 __device__ int
 basic_string<_CharT, _Traits, _Allocator>::compare(const_pointer __s) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return compare(0, npos, __s, traits_type::length(__s));
 }
 
@@ -2414,7 +2420,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
                                                    size_type __n1,
                                                    const_pointer __s) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     return compare(__pos1, __n1, __s, traits_type::length(__s));
 }
 
@@ -2425,7 +2431,7 @@ basic_string<_CharT, _Traits, _Allocator>::compare(size_type __pos1,
                                                    const_pointer __s,
                                                    size_type __n2) const
 {
-    assert(__s != 0);
+    device_assert(__s != 0);
     size_type __sz = size();
     if (__pos1 > __sz || __n2 == npos)
         this->__throw_out_of_range();

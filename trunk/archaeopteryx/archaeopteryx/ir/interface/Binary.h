@@ -158,6 +158,8 @@ private:
 private:
 	/*! \brief A handle to the file */
 	File* _file;
+	/*! \brief A handle to a file owned by this binary */
+	File* _ownedFile;
 
 };
 
