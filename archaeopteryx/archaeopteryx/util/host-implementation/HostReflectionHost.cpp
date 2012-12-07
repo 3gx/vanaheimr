@@ -1,27 +1,24 @@
-/*	\file   HostReflection.cpp
+/*	\file   HostReflectionHost.cpp
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\date   Saturday July 16, 2011
 	\brief  The host source file for the HostReflection set of functions.
 */
 
 // Archaeopteryx Includes
-#include <archaeopteryx/util/interface/HostReflection.h>
-#include <archaeopteryx/util/interface/ThreadId.h>
-#include <archaeopteryx/util/interface/cstring.h>
-#include <archaeopteryx/util/interface/StlFunctions.h>
-#include <archaeopteryx/util/interface/debug.h>
+#include <archaeopteryx/util/host-interface/HostReflectionHost.h>
+
+// Ocelot Includes
+#include <ocelot/api/interface/ocelot.h>
+#include <ocelot/cuda/interface/cuda_runtime.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
 
 // Standard Library Includes
 #include <cstring>
 #include <cassert>
 #include <fstream>
-
-// Forward Declarations
-
-namespace ocelot
-{
-	void launch(const std::string& moduleName, const std::string& kernelName);
-}
+#include <algorithm>
 
 // Preprocessor Macros
 #ifdef REPORT_BASE
@@ -39,27 +36,18 @@ namespace util
 // device/host shared memory region
 static char* _deviceHostSharedMemory = 0;
 
-__host__ void HostReflection::create(const std::string& module)
+void HostReflectionHost::create(const std::string& module)
 {
 	assert(_booter == 0);
 	_booter = new BootUp(module);
 }
 
-__host__ void HostReflection::destroy()
+void HostReflectionHost::destroy()
 {
 	delete _booter;
 }
 
-class HostReflectionSingleton
-{
-public:
-	__host__ HostReflectionSingleton() {  HostReflection::create(""); }
-	__host__ ~HostReflectionSingleton() { HostReflection::destroy(); }
-};
-
-static HostReflectionSingleton singleton;
-
-__host__ void HostReflection::handleOpenFile(HostQueue& queue,
+void HostReflectionHost::handleOpenFile(HostQueue& queue,
 	const Header* header)
 {
 	struct Payload
@@ -92,7 +80,7 @@ __host__ void HostReflection::handleOpenFile(HostQueue& queue,
 	
 	if(mode.find("w") != std::string::npos)
 	{
-		openmode |= std::ios_base::out;
+		openmode |= std::ios_base::out | std::ios_base::trunc;
 	}
 
 	std::fstream* file = new std::fstream(filename.c_str(), openmode);
@@ -118,7 +106,7 @@ __host__ void HostReflection::handleOpenFile(HostQueue& queue,
 	hostSendAsynchronous(queue, reply, &payload);
 }
 
-__host__ void HostReflection::handleTeardownFile(HostQueue& queue,
+void HostReflectionHost::handleTeardownFile(HostQueue& queue,
 	const Header* header)
 {
 	report("    handling teardown file message");
@@ -132,7 +120,7 @@ __host__ void HostReflection::handleTeardownFile(HostQueue& queue,
 	report("     file closed...");
 }
 
-__host__ void HostReflection::handleFileWrite(HostQueue& queue,
+void HostReflectionHost::handleFileWrite(HostQueue& queue,
 	const Header* header)
 {
 	struct WriteHeader
@@ -155,7 +143,7 @@ __host__ void HostReflection::handleFileWrite(HostQueue& queue,
 	file->write((char*)(writeHeader + 1), bytes);
 }
 
-__host__ void HostReflection::handleFileRead(HostQueue& queue,
+void HostReflectionHost::handleFileRead(HostQueue& queue,
 	const Header* header)
 {
 	struct ReadHeader
@@ -190,7 +178,7 @@ __host__ void HostReflection::handleFileRead(HostQueue& queue,
 	delete[] buffer;
 }
 
-__host__ void HostReflection::handleKernelLaunch(HostQueue& queue,
+void HostReflectionHost::handleKernelLaunch(HostQueue& queue,
 	const Header* header)
 {
 	report("    handling kernel launch message");
@@ -207,7 +195,7 @@ __host__ void HostReflection::handleKernelLaunch(HostQueue& queue,
 	launchFromHost(*ctas, *threads, kernelName, arguments);
 }
 
-__host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
+void HostReflectionHost::hostSendAsynchronous(HostQueue& queue,
 	const Header& header, const void* payload)
 {
 	assert(header.size  >= sizeof(Header));
@@ -218,7 +206,12 @@ __host__ void HostReflection::hostSendAsynchronous(HostQueue& queue,
 	while(!queue.push(payload, header.size - sizeof(Header)));
 }
 
-__host__ void HostReflection::launchFromHost(unsigned int ctas,
+size_t HostReflectionHost::maxMessageSize()
+{
+	return MaxMessageSize;
+}
+
+void HostReflectionHost::launchFromHost(unsigned int ctas,
 	unsigned int threads, const std::string& name, Payload payload)
 {
 	KernelLaunch launch = {ctas, threads, name, payload};
@@ -226,18 +219,18 @@ __host__ void HostReflection::launchFromHost(unsigned int ctas,
 	_booter->addLaunch(launch);
 }
 
-__host__ HostReflection::HostQueue::HostQueue(QueueMetaData* m)
+HostReflectionHost::HostQueue::HostQueue(QueueMetaData* m)
 : _metadata(m)
 {
 
 }
 
-__host__ HostReflection::HostQueue::~HostQueue()
+HostReflectionHost::HostQueue::~HostQueue()
 {
 
 }
 
-__host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
+bool HostReflectionHost::HostQueue::push(const void* data, size_t size)
 {
 	assert(size < this->size());
 
@@ -247,7 +240,7 @@ __host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
 	size_t head = _metadata->head;
 
 	size_t remainder = end - head;
-	size_t firstCopy = min(remainder, size);
+	size_t firstCopy = std::min(remainder, size);
 
 	std::memcpy(_metadata->hostBegin + head, data, firstCopy);
 
@@ -261,7 +254,7 @@ __host__ bool HostReflection::HostQueue::push(const void* data, size_t size)
 	return true;
 }
 
-__host__ bool HostReflection::HostQueue::pull(void* data, size_t size)
+bool HostReflectionHost::HostQueue::pull(void* data, size_t size)
 {
 	if(size > _used()) return false;
 
@@ -278,17 +271,17 @@ __host__ bool HostReflection::HostQueue::pull(void* data, size_t size)
 	return true;
 }
 
-__host__ bool HostReflection::HostQueue::peek()
+bool HostReflectionHost::HostQueue::peek()
 {
 	return _used() >= sizeof(Header);
 }
 
-__host__ size_t HostReflection::HostQueue::size() const
+size_t HostReflectionHost::HostQueue::size() const
 {
 	return _metadata->size;
 }
 
-__host__ size_t HostReflection::HostQueue::_used() const
+size_t HostReflectionHost::HostQueue::_used() const
 {
 	size_t end  = _metadata->size;
 	size_t head = _metadata->head;
@@ -302,18 +295,18 @@ __host__ size_t HostReflection::HostQueue::_used() const
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__host__ size_t HostReflection::HostQueue::_capacity() const
+size_t HostReflectionHost::HostQueue::_capacity() const
 {
 	return size() - _used();
 }
 
-__host__ size_t HostReflection::HostQueue::_read(void* data, size_t size)
+size_t HostReflectionHost::HostQueue::_read(void* data, size_t size)
 {
 	size_t end  = _metadata->size;
 	size_t tail = _metadata->tail;
 
 	size_t remainder = end - tail;
-	size_t firstCopy = min(remainder, size);
+	size_t firstCopy = std::min(remainder, size);
 
 	std::memcpy(data, _metadata->hostBegin + tail, firstCopy);
 
@@ -326,7 +319,7 @@ __host__ size_t HostReflection::HostQueue::_read(void* data, size_t size)
 	return secondCopyNecessary ? secondCopy : tail + firstCopy;
 }
 
-__host__ void HostReflection::BootUp::_addMessageHandlers()
+void HostReflectionHost::BootUp::_addMessageHandlers()
 {
 	addHandler(OpenFileMessageHandler,     handleOpenFile);
 	addHandler(TeardownFileMessageHandler, handleTeardownFile);
@@ -335,13 +328,7 @@ __host__ void HostReflection::BootUp::_addMessageHandlers()
 	addHandler(KernelLaunchMessageHandler, handleKernelLaunch);
 }
 
-extern __global__ void _bootupHostReflection(
-	HostReflection::QueueMetaData* hostToDeviceMetadata,
-	HostReflection::QueueMetaData* deviceToHostMetadata);
-
-extern __global__ void _teardownHostReflection();
-
-__host__ HostReflection::BootUp::BootUp(const std::string& module)
+HostReflectionHost::BootUp::BootUp(const std::string& module)
 : _module(module)
 {
 	report("Booting up host reflection...");
@@ -350,7 +337,7 @@ __host__ HostReflection::BootUp::BootUp(const std::string& module)
 	_addMessageHandlers();
 
 	// allocate memory for the queue
-	size_t queueDataSize = HostReflection::maxMessageSize() * 2;
+	size_t queueDataSize = maxMessageSize() * 2;
 	size_t size = 2 * (queueDataSize + sizeof(QueueMetaData));
 
 	_deviceHostSharedMemory = new char[size];
@@ -387,7 +374,7 @@ __host__ HostReflection::BootUp::BootUp(const std::string& module)
 
 	char* devicePointer = 0;
 	
-	cudaHostGetDevicePointer(&devicePointer,
+	cudaHostGetDevicePointer((void**)&devicePointer,
 		_deviceHostSharedMemory, 0);
 
 	// Send the metadata to the device
@@ -401,15 +388,18 @@ __host__ HostReflection::BootUp::BootUp(const std::string& module)
 	deviceToHostMetaData->deviceBegin = devicePointer +
 		2 * sizeof(QueueMetaData) + queueDataSize;
 
-	_bootupHostReflection<<<1, 1>>>(hostToDeviceMetaDataPointer,
-		deviceToHostMetaDataPointer);
+	cudaConfigureCall(dim3(1, 1, 1), dim3(1, 1, 1), 0, 0);
+
+	cudaSetupArgument(&hostToDeviceMetaDataPointer, 8, 0 );
+	cudaSetupArgument(&deviceToHostMetaDataPointer, 8, 8 );
+	ocelot::launch(_module, "_bootupHostReflection");
 
 	// start up the host worker thread
 	_kill   = false;
 	_thread = new boost::thread(_runThread, this);
 }
 
-__host__ HostReflection::BootUp::~BootUp()
+HostReflectionHost::BootUp::~BootUp()
 {
 	report("Destroying host reflection");
 
@@ -419,7 +409,9 @@ __host__ HostReflection::BootUp::~BootUp()
 	delete _thread;
 	
 	// destroy the device queues
-	_teardownHostReflection<<<1, 1>>>();
+	cudaConfigureCall(dim3(1, 1, 1), dim3(1, 1, 1), 0, 0);
+	
+	ocelot::launch(_module, "_teardownHostReflection");
 	cudaThreadSynchronize();
 	
 	// destroy the host queues
@@ -430,7 +422,7 @@ __host__ HostReflection::BootUp::~BootUp()
 	delete[] _deviceHostSharedMemory;
 }
 
-__host__ void HostReflection::BootUp::addHandler(int handlerId,
+void HostReflectionHost::BootUp::addHandler(int handlerId,
 	MessageHandler handler)
 {
 	assert(_handlers.count(handlerId) == 0);
@@ -438,7 +430,7 @@ __host__ void HostReflection::BootUp::addHandler(int handlerId,
 	_handlers.insert(std::make_pair(handlerId, handler));
 }
 
-__host__ void HostReflection::BootUp::addKernel(const std::string& name,
+void HostReflectionHost::BootUp::addKernel(const std::string& name,
 	KernelFunctionType kernel)
 {
 	assert(_kernels.count(name) == 0);
@@ -446,12 +438,12 @@ __host__ void HostReflection::BootUp::addKernel(const std::string& name,
 	_kernels.insert(std::make_pair(name, kernel));
 }
 
-__host__ void HostReflection::BootUp::addLaunch(const KernelLaunch& launch)
+void HostReflectionHost::BootUp::addLaunch(const KernelLaunch& launch)
 {
 	_launches.push(launch);
 }
 
-__host__ bool HostReflection::BootUp::_handleMessage()
+bool HostReflectionHost::BootUp::_handleMessage()
 {
 	if(!_deviceToHostQueue->peek())
 	{
@@ -480,7 +472,8 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 		report("   synchronous ack to address: " << address);
 		bool value = true;
 		
-		cudaMemcpyAsync(address, &value, sizeof(bool), cudaMemcpyHostToDevice);
+		cudaMemcpyAsync(address, &value, sizeof(bool),
+			cudaMemcpyHostToDevice, 0);
 		header.size -= sizeof(void*);
 	}
 
@@ -500,13 +493,13 @@ __host__ bool HostReflection::BootUp::_handleMessage()
 	return true;
 }
 
-__host__ static bool areAnyCudaKernelsRunning()
+static bool areAnyCudaKernelsRunning()
 {
 	cudaEvent_t event;
 	
 	cudaEventCreate(&event);
 	
-	cudaEventRecord(event);
+	cudaEventRecord(event, 0);
 	
 	bool running = cudaEventQuery(event) == cudaErrorNotReady;
 	
@@ -515,7 +508,7 @@ __host__ static bool areAnyCudaKernelsRunning()
 	return running;
 }
 
-__host__ void HostReflection::BootUp::_run()
+void HostReflectionHost::BootUp::_run()
 {
 	report(" Host reflection worker thread started.");
 
@@ -549,7 +542,7 @@ __host__ void HostReflection::BootUp::_run()
 	report("  Host reflection worker thread joined.");
 }
 
-__host__ void HostReflection::BootUp::_launchNextKernel()
+void HostReflectionHost::BootUp::_launchNextKernel()
 {
 	assert(!_launches.empty());
 	KernelLaunch& launch = _launches.front();
@@ -568,12 +561,12 @@ __host__ void HostReflection::BootUp::_launchNextKernel()
 	_launches.pop();
 }
 
-__host__ void HostReflection::BootUp::_runThread(BootUp* booter)
+void HostReflectionHost::BootUp::_runThread(BootUp* booter)
 {
 	booter->_run();
 }
 
-HostReflection::BootUp* HostReflection::_booter = 0;
+HostReflectionHost::BootUp* HostReflectionHost::_booter = 0;
 
 }
 

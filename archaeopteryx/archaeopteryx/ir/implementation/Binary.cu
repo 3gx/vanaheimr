@@ -238,7 +238,7 @@ __device__ void Binary::copyCode(InstructionContainer* code, PC pc,
 		InstructionContainer* container =
 			reinterpret_cast<InstructionContainer*>(pageData);
 	
-		std::memcpy(code, container + pageOffset,
+		util::memcpy(code, container + pageOffset,
 			sizeof(InstructionContainer) * instructionsInThisPage);
 	
 		instructions -= instructionsInThisPage;
