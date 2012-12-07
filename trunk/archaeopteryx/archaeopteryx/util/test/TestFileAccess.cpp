@@ -10,7 +10,7 @@
 #include <ocelot/cuda/interface/cuda_runtime.h>
 
 // Archaeopteryx Includes
-#include <archaeopteryx/util/interface/Host.h>
+#include <archaeopteryx/util/host-interface/HostReflectionHost.h>
 
 // Autogen files
 const char TestFileAccessesKernel[] = {
@@ -34,6 +34,11 @@ static unsigned int align(unsigned int size, unsigned int alignment)
 
 bool testReadWriteFile(const std::string& filename, unsigned int size)
 {
+	std::stringstream stream(TestFileAccessesKernel);
+	ocelot::registerPTXModule(stream, "ArchaeopteryxModule");
+	
+	archaeopteryx::util::HostReflectionHost::create("ArchaeopteryxModule");
+
 	size = align(size, sizeof(unsigned int));
 
 	char* hostFilename = 0;
@@ -66,10 +71,7 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 	cudaSetupArgument(&deviceData,     8, 16);
 	cudaSetupArgument(&size,           4, 24);
 
-	std::stringstream stream(TestFileAccessesKernel);
-
-	ocelot::registerPTXModule(stream, "TestPTXModule");
-	ocelot::launch("TestPTXModule", "deviceMain");
+	ocelot::launch("ArchaeopteryxModule", "deviceMain");
 	
 	bool pass = std::memcmp(hostData, hostResult, size) == 0;
 
@@ -93,6 +95,8 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 	cudaFreeHost(hostData);
 	cudaFreeHost(hostResult);
 	
+	archaeopteryx::util::HostReflectionHost::destroy();
+	
 	return pass;
 }
 
@@ -100,9 +104,6 @@ bool testReadWriteFile(const std::string& filename, unsigned int size)
 
 int main(int argc, char** argv)
 {
-	
-	archaeopteryx::util::startupHostReflection();
-
 	if(test::testReadWriteFile("Archaeopteryx_Test_File", 1000))
 	{
 		std::cout << "Pass/Fail: Pass\n";
@@ -111,9 +112,6 @@ int main(int argc, char** argv)
 	{
 		std::cout << "Pass/Fail: Fail\n";
 	}
-
-	archaeopteryx::util::teardownHostReflection();
-
 }
 
 

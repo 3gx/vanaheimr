@@ -60,7 +60,7 @@ testFileAccessesInc = env.PTXInclude('TestFileAccessesKernel.inc',
 # find all host source files in the source tree
 host_sources = []
 directories = ['archaeopteryx/util/host-implementation']
-extensions = ['*.cu']
+extensions = ["*.cpp"]
 
 for dir in directories:
 	for ext in extensions:

@@ -26,19 +26,24 @@ __device__ File::File(const char* fileName, const char* mode)
 
 	OpenMessage open(fileName, mode);
 	
-	HostReflection::sendSynchronous(open);
+	HostReflectionDevice::sendSynchronous(open);
 	
 	OpenReply reply;
 	
-	HostReflection::receive(reply);
+	HostReflectionDevice::receive(reply);
 	
 	_handle = reply.handle();
 	_size   = reply.size();
 	_put    = 0;
 	_get    = 0;
 
-	device_assert(_handle != 0);
-
+	if(_handle == 0)
+	{
+		std::printf(" failed to open file...\n");
+	
+		device_assert(_handle != 0);
+	}
+	
 	std::printf(" file opened, current size is %d\n", _size);
 }
 
@@ -48,7 +53,7 @@ __device__ File::~File()
 	{
 		TeardownMessage teardown(_handle);
 	
-		HostReflection::sendSynchronous(teardown);
+		HostReflectionDevice::sendSynchronous(teardown);
 	}
 }
 
@@ -69,14 +74,14 @@ __device__ size_t File::writeSome(const void* data, size_t bytes)
 {	
 	size_t attemptedSize =
 		util::min(bytes, util::max((size_t)1,
-		(size_t)(HostReflection::maxMessageSize() / 2)));
+		(size_t)(HostReflectionDevice::maxMessageSize() / 2)));
 	
 	WriteMessage message(data, attemptedSize, _put, _handle);
 	
 	std::printf("sending file write message (%d size, %d pointer, %p handle)\n",
 		attemptedSize, _put, _handle);
 	
-	HostReflection::sendSynchronous(message);
+	HostReflectionDevice::sendSynchronous(message);
 	
 	_put += attemptedSize;
 	
@@ -118,20 +123,20 @@ __device__ size_t File::readSome(void* data, size_t bytes)
 
 	size_t attemptedSize =
 		util::min(bytes, util::max((size_t)1,
-			(size_t)(HostReflection::maxMessageSize() / 2)));
+			(size_t)(HostReflectionDevice::maxMessageSize() / 2)));
 
 	std::printf(" sending file read message (%d size, %d pointer, %p handle)\n",
 		(int)attemptedSize, (int)_get, _handle);
 	
 	ReadMessage message(attemptedSize, _get, _handle);
 	
-	HostReflection::sendSynchronous(message);
+	HostReflectionDevice::sendSynchronous(message);
 	
 	ReadReply reply(attemptedSize);
 	
-	HostReflection::receive(reply);
+	HostReflectionDevice::receive(reply);
 	
-	std::memcpy(data, reply.payload(), attemptedSize);
+	util::memcpy(data, reply.payload(), attemptedSize);
 	
 	_get += attemptedSize;
 	
@@ -177,7 +182,7 @@ __device__ void File::seekp(size_t p)
 
 __device__ File::OpenMessage::OpenMessage(const char* f, const char* m)
 {
-	std::memset(_filename, 0, payloadSize());
+	util::memset(_filename, 0, payloadSize());
 	strlcpy(_filename, f, payloadSize());
 	size_t offset = util::strlen(f) + 1;
 	strlcpy(_filename + offset, m, payloadSize() - offset);
@@ -198,9 +203,9 @@ __device__ size_t File::OpenMessage::payloadSize() const
 	return sizeof(_filename);
 }
 
-__device__ HostReflection::HandlerId File::OpenMessage::handler() const
+__device__ HostReflectionDevice::HandlerId File::OpenMessage::handler() const
 {
-	return HostReflection::OpenFileMessageHandler;
+	return HostReflectionDevice::OpenFileMessageHandler;
 }
 
 __device__ File::OpenReply::OpenReply()
@@ -233,9 +238,10 @@ __device__ size_t File::OpenReply::payloadSize() const
 	return sizeof(Payload);
 }
 
-__device__ HostReflection::HandlerId File::OpenReply::handler() const
+__device__ HostReflectionDevice::HandlerId File::OpenReply::handler() const
 {
-	return (HostReflection::HandlerId)HostReflection::InvalidMessageHandler;
+	return (HostReflectionDevice::HandlerId)
+		HostReflectionDevice::InvalidMessageHandler;
 }
 
 __device__ File::TeardownMessage::TeardownMessage(Handle h)
@@ -259,9 +265,9 @@ __device__ size_t File::TeardownMessage::payloadSize() const
 	return sizeof(Handle);
 }
 
-__device__ HostReflection::HandlerId File::TeardownMessage::handler() const
+__device__ HostReflectionDevice::HandlerId File::TeardownMessage::handler() const
 {
-	return HostReflection::TeardownFileMessageHandler;
+	return HostReflectionDevice::TeardownFileMessageHandler;
 }
 
 __device__ File::WriteMessage::WriteMessage(const void* data, size_t size,
@@ -277,8 +283,8 @@ __device__ File::WriteMessage::WriteMessage(const void* data, size_t size,
 	header.pointer = pointer;
 	header.handle  = handle;
 
-	std::memcpy(_payload, &header, sizeof(Header));
-	std::memcpy((char*)_payload + sizeof(Header), data, size);
+	util::memcpy(_payload, &header, sizeof(Header));
+	util::memcpy((char*)_payload + sizeof(Header), data, size);
 }
 
 __device__ File::WriteMessage::~WriteMessage()
@@ -298,9 +304,9 @@ __device__ size_t File::WriteMessage::payloadSize() const
 	return header->size;
 }
 
-__device__ HostReflection::HandlerId File::WriteMessage::handler() const
+__device__ HostReflectionDevice::HandlerId File::WriteMessage::handler() const
 {
-	return HostReflection::FileWriteMessageHandler;
+	return HostReflectionDevice::FileWriteMessageHandler;
 }
 
 __device__ File::ReadMessage::ReadMessage(
@@ -326,9 +332,9 @@ __device__ size_t File::ReadMessage::payloadSize() const
 	return sizeof(Payload);
 }
 
-__device__ HostReflection::HandlerId File::ReadMessage::handler() const
+__device__ HostReflectionDevice::HandlerId File::ReadMessage::handler() const
 {
-	return HostReflection::FileReadMessageHandler;
+	return HostReflectionDevice::FileReadMessageHandler;
 }
 
 __device__ File::ReadReply::ReadReply(size_t size)
@@ -352,9 +358,9 @@ __device__ size_t File::ReadReply::payloadSize() const
 	return _size;
 }
 
-__device__ HostReflection::HandlerId File::ReadReply::handler() const
+__device__ HostReflectionDevice::HandlerId File::ReadReply::handler() const
 {
-	return HostReflection::FileReadReplyHandler;
+	return HostReflectionDevice::FileReadReplyHandler;
 }
 
 }

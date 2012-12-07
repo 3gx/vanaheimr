@@ -5,25 +5,11 @@
 */
 
 // Archaeopteryx Includes
-#include <archaeopteryx/util/interface/HostReflection.h>
+#include <archaeopteryx/util/interface/HostReflectionDevice.h>
 #include <archaeopteryx/util/interface/ThreadId.h>
 #include <archaeopteryx/util/interface/cstring.h>
 #include <archaeopteryx/util/interface/StlFunctions.h>
 #include <archaeopteryx/util/interface/debug.h>
-
-// Standard Library Includes
-#include <cstring>
-#include <cassert>
-#include <fstream>
-
-
-
-// Forward Declarations
-
-namespace ocelot
-{
-	void launch(const std::string& moduleName, const std::string& kernelName);
-}
 
 // Preprocessor Macros
 #ifdef REPORT_BASE
@@ -39,64 +25,54 @@ namespace util
 {
 
 // TODO Remove these when __device__ can be embedded in a clas
-__device__ HostReflection::DeviceQueue* _hostToDevice;
-__device__ HostReflection::DeviceQueue* _deviceToHost;
+__device__ HostReflectionDevice::DeviceQueue* _hostToDevice;
+__device__ HostReflectionDevice::DeviceQueue* _deviceToHost;
 
-template <typename T>
-__device__ T HostReflection::Payload::get(unsigned int i)
-{
-	T temp = 0;
-	
-	std::memcpy(&temp, data.data + data.indexes[i], sizeof(T));
-
-	return temp;
-}
-
-__device__ HostReflection::KernelLaunchMessage::KernelLaunchMessage(
+__device__ HostReflectionDevice::KernelLaunchMessage::KernelLaunchMessage(
 	unsigned int ctas, unsigned int threads,
 	const char* name, const Payload& payload)
 : _stringLength(util::strlen(name) + 1), _data(new char[payloadSize()])
 {
 	char* data = _data;
 	
-	std::memcpy(data, &payload.data, sizeof(PayloadData));
+	util::memcpy(data, &payload.data, sizeof(PayloadData));
 	data += sizeof(PayloadData);
 
-	std::memcpy(data, &ctas, sizeof(unsigned int));
+	util::memcpy(data, &ctas, sizeof(unsigned int));
 	data += sizeof(unsigned int);
 
-	std::memcpy(data, &threads, sizeof(unsigned int));
+	util::memcpy(data, &threads, sizeof(unsigned int));
 	data += sizeof(unsigned int);
 	
-	std::memcpy(data, &_stringLength, sizeof(unsigned int));
+	util::memcpy(data, &_stringLength, sizeof(unsigned int));
 	data += sizeof(unsigned int);
 	
-	std::memcpy(data, name, _stringLength);
+	util::memcpy(data, name, _stringLength);
 	data += _stringLength;
 }
 
-__device__ HostReflection::KernelLaunchMessage::~KernelLaunchMessage()
+__device__ HostReflectionDevice::KernelLaunchMessage::~KernelLaunchMessage()
 {
 	delete[] _data;
 }
 
-__device__ void* HostReflection::KernelLaunchMessage::payload() const
+__device__ void* HostReflectionDevice::KernelLaunchMessage::payload() const
 {
 	return _data;
 }
 
-__device__ size_t HostReflection::KernelLaunchMessage::payloadSize() const
+__device__ size_t HostReflectionDevice::KernelLaunchMessage::payloadSize() const
 {
 	return sizeof(unsigned int) * 3 + sizeof(Payload) + _stringLength;
 }
 
-__device__ HostReflection::HandlerId
-	HostReflection::KernelLaunchMessage::handler() const
+__device__ HostReflectionShared::HandlerId
+	HostReflectionDevice::KernelLaunchMessage::handler() const
 {
 	return KernelLaunchMessageHandler;
 }
 
-__device__ void HostReflection::sendAsynchronous(const Message& m)
+__device__ void HostReflectionDevice::sendAsynchronous(const Message& m)
 {
 	unsigned int bytes = m.payloadSize() + sizeof(Header);
 
@@ -109,7 +85,7 @@ __device__ void HostReflection::sendAsynchronous(const Message& m)
 	header->size     = bytes;
 	header->handler  = m.handler();
 	
-	std::memcpy(buffer + sizeof(Header), m.payload(), m.payloadSize());
+	util::memcpy(buffer + sizeof(Header), m.payload(), m.payloadSize());
 	 
 	device_report(" sending asynchronous gpu->host message "
 		"(%d type, %d id, %d size, %d handler)\n", Asynchronous,	
@@ -120,7 +96,7 @@ __device__ void HostReflection::sendAsynchronous(const Message& m)
 	delete[] buffer;
 }
 
-__device__ void HostReflection::sendSynchronous(const Message& m)
+__device__ void HostReflectionDevice::sendSynchronous(const Message& m)
 {
 	unsigned int bytes = m.payloadSize() + sizeof(SynchronousHeader);
 
@@ -138,7 +114,7 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 
 	header->address = (void*)flag;	
 
-	std::memcpy(buffer + sizeof(SynchronousHeader), m.payload(),
+	util::memcpy(buffer + sizeof(SynchronousHeader), m.payload(),
 		m.payloadSize());
 	 
 	device_report(" sending synchronous gpu->host message "
@@ -157,7 +133,7 @@ __device__ void HostReflection::sendSynchronous(const Message& m)
 	delete[] buffer;
 }
 
-__device__ void HostReflection::receive(Message& m)
+__device__ void HostReflectionDevice::receive(Message& m)
 {
 	while(!_hostToDevice->peek());
 
@@ -171,13 +147,13 @@ __device__ void HostReflection::receive(Message& m)
 
 	device_report("  bytes: %d\n", (int)(bytes - sizeof(Header)));
 
-	std::memcpy(m.payload(), (buffer + sizeof(Header)), m.payloadSize());
+	util::memcpy(m.payload(), (buffer + sizeof(Header)), m.payloadSize());
 
 	delete[] buffer;
 }
 
-__device__ void HostReflection::launch(unsigned int ctas, unsigned int threads,
-	const char* functionName, const Payload& payload)
+__device__ void HostReflectionDevice::launch(unsigned int ctas,
+	unsigned int threads, const char* functionName, const Payload& payload)
 {
 	KernelLaunchMessage message(ctas, threads, functionName, payload);
 
@@ -191,8 +167,8 @@ __device__ unsigned int align(unsigned int address, unsigned int alignment)
 }
 
 template<typename T0, typename T1, typename T2, typename T3, typename T4>
-__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
-	const T1& t1, const T2& t2, const T3& t3, const T4& t4)
+__device__ HostReflectionDevice::Payload HostReflectionDevice::createPayload(
+	const T0& t0, const T1& t1, const T2& t2, const T3& t3, const T4& t4)
 {
 	Payload result;
 
@@ -201,82 +177,84 @@ __device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
 	unsigned int index = 0;
 	
 	payload.indexes[0] = index;
-	std::memcpy(payload.data + index, &t0, sizeof(T0));
+	util::memcpy(payload.data + index, &t0, sizeof(T0));
 	index += sizeof(T0);
 	index =  align(index, sizeof(T1));
 	
 	payload.indexes[1] = index;
-	std::memcpy(payload.data + index, &t1, sizeof(T1));
+	util::memcpy(payload.data + index, &t1, sizeof(T1));
 	index += sizeof(T1);
 	index =  align(index, sizeof(T2));
 	
 	payload.indexes[2] = index;
-	std::memcpy(payload.data + index, &t2, sizeof(T2));
+	util::memcpy(payload.data + index, &t2, sizeof(T2));
 	index += sizeof(T2);
 	index =  align(index, sizeof(T3));
 	
 	payload.indexes[3] = index;
-	std::memcpy(payload.data + index, &t3, sizeof(T3));
+	util::memcpy(payload.data + index, &t3, sizeof(T3));
 	index += sizeof(T3);
 	index =  align(index, sizeof(T4));
 	
 	payload.indexes[4] = index;
-	std::memcpy(payload.data + index, &t4, sizeof(T4));
+	util::memcpy(payload.data + index, &t4, sizeof(T4));
 
 	return result;
 }
 
 template<typename T0, typename T1, typename T2, typename T3>
-__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
-	const T1& t1, const T2& t2, const T3& t3)
+__device__ HostReflectionDevice::Payload HostReflectionDevice::createPayload(
+	const T0& t0, const T1& t1, const T2& t2, const T3& t3)
 {
 	return createPayload(t0, t1, t2, t3, (int)0);
 }
 
 template<typename T0, typename T1, typename T2>
-__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
-	const T1& t1, const T2& t2)
+__device__ HostReflectionDevice::Payload HostReflectionDevice::createPayload(
+	const T0& t0, const T1& t1, const T2& t2)
 {
 	return createPayload(t0, t1, t2, (int)0);
 }
 
 template<typename T0, typename T1>
-__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0,
-	const T1& t1)
+__device__ HostReflectionDevice::Payload HostReflectionDevice::createPayload(
+	const T0& t0, const T1& t1)
 {
 	return createPayload(t0, t1, (int)0);
 }
 
 template<typename T0>
-__device__ HostReflection::Payload HostReflection::createPayload(const T0& t0)
+__device__ HostReflectionDevice::Payload HostReflectionDevice::createPayload(
+	const T0& t0)
 {
 	return createPayload(t0, (int)0);
 }
 
-__device__ HostReflection::Payload HostReflection::createPayload()
+__device__ HostReflectionDevice::Payload HostReflectionDevice::createPayload()
 {
 	return createPayload((int)0);
 }
 
-__device__ size_t HostReflection::maxMessageSize()
+__device__ size_t HostReflectionDevice::maxMessageSize()
 {
-	return 512;
+	return MaxMessageSize;
 }
 
-__device__ HostReflection::DeviceQueue::DeviceQueue(QueueMetaData* m)
+__device__ HostReflectionDevice::DeviceQueue::DeviceQueue(QueueMetaData* m)
 : _metadata(m)
 {
 	device_report("binding device queue to metadata (%d size, "
-		"%d head, %d tail, %d mutex)\n", (int)m->size, (int)m->head,
-		(int)m->tail, m->mutex);
+		"%d head, %d tail, %d mutex, %x address)\n", (int)m->size,
+		(int)m->head, (int)m->tail, (int)m->mutex, (void*)m->deviceBegin);
 }
 
-__device__ HostReflection::DeviceQueue::~DeviceQueue()
+__device__ HostReflectionDevice::DeviceQueue::~DeviceQueue()
 {
 
 }
 
-__device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
+__device__ bool HostReflectionDevice::DeviceQueue::push(const void* data,
+	size_t size)
 {
 	device_assert(size <= this->size());
 
@@ -292,13 +270,13 @@ __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 	size_t remainder = end - head;
 	size_t firstCopy = min(remainder, size);
 
-	std::memcpy(_metadata->deviceBegin + head, data, firstCopy);
+	util::memcpy(_metadata->deviceBegin + head, data, firstCopy);
 
 	bool secondCopyNecessary = firstCopy != size;
 
 	size_t secondCopy = secondCopyNecessary ? size - firstCopy : 0;
 	
-	std::memcpy(_metadata->deviceBegin, (char*)data + firstCopy, secondCopy);
+	util::memcpy(_metadata->deviceBegin, (char*)data + firstCopy, secondCopy);
 	_metadata->head = secondCopyNecessary ? secondCopy : head + firstCopy;
 	
 	device_report(" after push (%d used, %d remaining, %d size)\n",
@@ -309,7 +287,7 @@ __device__ bool HostReflection::DeviceQueue::push(const void* data, size_t size)
 	return true;
 }
 
-__device__ bool HostReflection::DeviceQueue::pull(void* data, size_t size)
+__device__ bool HostReflectionDevice::DeviceQueue::pull(void* data, size_t size)
 {
 	device_assert(size <= _used());
 
@@ -322,7 +300,7 @@ __device__ bool HostReflection::DeviceQueue::pull(void* data, size_t size)
 	return true;
 }
 
-__device__ bool HostReflection::DeviceQueue::peek()
+__device__ bool HostReflectionDevice::DeviceQueue::peek()
 {
 	if(_used() < sizeof(Header)) return false;
 
@@ -337,12 +315,12 @@ __device__ bool HostReflection::DeviceQueue::peek()
 	return header.threadId == threadId();
 }
 
-__device__ size_t HostReflection::DeviceQueue::size() const
+__device__ size_t HostReflectionDevice::DeviceQueue::size() const
 {
 	return _metadata->size;
 }
 
-__device__  size_t HostReflection::DeviceQueue::_used() const
+__device__  size_t HostReflectionDevice::DeviceQueue::_used() const
 {
 	size_t end  = _metadata->size;
 	size_t head = _metadata->head;
@@ -356,12 +334,12 @@ __device__  size_t HostReflection::DeviceQueue::_used() const
 	return (isGreaterOrEqual) ? greaterOrEqual : less;
 }
 
-__device__  size_t HostReflection::DeviceQueue::_capacity() const
+__device__  size_t HostReflectionDevice::DeviceQueue::_capacity() const
 {
 	return size() - _used();
 }
 
-__device__ bool HostReflection::DeviceQueue::_lock()
+__device__ bool HostReflectionDevice::DeviceQueue::_lock()
 {
 	device_assert(_metadata->mutex != threadId());
 	
@@ -371,14 +349,14 @@ __device__ bool HostReflection::DeviceQueue::_lock()
 	return result == (size_t)-1;
 }
 
-__device__ void HostReflection::DeviceQueue::_unlock()
+__device__ void HostReflectionDevice::DeviceQueue::_unlock()
 {
 	device_assert(_metadata->mutex == threadId());
 	
 	_metadata->mutex = (size_t)-1;
 }
 
-__device__ size_t HostReflection::DeviceQueue::_read(
+__device__ size_t HostReflectionDevice::DeviceQueue::_read(
 	void* data, size_t size)
 {
 	size_t end  = _metadata->size;
@@ -387,26 +365,26 @@ __device__ size_t HostReflection::DeviceQueue::_read(
 	size_t remainder = end - tail;
 	size_t firstCopy = min(remainder, size);
 
-	std::memcpy(data, _metadata->deviceBegin + tail, firstCopy);
+	util::memcpy(data, _metadata->deviceBegin + tail, firstCopy);
 
 	bool secondCopyNecessary = firstCopy != size;
 
 	size_t secondCopy = secondCopyNecessary ? size - firstCopy : 0;
 	
-	std::memcpy((char*)data + firstCopy, _metadata->deviceBegin, secondCopy);
+	util::memcpy((char*)data + firstCopy, _metadata->deviceBegin, secondCopy);
 	
 	return secondCopyNecessary ? secondCopy : tail + firstCopy;
 }
 
-__global__ void _bootupHostReflection(
-	HostReflection::QueueMetaData* hostToDeviceMetadata,
-	HostReflection::QueueMetaData* deviceToHostMetadata)
+extern "C" __global__ void _bootupHostReflection(
+	HostReflectionDevice::QueueMetaData* hostToDeviceMetadata,
+	HostReflectionDevice::QueueMetaData* deviceToHostMetadata)
 {
-	_hostToDevice = new HostReflection::DeviceQueue(hostToDeviceMetadata);
-	_deviceToHost = new HostReflection::DeviceQueue(deviceToHostMetadata);
+	_hostToDevice = new HostReflectionDevice::DeviceQueue(hostToDeviceMetadata);
+	_deviceToHost = new HostReflectionDevice::DeviceQueue(deviceToHostMetadata);
 }
 
-__global__ void _teardownHostReflection()
+extern "C" __global__ void _teardownHostReflection()
 {
 	delete _hostToDevice;
 	delete _deviceToHost;

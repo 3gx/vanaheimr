@@ -66,7 +66,7 @@ __device__ void* memcpy(void* s1, const void* s2, size_t n)
 
 	while(n--)
 	{
-		*p1 = *p1;
+		*p1 = *p2;
 		++p1;
 		++p2;
 	}
