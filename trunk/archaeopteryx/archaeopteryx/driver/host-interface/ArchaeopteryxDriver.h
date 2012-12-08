@@ -10,6 +10,9 @@
 #include <list>
 #include <utility>
 
+// Forward Declarations
+namespace archaeopteryx { namespace driver { class SimulatorKnobs; } }
+
 namespace archaeopteryx
 {
 
@@ -30,6 +33,10 @@ private:
 	void _loadArchaeopteryxDeviceCode();
 	void _runSimulation();
 	void _unloadArchaeopteryxDeviceCode();
+
+private:
+	SimulatorKnobs* _createDeviceKnobs();
+	void _freeDeviceKnobs(SimulatorKnobs*);
 
 private:
 	KnobList _knobs;

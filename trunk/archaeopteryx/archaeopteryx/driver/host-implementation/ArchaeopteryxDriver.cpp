@@ -5,6 +5,7 @@
 */
 
 // Archaeopteryx Includes
+#include <archaeoteryx/driver/interface/SimulatorKnobs.h>
 #include <archaeoteryx/driver/host-interface/ArchaeopteryDriver.h>
 #include <archaeoteryx/util/host-interface/HostReflectionHost.h>
 
@@ -36,6 +37,11 @@ void ArchaeopteryxDriver::runSimulation(const std::string& traceFileName,
 	
 	_unloadArchaeopteryxDeviceCode();
 }
+	
+void ArchaeopteryxDriver::_loadTraceFile(const std::string& traceFileName)
+{
+	_knobs.push_back(std::make_pair("TraceFileName", traceFileName));
+}
 
 void ArchaeopteryxDriver::_loadArchaeopteryxDeviceCode()
 {
@@ -47,7 +53,15 @@ void ArchaeopteryxDriver::_loadArchaeopteryxDeviceCode()
 
 void ArchaeopteryxDriver::_runSimulation()
 {
+	cudaConfigureCall(dim3(1, 1, 1), dim3(1, 1, 1), 0, 0);
+
+	SimulatorKnobs* deviceKnobs = _createDeviceKnobs();
+
+	cudaSetupArgument(&deviceKnobs, 8, 0 );
 	
+	ocelot::launch("ArchaeopteryxModule", "archaeopteryxDriver");
+
+	_freeDeviceKnobs(deviceKnobs);
 }
 
 void ArchaeopteryxDriver::_unloadArchaeopteryxDeviceCode()
@@ -57,8 +71,66 @@ void ArchaeopteryxDriver::_unloadArchaeopteryxDeviceCode()
 	ocelot::unregisterModule("ArchaeopteryxModule");
 }
 
+SimulatorKnobs* ArchaeopteryxDriver::_createDeviceKnobs()
+{
+	typedef std::vector<SimulatorKnobs::KnobOffsetPair> OffsetVector;
+
+	OffsetVector offsets;
+
+	// Allocate memory for knobs
+	size_t size = sizeof(SimulatorKnobs);
+	
+	size += _knobs.size() * sizeof(SimulatorKnobs::KnobOffsetPair);
+
+	for(auto knob = _knobs.begin(); knob != _knobs.end(); ++knob)
+	{
+		offsets.push_back(KnobOffsetPair(size, size + knob->first.size() + 1));
+
+		size += knob->first.size() + knob->second.size() + 2;
+	}
+
+	SimulatorKnobs* devicePointer = 0;
+
+	cudaMalloc(&devicePointer, size);
+
+	// serialize the knobs
+	SimulatorKnobs simulatorKnobs(_knobs.size());
+
+	// 1) serialize the header
+	char* deviceIterator = (char*) devicePointer;
+
+	cudaMemcpy(deviceIterator, &simulatorKnobs, sizeof(SimulatorKnobs),
+		cudaMemcpyHostToDevice);
+	deviceIterator += sizeof(SimulatorKnobs);
+
+	// 2) serialize the offsets
+	cudaMemcpy(deviceIterator, offsets.data(),
+		sizeof(SimulatorKnobs::KnobOffsetPair) * offsets.size(),
+		cudaMemcpyHostToDevice);
+	deviceIterator += sizeof(SimulatorKnobs::KnobOffsetPair * offsets.size());
+	
+	// 3) serialize the knobs themselves
+	for(auto knob = _knobs.begin(); knob != _knobs.end(); ++knob)
+	{
+			cudaMemcpy(deviceIterator, knob->first.c_str(),
+				knob->first.size() + 1, cudaMemcpyHostToDevice);
+			deviceIterator += knob->first.size() + 1;
+		
+			cudaMemcpy(deviceIterator, knob->second.c_str(),
+				knob->second.size() + 1, cudaMemcpyHostToDevice);
+			deviceIterator += knob->second.size() + 1;
+	}
+
+	return devicePointer;
+}
+
+void ArchaeopteryxDriver::_freeDeviceKnobs(SimulatorKnobs* knobs)
+{
+	cudaFree(knobs);
 }
 
 }
+
+
 
 
