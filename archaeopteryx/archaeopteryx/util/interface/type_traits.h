@@ -666,6 +666,30 @@ struct make_unsigned
     typedef typename __apply_cv<_Tp, typename __make_unsigned<typename remove_cv<_Tp>::type>::type>::type type;
 };
 
+template <class _Tp, class _Up = void, class V = void>
+struct common_type
+{
+public:
+    typedef typename common_type<typename common_type<_Tp, _Up>::type, V>::type type;
+};
+
+template <class _Tp>
+struct common_type<_Tp, void, void>
+{
+public:
+    typedef _Tp type;
+};
+
+template <class _Tp, class _Up>
+struct common_type<_Tp, _Up, void>
+{
+private:
+    static _Tp __t();
+    static _Up __u();
+public:
+    typedef typename remove_reference<_Tp>::type type;
+};
+
 }
 
 }

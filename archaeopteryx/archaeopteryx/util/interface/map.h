@@ -363,7 +363,7 @@ public:
     template <class _InputIterator>
             __device__ void insert(_InputIterator __f, _InputIterator __l)
         {
-            for (const_iterator __e = cend(); __f != __l; ++__f)
+            for (const_iterator __e = end(); __f != __l; ++__f)
                 insert(__e.__i_, *__f);
         }
 
