@@ -10,6 +10,9 @@
 #include <archaeopteryx/util/interface/functional.h>
 #include <archaeopteryx/util/interface/iterator.h>
 #include <archaeopteryx/util/interface/utility.h>
+#include <archaeopteryx/util/interface/limits.h>
+
+#include <archaeopteryx/util/interface/cstring.h>
 
 namespace archaeopteryx
 {
@@ -1010,7 +1013,7 @@ public:
     __device__ _Dp_const_reference get_deleter() const
         {return __ptr_.second;}
     __device__ operator bool() const
-        {return __ptr_.first != nullptr;}
+        {return __ptr_.first != 0;}
 
     __device__ pointer release()
     {
@@ -1086,7 +1089,7 @@ public:
     __device__ _Dp_const_reference get_deleter() const
         {return __ptr_.second();}
     __device__ operator bool() const
-        {return __ptr_.first() != nullptr;}
+        {return __ptr_.first() != 0;}
 
     __device__ pointer release()
     {
