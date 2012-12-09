@@ -48,12 +48,6 @@ __device__ void Runtime::create()
 {
 	state = new RuntimeState;
 
-	state->parameterMemoryAddress =
-		mmap(util::KnobDatabase::getKnob<size_t>("parameter-memory-size"));
-
-	unsigned int ctas =
-		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
-	state->hardwareCTAs.resize(ctas);
 }
 
 __device__ void Runtime::destroy()
@@ -87,12 +81,22 @@ __device__ Runtime::Address
 	return state->memory.translate((size_t) virtualAddress);
 }
 
+__device__ void Runtime::loadKnobs()
+{
+	unsigned int ctas =
+		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
+	state->hardwareCTAs.resize(ctas);
+    
+	state->parameterMemoryAddress =
+		mmap(util::KnobDatabase::getKnob<size_t>("parameter-memory-size"));
+}
+
 // The Runtime class owns all of the simulator state, it should have allocated it in the constructor
 //  a) simulated state is CoreSimKernel/Block/Thread and other classes
 //  b) this call changes the number of CoreSimBlock/Thread
 __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta)
 {
-    state->simulatedBlockCount = totalCtas;
+	state->simulatedBlockCount = totalCtas;
    
 	// TODO: run in a kernel 
     for(RuntimeState::CTAVector::iterator cta = state->hardwareCTAs.begin();

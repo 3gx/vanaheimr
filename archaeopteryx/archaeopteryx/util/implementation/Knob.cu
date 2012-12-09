@@ -16,48 +16,32 @@ namespace archaeopteryx
 namespace util
 {
 
-__device__ KnobBase::KnobBase(const util::string& name)
-: _name(name)
+__device__ Knob::Knob(const util::string& name, const util::string& value)
+: _name(name), _value(value)
 {
 
 }
 
-__device__ KnobBase::~KnobBase()
-{
-
-}
-
-__device__ const util::string& KnobBase::name() const
+__device__ const util::string& Knob::name() const
 {
 	return _name;
 }
 
-template<typename T>
-__device__ Knob<T>::Knob(const util::string& name, const value_type& v)
-: KnobBase(name), value(v)
+__device__ const util::string& Knob::value() const
 {
-
+	return _name;
 }
 
-template<typename T>
-__device__ Knob<T>& Knob<T>::operator=(const value_type& v)
-{
-	value = v;
-	
-	return *this;
-}
-
-
-typedef util::map<util::string, KnobBase*> KnobMap;
+typedef util::map<util::string, Knob*> KnobMap;
 
 static __device__ KnobMap* knobDatabaseImplementation = 0;
 
-__device__ void KnobDatabase::addKnob(KnobBase* base)
+__device__ void KnobDatabase::addKnob(Knob* base)
 {
 	knobDatabaseImplementation->insert(util::make_pair(base->name(), base));
 }
 
-__device__ void KnobDatabase::removeKnob(const KnobBase& base)
+__device__ void KnobDatabase::removeKnob(const Knob& base)
 {
 	KnobMap::iterator knob = knobDatabaseImplementation->find(base.name());
 
@@ -68,7 +52,7 @@ __device__ void KnobDatabase::removeKnob(const KnobBase& base)
 	}
 }
 
-__device__ const KnobBase& KnobDatabase::getKnobBase(const util::string& name)
+__device__ const Knob& KnobDatabase::getKnobBase(const util::string& name)
 {
 	KnobMap::iterator knob = knobDatabaseImplementation->find(name);
 
@@ -77,9 +61,14 @@ __device__ const KnobBase& KnobDatabase::getKnobBase(const util::string& name)
 	return *knob->second;
 }
 
-__device__ void KnobDatabase::loadDatabase()
+__device__ void KnobDatabase::create()
 {
 	knobDatabaseImplementation = new KnobMap;
+}
+
+__device__ void KnobDatabase::destroy()
+{
+	delete knobDatabaseImplementation;
 }
 
 }
