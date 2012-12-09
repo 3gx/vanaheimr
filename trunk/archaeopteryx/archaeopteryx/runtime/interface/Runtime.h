@@ -29,6 +29,8 @@ public:
 	__device__ static void create();
 	__device__ static void destroy();
 
+	__device__ static void loadKnobs();
+
 public:
 	__device__ static void loadBinary(const char* fileName);
 	__device__ static void loadBinary(ir::Binary* binary);

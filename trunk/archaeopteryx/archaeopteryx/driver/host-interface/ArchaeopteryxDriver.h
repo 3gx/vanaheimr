@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <list>
 #include <utility>
+#include <string>
 
 // Forward Declarations
 namespace archaeopteryx { namespace driver { class SimulatorKnobs; } }
@@ -23,7 +24,7 @@ class ArchaeopteryxDriver
 {
 public:
 	typedef std::pair<std::string, std::string> Knob;
-	typedef std::list<KnobPair> KnobList;
+	typedef std::list<Knob> KnobList;
 
 public:
 	void runSimulation(const std::string& traceFileName, const KnobList& knobs);

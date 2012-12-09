@@ -5,9 +5,9 @@
 */
 
 // Archaeopteryx Includes
-#include <archaeoteryx/driver/interface/SimulatorKnobs.h>
-#include <archaeoteryx/driver/host-interface/ArchaeopteryDriver.h>
-#include <archaeoteryx/util/host-interface/HostReflectionHost.h>
+#include <archaeopteryx/driver/interface/SimulatorKnobs.h>
+#include <archaeopteryx/driver/host-interface/ArchaeopteryxDriver.h>
+#include <archaeopteryx/util/host-interface/HostReflectionHost.h>
 
 // Ocelot Includes
 #include <ocelot/api/interface/ocelot.h>
@@ -84,17 +84,24 @@ SimulatorKnobs* ArchaeopteryxDriver::_createDeviceKnobs()
 
 	for(auto knob = _knobs.begin(); knob != _knobs.end(); ++knob)
 	{
-		offsets.push_back(KnobOffsetPair(size, size + knob->first.size() + 1));
+		SimulatorKnobs::KnobOffsetPair pair;
+
+		pair.first  = size;
+		pair.second = size + knob->first.size() + 1;
+
+		offsets.push_back(pair);
 
 		size += knob->first.size() + knob->second.size() + 2;
 	}
 
 	SimulatorKnobs* devicePointer = 0;
 
-	cudaMalloc(&devicePointer, size);
+	cudaMalloc((void**)&devicePointer, size);
 
 	// serialize the knobs
-	SimulatorKnobs simulatorKnobs(_knobs.size());
+	SimulatorKnobs simulatorKnobs;
+
+	simulatorKnobs.knobCount = _knobs.size();
 
 	// 1) serialize the header
 	char* deviceIterator = (char*) devicePointer;
@@ -107,7 +114,7 @@ SimulatorKnobs* ArchaeopteryxDriver::_createDeviceKnobs()
 	cudaMemcpy(deviceIterator, offsets.data(),
 		sizeof(SimulatorKnobs::KnobOffsetPair) * offsets.size(),
 		cudaMemcpyHostToDevice);
-	deviceIterator += sizeof(SimulatorKnobs::KnobOffsetPair * offsets.size());
+	deviceIterator += sizeof(SimulatorKnobs::KnobOffsetPair) * offsets.size();
 	
 	// 3) serialize the knobs themselves
 	for(auto knob = _knobs.begin(); knob != _knobs.end(); ++knob)
@@ -131,6 +138,6 @@ void ArchaeopteryxDriver::_freeDeviceKnobs(SimulatorKnobs* knobs)
 
 }
 
-
+}
 
 

@@ -39,6 +39,7 @@ intermediate_headers = []
 directories = ['archaeopteryx/executive/implementation',
 	'archaeopteryx/util/implementation',
 	'archaeopteryx/runtime/implementation',
+	'archaeopteryx/driver/implementation',
 	'archaeopteryx/ir/implementation']
 extensions = ['*.cu']
 
@@ -56,10 +57,13 @@ testFileAccessesKernelBin = env.PTXBinary('libTestFileAccess',
 	[libarchaeopteryx, testFileAccessesKernel])
 testFileAccessesInc = env.PTXInclude('TestFileAccessesKernel.inc',
 	testFileAccessesKernelBin)
+archaeopteryxModuleInc = env.PTXInclude('ArchaeopteryxModule.inc',
+	libarchaeopteryx)
 
 # find all host source files in the source tree
 host_sources = []
-directories = ['archaeopteryx/util/host-implementation']
+directories = ['archaeopteryx/util/host-implementation',
+	'archaeopteryx/driver/host-implementation']
 extensions = ["*.cpp"]
 
 for dir in directories:
@@ -71,6 +75,12 @@ for dir in directories:
 libarchaeopteryxHost = env.SharedLibrary('archaeopteryxHost', host_sources)
 
 libs.append('-larchaeopteryxHost')
+
+# Add normal program
+simulator = env.Program('archaeopteryx-simulator',
+	'archaeopteryx/tools/archaeopteryx-simulator.cpp', LIBS=libs)
+env.Depends(simulator, libarchaeopteryxHost)
+Default(simulator)
 
 # Create the archaeopteryx unit tests
 tests = []
