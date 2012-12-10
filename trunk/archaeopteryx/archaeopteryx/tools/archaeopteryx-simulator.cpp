@@ -56,7 +56,8 @@ int main(int argc, char** argv)
 	parser.parse( "-i", "--input", input, "",
 		"The input trace file to be simulated." );
 	parser.parse( "-k", "--knobs", knobs, "",
-		"The input trace file to be simulated." );
+		"Comma separated list of knobs "
+		"(e.g. 'key1=value1,key2=value2, etc')." );
 	
 	parser.parse();
 	

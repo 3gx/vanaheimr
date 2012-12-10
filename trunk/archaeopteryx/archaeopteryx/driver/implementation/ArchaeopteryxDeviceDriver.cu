@@ -73,12 +73,30 @@ __device__ void ArchaeopteryxDeviceDriver::runSimulation()
 
 __device__ void ArchaeopteryxDeviceDriver::_loadFile()
 {
+	util::string fileName =
+		util::knobDatabase::getKnob<util::string>("TraceFileName");
 
+	rt::Runtime::loadBinary(fileName.c_str());
+}
+
+__device__ static void addKnobFromBinary(ir::Binary* binary,
+	const char* knobName)
+{
+	ir::Binary::SymbolTableEntry* symbol = binary->findSymbol(knobName);
+
+
+	util::KnobDatabase::addKnob(new util::Knob());
+	
 }
 
 __device__ void ArchaeopteryxDeviceDriver::_extractSimulatorParameters()
 {
+	ir::Binary* binary = rt::Runtime::getSelectedBinary();
 
+	addKnobFromBinary(binary, "simulator-ctas"                 );
+	addKnobFromBinary(binary, "parameter-memory-size"          );
+	addKnobFromBinary(binary, "simulator-threads-per-cta"      );
+	addKnobFromBinary(binary, "simulator-shared-memory-per-cta");
 }
 
 __device__ void ArchaeopteryxDeviceDriver::_loadInitialMemoryContents()
