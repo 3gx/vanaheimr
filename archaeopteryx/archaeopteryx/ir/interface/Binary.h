@@ -8,6 +8,8 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/util/interface/IntTypes.h>
+#include <vanaheimr/asm/interface/BinaryHeader.h>
+#include <vanaheimr/asm/interface/SymbolTableEntry.h>
 
 // Forward Declarations
 namespace archaeopteryx { namespace util { class File;                 } }
@@ -32,14 +34,8 @@ public:
 	typedef util::File File;
 
 	/*! \brief A binary header */
-	class Header
-	{
-	public:
-		uint32_t dataPages;
-		uint32_t codePages;
-		uint32_t symbols;
-		uint32_t strings;
-	};
+	typedef vanaheimr::as::BinaryHeader     Header;
+	typedef vanaheimr::as::SymbolTableEntry SymbolTableEntry;
 
 	/*! \brief A 32-KB page */
 	typedef uint32_t PageDataType[1 << 13];
