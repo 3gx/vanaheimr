@@ -29,7 +29,7 @@ __device__ const util::string& Knob::name() const
 
 __device__ const util::string& Knob::value() const
 {
-	return _name;
+	return _value;
 }
 
 typedef util::map<util::string, Knob*> KnobMap;

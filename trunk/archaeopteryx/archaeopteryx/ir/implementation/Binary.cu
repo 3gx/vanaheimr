@@ -8,7 +8,6 @@
 #include <archaeopteryx/ir/interface/Binary.h>
 
 #include <archaeopteryx/util/interface/File.h>
-#include <archaeopteryx/util/interface/StlFunctions.h>
 
 #include <archaeopteryx/util/interface/debug.h>
 #include <archaeopteryx/util/interface/cstring.h>
@@ -32,7 +31,7 @@ namespace ir
 __device__ Binary::Binary(const char* filename)
 : _file(0), _ownedFile(0)
 {
-	_ownedFile = new util::File(filename);
+	_ownedFile = new util::File(filename, "r");
 	
 	_file = _ownedFile;
 
@@ -101,7 +100,8 @@ __device__ void Binary::copyCode(InstructionContainer* code, PC pc,
 	while(instructions > 0)
 	{
 		size_t instructionsInThisPage =
-			util::min(instructionsPerPage - pageOffset, (size_t)instructions);
+			util::min((size_t)(instructionsPerPage - pageOffset),
+				(size_t)instructions);
 	
 		device_report(" copying %d instructions from page %d\n", 
 			(int)instructionsInThisPage, (int)page);
@@ -146,8 +146,8 @@ __device__ void Binary::findFunction(page_iterator& page, unsigned int& offset,
 	
 	device_assert(symbol->type == SymbolTableEntry::FunctionType);
 	
-	page   = code_begin() + _getPageId(symbol->offset);
-	offset = _getPageOffset(symbol->offset);
+	page   = code_begin() + _getCodePageId(symbol->offset);
+	offset = _getCodePageOffset(symbol->offset);
 }
 
 __device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
@@ -163,10 +163,25 @@ __device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
 		return;
 	}
 	
-	device_assert(symbol->type == VariableSymbolType);
+	device_assert(symbol->type == SymbolTableEntry::VariableType);
 	
-	page   = dataSection + symbol->pageId;
-	offset = symbol->pageOffset;
+	page   = data_begin() + _getDataPageId(symbol->offset);
+	offset = _getDataPageOffset(symbol->offset);
+}
+
+__device__ util::string Binary::getSymbolDataAsString(const char* symbolName)
+{
+	SymbolTableEntry* symbol = findSymbol(symbolName);
+	
+	device_assert(symbol != 0);
+
+	device_assert(symbol->type == SymbolTableEntry::VariableType);
+	
+	util::string result(symbol->size, '\0');
+	
+	_strcpy((char*)result.data(), symbol->offset);
+	
+	return result;
 }
 
 __device__ Binary::PC Binary::findFunctionsPC(const char* name)
@@ -272,11 +287,9 @@ __device__ Binary::PageDataType* Binary::getStringPage(page_iterator page)
 
 __device__ void Binary::_loadHeader()
 {
-	Header header;
-
 	_file->read(&_header, sizeof(Header));
 	
-	device_assert(_header.magic == Binary::MagicNumber);
+	device_assert(_header.magic == Header::MagicNumber);
 	
 	_dataSection   = new PagePointer[_header.dataPages];
 	_codeSection   = new PagePointer[_header.codePages];
@@ -324,12 +337,110 @@ __device__ size_t Binary::_getDataPageOffset(page_iterator page)
 	return _header.dataOffset + (page - data_begin()) * sizeof(PageDataType);
 }
 
-__device__ size_t Binary::_getDataStringOffset(page_iterator page)
+__device__ size_t Binary::_getStringPageOffset(page_iterator page)
 {
-	return _header.stringOffset +
+	return _header.stringsOffset +
 		(page - string_begin()) * sizeof(PageDataType);
 }
 
+__device__ int Binary::_strcmp(unsigned int stringTableOffset,
+	const char* string)
+{
+	page_iterator page  = string_begin() + _getStringPageId(stringTableOffset);
+	unsigned int offset = _getStringPageOffset(stringTableOffset);
+
+	for(; page != string_end(); ++page, offset = 0)
+	{
+		const char* data = (const char*)*getStringPage(page);
+		
+		for(; offset != sizeof(PageDataType); ++offset, ++string)
+		{
+			if(data[offset] != *string)
+			{
+				return -1;
+			}
+			
+			if(data[offset] == '\0')
+			{
+				if(*string == '\0')
+				{
+					return 0;
+				}
+				
+				return -1;
+			}
+			else if(*string == '\n')
+			{
+				return -1;
+			}
+		}
+	}
+	
+	return 0;
+}
+
+__device__ void Binary::_strcpy(char* string, unsigned int stringTableOffset)
+{
+	page_iterator page  = string_begin() + _getStringPageId(stringTableOffset);
+	unsigned int offset = _getStringPageOffset(stringTableOffset);
+
+	for(; page != string_end(); ++page, offset = 0)
+	{
+		const char* data = (const char*)*getStringPage(page);
+		
+		for(; offset != sizeof(PageDataType); ++offset, ++string)
+		{
+			if(data[offset] == '\0')
+			{
+				return;
+			}
+			
+			*string = data[offset];
+		}
+	}
+}
+
+__device__ unsigned int Binary::_getCodePageId(size_t offset)
+{
+	size_t codeOffset = offset - _header.codeOffset;
+	
+	return codeOffset / sizeof(PageDataType);
+}
+
+__device__ unsigned int Binary::_getCodePageOffset(size_t offset)
+{
+	size_t codeOffset = offset - _header.codeOffset;
+	
+	return codeOffset % sizeof(PageDataType);
+}
+
+__device__ unsigned int Binary::_getDataPageId(size_t offset)
+{
+	size_t dataOffset = offset - _header.dataOffset;
+	
+	return dataOffset / sizeof(PageDataType);
+}
+
+__device__ unsigned int Binary::_getDataPageOffset(size_t offset)
+{
+	size_t dataOffset = offset - _header.dataOffset;
+	
+	return dataOffset % sizeof(PageDataType);
+}
+
+__device__ unsigned int Binary::_getStringPageId(size_t offset)
+{
+	size_t stringsOffset = offset - _header.stringsOffset;
+	
+	return stringsOffset / sizeof(PageDataType);
+}
+
+__device__ unsigned int Binary::_getStringPageOffset(size_t offset)
+{
+	size_t stringsOffset = offset - _header.stringsOffset;
+	
+	return stringsOffset % sizeof(PageDataType);
+}
 
 }
 

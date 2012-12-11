@@ -94,7 +94,8 @@ __device__ void Runtime::loadKnobs()
 // The Runtime class owns all of the simulator state, it should have allocated it in the constructor
 //  a) simulated state is CoreSimKernel/Block/Thread and other classes
 //  b) this call changes the number of CoreSimBlock/Thread
-__device__ void Runtime::setupLaunchConfig(unsigned int totalCtas, unsigned int threadsPerCta)
+__device__ void Runtime::setupLaunchConfig(unsigned int totalCtas,
+	unsigned int threadsPerCta)
 {
 	state->simulatedBlockCount = totalCtas;
    
