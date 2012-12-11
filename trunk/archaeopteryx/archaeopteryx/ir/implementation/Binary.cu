@@ -35,183 +35,56 @@ __device__ Binary::Binary(const char* filename)
 	_ownedFile = new util::File(filename);
 	
 	_file = _ownedFile;
+
+	_loadHeader();
 }
 
 __device__ Binary::Binary(File* file)
 : _file(file), _ownedFile(0)
 {
-	Header header;
-
-	_file->read(&header, sizeof(Header));
-
-	dataPages          = header.dataPages;
-	codePages          = header.codePages;
-	symbolTableEntries = header.symbols;
-	stringTableEntries = header.strings;
-	
-	dataSection = new PageDataType*[dataPages];
-	codeSection = new PageDataType*[codePages];
-	symbolTable = 0;
-	stringTable = 0;
-
-	util::memset(dataSection, 0, dataPages * sizeof(PageDataType*));
-	util::memset(codeSection, 0, codePages * sizeof(PageDataType*));
-
-	device_report("Loaded binary (%d data pages, %d code pages, "
-		"%d symbols, %d strings)\n", dataPages, codePages, symbolTableEntries, 
-		stringTableEntries);
+	_loadHeader();
 }
 
 __device__ Binary::~Binary()
 {
-	for(unsigned int c = 0; c != codePages; ++c)
+	for(unsigned int c = 0; c != _header.codePages; ++c)
 	{
-		delete[] codeSection[c];
+		delete[] _codeSection[c];
 	}
 	
-	for(unsigned int d = 0; d != dataPages; ++d)
+	for(unsigned int d = 0; d != _header.dataPages; ++d)
 	{
-		delete[] dataSection[d];
+		delete[] _dataSection[d];
 	}
 	
-	delete[] stringTable;
-	delete[] symbolTable;
-	delete[] codeSection;
-	delete[] dataSection;
+	for(unsigned int s = 0; s != _header.stringPages; ++s)
+	{
+		delete[] _stringSection[s];
+	}
+	
+	delete[] _symbolTable;
+	delete[] _codeSection;
+	delete[] _dataSection;
+	delete[] _stringSection;
 	
 	delete _ownedFile;
-}
-
-__device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
-{
-	if(*page == 0)
-	{
-		size_t offset = _getCodePageOffset(page);
-
-		device_report("Loading code page (%p) at offset (%p) now...\n",
-			page, offset);
-
-		_file->seekg(offset);
-		*page = (PageDataType*)new PageDataType;
-		_file->read(*page, sizeof(PageDataType));
-	}
-	
-	return *page;
-}
-
-__device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
-{
-	if(*page == 0)
-	{
-		size_t offset = _getDataPageOffset(page);
-
-		device_report("Loading data page (%p) at offset (%p) now...\n",
-			page, offset);
-
-		_file->seekg(offset);
-		*page = (PageDataType*)new PageDataType;
-		_file->read(*page, sizeof(PageDataType));
-	}
-	
-	return *page;
 }
 
 __device__ Binary::SymbolTableEntry* Binary::findSymbol(const char* name)
 {
 	_loadSymbolTable();
 	
-	for(unsigned int i = 0; i < symbolTableEntries; ++i)
+	for(unsigned int i = 0; i < _header.symbols; ++i)
 	{
-		SymbolTableEntry* symbol = symbolTable + i;
-		const char* symbolName   = symbol->stringTableOffset + stringTable;
-	
-		if(util::strcmp(symbolName, name) != 0)
+		SymbolTableEntry* symbol = _symbolTable + i;
+			
+		if(_strcmp(symbol->stringOffset, name) != 0)
 		{
 			return symbol;
 		}
 	}
 	
 	return 0;
-}
-
-__device__ bool Binary::containsFunction(const char* name)
-{
-	SymbolTableEntry* symbol = findSymbol(name);
-	
-	if(symbol == 0) return false;
-	
-	return symbol->type == FunctionSymbolType;
-}
-
-__device__ void Binary::findFunction(page_iterator& page, unsigned int& offset,
-	const char* name)
-{
-	SymbolTableEntry* symbol = findSymbol(name);
-	
-	if(symbol == 0)
-	{
-		page   = 0;
-		offset = 0;
-		
-		return;
-	}
-	
-	device_assert(symbol->type == FunctionSymbolType);
-	
-	page   = codeSection + symbol->pageId;
-	offset = symbol->pageOffset;
-}
-
-__device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
-	const char* name)
-{
-	SymbolTableEntry* symbol = findSymbol(name);
-	
-	if(symbol == 0)
-	{
-		page   = 0;
-		offset = 0;
-		
-		return;
-	}
-	
-	device_assert(symbol->type == VariableSymbolType);
-	
-	page   = dataSection + symbol->pageId;
-	offset = symbol->pageOffset;
-}
-
-__device__ Binary::PC Binary::findFunctionsPC(const char* name)
-{
-	page_iterator page  = 0;
-	unsigned int offset = 0;
-
-	findFunction(page, offset, name);
-	
-	const size_t instructionsPerPage = sizeof(PageDataType) /
-		sizeof(InstructionContainer);
-	
-	return instructionsPerPage * (page - code_begin()) + offset;
-}
-
-__device__ Binary::page_iterator Binary::code_begin()
-{
-	return codeSection;
-}
-
-__device__ Binary::page_iterator Binary::code_end()
-{
-	return codeSection + codePages;
-}
-
-__device__ Binary::page_iterator Binary::data_begin()
-{
-	return dataSection;
-}
-
-__device__ Binary::page_iterator Binary::data_end()
-{
-	return dataSection + dataPages;
 }
 
 __device__ void Binary::copyCode(InstructionContainer* code, PC pc,
@@ -249,51 +122,214 @@ __device__ void Binary::copyCode(InstructionContainer* code, PC pc,
 	}
 }
 
-__device__ size_t Binary::_getCodePageOffset(page_iterator page)
+__device__ bool Binary::containsFunction(const char* name)
 {
-	return _getDataPageOffset(data_begin() + dataPages) +
-		(page - code_begin()) * sizeof(PageDataType);
+	SymbolTableEntry* symbol = findSymbol(name);
+	
+	if(symbol == 0) return false;
+	
+	return symbol->type == SymbolTableEntry::FunctionType;
 }
 
-__device__ size_t Binary::_getDataPageOffset(page_iterator page)
+__device__ void Binary::findFunction(page_iterator& page, unsigned int& offset,
+	const char* name)
 {
-	return sizeof(Header) + (page - data_begin()) * sizeof(PageDataType);
+	SymbolTableEntry* symbol = findSymbol(name);
+	
+	if(symbol == 0)
+	{
+		page   = 0;
+		offset = 0;
+		
+		return;
+	}
+	
+	device_assert(symbol->type == SymbolTableEntry::FunctionType);
+	
+	page   = code_begin() + _getPageId(symbol->offset);
+	offset = _getPageOffset(symbol->offset);
+}
+
+__device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
+	const char* name)
+{
+	SymbolTableEntry* symbol = findSymbol(name);
+	
+	if(symbol == 0)
+	{
+		page   = 0;
+		offset = 0;
+		
+		return;
+	}
+	
+	device_assert(symbol->type == VariableSymbolType);
+	
+	page   = dataSection + symbol->pageId;
+	offset = symbol->pageOffset;
+}
+
+__device__ Binary::PC Binary::findFunctionsPC(const char* name)
+{
+	page_iterator page  = 0;
+	unsigned int offset = 0;
+
+	findFunction(page, offset, name);
+	
+	const size_t instructionsPerPage = sizeof(PageDataType) /
+		sizeof(InstructionContainer);
+	
+	return instructionsPerPage * (page - code_begin()) + offset;
+}
+
+__device__ Binary::page_iterator Binary::code_begin()
+{
+	return _codeSection;
+}
+
+__device__ Binary::page_iterator Binary::code_end()
+{
+	return _codeSection + _header.codePages;
+}
+
+__device__ Binary::page_iterator Binary::data_begin()
+{
+	return _dataSection;
+}
+
+__device__ Binary::page_iterator Binary::data_end()
+{
+	return _dataSection + _header.dataPages;
+}
+
+__device__ Binary::page_iterator Binary::string_begin()
+{
+	return _stringSection;
+}
+
+__device__ Binary::page_iterator Binary::string_end()
+{
+	return _stringSection + _header.stringPages;
+}
+
+__device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
+{
+	if(*page == 0)
+	{
+		// TODO lock the page
+		
+		size_t offset = _getCodePageOffset(page);
+
+		device_report("Loading code page (%p) at offset (%p) now...\n",
+			page, offset);
+
+		_file->seekg(offset);
+		*page = (PageDataType*)new PageDataType;
+		_file->read(*page, sizeof(PageDataType));
+	}
+	
+	return *page;
+}
+
+__device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
+{
+	if(*page == 0)
+	{
+		// TODO lock the page
+	
+		size_t offset = _getDataPageOffset(page);
+
+		device_report("Loading data page (%p) at offset (%p) now...\n",
+			page, offset);
+
+		_file->seekg(offset);
+		*page = (PageDataType*)new PageDataType;
+		_file->read(*page, sizeof(PageDataType));
+	}
+	
+	return *page;
+}
+
+__device__ Binary::PageDataType* Binary::getStringPage(page_iterator page)
+{
+	if(*page == 0)
+	{
+		// TODO lock the page
+	
+		size_t offset = _getStringPageOffset(page);
+
+		device_report("Loading string page (%p) at offset (%p) now...\n",
+			page, offset);
+
+		_file->seekg(offset);
+		*page = (PageDataType*)new PageDataType;
+		_file->read(*page, sizeof(PageDataType));
+	}
+	
+	return *page;
+}
+
+
+__device__ void Binary::_loadHeader()
+{
+	Header header;
+
+	_file->read(&_header, sizeof(Header));
+	
+	device_assert(_header.magic == Binary::MagicNumber);
+	
+	_dataSection   = new PagePointer[_header.dataPages];
+	_codeSection   = new PagePointer[_header.codePages];
+	_stringSection = new PagePointer[_header.stringPages];
+
+	_symbolTable = 0;
+
+	util::memset(_dataSection,   0, _header.dataPages   * sizeof(PagePointer));
+	util::memset(_codeSection,   0, _header.codePages   * sizeof(PagePointer));
+	util::memset(_stringSection, 0, _header.stringPages * sizeof(PagePointer));
+	
+	device_report("Loaded binary (%d data pages, %d code pages, "
+		"%d symbols, %d string pages)\n", _header.dataPages, _header.codePages,
+		_header.symbols, _header.stringPages);
 }
 
 __device__ void Binary::_loadSymbolTable()
 {
-	if(symbolTableEntries == 0) return;
-	if(symbolTable != 0)        return;
+	if(_header.symbols == 0) return;
+	if(_symbolTable != 0)    return;
 
-	device_report(" Loading symbol/string table now.\n");
+	device_report(" Loading symbol table now.\n");
 
-	stringTable = new char[stringTableEntries];
-	symbolTable = new SymbolTableEntry[symbolTableEntries];
+	_symbolTable = new SymbolTableEntry[_header.symbols];
 	
-	size_t symbolTableOffset = _getCodePageOffset(code_begin() + codePages);
-	size_t stringTableOffset = symbolTableOffset +
-		symbolTableEntries * sizeof(SymbolTableEntry);
-
-	device_report("  symbol table offset %d, string table offset %d.\n", 
-		(int)symbolTableOffset, (int)stringTableOffset);
+	device_report("  symbol table offset %d.\n", (int)_header.symbolOffset);
 	device_assert(_file != 0);
 
-	_file->seekg(symbolTableOffset);
+	_file->seekg(_header.symbolOffset);
 
 	device_report("  loading symbol table now.\n");
 
-	_file->read(symbolTable, symbolTableEntries * sizeof(SymbolTableEntry));
+	_file->read(_symbolTable, _header.symbols * sizeof(SymbolTableEntry));
 
-	device_report("   loaded %d symbols...\n", symbolTableEntries);
-	
-	_file->seekg(stringTableOffset);
-
-	device_report("  loading string table now.\n");
-
-	_file->read(stringTable, stringTableEntries);
-
-	device_report("   loaded %d bytes of strings...\n", stringTableEntries);
+	device_report("   loaded %d symbols...\n", _header.symbols);
 }
+
+__device__ size_t Binary::_getCodePageOffset(page_iterator page)
+{
+	return _header.codeOffset +	(page - code_begin()) * sizeof(PageDataType);
+}
+
+__device__ size_t Binary::_getDataPageOffset(page_iterator page)
+{
+	return _header.dataOffset + (page - data_begin()) * sizeof(PageDataType);
+}
+
+__device__ size_t Binary::_getDataStringOffset(page_iterator page)
+{
+	return _header.stringOffset +
+		(page - string_begin()) * sizeof(PageDataType);
+}
+
 
 }
 
