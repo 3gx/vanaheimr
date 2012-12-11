@@ -6,10 +6,14 @@
 
 #pragma once
 
+// Archaeopteryx Includes
+#include <archaeopteryx/util/interface/string.h>
+
 // Vanaheimr Includes
-#include <vanaheimr/util/interface/IntTypes.h>
 #include <vanaheimr/asm/interface/BinaryHeader.h>
 #include <vanaheimr/asm/interface/SymbolTableEntry.h>
+
+#include <vanaheimr/util/interface/IntTypes.h>
 
 // Forward Declarations
 namespace archaeopteryx { namespace util { class File;                 } }
@@ -40,43 +44,12 @@ public:
 	/*! \brief A 32-KB page */
 	typedef uint32_t PageDataType[1 << 13];
 	
-	/*! \brief A symbol type */
-	enum SymbolType
-	{
-		VariableSymbolType   = 0x1,
-		FunctionSymbolType   = 0x2,
-		ArgumentSymbolType   = 0x3,
-		BasicBlockSymbolType = 0x4,
-		InvalidSymbolType    = 0x0
-	};
-
-	/*! \brief A symbol attribute */
-	enum SymbolAttribute
-	{
-		InvalidAttribute = 0x0,
-	};
-
-	/*! \brief A table mapping symbols to pages and offsets */
-	class SymbolTableEntry
-	{
-	public:
-		/*! \brief The type of symbol */
-		uint32_t type;
-		/*! \brief The offset in the string table of the name */
-		uint32_t stringTableOffset;
-		/*! \brief The page id it is stored in */
-		uint32_t pageId;
-		/*! \brief The offset within the page */
-		uint32_t pageOffset;
-		/*! \brief The set of attributes */
-		uint64_t attributes;
-	};
-
 	/*! \brief A symbol table iterator */
 	typedef SymbolTableEntry* symbol_table_iterator;
 
 	/*! \brief A page iterator */
-	typedef PageDataType** page_iterator;
+	typedef PageDataType* PagePointer;
+	typedef PagePointer* page_iterator;
 
 public:
 	/*! \brief Construct a binary from a file name */
@@ -87,15 +60,15 @@ public:
 	__device__ ~Binary();
 
 public:
-	/*! \brief Get a particular code page */
-	__device__ PageDataType* getCodePage(page_iterator page);
-	/*! \brief Get a pointer to a particular data page */
-	__device__ PageDataType* getDataPage(page_iterator page);
-
-	
+	/*! \brief Copy code from a PC */
+	__device__ void copyCode(InstructionContainer* code, PC pc,
+		unsigned int instructions);
 	/*! \brief Does a named funtion exist? */
 	__device__ bool containsFunction(const char* name);
-	
+	/*! \brief Get PC */
+	__device__ PC findFunctionsPC(const char* name);
+
+public:	
 	/*! \brief Find a symbol by name */
 	__device__ SymbolTableEntry* findSymbol(const char* name);
 	/*! \brief Find a function by name */
@@ -106,8 +79,17 @@ public:
 		const char* name);
 
 public:
-	/*! \brief Get PC */
-	__device__ PC findFunctionsPC(const char* name);
+	__device__ util::string getSymbolDataAsString(const char* symbolName);
+
+private:
+
+	/*! \brief Get a particular code page */
+	__device__ PageDataType* getCodePage(page_iterator page);
+	/*! \brief Get a pointer to a particular data page */
+	__device__ PageDataType* getDataPage(page_iterator page);
+	/*! \brief Get a pointer to a particular string page */
+	__device__ PageDataType* getStringPage(page_iterator page);
+
 
 public:
 	/*! \brief Get an iterator to the first code page */
@@ -120,42 +102,47 @@ public:
 	/*! \brief Get an iterator to one past the last data page */
 	__device__ page_iterator data_end();
 
-public:
-	/*! \brief Copy code from a PC */
-	__device__ void copyCode(InstructionContainer* code, PC pc,
-		unsigned int instructions);
-
-public:
-	/*! \brief The number of pages in the data section */
-	unsigned int dataPages;
-	/*! \brief The list of data pages, lazily allocated */
-	PageDataType** dataSection;
-	/*! \brief The number of pages in the code section */
-	unsigned int codePages;
-	/*! \brief The list of instruction pages, lazily allocated */
-	PageDataType** codeSection;
-	/*! \brief The number of symbol table entries */
-	unsigned int symbolTableEntries;
-	/*! \brief The actual symbol table */
-	SymbolTableEntry* symbolTable;
-	/*! \brief The string table */
-	char* stringTable;
-	/*! \brief The number of string table entries */
-	unsigned int stringTableEntries;
+	/*! \brief Get an iterator to the first string page */
+	__device__ page_iterator string_begin();
+	/*! \brief Get an iterator to one past the last string page */
+	__device__ page_iterator string_end();
 
 private:
+	/*! \brief Load the binary header */
+	__device__ void _loadHeader();
+
+	/*! \brief Load the symbol table */
+	__device__ void _loadSymbolTable();
+
 	/*! \brief Get an offset in the file for a specific code page */
 	__device__ size_t _getCodePageOffset(page_iterator page);
 	/*! \brief Get an offset in the file for a specific data page */
 	__device__ size_t _getDataPageOffset(page_iterator page);
-	/*! \brief Load the symbol and string tables */
-	__device__ void _loadSymbolTable();
+
+
+private:
+	__device__ int _strcmp(unsigned int stringTableOffset, const char* string);
 
 private:
 	/*! \brief A handle to the file */
 	File* _file;
 	/*! \brief A handle to a file owned by this binary */
 	File* _ownedFile;
+
+private:
+	/*! \brief The header loaded from the file */
+	Header _header;
+
+private:
+	/*! \brief The list of data pages, lazily allocated */
+	PagePointer* _dataSection;
+	/*! \brief The list of instruction pages, lazily allocated */
+	PagePointer* _codeSection;
+	/*! \brief The list of string pages, lazily allocated */
+	PagePointer* _stringSection;
+
+	/*! \brief The actual symbol table */
+	SymbolTableEntry* _symbolTable;
 
 };
 

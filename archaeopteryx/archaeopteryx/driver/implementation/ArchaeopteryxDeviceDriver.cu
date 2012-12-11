@@ -74,7 +74,7 @@ __device__ void ArchaeopteryxDeviceDriver::runSimulation()
 __device__ void ArchaeopteryxDeviceDriver::_loadFile()
 {
 	util::string fileName =
-		util::knobDatabase::getKnob<util::string>("TraceFileName");
+		util::KnobDatabase::getKnob<util::string>("TraceFileName");
 
 	rt::Runtime::loadBinary(fileName.c_str());
 }
@@ -82,11 +82,8 @@ __device__ void ArchaeopteryxDeviceDriver::_loadFile()
 __device__ static void addKnobFromBinary(ir::Binary* binary,
 	const char* knobName)
 {
-	ir::Binary::SymbolTableEntry* symbol = binary->findSymbol(knobName);
-
-
-	util::KnobDatabase::addKnob(new util::Knob());
-	
+	util::KnobDatabase::addKnob(new util::Knob(knobName,
+		binary->getSymbolDataAsString(knobName)));
 }
 
 __device__ void ArchaeopteryxDeviceDriver::_extractSimulatorParameters()
