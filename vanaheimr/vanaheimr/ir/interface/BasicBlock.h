@@ -88,6 +88,13 @@ public:
 	void push_front(Instruction* i);
 
 public:
+	/*! \brief Remove the first instruction in the block */
+	void pop_front();
+	
+	/*! \brief Remove the last instruction in the block */
+	void pop_back();
+
+public:
 	/*! \brief Inserts an instruction into the block */
 	iterator insert(iterator position, Instruction* i);
 	/*! \brief Inserts an instruction into the block */
