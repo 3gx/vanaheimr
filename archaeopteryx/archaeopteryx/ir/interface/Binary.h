@@ -42,7 +42,9 @@ public:
 	typedef vanaheimr::as::SymbolTableEntry SymbolTableEntry;
 
 	/*! \brief A 32-KB page */
-	typedef uint32_t PageDataType[1 << 13];
+	static const unsigned int PageSize = 1 << 13;
+	
+	typedef uint32_t PageDataType[PageSize];
 	
 	/*! \brief A symbol table iterator */
 	typedef SymbolTableEntry* symbol_table_iterator;
@@ -79,6 +81,7 @@ public:
 		const char* name);
 
 public:
+	/*! \brief Find a symbol by name and return its data as a string */
 	__device__ util::string getSymbolDataAsString(const char* symbolName);
 
 private:
@@ -118,10 +121,27 @@ private:
 	__device__ size_t _getCodePageOffset(page_iterator page);
 	/*! \brief Get an offset in the file for a specific data page */
 	__device__ size_t _getDataPageOffset(page_iterator page);
+	/*! \brief Get an offset in the file for a specific string page */
+	__device__ size_t _getStringPageOffset(page_iterator page);
 
 
 private:
 	__device__ int _strcmp(unsigned int stringTableOffset, const char* string);
+	__device__ void _strcpy(char* string, unsigned int stringTableOffset);
+
+private:
+	/*! \brief Get the page number for a specific offset in the file */
+	__device__ unsigned int _getCodePageId(size_t offset);
+	/*! \brief Get the page offset for a specific offset in the file */
+	__device__ unsigned int _getCodePageOffset(size_t offset);
+	/*! \brief Get the page number for a specific offset in the file */
+	__device__ unsigned int _getDataPageId(size_t offset);
+	/*! \brief Get the page offset for a specific offset in the file */
+	__device__ unsigned int _getDataPageOffset(size_t offset);
+	/*! \brief Get the page number for a specific offset in the file */
+	__device__ unsigned int _getStringPageId(size_t offset);
+	/*! \brief Get the page offset for a specific offset in the file */
+	__device__ unsigned int _getStringPageOffset(size_t offset);
 
 private:
 	/*! \brief A handle to the file */
