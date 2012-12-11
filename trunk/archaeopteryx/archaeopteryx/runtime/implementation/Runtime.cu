@@ -24,7 +24,7 @@ class RuntimeState
 {
 public:
 	typedef util::vector<executive::CoreSimBlock> CTAVector;
-	typedef util::map<util::string, ir::Binary>   BinaryMap;
+	typedef util::map<util::string, ir::Binary*>  BinaryMap;
 	typedef executive::CoreSimKernel              Kernel;
 
 public:
@@ -47,17 +47,18 @@ __device__ static RuntimeState* state = 0;
 __device__ void Runtime::create()
 {
 	state = new RuntimeState;
-
 }
 
 __device__ void Runtime::destroy()
 {
+	unloadBinaries();
+
 	delete state; state = 0;
 }
 
 __device__ void Runtime::loadBinary(const char* fileName)
 {
-    state->binaries.insert(util::make_pair(fileName, ir::Binary(fileName)));
+    state->binaries.insert(util::make_pair(fileName, new ir::Binary(fileName)));
 }
 
 __device__ bool Runtime::mmap(size_t bytes, Address address)
@@ -121,7 +122,8 @@ __device__ void Runtime::setupMemoryConfig(unsigned int threadStackSize)
     }
 }
 
-__device__ void Runtime::setupArgument(const void* data, size_t size, size_t offset)
+__device__ void Runtime::setupArgument(const void* data,
+	size_t size, size_t offset)
 {
 	char* parameterBase =
 		(char*)translateVirtualToPhysicalAddress(state->parameterMemoryAddress);
@@ -145,14 +147,22 @@ __global__ void launchSimulationInParallel()
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
 __device__ void Runtime::launchSimulation()
 {
-	unsigned int ctas    = util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
-	unsigned int threads = util::KnobDatabase::getKnob<unsigned int>("simulator-threads-per-cta");
+	unsigned int ctas    =
+		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
+	unsigned int threads =
+		util::KnobDatabase::getKnob<unsigned int>("simulator-threads-per-cta");
 	
 	launchSimulationInParallel<<<ctas, threads>>>();
 }
 
 __device__ void Runtime::unloadBinaries()
 {
+	for(RuntimeState::BinaryMap::iterator binary = state->binaries.begin();
+		binary != state->binaries.end(); ++binary)
+	{
+		delete binary->second;
+	}
+	
 	state->binaries.clear();
 }
 
@@ -161,9 +171,9 @@ __device__ size_t Runtime::findFunctionsPC(const char* functionName)
 	for(RuntimeState::BinaryMap::iterator binary = state->binaries.begin();
 		binary != state->binaries.end(); ++binary)
 	{
-		if(!binary->second.containsFunction(functionName)) continue;
+		if(!binary->second->containsFunction(functionName)) continue;
 
-		return binary->second.findFunctionsPC(functionName);
+		return binary->second->findFunctionsPC(functionName);
 	}
 
 	//assertM(false, "Function name not found.");
@@ -174,7 +184,7 @@ __device__ size_t Runtime::findFunctionsPC(const char* functionName)
 __device__ ir::Binary* Runtime::getSelectedBinary()
 {
 	//TODO support multiple binaries (requires linking)
-	return &state->binaries.begin()->second;
+	return state->binaries.begin()->second;
 }
 
 }

@@ -7,6 +7,12 @@
 // Vanaheimr Includes
 #include <vanaheimr/transforms/interface/ConvertFromSSAPass.h>
 
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/Instruction.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 namespace vanaheimr
 {
 
@@ -45,20 +51,20 @@ void ConvertFromSSAPass::_removePsis(Function& f)
 		{
 			if(!instruction->isPsi()) continue;
 			
-			_removePsi(static_cast<ir::Phi&>(*instruction));
+			_removePsi(static_cast<ir::Psi&>(*instruction));
 		}
 	}
 }
 
-void ConvertFromSSAPass::removePhis(ir::BasicBlock& block)
+void ConvertFromSSAPass::_removePhis(ir::BasicBlock& block)
 {
 	// get the first instruction after the phi
-	auto phiEnd = getFirstNonPhiInstruction(block);
+	//auto phiEnd = getFirstNonPhiInstruction(block);
 	
 	// 
 }
 
-void ConvertFromSSAPass::removePsi(ir::Psi& psi)
+void ConvertFromSSAPass::_removePsi(ir::Psi& psi)
 {
 	assertM(false, "Not implemented.");
 }

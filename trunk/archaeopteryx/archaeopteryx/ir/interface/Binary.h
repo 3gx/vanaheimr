@@ -42,7 +42,7 @@ public:
 	typedef vanaheimr::as::SymbolTableEntry SymbolTableEntry;
 
 	/*! \brief A 32-KB page */
-	static const unsigned int PageSize = 1 << 13;
+	static const unsigned int PageSize = Header::PageSize / sizeof(uint32_t);
 	
 	typedef uint32_t PageDataType[PageSize];
 	

@@ -9,6 +9,9 @@
 // Vanaheimr Includes
 #include <vanaheimr/transforms/interface/Pass.h>
 
+// Forward Declarations
+namespace vanaheimr { namespace ir { class Psi; } }
+
 namespace vanaheimr
 {
 
@@ -31,7 +34,7 @@ private:
 	void _removePhis(ir::BasicBlock& block);
 
 private:
-	void removePsi(ir::Psi& psi);
+	void _removePsi(ir::Psi& psi);
 
 };
 
