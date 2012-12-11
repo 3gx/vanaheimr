@@ -77,6 +77,8 @@ __device__ void ArchaeopteryxDeviceDriver::_loadFile()
 		util::KnobDatabase::getKnob<util::string>("TraceFileName");
 
 	rt::Runtime::loadBinary(fileName.c_str());
+	
+	device_report("loaded binary...\n");
 }
 
 __device__ static void addKnobFromBinary(ir::Binary* binary,

@@ -171,6 +171,8 @@ __device__ void Binary::findVariable(page_iterator& page, unsigned int& offset,
 
 __device__ util::string Binary::getSymbolDataAsString(const char* symbolName)
 {
+	device_report("   getting data for symbol '%s'\n", symbolName);
+	
 	SymbolTableEntry* symbol = findSymbol(symbolName);
 	
 	device_assert(symbol != 0);
@@ -267,6 +269,8 @@ __device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
 
 __device__ Binary::PageDataType* Binary::getStringPage(page_iterator page)
 {
+	device_assert(page < string_end());
+
 	if(*page == 0)
 	{
 		// TODO lock the page
@@ -288,6 +292,8 @@ __device__ Binary::PageDataType* Binary::getStringPage(page_iterator page)
 __device__ void Binary::_loadHeader()
 {
 	_file->read(&_header, sizeof(Header));
+	
+	device_report("Loading header (%p magic)\n", _header.magic);
 	
 	device_assert(_header.magic == Header::MagicNumber);
 	
@@ -349,6 +355,9 @@ __device__ int Binary::_strcmp(unsigned int stringTableOffset,
 	page_iterator page  = string_begin() + _getStringPageId(stringTableOffset);
 	unsigned int offset = _getStringPageOffset(stringTableOffset);
 
+	device_report("comparing string at offset %d against '%s'\n",
+		stringTableOffset, string);
+	
 	for(; page != string_end(); ++page, offset = 0)
 	{
 		const char* data = (const char*)*getStringPage(page);
@@ -430,6 +439,8 @@ __device__ unsigned int Binary::_getDataPageOffset(size_t offset)
 
 __device__ unsigned int Binary::_getStringPageId(size_t offset)
 {
+	device_assert(offset >= _header.stringsOffset);
+
 	size_t stringsOffset = offset - _header.stringsOffset;
 	
 	return stringsOffset / sizeof(PageDataType);

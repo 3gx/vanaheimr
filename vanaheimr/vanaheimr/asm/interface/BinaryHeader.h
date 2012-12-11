@@ -4,8 +4,8 @@
 	\brief  The header file for the specification of the header of the binary
 */
 
-// Standard Library Includes
-#include <cstdint>
+// Vanaheimr Includes
+#include <vanaheimr/util/interface/IntTypes.h>
 
 /*! \brief The wrapper namespace for Vanaheimr */
 namespace vanaheimr
