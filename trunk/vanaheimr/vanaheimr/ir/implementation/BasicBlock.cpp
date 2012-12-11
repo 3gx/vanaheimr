@@ -185,6 +185,16 @@ void BasicBlock::push_front(Instruction* i)
 	_instructions.push_front(i);
 }
 
+void BasicBlock::pop_back()
+{
+	_instructions.pop_back();
+}
+
+void BasicBlock::pop_front()
+{
+	_instructions.pop_front();
+}
+
 BasicBlock::iterator BasicBlock::insert(
 	const Instruction* pointer, Instruction* i)
 {

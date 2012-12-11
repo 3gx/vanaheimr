@@ -1,7 +1,8 @@
 /*! \file  SymbolTableEntry.h
 	\date   Saturday March 4, 2012
 	\author Sudnya Diamos <mailsudnya@gmail.com>
-	\brief  The header file for the specification of the symbol table of the binary
+	\brief  The header file for the specification of the symbol table of
+	        the binary
 */
 
 /*! \brief The wrapper namespace for Vanaheimr */
