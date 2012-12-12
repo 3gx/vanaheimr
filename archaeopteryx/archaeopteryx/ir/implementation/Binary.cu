@@ -77,7 +77,7 @@ __device__ Binary::SymbolTableEntry* Binary::findSymbol(const char* name)
 	{
 		SymbolTableEntry* symbol = _symbolTable + i;
 			
-		if(_strcmp(symbol->stringOffset, name) != 0)
+		if(_strcmp(_header.stringsOffset + symbol->stringOffset, name) == 0)
 		{
 			return symbol;
 		}
@@ -355,9 +355,6 @@ __device__ int Binary::_strcmp(unsigned int stringTableOffset,
 	page_iterator page  = string_begin() + _getStringPageId(stringTableOffset);
 	unsigned int offset = _getStringPageOffset(stringTableOffset);
 
-	device_report("comparing string at offset %d against '%s'\n",
-		stringTableOffset, string);
-	
 	for(; page != string_end(); ++page, offset = 0)
 	{
 		const char* data = (const char*)*getStringPage(page);

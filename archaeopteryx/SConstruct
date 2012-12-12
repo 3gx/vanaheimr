@@ -5,7 +5,7 @@
 #	\brief  The SCons master build script for Archaeopteryx
 ################################################################################
 
-if ARGUMENTS.get('mode', 'release') == 'debug':
+if ARGUMENTS.get('mode', 'debug') == 'debug':
 	SConscript('SConscript', variant_dir='.debug_build',   duplicate=0, 
 		exports={'mode':'debug'})
 else:

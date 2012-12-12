@@ -8,10 +8,15 @@
 #include <archaeopteryx/util/interface/File.h>
 #include <archaeopteryx/util/interface/cstring.h>
 #include <archaeopteryx/util/interface/debug.h>
-#include <archaeopteryx/util/interface/StlFunctions.h>
 
-// Standard Library Includes
-#include <cstdio>
+#include <archaeopteryx/util/interface/algorithm.h>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 0
 
 namespace archaeopteryx
 {
@@ -21,7 +26,7 @@ namespace util
 
 __device__ File::File(const char* fileName, const char* mode)
 {
-	std::printf("Opening file '%s' with mode '%s' on the gpu\n",
+	device_report("Opening file '%s' with mode '%s' on the gpu\n",
 		fileName, mode);
 
 	OpenMessage open(fileName, mode);
@@ -39,12 +44,12 @@ __device__ File::File(const char* fileName, const char* mode)
 
 	if(_handle == 0)
 	{
-		std::printf(" failed to open file...\n");
+		device_report(" failed to open file...\n");
 	
 		device_assert(_handle != 0);
 	}
 	
-	std::printf(" file opened, current size is %d\n", _size);
+	device_report(" file opened, current size is %d\n", _size);
 }
 
 __device__ File::~File()
@@ -78,7 +83,7 @@ __device__ size_t File::writeSome(const void* data, size_t bytes)
 	
 	WriteMessage message(data, attemptedSize, _put, _handle);
 	
-	std::printf("sending file write message (%d size, %d pointer, %p handle)\n",
+	device_report("sending file write message (%d size, %d pointer, %p handle)\n",
 		attemptedSize, _put, _handle);
 	
 	HostReflectionDevice::sendSynchronous(message);
@@ -102,7 +107,7 @@ __device__ void File::read(void* data, size_t bytes)
 
 	char* pointer = reinterpret_cast<char*>(data);
 
-	std::printf("performing file read (%d size, %d pointer)\n",
+	device_report("performing file read (%d size, %d pointer)\n",
 		(int)bytes, (int)_get);
 
 	while(bytes > 0)
@@ -125,7 +130,7 @@ __device__ size_t File::readSome(void* data, size_t bytes)
 		util::min(bytes, util::max((size_t)1,
 			(size_t)(HostReflectionDevice::maxMessageSize() / 2)));
 
-	std::printf(" sending file read message (%d size, %d pointer, %p handle)\n",
+	device_report(" sending file read message (%d size, %d pointer, %p handle)\n",
 		(int)attemptedSize, (int)_get, _handle);
 	
 	ReadMessage message(attemptedSize, _get, _handle);
@@ -165,7 +170,7 @@ __device__ void File::seekg(size_t g)
 		g = size();
 	}
 
-	std::printf("seeking get pointer from %d to %d\n", (int)_get, (int)g);
+	device_report("seeking get pointer from %d to %d\n", (int)_get, (int)g);
 	
 	_get = g;
 }
