@@ -208,7 +208,7 @@ def Environment():
 	vars = Variables()
 
 	# add a variable to handle RELEASE/DEBUG mode
-	vars.Add(EnumVariable('mode', 'Release versus debug mode', 'release',
+	vars.Add(EnumVariable('mode', 'Release versus debug mode', 'debug',
 		allowed_values = ('release', 'debug')))
 
 	# add a variable to handle warnings

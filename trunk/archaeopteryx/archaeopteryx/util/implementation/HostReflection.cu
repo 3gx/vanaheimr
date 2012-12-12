@@ -8,7 +8,7 @@
 #include <archaeopteryx/util/interface/HostReflectionDevice.h>
 #include <archaeopteryx/util/interface/ThreadId.h>
 #include <archaeopteryx/util/interface/cstring.h>
-#include <archaeopteryx/util/interface/StlFunctions.h>
+#include <archaeopteryx/util/interface/algorithm.h>
 #include <archaeopteryx/util/interface/debug.h>
 
 // Preprocessor Macros
@@ -16,7 +16,7 @@
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace archaeopteryx
 {

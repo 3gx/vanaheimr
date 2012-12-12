@@ -6,6 +6,10 @@
 
 #pragma once
 
+#include <archaeopteryx/util/interface/iterator.h>
+#include <archaeopteryx/util/interface/utility.h>
+#include <archaeopteryx/util/interface/type_traits.h>
+
 namespace archaeopteryx
 {
 

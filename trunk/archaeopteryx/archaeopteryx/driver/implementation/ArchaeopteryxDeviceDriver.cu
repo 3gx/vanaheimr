@@ -84,15 +84,19 @@ __device__ void ArchaeopteryxDeviceDriver::_loadFile()
 __device__ static void addKnobFromBinary(ir::Binary* binary,
 	const char* knobName)
 {
+	device_report(" Getting symbol (%s)\n", knobName);
+
 	util::string value = binary->getSymbolDataAsString(knobName);
 	
-	device_report("Loaded knob (%s, %s)\n", knobName, value.c_str());
+	device_report("  Loaded knob (%s, %s)\n", knobName, value.c_str());
 
 	util::KnobDatabase::addKnob(new util::Knob(knobName, value));
 }
 
 __device__ void ArchaeopteryxDeviceDriver::_extractSimulatorParameters()
 {
+	device_report("Extracting simulator parameters from binary.\n");
+	
 	ir::Binary* binary = rt::Runtime::getSelectedBinary();
 
 	addKnobFromBinary(binary, "simulator-ctas"                 );

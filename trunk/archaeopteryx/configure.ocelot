@@ -12,7 +12,7 @@
 		},
 		debugger: {
 			enabled: false,
-			kernelFilter: "_bootupHostReflection",
+			kernelFilter: "archaeopteryxDriver",
 			alwaysAttach: false
 		},
 		cacheSimulator: {
@@ -32,11 +32,12 @@
 		optimizationLevel: none,
 		workerThreadLimit: 1,
 		asynchronousKernelLaunch: True,
-		reconvergenceMechanism: "tf-stack",
+		reconvergenceMechanism: "ipdom",
 		warpSize: 4
 	},
 	optimizations: {
-		subkernelSize: 1000
+		subkernelSize: 1000,
+		simplifyCFG:   True,
 	},
 	checkpoint: {
 		enabled: false,
