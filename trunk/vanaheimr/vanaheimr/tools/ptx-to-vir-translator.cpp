@@ -23,9 +23,14 @@
 namespace vanaheimr
 {
 
-/*! \brief Load a PTX module, translate it to VIR, output the result */
-static void translate(const std::string& virFileName,
-	const std::string& ptxFileName, bool binary)
+static bool isTraceFile(const std::string& path)
+{
+	auto extension = hydrazine::split(path, '.').back();
+	
+	return extension == "trace";
+}
+
+static std::string translatePTX(const std::string& ptxFileName)
 {
 	// Load the PTX module
 	::ir::Module ptxModule(ptxFileName);
@@ -46,9 +51,54 @@ static void translate(const std::string& virFileName,
 		return;
 	}
 	
+	return ptxFileName;
+}
+
+static std::string translateTrace(const std::string& traceFileName)
+{
+	// Translate the trace
+	compiler::Compiler* virCompiler = compiler::Compiler::getSingleton();
+	
+	translation::OcelotToVIRTraceTranslator translator(virCompiler);
+	
+	try
+	{
+		translator.translate(traceFileName);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Compilation Failed: PTX to VIR translation failed.\n"; 
+		std::cerr << "  Message: " << e.what() << "\n"; 
+		return;
+	}
+	
+	return translator.ptxModuleName;	
+}
+
+/*! \brief Load a PTX module, translate it to VIR, output the result */
+static void translate(const std::string& virFileName,
+	const std::string& ptxFileName, bool binary)
+{
+	// is this a ptx or trace file?
+	bool isTrace = isTraceFile(ptxFileName);
+
+	std::string ptxModuleName;
+
+	// Translate the ptx
+	if(isTrace)
+	{
+		ptxModuleName = translateTrace(ptxFileName);
+	}
+	else
+	{
+		ptxModuleName = translatePTX(ptxFileName);
+	}
+
+	compiler::Compiler* virCompiler = compiler::Compiler::getSingleton();
+	
 	// Output the VIR module
 	vanaheimr::compiler::Compiler::module_iterator virModule =
-		virCompiler->getModule(ptxFileName);
+		virCompiler->getModule(ptxModuleName);
 	assert(virModule != virCompiler->module_end());
 	
 	virModule->name = virFileName;
