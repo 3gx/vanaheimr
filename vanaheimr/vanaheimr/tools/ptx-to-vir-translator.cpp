@@ -10,6 +10,7 @@
 #include <vanaheimr/compiler/interface/Compiler.h>
 
 #include <vanaheimr/translation/interface/PTXToVIRTranslator.h>
+#include <vanaheimr/translation/interface/OcelotToVIRTraceTranslator.h>
 
 // Ocelot Includes
 #include <ocelot/ir/interface/Module.h>
@@ -25,7 +26,7 @@ namespace vanaheimr
 
 static bool isTraceFile(const std::string& path)
 {
-	auto extension = hydrazine::split(path, '.').back();
+	auto extension = hydrazine::split(path, ".").back();
 	
 	return extension == "trace";
 }
@@ -48,7 +49,8 @@ static std::string translatePTX(const std::string& ptxFileName)
 	{
 		std::cerr << "Compilation Failed: PTX to VIR translation failed.\n"; 
 		std::cerr << "  Message: " << e.what() << "\n"; 
-		return;
+		
+		throw;
 	}
 	
 	return ptxFileName;
@@ -67,12 +69,13 @@ static std::string translateTrace(const std::string& traceFileName)
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Compilation Failed: PTX to VIR translation failed.\n"; 
+		std::cerr << "Compilation Failed: Trace to VIR translation failed.\n"; 
 		std::cerr << "  Message: " << e.what() << "\n"; 
-		return;
+		
+		throw;
 	}
 	
-	return translator.ptxModuleName;	
+	return translator.translatedModuleName();	
 }
 
 /*! \brief Load a PTX module, translate it to VIR, output the result */
@@ -85,13 +88,20 @@ static void translate(const std::string& virFileName,
 	std::string ptxModuleName;
 
 	// Translate the ptx
-	if(isTrace)
+	try
 	{
-		ptxModuleName = translateTrace(ptxFileName);
+		if(isTrace)
+		{
+			ptxModuleName = translateTrace(ptxFileName);
+		}
+		else
+		{
+			ptxModuleName = translatePTX(ptxFileName);
+		}
 	}
-	else
+	catch(const std::exception& e)
 	{
-		ptxModuleName = translatePTX(ptxFileName);
+		return;
 	}
 
 	compiler::Compiler* virCompiler = compiler::Compiler::getSingleton();

@@ -178,6 +178,16 @@ unsigned int ArrayType::elementsInArray() const
 	return _elementCount;
 }
 
+size_t ArrayType::bytes() const
+{
+	return _pointedToType->bytes() * _elementCount;
+}
+
+Type* ArrayType::clone() const
+{
+	return new ArrayType(*this);
+}
+
 StructureType::StructureType(Compiler* c, const TypeVector& types)
 : AggregateType(c), _types(types)
 {
