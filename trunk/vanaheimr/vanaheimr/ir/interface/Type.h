@@ -124,6 +124,10 @@ public:
 public:
 	unsigned int elementsInArray() const;
 
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+
 private:
 	const Type*  _pointedToType;
 	unsigned int _elementCount;

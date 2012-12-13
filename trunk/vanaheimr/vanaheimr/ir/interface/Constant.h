@@ -4,11 +4,16 @@
 	\brief  The header file for the Constant family of classes.
 */
 
+#pragma once
+
 // Standard Library Includes
 #include <vector>
+#include <cstdint>
+#include <cstddef>
 
 // Forward Declarations
 namespace vanaheimr { namespace ir { class BasicBlock; } }
+namespace vanaheimr { namespace ir { class Type;       } }
 
 namespace vanaheimr
 {
@@ -156,33 +161,13 @@ public:
 public:
 	bool isNullValue() const;
 	DataVector data() const;
+
+public:
+	size_t bytes() const;
+	Constant* clone() const;
 	
 private:
 	DataVector _value;
-};
-
-/*! \brief An array constant */
-class ComplexArrayConstant : public StructureConstant
-{
-public:
-	ComplexArrayConstant(const Type* t);
-
-};
-
-/*! \brief An address of a basic block */
-class BasicBlockAddressConstant : public Constant
-{
-public:
-	BasicBlockAddressConstant(const BasicBlock* block);
-
-public:
-	operator const BasicBlock*() const;
-	
-public:
-	BasicBlockAddressConstant& operator=(const BasicBlock* b);
-
-private:
-	const BasicBlock* _basicBlock;
 };
 
 }
