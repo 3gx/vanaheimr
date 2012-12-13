@@ -144,14 +144,24 @@ Type* DoubleType::clone() const
 	return new DoubleType(*this);
 }
 
-AggregateType::AggregateType(Compiler* c)
-: Type("", c)
+AggregateType::AggregateType(Compiler* c, const std::string& name)
+: Type(name, c)
 {
 
 }
 
+static std::string arrayTypeName(const Type* t, unsigned int count)
+{
+	std::stringstream stream;
+	
+	stream << t->name() << "[" << count << "]";
+	
+	return stream.str();
+}
+
 ArrayType::ArrayType(Compiler* c, const Type* t, unsigned int elementCount)
-: AggregateType(c), _pointedToType(t), _elementCount(elementCount)
+: AggregateType(c, arrayTypeName(t, elementCount)), _pointedToType(t),
+	_elementCount(elementCount)
 {
 
 }

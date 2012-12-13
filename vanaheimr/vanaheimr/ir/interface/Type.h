@@ -101,7 +101,7 @@ public:
 class AggregateType : public Type
 {
 public:
-	AggregateType(Compiler* c);
+	AggregateType(Compiler* c, const std::string& name = "");
 
 public:
 	virtual const Type*  getTypeAtIndex  (unsigned int index) const = 0;
