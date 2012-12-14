@@ -7,6 +7,14 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/runtime/interface/MemoryPool.h>
 
+#include <archaeopteryx/util/interface/debug.h>
+
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 0
+
 namespace archaeopteryx
 {
 
@@ -15,18 +23,22 @@ namespace rt
 
 __device__ bool MemoryPool::allocate(uint64_t size, Address address)
 {
+	device_report("Attempting to allocate %d bytes at %p\n", size, address);
+	
 	PageMap::iterator page = _pages.lower_bound(address);
 
 	if(page != _pages.end())
 	{
 		if(page->second.endAddress() > address)
 		{
+			device_report(" failed, collision with previous allocation\n");
 			return false;
 		}
 	}
 
-	_pages.insert(util::make_pair(address, Page(address, size)));
+	_pages.insert(util::make_pair(address, Page(size, address)));
 
+	device_report(" success\n");
 	return true;
 }
 
@@ -46,7 +58,7 @@ __device__ MemoryPool::Address MemoryPool::allocate(uint64_t size)
 		address = page->second.endAddress();
 	}
 
-	_pages.insert(util::make_pair(address, Page(address, size)));
+	_pages.insert(util::make_pair(address, Page(size, address)));
 	
 	return address;
 }

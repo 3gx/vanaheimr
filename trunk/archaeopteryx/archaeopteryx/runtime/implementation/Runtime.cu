@@ -13,6 +13,13 @@
 #include <archaeopteryx/runtime/interface/MemoryPool.h>
 
 #include <archaeopteryx/util/interface/Knob.h>
+#include <archaeopteryx/util/interface/debug.h>
+
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace archaeopteryx
 {
@@ -46,14 +53,23 @@ __device__ static RuntimeState* state = 0;
 
 __device__ void Runtime::create()
 {
+	device_report("Creating runtime.\n");
+
 	state = new RuntimeState;
 }
 
 __device__ void Runtime::destroy()
 {
+	device_report("Destroying runtime.\n");
+	device_report(" unloading binaries...\n");
+	
 	unloadBinaries();
 
+	device_report(" destroying runtime state..\n");
+	
 	delete state; state = 0;
+
+	device_report(" destroyed runtime state..\n");
 }
 
 __device__ void Runtime::loadBinary(const char* fileName)
@@ -89,10 +105,12 @@ __device__ void Runtime::loadKnobs()
 	state->hardwareCTAs.resize(ctas);
     
 	state->parameterMemoryAddress =
-		mmap(util::KnobDatabase::getKnob<size_t>("parameter-memory-size"));
+		mmap(util::KnobDatabase::getKnob<size_t>(
+			"simulator-parameter-memory-size"));
 }
 
-// The Runtime class owns all of the simulator state, it should have allocated it in the constructor
+// The Runtime class owns all of the simulator state, it should have allocated
+//       it in the constructor
 //  a) simulated state is CoreSimKernel/Block/Thread and other classes
 //  b) this call changes the number of CoreSimBlock/Thread
 __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas,
@@ -163,7 +181,12 @@ __device__ void Runtime::unloadBinaries()
 		delete binary->second;
 	}
 	
+	device_report("   clearing binary map...\n");
+	
+	device_assert(state != 0);
 	state->binaries.clear();
+	
+	device_report("    finished...\n");
 }
 
 __device__ size_t Runtime::findFunctionsPC(const char* functionName)

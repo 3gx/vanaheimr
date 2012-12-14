@@ -170,14 +170,17 @@ static void addLaunch(compiler::Compiler* compiler,
 			" kernels with threads in the x dimension.");
 	}
 
-	addGlobal(compiler, state, "simulator-ctas",
+	addGlobal(compiler, state, "simulated-parameter-memory-size",
 		state.launch.gridDim.x);
-	addGlobal(compiler, state, "simulator-threads-per-cta",
+	
+	addGlobal(compiler, state, "simulated-ctas",
+		state.launch.gridDim.x);
+	addGlobal(compiler, state, "simulated-threads-per-cta",
 		state.launch.blockDim.x);
-	addGlobal(compiler, state, "simulator-shared-memory-per-cta",
+	addGlobal(compiler, state, "simulated-shared-memory-per-cta",
 		state.launch.sharedMemorySize);
 	
-	addGlobal(compiler, state, "simulator-kernel-name", state.launch.kernelName);
+	addGlobal(compiler, state, "simulated-kernel-name", state.launch.kernelName);
 }
 
 static void addAllocations(compiler::Compiler* compiler,
@@ -193,7 +196,7 @@ static void addAllocations(compiler::Compiler* compiler,
 	{
 		std::stringstream name;
 		
-		name << "simulator-allocation-" << allocation->second->devicePointer;
+		name << "simulated-allocation-" << allocation->second->devicePointer;
 	
 		addGlobal(compiler, state, name.str(), allocation->second->data);
 	}
@@ -212,7 +215,7 @@ static void addAllocationChecks(compiler::Compiler* compiler,
 	{
 		std::stringstream name;
 		
-		name << "simulator-verify-allocation-"
+		name << "simulated-verify-allocation-"
 			<< allocation->second->devicePointer;
 	
 		addGlobal(compiler, state, name.str(), allocation->second->data);

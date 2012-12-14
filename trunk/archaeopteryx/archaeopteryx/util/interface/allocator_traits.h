@@ -1150,6 +1150,46 @@ move(unique_ptr<_Tp, _Dp>& __t)
     return unique_ptr<_Tp, _Dp>(__rv<unique_ptr<_Tp, _Dp> >(__t));
 }
 
+struct __destruct_n
+{
+private:
+    size_t size;
+
+    template <class _Tp>
+    __device__ void __process(_Tp* __p, false_type)
+        {for (size_t __i = 0; __i < size; ++__i, ++__p) __p->~_Tp();}
+
+    template <class _Tp>
+    __device__ void __process(_Tp*, true_type)
+        {}
+
+    __device__ void __incr(false_type)
+        {++size;}
+    __device__ void __incr(true_type)
+        {}
+
+    __device__ void __set(size_t __s, false_type)
+        {size = __s;}
+    __device__ void __set(size_t, true_type)
+        {}
+public:
+    __device__ explicit __destruct_n(size_t __s)
+        : size(__s) {}
+
+    template <class _Tp>
+    __device__ void __incr(_Tp*)
+        {__incr(integral_constant<bool, is_trivially_destructible<_Tp>::value>());}
+
+    template <class _Tp>
+    __device__ void __set(size_t __s, _Tp*)
+        {__set(__s, integral_constant<bool, is_trivially_destructible<_Tp>::value>());}
+
+    template <class _Tp>
+    __device__ void operator()(_Tp* __p)
+        {__process(__p, integral_constant<bool, is_trivially_destructible<_Tp>::value>());}
+};
+
+
 }
 
 }

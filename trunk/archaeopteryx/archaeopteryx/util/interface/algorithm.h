@@ -580,8 +580,8 @@ __search(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
            _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate __pred,
            random_access_iterator_tag, random_access_iterator_tag)
 {
-    typedef typename std::iterator_traits<_RandomAccessIterator1>::difference_type _D1;
-    typedef typename std::iterator_traits<_RandomAccessIterator2>::difference_type _D2;
+    typedef typename util::iterator_traits<_RandomAccessIterator1>::difference_type _D1;
+    typedef typename util::iterator_traits<_RandomAccessIterator2>::difference_type _D2;
     // Take advantage of knowing source and pattern lengths.  Stop short when source is smaller than pattern
     _D2 __len2 = __last2 - __first2;
     if (__len2 == 0)
@@ -693,8 +693,8 @@ search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 {
     return util::__search<typename add_lvalue_reference<_BinaryPredicate>::type>
                          (__first1, __last1, __first2, __last2, __pred,
-                          typename std::iterator_traits<_ForwardIterator1>::iterator_category(),
-                          typename std::iterator_traits<_ForwardIterator2>::iterator_category());
+                          typename util::iterator_traits<_ForwardIterator1>::iterator_category(),
+                          typename util::iterator_traits<_ForwardIterator2>::iterator_category());
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2>
@@ -702,8 +702,8 @@ __device__ inline _ForwardIterator1
 search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
        _ForwardIterator2 __first2, _ForwardIterator2 __last2)
 {
-    typedef typename std::iterator_traits<_ForwardIterator1>::value_type __v1;
-    typedef typename std::iterator_traits<_ForwardIterator2>::value_type __v2;
+    typedef typename util::iterator_traits<_ForwardIterator1>::value_type __v1;
+    typedef typename util::iterator_traits<_ForwardIterator2>::value_type __v2;
     return util::search(__first1, __last1, __first2, __last2, __equal_to<__v1, __v2>());
 }
 
