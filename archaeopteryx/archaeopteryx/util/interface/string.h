@@ -889,7 +889,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s)
 template <class _CharT, class _Traits, class _Allocator>
 __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, const allocator_type& __a)
-    : __r_(__a)
+    : __r_(__rep(), __a)
 {
     device_assert(__s != 0);
     __init(__s, traits_type::length(__s));
@@ -906,7 +906,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_
 template <class _CharT, class _Traits, class _Allocator>
 __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(const_pointer __s, size_type __n, const allocator_type& __a)
-    : __r_(__a)
+    : __r_(__rep(), __a)
 {
     device_assert(__s != 0);
     __init(__s, __n);
@@ -924,7 +924,7 @@ __device__ basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_s
 
 template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str, const allocator_type& __a)
-    : __r_(__a)
+    : __r_(__rep(), __a)
 {
     if (!__str.__is_long())
         __r_.first.__r = __str.__r_.first.__r;
@@ -966,7 +966,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(size_type __n, value_typ
 template <class _CharT, class _Traits, class _Allocator>
 __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(size_type __n, value_type __c, const allocator_type& __a)
-    : __r_(__a)
+    : __r_(__rep(), __a)
 {
     __init(__n, __c);
 }
@@ -974,7 +974,7 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(size_type __n, value_typ
 template <class _CharT, class _Traits, class _Allocator>
 __device__ basic_string<_CharT, _Traits, _Allocator>::basic_string(const basic_string& __str, size_type __pos, size_type __n,
                                                         const allocator_type& __a)
-    : __r_(__a)
+    : __r_(__rep(), __a)
 {
     size_type __str_sz = __str.size();
     if (__pos > __str_sz)
@@ -1041,7 +1041,7 @@ template<class _InputIterator>
 __device__ inline
 basic_string<_CharT, _Traits, _Allocator>::basic_string(_InputIterator __first, _InputIterator __last,
                                                         const allocator_type& __a)
-    : __r_(__a)
+    : __r_(__rep(), __a)
 {
     __init(__first, __last);
 }

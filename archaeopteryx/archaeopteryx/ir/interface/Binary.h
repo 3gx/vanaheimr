@@ -8,6 +8,7 @@
 
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/string.h>
+#include <archaeopteryx/util/interface/vector.h>
 
 // Vanaheimr Includes
 #include <vanaheimr/asm/interface/BinaryHeader.h>
@@ -29,6 +30,9 @@ namespace ir
 class Binary
 {
 public:
+	/*! \brief A generic type for a vector of strings */
+	typedef util::vector<util::string> StringVector;
+
 	/*! \brief An instruction object stored in the binary */
 	typedef vanaheimr::as::InstructionContainer InstructionContainer;
 
@@ -81,8 +85,17 @@ public:
 		const char* name);
 
 public:
+	/*! \brief Get the name of a symbol */
+	__device__ util::string getSymbolName(SymbolTableEntry* symbol);
+	/*! \brief Get the size of a symbol */
+	__device__ size_t getSymbolSize(const char* name);
 	/*! \brief Find a symbol by name and return its data as a string */
 	__device__ util::string getSymbolDataAsString(const char* symbolName);
+	/*! \brief Find a symbol by name and copy its data to an address */
+	__device__ void copySymbolDataToAddress(void* address,
+		const char* symbolName);
+	/*! \brief Get symbol names that match a substring */
+	__device__ StringVector getSymbolNamesThatMatch(const char* substring);
 
 private:
 
@@ -128,6 +141,8 @@ private:
 private:
 	__device__ int _strcmp(unsigned int stringTableOffset, const char* string);
 	__device__ void _strcpy(char* string, unsigned int stringTableOffset);
+	__device__ int _strlen(unsigned int stringTableOffset);
+	__device__ void _datacpy(char* string, unsigned int dataOffset);
 
 private:
 	/*! \brief Get the page number for a specific offset in the file */

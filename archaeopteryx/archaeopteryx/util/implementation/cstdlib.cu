@@ -16,12 +16,37 @@ namespace util
 __device__ int atoi(const char* s)
 {
 	int value = 0;
+	int base = 10;
 
-	while(*s != '\n')
+	if(s[0] != '\0' && s[1] != '\0' && s[0] == '0' && s[1] == 'x')
 	{
-		value = value * 10;
+		base = 16;
 		
-		value += *s - '0';
+		s += 2;
+	}
+
+	while(*s != '\0')
+	{
+		if(*s <= '9')
+		{
+			value = value * base;
+		
+			value += *s - '0';
+		}
+		else if(*s <= 'F')
+		{
+			value = value * base;
+		
+			value += *s - 'A' + 10;
+		}
+		else if(*s <= 'f')
+		{
+			value = value * base;
+		
+			value += *s - 'a' + 10;
+		}
+		
+		++s;
 	}
 
 	return value;
