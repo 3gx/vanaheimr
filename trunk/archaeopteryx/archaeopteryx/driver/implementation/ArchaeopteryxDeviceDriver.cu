@@ -42,9 +42,25 @@ __device__ ArchaeopteryxDeviceDriver::~ArchaeopteryxDeviceDriver()
 	util::KnobDatabase::destroy();
 }
 
+__device__ static void loadDefaultKnobs()
+{
+	util::KnobDatabase::addKnob(
+		new util::Knob("simulator-thread-stack-size", "128"));
+	util::KnobDatabase::addKnob(
+		new util::Knob("simulator-shared-memory-per-cta", "1024"));
+
+	util::KnobDatabase::addKnob(new util::Knob("simulator-ctas", "64" ));
+	util::KnobDatabase::addKnob(
+		new util::Knob("simulator-threads-per-cta", "32"));
+	util::KnobDatabase::addKnob(
+		new util::Knob("simulator-registers-per-thread", "64"));
+}
+
 __device__ void ArchaeopteryxDeviceDriver::loadKnobs(
 	const void* serializedKnobs)
 {
+	loadDefaultKnobs();
+
 	const char* base     = (const char*) serializedKnobs;
 	const char* iterator = base;	
 
@@ -105,6 +121,7 @@ __device__ void ArchaeopteryxDeviceDriver::_extractSimulatorParameters()
 
 	addKnobFromBinary(binary, "simulated-ctas"                 );
 	addKnobFromBinary(binary, "simulated-parameter-memory-size");
+	addKnobFromBinary(binary, "simulated-parameter-memory"     );
 	addKnobFromBinary(binary, "simulated-threads-per-cta"      );
 	addKnobFromBinary(binary, "simulated-shared-memory-per-cta");
 	addKnobFromBinary(binary, "simulated-kernel-name"          );
@@ -166,7 +183,13 @@ __device__ void ArchaeopteryxDeviceDriver::_loadInitialMemoryContents()
 
 __device__ void ArchaeopteryxDeviceDriver::_runSimulation()
 {
+	rt::Runtime::loadKnobs();
+	
 	device_report("Launching simulation.\n");
+	
+	device_report(" launch config (%d ctas, %d threads).\n",
+		util::KnobDatabase::getKnob<unsigned int>("simulated-ctas"),
+		util::KnobDatabase::getKnob<unsigned int>("simulated-threads-per-cta"));
 	
 	rt::Runtime::setupLaunchConfig(
 		util::KnobDatabase::getKnob<unsigned int>("simulated-ctas"),
@@ -180,8 +203,12 @@ __device__ void ArchaeopteryxDeviceDriver::_runSimulation()
 
 	rt::Runtime::setupArgument(argumentMemory.data(), argumentMemory.size(), 0);
 	
+	device_report(" parameter memory (%d bytes).\n", argumentMemory.size());
+	
 	util::string kernelEntryPoint = util::KnobDatabase::getKnob<util::string>(
 		"simulated-kernel-name");
+	
+	device_report(" kernel name '%s'.\n", kernelEntryPoint.c_str());
 	
 	rt::Runtime::setupKernelEntryPoint(kernelEntryPoint.c_str());
 	
@@ -200,7 +227,7 @@ __device__ static bool verifyAllocation(const util::string& data,
 	
 	const char* base = (const char*)address;
 	
-	std::printf(" Checking allocation at address 0x%x (%d bytes):",
+	std::printf(" Checking allocation at address 0x%p (%d bytes):",
 		virtualAddress, data.size());
 	
 	bool anyErrors = false;
@@ -262,7 +289,7 @@ __device__ static bool verifyAllocation(const util::string& data,
 		std::printf(" matched.\n");
 	}
 	
-	return anyErrors;
+	return !anyErrors;
 }
 
 __device__ void ArchaeopteryxDeviceDriver::_verifyMemoryContents()

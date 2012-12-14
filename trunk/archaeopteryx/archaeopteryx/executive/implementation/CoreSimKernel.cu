@@ -10,6 +10,8 @@
 #include <archaeopteryx/runtime/interface/Runtime.h>
 #include <archaeopteryx/ir/interface/Binary.h>
 
+#include <archaeopteryx/util/interface/Knob.h>
+
 namespace archaeopteryx
 {
 
@@ -19,7 +21,8 @@ namespace executive
 __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, 
 	CoreSimBlock* blocks, ir::Binary* binary)
 {
-	unsigned int registerCount = 0; // TODO
+	unsigned int registerCount = util::KnobDatabase::getKnob<unsigned int>(
+			"simulator-registers-per-thread"); // TODO
 
 	for (unsigned int simulatedBlock = blockIdx.x;
 		simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)
