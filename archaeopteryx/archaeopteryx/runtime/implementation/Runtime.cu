@@ -15,6 +15,7 @@
 #include <archaeopteryx/util/interface/Knob.h>
 #include <archaeopteryx/util/interface/debug.h>
 
+// Preprocessor Defines
 #ifdef REPORT_BASE
 #undef REPORT_BASE
 #endif
@@ -106,7 +107,10 @@ __device__ void Runtime::loadKnobs()
     
 	state->parameterMemoryAddress =
 		mmap(util::KnobDatabase::getKnob<size_t>(
-			"simulator-parameter-memory-size"));
+			"simulated-parameter-memory-size"));
+			
+	device_report("Allocated parameter memory at address 0x%p\n",
+		state->parameterMemoryAddress);
 }
 
 // The Runtime class owns all of the simulator state, it should have allocated
@@ -130,7 +134,8 @@ __device__ void Runtime::setupLaunchConfig(unsigned int totalCtas,
 __device__ void Runtime::setupMemoryConfig(unsigned int threadStackSize)
 {
 	unsigned int sharedMemoryPerCta =
-		util::KnobDatabase::getKnob<unsigned int>("shared-memory-per-cta");
+		util::KnobDatabase::getKnob<unsigned int>(
+			"simulator-shared-memory-per-cta");
 
 	// TODO: run in a kernel 
     for(RuntimeState::CTAVector::iterator cta = state->hardwareCTAs.begin();
@@ -143,6 +148,9 @@ __device__ void Runtime::setupMemoryConfig(unsigned int threadStackSize)
 __device__ void Runtime::setupArgument(const void* data,
 	size_t size, size_t offset)
 {
+	device_report("Adding argument (address 0x%p, %d bytes, at offset %d) "
+		"to parameter memory (%p)\n", data, (int)size, (int)offset,
+		state->parameterMemoryAddress);
 	char* parameterBase =
 		(char*)translateVirtualToPhysicalAddress(state->parameterMemoryAddress);
 	
@@ -171,6 +179,7 @@ __device__ void Runtime::launchSimulation()
 		util::KnobDatabase::getKnob<unsigned int>("simulator-threads-per-cta");
 	
 	launchSimulationInParallel<<<ctas, threads>>>();
+	cudaDeviceSynchronize();
 }
 
 __device__ void Runtime::unloadBinaries()

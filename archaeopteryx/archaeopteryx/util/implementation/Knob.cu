@@ -38,7 +38,17 @@ static __device__ KnobMap* knobDatabaseImplementation = 0;
 
 __device__ void KnobDatabase::addKnob(Knob* base)
 {
-	knobDatabaseImplementation->insert(util::make_pair(base->name(), base));
+	KnobMap::iterator knob = knobDatabaseImplementation->find(base->name());
+	
+	if(knob == knobDatabaseImplementation->end())
+	{
+		knobDatabaseImplementation->insert(util::make_pair(base->name(), base));
+	}
+	else
+	{
+		delete knob->second;
+		knob->second = base;
+	}
 }
 
 __device__ void KnobDatabase::removeKnob(const Knob& base)
@@ -55,6 +65,11 @@ __device__ void KnobDatabase::removeKnob(const Knob& base)
 __device__ const Knob& KnobDatabase::getKnobBase(const util::string& name)
 {
 	KnobMap::iterator knob = knobDatabaseImplementation->find(name);
+
+	if(knob == knobDatabaseImplementation->end())
+	{
+		std::printf("ERROR: No knob '%s' declared.\n", name.c_str());
+	}
 
 	device_assert(knob != knobDatabaseImplementation->end());
 	

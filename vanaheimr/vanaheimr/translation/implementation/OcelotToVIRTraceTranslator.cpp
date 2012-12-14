@@ -171,7 +171,9 @@ static void addLaunch(compiler::Compiler* compiler,
 	}
 
 	addGlobal(compiler, state, "simulated-parameter-memory-size",
-		state.launch.gridDim.x);
+		state.launch.parameterMemory.size());
+	addGlobal(compiler, state, "simulated-parameter-memory",
+		state.launch.parameterMemory);
 	
 	addGlobal(compiler, state, "simulated-ctas",
 		state.launch.gridDim.x);
@@ -180,7 +182,8 @@ static void addLaunch(compiler::Compiler* compiler,
 	addGlobal(compiler, state, "simulated-shared-memory-per-cta",
 		state.launch.sharedMemorySize);
 	
-	addGlobal(compiler, state, "simulated-kernel-name", state.launch.kernelName);
+	addGlobal(compiler, state, "simulated-kernel-name",
+		state.launch.kernelName);
 }
 
 static void addAllocations(compiler::Compiler* compiler,
