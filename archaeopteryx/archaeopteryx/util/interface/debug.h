@@ -20,7 +20,9 @@
 #ifdef device_assert
 #undef device_assert
 #endif
+
 #define device_assert(x) util::_assert(x, #x, __FILE__, __LINE__)
+#define device_assert_m(x, y) device_report(y "\n"); device_assert(x)
 
 #ifndef NDEBUG
 	#define report(y) \

@@ -7,7 +7,10 @@
 
 #pragma once
 
+// Archaeopteryx Includes
 #include <archaeopteryx/ir/interface/Binary.h>
+
+#include <archaeopteryx/util/interface/IntTypes.h>
 
 // Forward Declarations
 namespace archaeopteryx { namespace executive { class CoreSimBlock; } }
@@ -25,8 +28,11 @@ class CoreSimThread
         typedef ir::Binary Binary;
 		typedef Binary::PC PC;
         
-		typedef long long unsigned int Value;
-        typedef long long signed int SValue;
+		typedef uint64_t Value;
+        typedef int64_t  SValue;
+        typedef float    FValue;
+        typedef double   DValue;
+        
         typedef long long unsigned int Address;
     
 	public:
