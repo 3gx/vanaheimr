@@ -7,13 +7,13 @@
 			checkInitialization: false
 		},
 		raceDetector: {
-			enabled: true,
+			enabled: false,
 			ignoreIrrelevantWrites: true
 		},
 		debugger: {
 			enabled: false,
 			kernelFilter: "archaeopteryxDriver",
-			alwaysAttach: true
+			alwaysAttach: false
 		},
 		cacheSimulator: {
 			enabled: false,

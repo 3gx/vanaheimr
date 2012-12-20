@@ -69,8 +69,6 @@ __device__ bool CoreSimBlock::areAllThreadsFinished()
 {
 	__shared__ bool tempFinished[WARP_SIZE];
 	
-	cta_report("Determining if all threads are finished\n");
-
 	bool finished = m_warp[getThreadIdInWarp()].finished;
 
 	tempFinished[getThreadIdInWarp()] = finished;
@@ -280,6 +278,10 @@ __device__ void CoreSimBlock::initializeSpecialRegisters()
 
 		roundRobinScheduler();
 	}
+	
+	cta_report(" core-sim-block finished simulating cta %d\n", 
+		m_blockState.blockId);
+
 }
 
 __device__ CoreSimThread::Value CoreSimBlock::getRegister(unsigned int threadId,
@@ -317,6 +319,8 @@ __device__ void CoreSimBlock::barrier(unsigned int threadId)
 __device__ unsigned int CoreSimBlock::returned(unsigned int threadId,
 	unsigned int pc)
 {
+	device_report("(%d): returned\n", threadId);
+
 	m_threads[threadId].finished = true;
 
 	// TODO return the PC from the stack

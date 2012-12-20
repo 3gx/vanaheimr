@@ -56,6 +56,16 @@
 		device_report(__VA_ARGS__);\
 	}
 
+#ifdef kernel_report
+#undef kernel_report
+#endif
+
+#define kernel_report(...) \
+	if(blockIdx.x == 0)\
+	{ \
+		cta_report(__VA_ARGS__);\
+	}
+
 namespace archaeopteryx
 {
 

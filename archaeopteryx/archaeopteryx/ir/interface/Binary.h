@@ -142,7 +142,8 @@ private:
 	__device__ int _strcmp(unsigned int stringTableOffset, const char* string);
 	__device__ void _strcpy(char* string, unsigned int stringTableOffset);
 	__device__ int _strlen(unsigned int stringTableOffset);
-	__device__ void _datacpy(char* string, unsigned int dataOffset);
+	__device__ void _datacpy(char* string, unsigned int dataOffset,
+		unsigned int size);
 
 private:
 	/*! \brief Get the page number for a specific offset in the file */

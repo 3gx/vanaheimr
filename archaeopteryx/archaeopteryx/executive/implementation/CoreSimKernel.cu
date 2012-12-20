@@ -22,7 +22,7 @@ __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks,
 	CoreSimBlock* blocks, ir::Binary* binary)
 {
 	unsigned int registerCount = util::KnobDatabase::getKnob<unsigned int>(
-			"simulator-registers-per-thread"); // TODO
+			"simulator-registers-per-thread");
 
 	for (unsigned int simulatedBlock = blockIdx.x;
 		simulatedBlock < simulatedBlocks; simulatedBlock += gridDim.x)

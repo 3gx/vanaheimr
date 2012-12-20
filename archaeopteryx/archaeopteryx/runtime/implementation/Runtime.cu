@@ -161,13 +161,16 @@ __device__ void Runtime::setupArgument(const void* data,
 //   Call into the binary to get the PC
 __device__ void Runtime::setupKernelEntryPoint(const char* functionName)
 {
-    state->programEntryPointAddress = findFunctionsPC(functionName);    
+    state->programEntryPointAddress = findFunctionsPC(functionName);
 }
 
 __global__ void launchSimulationInParallel()
 {
+    kernel_report("Booting up parallel simulation entry point with "
+    	"(%d ctas, %d threads)\n", gridDim.x, blockDim.x);
+    
     state->kernel.launchKernel(state->simulatedBlockCount, 	
-        &state->hardwareCTAs[0], Runtime::getSelectedBinary());
+        &state->hardwareCTAs[0], Runtime::getSelectedBinary());    
 }
 
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
@@ -180,6 +183,8 @@ __device__ void Runtime::launchSimulation()
 	
 	launchSimulationInParallel<<<ctas, threads>>>();
 	cudaDeviceSynchronize();
+
+    kernel_report("Parallel simulation finished.\n");
 }
 
 __device__ void Runtime::unloadBinaries()

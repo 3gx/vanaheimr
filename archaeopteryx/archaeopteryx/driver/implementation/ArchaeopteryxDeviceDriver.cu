@@ -221,7 +221,7 @@ __device__ static bool verifyAllocation(const util::string& data,
 	rt::Runtime::Address address, rt::Runtime::Address virtualAddress)
 {
 	// TODO do this in parallel
-	const unsigned int chunkSize = 40;
+	const unsigned int chunkSize = 32;
 	
 	unsigned int chunks = (data.size() + chunkSize - 1) / chunkSize;
 	
@@ -266,18 +266,18 @@ __device__ static bool verifyAllocation(const util::string& data,
 			
 			for(unsigned int i = 0; i < chunkLength; ++i, ++index)
 			{
-				std::printf(" 0x%x", data[index]);				
+				std::printf(" 0x%x", (int)(unsigned char)data[index]);				
 			}
 			
 			std::printf("\n");
 			
-			std::printf("                       computed:");
+			std::printf("                           computed: ");
 			
 			index = chunkSize * chunk;
 			
 			for(unsigned int i = 0; i < chunkLength; ++i, ++index)
 			{
-				std::printf(" 0x%x", base[index]);				
+				std::printf(" 0x%x", (int)(unsigned char)base[index]);				
 			}
 			
 			std::printf("\n");
