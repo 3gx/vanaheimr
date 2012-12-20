@@ -211,7 +211,7 @@ __device__ util::string Binary::getSymbolDataAsString(const char* symbolName)
 	
 	device_report("    data size is '%d' bytes\n", symbol->size);
 	
-	_datacpy((char*)result.data(), symbol->offset);
+	_datacpy((char*)result.data(), symbol->offset, symbol->size);
 	
 	return result;
 }
@@ -229,7 +229,7 @@ __device__ void Binary::copySymbolDataToAddress(void* address,
 	
 	device_report("    data size is '%d' bytes\n", symbol->size);
 	
-	_datacpy((char*)address, symbol->offset);
+	_datacpy((char*)address, symbol->offset, symbol->size);
 }
 
 __device__ Binary::StringVector Binary::getSymbolNamesThatMatch(
@@ -452,10 +452,12 @@ __device__ int Binary::_strcmp(unsigned int stringTableOffset,
 	return 0;
 }
 
-__device__ void Binary::_datacpy(char* string, unsigned int dataOffset)
+__device__ void Binary::_datacpy(char* string, unsigned int dataOffset,
+	unsigned int size)
 {
 	page_iterator page  = data_begin() + _getDataPageId(dataOffset);
 	unsigned int offset = _getDataPageOffset(dataOffset);
+	unsigned int bytesCopied = 0;
 
 	device_report("copying data from file offset (0x%x) to (%p)\n",
 		dataOffset, string);
@@ -466,8 +468,9 @@ __device__ void Binary::_datacpy(char* string, unsigned int dataOffset)
 		
 		for(; offset != sizeof(PageDataType); ++offset, ++string)
 		{
-			if(data[offset] == '\0')
+			if(bytesCopied++ >= size)
 			{
+				device_report(" copied %d bytes\n", bytesCopied);
 				return;
 			}
 			
@@ -490,10 +493,7 @@ __device__ void Binary::_strcpy(char* string, unsigned int stringTableOffset)
 		
 		for(; offset != sizeof(PageDataType); ++offset, ++string)
 		{
-			if(data[offset] == '\0')
-			{
-				return;
-			}
+			if(data[offset] == '\0') return;
 			
 			*string = data[offset];
 		}
