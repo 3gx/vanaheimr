@@ -23,7 +23,7 @@ public:
 	/*! \brief The set of possible instructions */
 	enum Opcode
 	{
-		Add,
+		Add = 0x0,
 		And,
 		Ashr,
 		Atom,
@@ -201,6 +201,8 @@ public:
 class Call : public Instruction
 {
 public:
+	OperandContainer linkRegister;
+
 	OperandContainer target;
 
 public:
@@ -209,6 +211,18 @@ public:
 
 	uint64_t returnArgumentOffset;
 	uint64_t argumentOffset;
+};
+
+/*! \brief Floating point division */
+class Fdiv : public BinaryInstruction
+{
+
+};
+
+/*! \brief Floating point multiplication */
+class Fmul : public BinaryInstruction
+{
+
 };
 
 /*! \brief A floating point precision extension instruction */
@@ -231,6 +245,12 @@ class Fptoui : public UnaryInstruction
 
 /*! \brief A floating point precision truncate instruction */
 class Fptrunc : public UnaryInstruction
+{
+
+};
+
+/*! \brief Floating point remainder */
+class Frem : public BinaryInstruction
 {
 
 };
