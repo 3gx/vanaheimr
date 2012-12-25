@@ -201,8 +201,6 @@ public:
 class Call : public Instruction
 {
 public:
-	OperandContainer linkRegister;
-
 	OperandContainer target;
 
 public:

@@ -327,6 +327,11 @@ __device__ unsigned int CoreSimBlock::returned(unsigned int threadId,
 	return 0;
 }
 
+__device__ unsigned int CoreSimBlock::getLinkRegister() const
+{
+	return m_kernel->getLinkRegister();
+}
+
 __device__ void CoreSimBlock::clearAllBarrierBits()
 {
 	for (unsigned int i = 0 ; i < (m_blockState.threadsPerBlock)/WARP_SIZE ; ++i)

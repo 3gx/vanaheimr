@@ -104,7 +104,10 @@ __device__ void Runtime::loadKnobs()
 	unsigned int ctas =
 		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
 	state->hardwareCTAs.resize(ctas);
-    
+
+	state->kernel.linkRegister =
+		util::KnobDatabase::getKnob<unsigned int>("simulated-link-register");
+
 	state->parameterMemoryAddress =
 		mmap(util::KnobDatabase::getKnob<size_t>(
 			"simulated-parameter-memory-size"));

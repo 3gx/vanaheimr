@@ -37,6 +37,8 @@ static void translatePTX(compiler::Compiler* compiler,
 	const util::ExtractedDeviceState& state);
 static void addVariablesForTraceData(compiler::Compiler* compiler,
 	const util::ExtractedDeviceState& state);
+static void archaeopteryxCodeGen(compiler::Compiler* compiler,
+	const util::ExtractedDeviceState& state);
 
 void OcelotToVIRTraceTranslator::translate(const std::string& traceFileName)
 {
@@ -53,6 +55,7 @@ void OcelotToVIRTraceTranslator::translate(const std::string& traceFileName)
 	state.deserialize(stream);
 	
 	translatePTX(_compiler, state);
+	archaeopteryxCodeGen(_compiler, state);
 	
 	addVariablesForTraceData(_compiler, state);
 
@@ -232,6 +235,19 @@ static void addVariablesForTraceData(compiler::Compiler* compiler,
 	addLaunch(compiler, state);
 	addAllocations(compiler, state);
 	addAllocationChecks(compiler, state);
+}
+
+static void archaeopteryxCodeGen(compiler::Compiler* compiler,
+	const util::ExtractedDeviceState& state)
+{
+	codegen::ArchaeopteryxTarget target;
+
+	for(auto module = compiler->begin(); module != compiler->end(); ++module)
+	{
+		target.assignModule(&*module);
+		
+		target.lower();
+	}
 }
 
 }

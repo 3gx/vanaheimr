@@ -47,6 +47,11 @@ __device__ CoreSimKernel::Address
     return rt::Runtime::translateVirtualToPhysicalAddress(va);
 }
 
+__device__ unsigned int CoreSimKernel::getLinkRegister() const
+{
+	return linkRegister;
+}
+
 }
 
 }
