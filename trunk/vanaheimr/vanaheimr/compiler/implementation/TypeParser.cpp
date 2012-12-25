@@ -61,6 +61,11 @@ static bool isFunction(const std::string& token)
 	return token.find("(") == 0;
 }
 
+static bool isArray(const std::string& token)
+{
+	return token.find("[") == 0;
+}
+
 static bool isPrimitive(Compiler* compiler, const std::string& token)
 {
 	report("Checking if " << token << " is a primitive type.");
@@ -85,6 +90,13 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 	else if(isPrimitive(_compiler, nextToken))
 	{
 		type = _parsePrimitive(stream);
+		
+		nextToken = _peek(stream);
+		
+		if(isArray(nextToken))
+		{
+			type = _parseArray(type, stream);
+		}
 	}
 	
 	if(type == nullptr)
@@ -97,7 +109,7 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 
 ir::Type* TypeParser::_parseFunction(std::istream& stream)
 {
-	           ir::Type* returnType = nullptr;
+	ir::Type* returnType = nullptr;
 	ir::Type::TypeVector argumentTypes;
 
 	if(!_scan("(", stream))
@@ -156,6 +168,60 @@ ir::Type* TypeParser::_parseFunction(std::istream& stream)
 	return new ir::FunctionType(_compiler, returnType, argumentTypes);
 }
 
+static bool isNumeric(char c)
+{
+	return c == '0' || c == '2' || c == '3' || c == '4' || c == '5' ||
+		c == '6' || c == '7' || c == '8' || c == '9' || c == '1';
+}
+
+static bool isInteger(const std::string& integer)
+{
+	for(auto character : integer)
+	{
+		if(!isNumeric(character)) return false;
+	}
+	
+	return true;
+}
+
+static unsigned int parseInteger(const std::string& integer)
+{
+	if(!isInteger(integer))
+	{
+		throw std::runtime_error("Failed to parse array "
+			"type, expecting an integer.");
+	}
+	
+	std::stringstream stream(integer);
+	
+	unsigned int value = 0;
+	
+	stream >> value;
+	
+	return value;
+}
+
+ir::Type* TypeParser::_parseArray(const ir::Type* base, std::istream& stream)
+{
+	if(!_scan("[", stream))
+	{
+		throw std::runtime_error("Failed to parse array "
+			"type, expecting '['.");
+	}
+	
+	std::string dimensionToken = _nextToken(stream);
+	
+	unsigned int dimension = parseInteger(dimensionToken);
+	
+	if(!_scan("]", stream))
+	{
+		throw std::runtime_error("Failed to parse array "
+			"type, expecting ']'.");
+	}
+	
+	return new ir::ArrayType(_compiler, base, dimension);
+}
+
 ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
 {
 	std::string token;
@@ -178,7 +244,7 @@ static bool isWhitespace(char c)
 
 static bool isToken(char c)
 {
-	return c == '(' || c == ')' || c == ',';
+	return c == '(' || c == ')' || c == ',' || c == '[' || c == ']';
 }
 
 std::string TypeParser::_peek(std::istream& stream)

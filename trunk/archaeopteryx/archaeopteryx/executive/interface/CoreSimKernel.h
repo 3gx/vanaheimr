@@ -33,6 +33,10 @@ public:
 	// Interface to CoreSimBlock
 	__device__ Address translateVirtualToPhysicalAddress(
 		Address virtualAddress) const;
+	__device__ unsigned int getLinkRegister() const;
+
+public:
+	unsigned int linkRegister;
 
 };
 

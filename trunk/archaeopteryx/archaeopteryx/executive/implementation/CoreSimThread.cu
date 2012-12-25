@@ -189,6 +189,12 @@ static void __device__ setRegister(OperandContainer& operandContainer,
 	parentBlock->setRegister(threadId, reg.reg, result);
 }
 
+static void __device__ setRegister(unsigned int reg, CoreSimBlock* parentBlock,
+	unsigned threadId, const Value& result)
+{
+	parentBlock->setRegister(threadId, reg, result);
+}
+
 static __device__ ir::Binary::PC executeAdd(Instruction* instruction,
 	ir::Binary::PC pc, CoreSimBlock* parentBlock, unsigned threadId)
 {
@@ -301,7 +307,7 @@ static __device__ ir::Binary::PC executeCall(Instruction* instruction,
 
 	Value a = getOperand(call->target, parentBlock, threadId);
 
-	setRegister(call->linkRegister, parentBlock, threadId, pc + 1);
+	setRegister(parentBlock->getLinkRegister(), parentBlock, threadId, pc + 1);
 
 	return a;
 }

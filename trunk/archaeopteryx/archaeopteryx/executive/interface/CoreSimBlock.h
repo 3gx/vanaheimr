@@ -98,6 +98,7 @@ class CoreSimBlock
         __device__ CoreSimThread::Value translateVirtualToPhysical(const CoreSimThread::Value);
         __device__ void barrier(unsigned int);
         __device__ unsigned int returned(unsigned int, unsigned int);
+        __device__ unsigned int getLinkRegister() const;
 
     public:
         //Interface to Runtime

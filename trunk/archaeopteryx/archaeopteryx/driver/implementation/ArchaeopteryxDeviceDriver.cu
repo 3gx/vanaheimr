@@ -54,6 +54,8 @@ __device__ static void loadDefaultKnobs()
 		new util::Knob("simulator-threads-per-cta", "32"));
 	util::KnobDatabase::addKnob(
 		new util::Knob("simulator-registers-per-thread", "64"));
+	util::KnobDatabase::addKnob(
+		new util::Knob("simulated-link-register", "63"));
 }
 
 __device__ void ArchaeopteryxDeviceDriver::loadKnobs(

@@ -21,7 +21,7 @@
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 1
+#define REPORT_BASE 0
 
 namespace vanaheimr
 {
@@ -38,9 +38,9 @@ void AssemblyWriter::write(std::ostream& stream, const ir::Module& module)
 {
 	report("Writing assembly for module '" << module.name << "'");
 
-	for(auto function : module)
+	for(auto function = module.begin(); function != module.end(); ++function)
 	{
-		writeFunction(stream, function);
+		writeFunction(stream, *function);
 	}
 	
 	for(auto global = module.global_begin();
@@ -202,38 +202,13 @@ void AssemblyWriter::writeBasicBlock(std::ostream& stream,
 	{
 		stream << "\t\t";
 		stream << instruction->toString();
-		stream << "\n";
+		stream << ";\n";
 	}
 }
 
 void AssemblyWriter::writeType(std::ostream& stream, const ir::Type& type)
 {
-	if(type.isPrimitive())
-	{
-		if(type.isInteger())
-		{
-			const ir::IntegerType& integerType =
-				static_cast<const ir::IntegerType&>(type);
-				
-			stream << ".i" << integerType.bits() << " ";
-		}
-		else if(type.isSinglePrecisionFloat())
-		{
-			stream << ".f32 ";
-		}
-		else if(type.isDoublePrecisionFloat())
-		{
-			stream << ".f64 ";
-		}
-		else
-		{
-			throw std::runtime_error("Invalid primitive type " + type.name());
-		}
-	}
-	else
-	{
-		assertM(false, "Not implemented.");
-	}
+	stream << type.name() << " ";
 }
 
 void AssemblyWriter::writeInitializer(std::ostream& stream,

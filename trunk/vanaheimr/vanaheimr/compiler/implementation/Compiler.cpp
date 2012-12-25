@@ -112,6 +112,8 @@ Compiler::iterator Compiler::newType(const ir::Type& type)
 {
 	assert(getType(type.name()) == nullptr);
 
+	report("Added type: '" << type.name() << "'");
+	
 	return _types.insert(_types.end(), type.clone());
 }
 
