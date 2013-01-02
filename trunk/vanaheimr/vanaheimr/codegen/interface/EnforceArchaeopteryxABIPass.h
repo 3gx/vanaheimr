@@ -17,7 +17,7 @@ namespace codegen
 
 /*! \brief A pass to enforce the archaeopteryx memory layout and
 	calling convention */
-class EnforceArchaeopteryxABIPass : public ModulePass
+class EnforceArchaeopteryxABIPass : public transforms::ModulePass
 {
 public:
 	/*! \brief The constructor sets the type */

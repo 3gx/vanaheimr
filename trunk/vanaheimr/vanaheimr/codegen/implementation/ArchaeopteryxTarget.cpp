@@ -7,9 +7,13 @@
 // Vanaheimr Includes
 #include <vanaheimr/codegen/interface/ArchaeopteryxTarget.h>
 
-#include <vanaheimr/transform/interface/PassManager.h>
-#include <vanaheimr/transform/interface/PassFactory.h>
+#include <vanaheimr/transforms/interface/PassManager.h>
+#include <vanaheimr/transforms/interface/PassFactory.h>
 
+#include <vanaheimr/ir/interface/Module.h>
+
+// Standard Library Includes
+#include <stdexcept>
 
 namespace vanaheimr
 {
@@ -27,7 +31,7 @@ ArchaeopteryxTarget::ArchaeopteryxTarget()
 
 void ArchaeopteryxTarget::lower()
 {
-	auto abiLowering = transform::PassFactory::createPass(
+	auto abiLowering = transforms::PassFactory::createPass(
 		"EnforceArchaeopetryxABIPass");
 
 	if(abiLowering == nullptr)
@@ -36,7 +40,7 @@ void ArchaeopteryxTarget::lower()
 			" ABI lowering pass.");
 	}
 
-	auto scheduler = transform::PassFactory::createPass(
+	auto scheduler = transforms::PassFactory::createPass(
 		instructionSchedulerName);
 	
 	if(scheduler == nullptr)
@@ -47,7 +51,7 @@ void ArchaeopteryxTarget::lower()
 			instructionSchedulerName +"'");
 	}
 	
-	auto allocator = transform::PassFactory::createPass(registerAllocatorName);	
+	auto allocator = transforms::PassFactory::createPass(registerAllocatorName);	
 	
 	if(allocator == nullptr)
 	{
@@ -58,14 +62,14 @@ void ArchaeopteryxTarget::lower()
 			registerAllocatorName +"'");
 	}
 	
-	transform::PassManager manager(_module);
+	transforms::PassManager manager(_module);
 	
 	manager.addPass(abiLowering);
 	manager.addPass(scheduler);
 	manager.addPass(allocator);
 	
-	manager.addDependence(scheduler.name, abiLowering.name);
-	manager.addDependence(allocator.name,   scheduler.name);
+	manager.addDependence(scheduler->name, abiLowering->name);
+	manager.addDependence(allocator->name,   scheduler->name);
 	
 	manager.runOnModule();
 }

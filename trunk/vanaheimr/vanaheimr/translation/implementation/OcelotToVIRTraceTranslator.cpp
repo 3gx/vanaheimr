@@ -8,6 +8,8 @@
 #include <vanaheimr/translation/interface/OcelotToVIRTraceTranslator.h>
 #include <vanaheimr/translation/interface/PTXToVIRTranslator.h>
 
+#include <vanaheimr/codegen/interface/ArchaeopteryxTarget.h>
+
 #include <vanaheimr/compiler/interface/Compiler.h>
 
 #include <vanaheimr/ir/interface/Type.h>
@@ -242,7 +244,8 @@ static void archaeopteryxCodeGen(compiler::Compiler* compiler,
 {
 	codegen::ArchaeopteryxTarget target;
 
-	for(auto module = compiler->begin(); module != compiler->end(); ++module)
+	for(auto module = compiler->module_begin();
+		module != compiler->module_end(); ++module)
 	{
 		target.assignModule(&*module);
 		

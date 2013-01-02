@@ -22,8 +22,22 @@ namespace vanaheimr
 namespace ir
 {
 
+/*! \brief A base class for modules of different types */
+class ModuleBase
+{
+public:
+	virtual ~ModuleBase();
+
+public:
+	/*! \brief Write the module to a binary */
+	virtual void writeBinary(std::ostream&) = 0;
+
+	/*! \brief Write the module as IR to an assembly file */
+	virtual void writeAssembly(std::ostream&) = 0;
+};
+
 /*! \brief Represents a single compilation unit. */
-class Module
+class Module : public ModuleBase
 {
 public:
 	typedef std::list<Function>  FunctionList;

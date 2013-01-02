@@ -7,6 +7,24 @@
 // Vanaheimr Includes
 #include <vanaheimr/codegen/interface/EnforceArchaeopteryxABIPass.h>
 
+#include <vanaheimr/abi/interface/ApplicationBinaryInterface.h>
+
+#include <vanaheimr/ir/interface/Module.h>
+#include <vanaheimr/ir/interface/Type.h>
+
+#include <vanaheimr/util/interface/LargeMap.h>
+#include <vanaheimr/util/interface/SmallMap.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
+
 namespace vanaheimr
 {
 
@@ -30,11 +48,15 @@ void lowerFunction(ir::Function& function,
 	const abi::ApplicationBinaryInterface& abi,
 	const GlobalToAddressMap& globals, const LocalToAddressMap& locals);
 
+const abi::ApplicationBinaryInterface* getABI();
+
 void EnforceArchaeopteryxABIPass::runOnModule(Module& m)
 {
+	const abi::ApplicationBinaryInterface* abi = getABI();
+
 	GlobalToAddressMap globals;
 
-	layoutGlobals(m, globals);
+	layoutGlobals(m, globals, *abi);
 	
 	// barrier
 	
@@ -43,40 +65,50 @@ void EnforceArchaeopteryxABIPass::runOnModule(Module& m)
 	{
 		LocalToAddressMap locals;
 	
-		layoutLocals(function, locals);
+		layoutLocals(*function, locals, *abi);
 		
 		// barrier
 
-		lowerFunction(function, abi, globals, locals);
+		lowerFunction(*function, *abi, globals, locals);
 	}
 }
 
-void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals)
+static unsigned int align(unsigned int address, unsigned int alignment)
+{
+	unsigned int remainder = address % alignment;
+	unsigned int offset = remainder == 0 ? 0 : alignment - remainder;
+	
+	return address + offset;	
+}
+
+void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
+	const abi::ApplicationBinaryInterface& abi)
 {
 	unsigned int offset = 0;
 
 	for(auto global = module.global_begin();
 		global != module.global_end(); ++global)
 	{
-		offset = align(offset, global->alignment());
+		offset = align(offset, global->type().alignment());
 		
-		globals.insert(std::make_pair(global->name(), offset))
+		globals.insert(std::make_pair(global->name(), offset));
 
 		offset += global->bytes();
 	}
 }
 
-void layoutLocals(ir::Function& function, LocalToAddressMap& locals)
+void layoutLocals(ir::Function& function, LocalToAddressMap& locals,
+	const abi::ApplicationBinaryInterface& abi)
 {
 	// TODO
 }
 
-void lowerCall(ir::Instruction* i)
+void lowerCall(ir::Instruction* i, const abi::ApplicationBinaryInterface& abi)
 {
 	assertM(false, "not implemented.");
 }
 
-void lowerReturn(ir::Instruction* i)
+void lowerReturn(ir::Instruction* i, const abi::ApplicationBinaryInterface& abi)
 {
 	assertM(false, "Not implemented.");
 }
@@ -91,7 +123,7 @@ void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 	if(local != locals.end())
 	{
 		auto immediate = new ir::ImmediateOperand(local->second,
-			read->instruction, read->type);
+			read->instruction(), read->type());
 
 		read = immediate;
 
@@ -104,7 +136,7 @@ void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 	assert(global != globals.end());
 
 	auto immediate = new ir::ImmediateOperand(global->second,
-		read->instruction, read->type);
+		read->instruction(), read->type());
 
 	read = immediate;
 
@@ -156,6 +188,14 @@ void lowerFunction(ir::Function& function,
 			}
 		}
 	}
+}
+
+const abi::ApplicationBinaryInterface* getABI()
+{
+	auto archaeopteryxABI =
+		abi::ApplicationBinaryInterface::getABI("archaeopteryx");
+
+	return archaeopteryxABI;
 }
 
 }

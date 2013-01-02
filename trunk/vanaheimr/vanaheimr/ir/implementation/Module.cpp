@@ -21,6 +21,11 @@ namespace vanaheimr
 namespace ir
 {
 
+ModuleBase::~ModuleBase()
+{
+
+}
+
 Module::Module(const std::string& n, compiler::Compiler* c)
 : name(n), _compiler(c)
 {

@@ -107,6 +107,11 @@ public:
 	iterator erase(const Instruction* position);
 	
 public:
+	/*! \brief Assign instructions to the block */
+	template <typename Iterator>
+	void assign(Iterator begin, Iterator end);
+	
+public:
 	/*! \brief Delete all instructions within the block */
 	void clear();
 	/*! \brief Set the owning function */
@@ -118,6 +123,13 @@ private:
 	Id              _id;
 	Instruction::Id _nextInstructionId;
 };
+
+template <typename Iterator>
+void BasicBlock::assign(Iterator begin, Iterator end)
+{
+	_instructions.assign(begin, end);
+}
+
 
 }
 
