@@ -14,6 +14,9 @@
 #include <vector>
 #include <cstdint>
 
+// Forward Declarations
+namespace vanaheimr { namespace ir { class Type; } }
+
 namespace vanaheimr
 {
 
@@ -51,6 +54,8 @@ public:
 	private:
 		Binding _binding;
 	};
+	
+	typedef MemoryRegion::Binding MemoryBinding;
 	
 	class RegisterBoundRegion : public MemoryRegion
 	{
@@ -111,6 +116,8 @@ public:
 		Binding _binding;
 	};
 	
+	typedef BoundVariable::Binding VariableBinding;
+	
 	class RegisterBoundVariable: public BoundVariable
 	{
 	public:
@@ -137,17 +144,12 @@ public:
 	
 	typedef MemoryRegionMap::const_iterator  const_region_iterator;
 	typedef BoundVariableMap::const_iterator const_variable_iterator;
-	
+
 public:
 	ApplicationBinaryInterface();
 	/*! \brief Destroy all regions and variables */
 	~ApplicationBinaryInterface();
 
-public:
-	ApplicationBinaryInterface(const ApplicationBinaryInterface&) = delete;
-	ApplicationBinaryInterface&
-		operator=(const ApplicationBinaryInterface&) = delete;
-	
 public:
 	/*! \brief Is the ABI valid?  return false if not and
 		set message to indicate why */
@@ -174,6 +176,15 @@ public:
 	
 	const_variable_iterator variables_begin() const;
 	const_variable_iterator variables_end() const;
+
+public:
+	ApplicationBinaryInterface(const ApplicationBinaryInterface&) = delete;
+	ApplicationBinaryInterface&
+		operator=(const ApplicationBinaryInterface&) = delete;
+
+public:
+	/*! \brief Get the global singleton corresponding to the named ABI */
+	static const ApplicationBinaryInterface* getABI(const std::string& name); 
 
 public:
 	/*! \brief The mandatory alignment for all stack variables, in bytes */
