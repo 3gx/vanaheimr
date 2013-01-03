@@ -31,6 +31,9 @@ ArchaeopteryxTarget::ArchaeopteryxTarget()
 
 void ArchaeopteryxTarget::lower()
 {
+	transforms::PassManager manager(_module);
+
+	// ABI Lowering	
 	auto abiLowering = transforms::PassFactory::createPass(
 		"EnforceArchaeopteryxABIPass");
 
@@ -40,36 +43,42 @@ void ArchaeopteryxTarget::lower()
 			" ABI lowering pass.");
 	}
 
+	manager.addPass(abiLowering);
+
+	// Instruction Scheduler
 	auto scheduler = transforms::PassFactory::createPass(
 		instructionSchedulerName);
 	
 	if(scheduler == nullptr)
 	{
-		delete abiLowering;
-
 		throw std::runtime_error("Failed to get instruction scheduler '" +
 			instructionSchedulerName +"'");
 	}
+
+	manager.addPass(scheduler);
 	
+	// Register Allocator
 	auto allocator = transforms::PassFactory::createPass(registerAllocatorName);	
 	
 	if(allocator == nullptr)
 	{
-		delete abiLowering;
-		delete scheduler;
-	
 		throw std::runtime_error("Failed to get register allocator '" +
 			registerAllocatorName +"'");
 	}
-	
-	transforms::PassManager manager(_module);
-	
-	manager.addPass(abiLowering);
-	manager.addPass(scheduler);
+
 	manager.addPass(allocator);
 	
+	// Register Spiller
+	auto spiller = transforms::PassFactory::createPass("GenericSpillCodePass");
+
+	if(spiller == nullptr)
+	{
+		throw std::runtime_error("Failed to create spill code pass.");
+	}
+
 	manager.addDependence(scheduler->name, abiLowering->name);
-	manager.addDependence(allocator->name,   scheduler->name);
+	manager.addDependence(allocator->name, scheduler->name);
+	manager.addDependence(spiller->name,   allocator->name);
 	
 	manager.runOnModule();
 }

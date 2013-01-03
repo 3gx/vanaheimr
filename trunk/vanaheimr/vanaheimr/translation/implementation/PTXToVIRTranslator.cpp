@@ -277,6 +277,7 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 			_translateExit(ptx);
 			return true;
 		}
+		case PTXInstruction::Bar:  // fall through
 		case PTXInstruction::SelP: // fall through
 		case PTXInstruction::Fma:  // fall through
 		case PTXInstruction::Mad:
@@ -818,6 +819,16 @@ static std::string modifierString(unsigned int modifier,
 	return result;
 }
 
+static bool hasDestination(const PTXInstruction& ptx)
+{
+	return ptx.opcode != PTXInstruction::Bar;
+}
+
+static bool destinationIsSource(const PTXInstruction& ptx)
+{
+	return ptx.opcode == PTXInstruction::Bar;
+}
+
 void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 {	
 	ir::Call* call = new ir::Call(_block);
@@ -825,7 +836,14 @@ void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 	call->setGuard(static_cast<ir::PredicateOperand*>(
 		_translatePredicateOperand(ptx.pg)));
 	
-	call->addReturn(_newTranslatedOperand(ptx.d));
+	if(hasDestination(ptx))
+	{
+		call->addReturn(_newTranslatedOperand(ptx.d));
+	}
+	else if(destinationIsSource(ptx))
+	{
+		call->addArgument(_newTranslatedOperand(ptx.d));
+	}
 	
 	auto operands = {&ptx.a, &ptx.b, &ptx.c};
 

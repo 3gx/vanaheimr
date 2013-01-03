@@ -4,10 +4,15 @@
 	\brief  The source file for the ChaitanBriggsRegisterAllocatorPass class.
 */
 
-#pragma once
-
 // Vanaheimr Includes
-#include <vanaheimr/codegen/interface/RegisterAllocator.h>
+#include <vanaheimr/codegen/interface/ChaitanBriggsRegisterAllocatorPass.h>
+
+#include <vanaheimr/machine/interface/MachineModel.h>
+
+#include <vanaheimr/ir/interface/VirtualRegister.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
 
 namespace vanaheimr
 {
@@ -15,30 +20,34 @@ namespace vanaheimr
 namespace codegen
 {
 
-class ChaitanBriggsRegisterAllocatorPass : public RegisterAllocator
+ChaitanBriggsRegisterAllocatorPass::ChaitanBriggsRegisterAllocatorPass()
+: RegisterAllocator({""}, "ChaitanBriggsRegisterAllocatorPass")
 {
-public:
-	ChaitanBriggsRegisterAllocatorPass();
 
-public:
-	/*! \brief Run the pass on a specific function in the module */
-	void runOnFunction(Function& f);
+}
 
-public:
-	/*! \brief Get the set of values that were spilled during allocation */
-	VirtualRegisterSet getSpilledRegisters();
+void ChaitanBriggsRegisterAllocatorPass::runOnFunction(Function& f)
+{
+	assertM(false, "Not implemented.");
+}
+
+RegisterAllocator::VirtualRegisterSet
+	ChaitanBriggsRegisterAllocatorPass::getSpilledRegisters()
+{
+	return _spilled;
+}
+
+const machine::PhysicalRegister*
+	ChaitanBriggsRegisterAllocatorPass::getPhysicalRegisterName(
+	const ir::VirtualRegister& vr)
+{
+	auto allocatedRegister = _allocated.find(vr.id);
 	
-	/*! \brief Get the mapping of a value to a named physical register */
-	std::string getPhysicalRegisterName(const ir::VirtualRegister&);
-
-private:
-	typedef util::LargeMap<unsigned int, unsigned int> RegisterMap;
-
-private:
-	VirtualRegisterSet _spilled;
-	RegisterMap        _allocated;
+	if(allocatedRegister == _allocated.end()) return nullptr;
 	
-};
+	return _machine->getPhysicalRegister(allocatedRegister->second);
+}
+
 
 }
 
