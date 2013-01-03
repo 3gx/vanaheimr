@@ -11,6 +11,9 @@
 #include <vanaheimr/transforms/interface/ConvertToSSAPass.h>
 #include <vanaheimr/transforms/interface/ConvertFromSSAPass.h>
 
+#include <vanaheimr/codegen/interface/EnforceArchaeopteryxABIPass.h>
+#include <vanaheimr/codegen/interface/ListInstructionSchedulerPass.h>
+
 namespace vanaheimr
 {
 
@@ -30,6 +33,16 @@ Pass* PassFactory::createPass(const std::string& name,
 	if(name == "ConvertFromSSA" || name == "ConvertFromSSAPass")
 	{
 		pass = new ConvertFromSSAPass();
+	}
+	
+	if(name == "EnforceArchaeopteryxABIPass")
+	{
+		pass = new codegen::EnforceArchaeopteryxABIPass();
+	}
+	
+	if(name == "ListInstructionSchedulerPass" || name == "list")
+	{
+		pass = new codegen::ListInstructionSchedulerPass();
 	}
 	
 	if(pass != nullptr)

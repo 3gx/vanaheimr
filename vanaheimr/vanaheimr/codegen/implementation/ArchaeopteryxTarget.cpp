@@ -32,7 +32,7 @@ ArchaeopteryxTarget::ArchaeopteryxTarget()
 void ArchaeopteryxTarget::lower()
 {
 	auto abiLowering = transforms::PassFactory::createPass(
-		"EnforceArchaeopetryxABIPass");
+		"EnforceArchaeopteryxABIPass");
 
 	if(abiLowering == nullptr)
 	{

@@ -20,7 +20,7 @@
 namespace vanaheimr
 {
 
-namespace transforms
+namespace codegen
 {
 
 ListInstructionSchedulerPass::ListInstructionSchedulerPass()
