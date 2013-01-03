@@ -12,11 +12,11 @@
 namespace vanaheimr
 {
 
-namespace transforms
+namespace codegen
 {
 
 /*! \brief Convert a program IR not in SSA form to SSA */
-class ListInstructionSchedulerPass : public FunctionPass
+class ListInstructionSchedulerPass : public transforms::FunctionPass
 {
 public:
 	ListInstructionSchedulerPass();
