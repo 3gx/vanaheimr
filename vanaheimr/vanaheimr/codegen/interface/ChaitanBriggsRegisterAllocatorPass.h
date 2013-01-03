@@ -9,6 +9,11 @@
 // Vanaheimr Includes
 #include <vanaheimr/codegen/interface/RegisterAllocator.h>
 
+#include <vanaheimr/util/interface/LargeMap.h>
+
+// Forward Declarations
+namespace vanaheimr { namespace machine { class MachineModel; } }
+
 namespace vanaheimr
 {
 
@@ -29,7 +34,8 @@ public:
 	VirtualRegisterSet getSpilledRegisters();
 	
 	/*! \brief Get the mapping of a value to a named physical register */
-	std::string getPhysicalRegisterName(const ir::VirtualRegister&);
+	const machine::PhysicalRegister* getPhysicalRegisterName(
+		const ir::VirtualRegister&);
 
 private:
 	typedef util::LargeMap<unsigned int, unsigned int> RegisterMap;
@@ -37,7 +43,9 @@ private:
 private:
 	VirtualRegisterSet _spilled;
 	RegisterMap        _allocated;
-	
+
+private:
+	const machine::MachineModel* _machine;
 };
 
 }
