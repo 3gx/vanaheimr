@@ -146,6 +146,13 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 		_translateRegisterValue(reg->id, reg->type);
 	}
 	
+	// Translate locals
+	for(auto local = kernel.locals.begin();
+		local != kernel.locals.end(); ++local)
+	{
+		_translateLocal(local->second);
+	}
+	
 	::ir::ControlFlowGraph::BlockPointerVector sequence =
 		getBlockSequence(kernel);
 
@@ -167,6 +174,20 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 
 		_translateBasicBlock(**block);
 	}
+	
+	_registers.clear();
+	_blocks.clear();
+}
+
+void PTXToVIRTranslator::_translateLocal(const PTXLocal& local)
+{
+	report("  Translating PTX local " << local.toString());
+	
+	_function->newLocalValue(local.name, _getType(local.type),
+		_translateLinkage(local.attribute),
+		(ir::Global::Level)_translateAddressSpace(local.space));
+
+	// No initializer for now
 }
 
 void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
@@ -819,14 +840,14 @@ static std::string modifierString(unsigned int modifier,
 	return result;
 }
 
-static bool hasDestination(const PTXInstruction& ptx)
+static bool hasDestination(const ::ir::PTXInstruction& ptx)
 {
-	return ptx.opcode != PTXInstruction::Bar;
+	return ptx.opcode != ::ir::PTXInstruction::Bar;
 }
 
-static bool destinationIsSource(const PTXInstruction& ptx)
+static bool destinationIsSource(const ::ir::PTXInstruction& ptx)
 {
-	return ptx.opcode == PTXInstruction::Bar;
+	return ptx.opcode == ::ir::PTXInstruction::Bar;
 }
 
 void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
@@ -1056,6 +1077,10 @@ ir::VirtualRegister* PTXToVIRTranslator::_getRegister(PTXRegisterId id)
 
 ir::Variable* PTXToVIRTranslator::_getGlobal(const std::string& name)
 {
+	ir::Function::local_iterator local = _function->findLocalValue(name);
+
+	if(local != _function->local_end()) return &*local;
+
 	ir::Module::iterator function = _module->getFunction(name);
 
 	if(function != _module->end()) return &*function;
@@ -1273,18 +1298,11 @@ void PTXToVIRTranslator::_addPrototype(const std::string& name,
 
 	for(auto returned : returnedArguments)
 	{
-		assertM(returned->isRegister(), "Only register operands to "
-			"calls supported for now.");
-		
-		auto registerOperand =
-			static_cast<const ir::RegisterOperand*>(returned);
-	
 		std::stringstream stream;
 		
 		stream << "returnValue_" << index++;
 	
-		function->newReturnValue(registerOperand->virtualRegister->type,
-			stream.str());
+		function->newReturnValue(returned->type(), stream.str());
 	}
 
 	index = 0;
@@ -1293,18 +1311,11 @@ void PTXToVIRTranslator::_addPrototype(const std::string& name,
 	
 	for(auto argument : arguments)
 	{
-		assertM(argument->isRegister(), "Only register operands to "
-			"calls supported for now.");
-		
-		auto registerOperand =
-			static_cast<const ir::RegisterOperand*>(argument);
-	
 		std::stringstream stream;
 		
 		stream << "argument_" << index++;
-	
-		function->newArgument(registerOperand->virtualRegister->type,
-			stream.str());
+
+		function->newArgument(argument->type(), stream.str());
 	}
 	
 	function->interpretType();

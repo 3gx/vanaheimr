@@ -18,6 +18,7 @@
                       namespace ir       { class Module;           }
                       namespace ir       { class PTXKernel;        }
                       namespace ir       { class Global;           }
+                      namespace ir       { class Local;            }
                       namespace ir       { class BasicBlock;       }
                       namespace ir       { class PTXInstruction;   }
                       namespace ir       { class PTXOperand;       }
@@ -51,6 +52,7 @@ public:
 private:
 	typedef ::ir::PTXKernel      PTXKernel;
 	typedef ::ir::Global         PTXGlobal;
+	typedef ::ir::Local          PTXLocal;
 	typedef ::ir::Parameter      PTXParameter;
 	typedef ::ir::BasicBlock     PTXBasicBlock;
 	typedef ::ir::PTXInstruction PTXInstruction;
@@ -67,6 +69,7 @@ private:
 private:
 	void _translateGlobal(const PTXGlobal&);
 	void _translateKernel(const PTXKernel&);
+	void _translateLocal(const PTXLocal&);
 	void _translateParameter(const PTXParameter& argument);
 	void _translateRegisterValue(PTXRegisterId, PTXDataType);
 	void _recordBasicBlock(const PTXBasicBlock&);

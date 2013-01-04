@@ -84,7 +84,7 @@ Function& Function::operator=(const Function& f)
 
 	_returnValues = f._returnValues;
 	
-	for(argument_iterator value = returned_begin(); value != returned_end(); ++value)
+	for(auto value = returned_begin(); value != returned_end(); ++value)
 	{
 		argumentMapping.insert(std::make_pair(value->name(), &*value));
 
@@ -94,7 +94,7 @@ Function& Function::operator=(const Function& f)
 	// Virtual Registers
 	VirtualRegisterMap registerMapping;
 
-	for(const_register_iterator reg = f.register_begin(); reg != f.register_end(); ++reg)
+	for(auto reg = f.register_begin(); reg != f.register_end(); ++reg)
 	{
 		registerMapping.insert(std::make_pair(
 			reg->id, &*newVirtualRegister(reg->type, reg->name)));
@@ -141,9 +141,9 @@ Function& Function::operator=(const Function& f)
 					AddressOperand* address =
 						static_cast<AddressOperand*>(operand);
 					
-					BasicBlock* block = static_cast<BasicBlock*>(address->globalValue);
+					auto block = static_cast<BasicBlock*>(address->globalValue);
 
-					BasicBlockMap::iterator mapping = basicBlockMapping.find(block->id());
+					auto mapping = basicBlockMapping.find(block->id());
 					assert(mapping != basicBlockMapping.end());
 
 					address->globalValue = mapping->second;
@@ -287,6 +287,13 @@ Function::argument_iterator Function::newReturnValue(const Type* type,
 	return _returnValues.insert(returned_end(), Argument(type, this, name));
 }
 
+Function::local_iterator Function::newLocalValue(const std::string& name,
+	const Type* t, Variable::Linkage l, ir::Global::Level le)
+{
+	return _locals.insert(local_end(), Local(name, module(), this, t, l,
+		ir::Variable::HiddenVisibility, nullptr, le));
+}
+
 void Function::addAttribute(const std::string& attribute)
 {
 	_attributes.insert(attribute);	
@@ -403,6 +410,46 @@ Function::register_iterator Function::erase(const VirtualRegister* r)
 	return erase(registerIterator);
 }
 
+Function::local_iterator Function::local_begin()
+{
+	return _locals.begin();
+}
+
+Function::const_local_iterator Function::local_begin() const
+{
+	return _locals.begin();
+}
+
+Function::local_iterator Function::local_end()
+{
+	return _locals.end();
+}
+
+Function::const_local_iterator Function::local_end() const
+{
+	return _locals.end();
+}
+
+size_t Function::local_size() const
+{
+	return _locals.size();
+}
+
+bool Function::local_empty() const
+{
+	return _locals.empty();
+}
+
+Function::local_iterator Function::findLocalValue(const std::string& name)
+{
+	for(auto local = local_begin(); local != local_end(); ++local)
+	{
+		if(local->name() == name) return local;
+	}
+	
+	return local_end();
+}
+
 void Function::clear()
 {
 	_blocks.clear();
@@ -426,6 +473,8 @@ void Function::interpretType()
 		argumentTypes.push_back(&argument->type());
 	}
 	
+	auto compilerSingleton = compiler::Compiler::getSingleton();
+		
 	const Type* returnType = 0;
 
 	if(returned_size() == 1)
@@ -442,17 +491,14 @@ void Function::interpretType()
 			returnTypes.push_back(&returned->type());
 		}
 		
-		StructureType structure(compiler::Compiler::getSingleton(),
-			returnTypes);
+		StructureType structure(compilerSingleton, returnTypes);
 
-		returnType =
-			*compiler::Compiler::getSingleton()->getOrInsertType(structure);
+		returnType = *compilerSingleton->getOrInsertType(structure);
 	}
 	
-	FunctionType type(compiler::Compiler::getSingleton(), returnType,
-		argumentTypes);
+	FunctionType type(compilerSingleton, returnType, argumentTypes);
 	
-	_setType(*compiler::Compiler::getSingleton()->getOrInsertType(type));
+	_setType(*compilerSingleton->getOrInsertType(type));
 }
 
 }

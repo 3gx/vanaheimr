@@ -17,7 +17,7 @@ RegisterAllocator::RegisterAllocator(const StringVector& analyses,
 	const std::string& n)
 : transforms::FunctionPass(analyses, n)
 {
-
+	
 }
 
 RegisterAllocator::~RegisterAllocator()
