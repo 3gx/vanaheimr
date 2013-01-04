@@ -58,7 +58,7 @@ public:
 	void setInitializer(Constant* c);
 	void setLevel(unsigned int level);
 
-private:
+protected:
 	Constant*    _initializer; // owned by the global
 	unsigned int _level;
 };

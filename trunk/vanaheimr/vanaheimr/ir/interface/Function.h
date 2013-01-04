@@ -10,6 +10,7 @@
 #include <vanaheimr/ir/interface/BasicBlock.h>
 #include <vanaheimr/ir/interface/Argument.h>
 #include <vanaheimr/ir/interface/VirtualRegister.h>
+#include <vanaheimr/ir/interface/Local.h>
 
 // Standard Library Includes
 #include <list>
@@ -29,15 +30,19 @@ public:
 	typedef std::list<Argument>        ArgumentList;
 	typedef std::list<VirtualRegister> VirtualRegisterList;
 	typedef std::list<std::string>     StringList;
+	typedef std::list<Local>           LocalList;
 	
 	typedef BasicBlockList::iterator       iterator;
 	typedef BasicBlockList::const_iterator const_iterator;
 
 	typedef ArgumentList::iterator       argument_iterator;
 	typedef ArgumentList::const_iterator const_argument_iterator;
-
+	
 	typedef VirtualRegisterList::iterator       register_iterator;
 	typedef VirtualRegisterList::const_iterator const_register_iterator;
+
+	typedef LocalList::iterator       local_iterator;
+	typedef LocalList::const_iterator const_local_iterator;
 
 public:
 	Function(const std::string& name = "", Module* m = 0,
@@ -86,6 +91,8 @@ public:
 		const std::string& name);
 	argument_iterator newReturnValue(const Type* type,
 		const std::string& name);
+	local_iterator newLocalValue(const std::string& name,
+		const Type* t, Variable::Linkage l, ir::Global::Level le);
 
 public:
 	void addAttribute(const std::string& attribute);
@@ -129,6 +136,20 @@ public:
 
 public:
 	register_iterator findVirtualRegister(const std::string& name);
+	
+public:
+	local_iterator       local_begin();
+	const_local_iterator local_begin() const;
+	
+	local_iterator       local_end();
+	const_local_iterator local_end() const;
+
+public:
+	size_t local_size()  const;
+	bool   local_empty() const;
+
+public:
+	local_iterator findLocalValue(const std::string& name);
 
 public:
 	size_t instruction_size()  const;
@@ -150,6 +171,7 @@ private:
 	ArgumentList        _arguments;
 	VirtualRegisterList _registers;
 	StringSet           _attributes;
+	LocalList           _locals;
 	
 	iterator _entry;
 	iterator _exit;

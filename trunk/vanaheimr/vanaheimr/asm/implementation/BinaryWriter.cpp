@@ -94,27 +94,8 @@ void BinaryWriter::populateData()
 	for(ir::Module::const_global_iterator i = m_module->global_begin();
 		i != m_module->global_end(); ++i)
 	{
-		ir::Constant::DataVector blob;
-		
-		report("  " << i->name());
-
-		if (i->hasInitializer())
-		{
-			const ir::Constant* initializer = i->initializer();
-			blob = initializer->data();
-		}
-		else
-		{
-			blob.resize(i->bytes());
-		}
-
-		addSymbol(SymbolTableEntry::VariableType, i->linkage(), i->visibility(),
-			i->level(), i->name(), m_data.size(), i->bytes(), i->type().name());
-		
-		std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
+		addGlobal(*i);
 	}
-	
-	
 }
 
 static std::string flattenAttributes(const ir::Function& function)
@@ -152,6 +133,7 @@ void BinaryWriter::populateInstructions()
 	{
 		report("  " << function->name());
 	
+		// Arguments
 		for(auto argument = function->argument_begin();
 			argument != function->argument_end(); ++argument)
 		{
@@ -161,6 +143,14 @@ void BinaryWriter::populateInstructions()
 			m_data.resize(m_data.size() + argument->type().bytes());
 		}
 
+		// Locals
+		for(auto local = function->local_begin();
+			local != function->local_end(); ++local)
+		{
+			addGlobal(*local);
+		}
+		
+		// Instructions
 		unsigned int instructionsBegin =
 			m_instructions.size() * sizeof(InstructionContainer);
 		unsigned int instructionOffset = m_instructions.size();	
@@ -805,6 +795,29 @@ void BinaryWriter::addSymbol(unsigned int type, unsigned int linkage,
 	m_symbolTable.push_back(symbol);
 }
 
+void BinaryWriter::addGlobal(const ir::Global& global)
+{
+	ir::Constant::DataVector blob;
+		
+	report("  " << global.name());
+
+	if(global.hasInitializer())
+	{
+		const ir::Constant* initializer = global.initializer();
+		blob = initializer->data();
+	}
+	else
+	{
+		blob.resize(global.bytes());
+	}
+
+	addSymbol(SymbolTableEntry::VariableType, global.linkage(),
+		global.visibility(), global.level(), global.name(), m_data.size(),
+		global.bytes(), global.type().name());
+	
+	std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
+}
+
 void BinaryWriter::patchSymbol(const std::string& name,
 	uint64_t offset, uint64_t size)
 {
@@ -895,8 +908,7 @@ void BinaryWriter::convertCallInstruction(
 }
 
 void BinaryWriter::convertRetInstruction(
-	InstructionContainer& container,
-	const ir::Instruction& instruction)
+	InstructionContainer& container, const ir::Instruction& instruction)
 {
 	// Currently a NOP
 	// TODO: fix this

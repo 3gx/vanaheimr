@@ -20,6 +20,7 @@
 
 // Forward Declarations
 namespace vanaheimr { namespace ir { class Module;      } }
+namespace vanaheimr { namespace ir { class Global;      } }
 namespace vanaheimr { namespace ir { class Instruction; } }
 namespace vanaheimr { namespace ir { class Operand;     } }
 namespace vanaheimr { namespace ir { class Argument;    } }
@@ -91,6 +92,7 @@ private:
 		unsigned int visibility, unsigned int level,
 		const std::string& name, uint64_t offset, uint64_t size,
 		const std::string& typeName, const std::string& attributeName = "");
+	void addGlobal(const ir::Global&);
 	void patchSymbol(const std::string& name, uint64_t offset, uint64_t size);
 
 	void alignData(uint64_t alignment);
