@@ -769,74 +769,90 @@ static std::string translateTypeName(::ir::PTXOperand::DataType type)
 	return "";
 }
 
-static std::string modifierString(unsigned int modifier,  
-        ::ir::PTXInstruction::CarryFlag carry)
+static std::string modifierString(const ::ir::PTXInstruction& ptx)
 {
 	typedef ::ir::PTXInstruction PTXInstruction;
 	
 	std::string result;
 	
-	if(modifier & PTXInstruction::approx)
+	if(ptx.modifier & PTXInstruction::approx)
 	{
-		result += "approx";
+		result += "_approx";
 	}
-	else if(modifier & PTXInstruction::wide)
+	else if(ptx.modifier & PTXInstruction::wide)
 	{
-		result += "wide";
+		result += "_wide";
 	}
-	else if(modifier & PTXInstruction::hi)
+	else if(ptx.modifier & PTXInstruction::hi)
 	{
-		result += "hi";
+		result += "_hi";
 	}
-	else if(modifier & PTXInstruction::lo)
+	else if(ptx.modifier & PTXInstruction::lo)
 	{
-		result += "lo";
+		result += "_lo";
 	}
-	else if(modifier & PTXInstruction::rn)
+	else if(ptx.modifier & PTXInstruction::rn)
 	{
-		result += "rn";
+		result += "_rn";
 	}
-	else if(modifier & PTXInstruction::rz)
+	else if(ptx.modifier & PTXInstruction::rz)
 	{
-		result += "rz";
+		result += "_rz";
 	}
-	else if(modifier & PTXInstruction::rm)
+	else if(ptx.modifier & PTXInstruction::rm)
 	{
-		result += "rm";
+		result += "_rm";
 	}
-	else if(modifier & PTXInstruction::rp)
+	else if(ptx.modifier & PTXInstruction::rp)
 	{
-		result += "rp";
+		result += "_rp";
 	}
-	else if(modifier & PTXInstruction::rni)
+	else if(ptx.modifier & PTXInstruction::rni)
 	{
-		result += "rni";
+		result += "_rni";
 	}
-	else if(modifier & PTXInstruction::rzi)
+	else if(ptx.modifier & PTXInstruction::rzi)
 	{
-		result += "rzi";
+		result += "_rzi";
 	}
-	else if(modifier & PTXInstruction::rmi)
+	else if(ptx.modifier & PTXInstruction::rmi)
 	{
-		result += "rmi";
+		result += "_rmi";
 	}
-	else if(modifier & PTXInstruction::rpi)
+	else if(ptx.modifier & PTXInstruction::rpi)
 	{
-		result += "rpi";
+		result += "_rpi";
 	}
 
-	if(modifier & PTXInstruction::ftz)
+	if(ptx.modifier & PTXInstruction::ftz)
 	{
-		result += "ftz";
+		result += "_ftz";
 	}
-	if(modifier & PTXInstruction::sat)
+	if(ptx.modifier & PTXInstruction::sat)
 	{
-		result += "sat";
+		result += "_sat";
 	}
-	if(carry == PTXInstruction::CC)
+	if(ptx.carry == PTXInstruction::CC)
 	{
-		result += "cc";
+		result += "_cc";
 	}
+
+	if(ptx.opcode == PTXInstruction::Bar)
+	{
+		if(ptx.barrierOperation == PTXInstruction::BarSync)
+		{
+			result += "_sync";
+		}
+		else if(ptx.barrierOperation == PTXInstruction::BarArrive)
+		{
+			result += "_arrive";
+		}
+		else if(ptx.barrierOperation == PTXInstruction::BarReduction)
+		{
+			result += "_reduce";
+		}
+	}
+	
 	return result;
 }
 
@@ -877,16 +893,19 @@ void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 	
 	std::stringstream stream;
 	
-	stream << "_Zintrinsic_" << PTXInstruction::toString(ptx.opcode) << "_";
+	stream << "_Zintrinsic_" << PTXInstruction::toString(ptx.opcode);
 	
-	std::string modifiers = modifierString(ptx.modifier, ptx.carry);
+	std::string modifiers = modifierString(ptx);
 	
 	if(!modifiers.empty())
 	{
-		stream << modifiers << "_";
+		stream << modifiers;
 	}
 	
-	stream << translateTypeName(ptx.type);
+	if(hasDestination(ptx))
+	{
+		stream << "_" << translateTypeName(ptx.type);
+	}
 	
 	_addPrototype(stream.str(), *call);
 	

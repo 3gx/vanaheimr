@@ -235,6 +235,11 @@ void BasicBlock::setFunction(Function* f)
 	_function = f;
 }
 
+void BasicBlock::setName(const std::string& n)
+{
+	_setName(n);
+}
+
 }
 
 }

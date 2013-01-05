@@ -117,6 +117,10 @@ public:
 	/*! \brief Set the owning function */
 	void setFunction(Function*);
 
+public:
+	/*! \brief Set the name of the basic block */
+	void setName(const std::string& name);
+
 private:
 	Function*       _function;
 	InstructionList _instructions;
