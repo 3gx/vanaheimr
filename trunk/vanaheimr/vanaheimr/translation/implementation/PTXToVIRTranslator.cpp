@@ -187,7 +187,7 @@ void PTXToVIRTranslator::_translateLocal(const PTXLocal& local)
 		_translateLinkage(local.attribute),
 		(ir::Global::Level)_translateAddressSpace(local.space));
 
-	// No initializer for now
+	// No initializer for now (ever?)
 }
 
 void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
