@@ -163,6 +163,7 @@ void BinaryReader::_initializeModule(ir::Module& m)
 	_loadFunctions(m);
 
 	_variables.clear();
+	_locals.clear();
 }
 
 void BinaryReader::_loadGlobals(ir::Module& m)
@@ -209,9 +210,24 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 			
 				variable = &*global;
 			}
+			else if(symbol->attributes.level == ir::Global::Thread)
+			{
+				bool success = _locals.insert(
+					std::make_pair(symbolTableOffset, nullptr)).second;
+				
+				if(!success)
+				{
+					throw std::runtime_error(
+						"Thread-local variable with name '" +
+						_getSymbolName(*symbol) + "' defined multiple times.");
+				}
+				
+				// Don't update the variable set
+				return;
+			}
 			else
 			{
-				assertM(false, "Non-Global variables not implemented.");
+				assertM(false, "Variable scoping level not implemented.");
 			}
 		}
 		else
@@ -257,7 +273,9 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 	
 		ir::Variable* variable = _getVariableAtSymbolOffset(symbolTableOffset);
 		ir::Function* function = static_cast<ir::Function*>(variable);
-				
+		
+		_function = function;
+		
 		report("   loading arguments...");
 
 		for(auto argumentSymbol = _symbolTable.begin();
@@ -329,13 +347,8 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 		for(auto unresolved : _unresolvedTargets)
 		{
 			// find the symbol with the specified offset
-			uint64_t symbolOffset = (unresolved.first -
-				_header.symbolOffset) / sizeof(SymbolTableEntry);
-
-			assertM(symbolOffset < _symbolTable.size(), "Invalid symbol "
-				<< symbolOffset << " out of " << _symbolTable.size());
-
-			const SymbolTableEntry& targetSymbol = _symbolTable[symbolOffset];
+			const SymbolTableEntry& targetSymbol =
+				_getSymbolEntryAtOffset(unresolved.first);
 
 			uint64_t pc = (targetSymbol.offset - _header.codeOffset) /
 				sizeof(InstructionContainer);
@@ -362,6 +375,11 @@ void BinaryReader::_loadFunctions(ir::Module& m)
 		_unresolvedTargets.clear();
 		_virtualRegisters.clear();
 		_arguments.clear();
+		
+		for(auto local = _locals.begin(); local != _locals.end(); ++local)
+		{
+			local->second = nullptr;
+		}
 	}
 }
 
@@ -456,13 +474,8 @@ BinaryReader::BasicBlockDescriptorVector
 			}
 			else if(operand.asOperand.mode == Operand::Symbol)
 			{
-				uint64_t symbolOffset = (operand.asSymbol.symbolTableOffset -
-					_header.symbolOffset) / sizeof(SymbolTableEntry);
-
-				assert(symbolOffset < _symbolTable.size());
-
-				const SymbolTableEntry& targetSymbol =
-					_symbolTable[symbolOffset];
+				const SymbolTableEntry& targetSymbol = 
+					_getSymbolEntryAtOffset(operand.asSymbol.symbolTableOffset);
 				
 				uint64_t targetPC = (targetSymbol.offset - _header.codeOffset) /
 					sizeof(InstructionContainer);
@@ -943,8 +956,34 @@ ir::VirtualRegister* BinaryReader::_getVirtualRegister(
 	return virtualRegister->second;
 }
 
-ir::Variable* BinaryReader::_getVariableAtSymbolOffset(uint64_t offset) const
+ir::Variable* BinaryReader::_getVariableAtSymbolOffset(uint64_t offset)
 {
+	auto local = _locals.find(offset);
+	
+	if(local != _locals.end())
+	{
+		if(local->second == nullptr)
+		{
+			auto symbol = _getSymbolEntryAtOffset(local->first);
+			
+			auto type = _getSymbolType(symbol);
+
+			if(type == nullptr)
+			{
+				throw std::runtime_error("Could not find type with name '" +
+					_getSymbolTypeName(symbol) + "' for symbol '" +
+					_getSymbolName(symbol) + "'");
+			}
+		
+			auto newLocal = _function->newLocalValue(_getSymbolName(symbol),
+				type, _getSymbolLinkage(symbol), _getSymbolLevel(symbol));
+			
+			local->second = &*newLocal;
+		}
+	
+		return local->second;
+	}
+	
 	auto variable = _variables.find(offset);
 
 	if(variable == _variables.end())
@@ -965,6 +1004,18 @@ ir::Argument* BinaryReader::_getArgumentAtSymbolOffset(uint64_t offset) const
 	}
 
 	return argument->second;
+}
+
+const SymbolTableEntry& BinaryReader::_getSymbolEntryAtOffset(
+	uint64_t offset) const
+{
+	uint64_t symbolOffset =
+		(offset - _header.symbolOffset) / sizeof(SymbolTableEntry);
+	
+	assertM(symbolOffset < _symbolTable.size(), "Invalid symbol "
+		<< symbolOffset << " out of " << _symbolTable.size());
+	
+	return _symbolTable[symbolOffset];
 }
 
 BinaryReader::BasicBlockDescriptor::BasicBlockDescriptor(
