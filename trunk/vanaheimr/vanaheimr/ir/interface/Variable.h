@@ -49,13 +49,14 @@ public:
 
 public:
 	const std::string& name() const;
-	Module*            module();
+	Module*            module() const;
 	Linkage            linkage() const;
 	Visibility         visibility() const;
 	const Type&        type() const;
 
 protected:
 	void _setType(const Type*);
+	void _setName(const std::string& name);
 
 private:
 	std::string _name;

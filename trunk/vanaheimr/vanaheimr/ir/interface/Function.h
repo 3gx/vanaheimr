@@ -43,6 +43,8 @@ public:
 
 	typedef LocalList::iterator       local_iterator;
 	typedef LocalList::const_iterator const_local_iterator;
+	
+	typedef unsigned int Id;
 
 public:
 	Function(const std::string& name = "", Module* m = 0,
@@ -154,6 +156,10 @@ public:
 public:
 	size_t instruction_size()  const;
 	bool   instruction_empty() const;
+	
+public:
+	/*! \brief Get a unique ID for the function in the module */
+	Id id() const;
 
 public:
 	void clear();

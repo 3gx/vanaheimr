@@ -450,6 +450,20 @@ Function::local_iterator Function::findLocalValue(const std::string& name)
 	return local_end();
 }
 
+Function::Id Function::id() const
+{
+	for(auto function = module()->begin();
+		function != module()->end(); ++function)
+	{
+		if(this == &*function)
+		{
+			return std::distance(module()->begin(), function);
+		}
+	}
+	
+	return 0;
+}
+
 void Function::clear()
 {
 	_blocks.clear();

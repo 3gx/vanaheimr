@@ -30,7 +30,7 @@ const std::string& Variable::name() const
 	return _name;
 }
 
-Module* Variable::module()
+Module* Variable::module() const
 {
 	return _module;
 }
@@ -53,6 +53,11 @@ const Type& Variable::type() const
 void Variable::_setType(const Type* t)
 {
 	_type = t;
+}
+
+void Variable::_setName(const std::string& n)
+{
+	_name = n;
 }
 
 }
