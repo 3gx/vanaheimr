@@ -114,8 +114,9 @@ private:
 	const ir::Type* _getType(DataType type) const;
 	ir::VirtualRegister* _getVirtualRegister(
 		RegisterType reg, DataType type, ir::Function*);	
-	ir::Variable* _getVariableAtSymbolOffset(uint64_t offset) const;
+	ir::Variable* _getVariableAtSymbolOffset(uint64_t offset);
 	ir::Argument* _getArgumentAtSymbolOffset(uint64_t offset) const;
+	const SymbolTableEntry& _getSymbolEntryAtOffset(uint64_t offset) const; 
 
 private:
 	BinaryHeader _header;
@@ -139,7 +140,9 @@ private:
 	VirtualRegisterMap       _virtualRegisters;
 	SymbolToVariableMap      _variables;
 	SymbolToArgumentMap      _arguments;
+	SymbolToVariableMap      _locals;
 	TargetToBranchOperandMap _unresolvedTargets;
+	ir::Function*            _function;
 };
 
 }
