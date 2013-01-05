@@ -196,15 +196,23 @@ void BinaryReader::_loadGlobals(ir::Module& m)
 
 		if(symbol->type == SymbolTableEntry::VariableType)
 		{
-			auto global = m.newGlobal(_getSymbolName(*symbol), type,
-				_getSymbolLinkage(*symbol), _getSymbolLevel(*symbol));
-
-			if(_hasInitializer(*symbol))
-			{
-				global->setInitializer(_getInitializer(*symbol));
-			}
 			
-			variable = &*global;
+			if(symbol->attributes.level == ir::Global::Shared)
+			{
+				auto global = m.newGlobal(_getSymbolName(*symbol), type,
+					_getSymbolLinkage(*symbol), _getSymbolLevel(*symbol));
+
+				if(_hasInitializer(*symbol))
+				{
+					global->setInitializer(_getInitializer(*symbol));
+				}
+			
+				variable = &*global;
+			}
+			else
+			{
+				assertM(false, "Non-Global variables not implemented.");
+			}
 		}
 		else
 		{
