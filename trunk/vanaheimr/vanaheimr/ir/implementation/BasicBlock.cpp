@@ -64,7 +64,7 @@ Instruction* BasicBlock::terminator()
 {
 	if(empty()) return 0;
 	
-	if(back()->isBranch()) return back();
+	if(back()->isBranch() || back()->isReturn()) return back();
 	
 	return 0;
 }
@@ -73,7 +73,7 @@ const Instruction* BasicBlock::terminator() const
 {
 	if(empty()) return 0;
 	
-	if(back()->isBranch()) return back();
+	if(back()->isBranch() || back()->isReturn()) return back();
 	
 	return 0;
 }

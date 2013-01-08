@@ -116,9 +116,20 @@ void PTXToVIRTranslator::_translateKernel(const PTXKernel& kernel)
 {
 	report(" Translating PTX kernel '" << kernel.getPrototype().toString());
 
-	ir::Module::iterator function = _module->newFunction(kernel.name,
-		_translateLinkingDirective(kernel.getPrototype().linkingDirective),
-		_translateVisibility(kernel.getPrototype().linkingDirective));
+	ir::Module::iterator function = _module->getFunction(kernel.name);
+	
+	if(function != _module->end())
+	{
+		assert(function->isPrototype());
+		
+		function->removeAttribute("prototype");
+	}
+	else
+	{
+		function = _module->newFunction(kernel.name,
+			_translateLinkingDirective(kernel.getPrototype().linkingDirective),
+			_translateVisibility(kernel.getPrototype().linkingDirective));
+	}
 	
 	_function = &*function;
 
@@ -298,12 +309,43 @@ bool PTXToVIRTranslator::_translateComplexInstruction(const PTXInstruction& ptx)
 			_translateExit(ptx);
 			return true;
 		}
-		case PTXInstruction::Bar:  // fall through
-		case PTXInstruction::SelP: // fall through
-		case PTXInstruction::Fma:  // fall through
+		case PTXInstruction::Neg:
+		{
+			_translateNeg(ptx);
+			return true;
+		}
+		case PTXInstruction::Not:
+		{
+			_translateNot(ptx);
+			return true;
+		}
+		case PTXInstruction::Ld:
+		{
+			if(ptx.d.isVector())
+			{
+				_translateSimpleIntrinsic(ptx);
+				return true;
+			}
+			
+			return false;
+		}
+		case PTXInstruction::Bar:        // fall through
+		case PTXInstruction::SelP:       // fall through
+		case PTXInstruction::Fma:        // fall through
+		case PTXInstruction::Atom:       // fall through
+		case PTXInstruction::Reconverge: // fall through
+		case PTXInstruction::Membar:     // fall through
+		case PTXInstruction::Popc:       // fall through
+		case PTXInstruction::Min:        // fall through
+		case PTXInstruction::Max:        // fall through
 		case PTXInstruction::Mad:
 		{
 			_translateSimpleIntrinsic(ptx);
+			return true;
+		}
+		case PTXInstruction::Call:
+		{
+			_translateCall(ptx);
 			return true;
 		}
 		default: break;	
@@ -438,9 +480,9 @@ static bool isSimpleUnaryInstruction(const ::ir::PTXInstruction& ptx)
 
 	switch(ptx.opcode)
 	{
-	case PTXInstruction::Ldu:
-	case PTXInstruction::Ld:
-	case PTXInstruction::Mov:
+	case PTXInstruction::Ldu:  // fall through
+	case PTXInstruction::Ld:   // fall through
+	case PTXInstruction::Mov:  // fall through
 	case PTXInstruction::Cvta:
 	{
 		return true;
@@ -492,7 +534,6 @@ static bool isSimpleBinaryInstruction(const ::ir::PTXInstruction& ptx)
 	case PTXInstruction::And: // fall through
 	case PTXInstruction::Div: // fall through
 	case PTXInstruction::Mul: // fall through
-	case PTXInstruction::Not: // fall through
 	case PTXInstruction::Or:  // fall through
 	case PTXInstruction::Rem: // fall through
 	case PTXInstruction::Shl: // fall through
@@ -632,6 +673,12 @@ bool PTXToVIRTranslator::_translateSimpleBinaryInstruction(
 
 void PTXToVIRTranslator::_translateSt(const PTXInstruction& ptx)
 {
+	if(ptx.a.isVector())
+	{
+		_translateSimpleIntrinsic(ptx);
+		return;
+	}
+	
 	ir::St* st = new ir::St(_block);
 	
 	st->setGuard(_translatePredicateOperand(ptx.pg));
@@ -721,6 +768,37 @@ void PTXToVIRTranslator::_translateExit(const PTXInstruction& ptx)
 	report("    to " << exit->toString());
 	
 	_block->push_back(exit);
+}
+
+void PTXToVIRTranslator::_translateNeg(const PTXInstruction& ptx)
+{
+	ir::Sub* sub = new ir::Sub(_block);
+	
+	sub->setGuard(_translatePredicateOperand(ptx.pg));
+	
+	sub->setD(_newTranslatedOperand(ptx.d));
+	sub->setA(new ir::ImmediateOperand((uint64_t)0, sub, _getType(ptx.type)));
+	sub->setB(_newTranslatedOperand(ptx.a));
+
+	report("    to " << sub->toString());
+	
+	_block->push_back(sub);
+}
+
+void PTXToVIRTranslator::_translateNot(const PTXInstruction& ptx)
+{
+	ir::Xor* xxor = new ir::Xor(_block);
+	
+	xxor->setGuard(_translatePredicateOperand(ptx.pg));
+	
+	xxor->setD(_newTranslatedOperand(ptx.d));
+	xxor->setA(new ir::ImmediateOperand((uint64_t)0xffffffffffffffffULL,
+		xxor, _getType(ptx.type)));
+	xxor->setB(_newTranslatedOperand(ptx.a));
+
+	report("    to " << xxor->toString());
+	
+	_block->push_back(xxor);
 }
 
 static std::string translateTypeName(::ir::PTXOperand::DataType type)
@@ -852,13 +930,71 @@ static std::string modifierString(const ::ir::PTXInstruction& ptx)
 			result += "_reduce";
 		}
 	}
+
+	if(ptx.opcode == PTXInstruction::Membar)
+	{
+		if(ptx.level == PTXInstruction::CtaLevel)
+		{
+			result += "_cta";
+		}
+		else if(ptx.level == PTXInstruction::GlobalLevel)
+		{
+			result += "_global";
+		}
+	}
 	
+	if(ptx.opcode == PTXInstruction::Atom)
+	{
+		if(ptx.atomicOperation == PTXInstruction::AtomicAnd)
+		{
+			result += "_and";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicOr)
+		{
+			result += "_or";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicXor)
+		{
+			result += "_xor";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicCas)
+		{
+			result += "_cas";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicExch)
+		{
+			result += "_exch";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicAdd)
+		{
+			result += "_add";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicInc)
+		{
+			result += "_inc";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicDec)
+		{
+			result += "_dec";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicMin)
+		{
+			result += "_min";
+		}
+		else if(ptx.atomicOperation == PTXInstruction::AtomicMax)
+		{
+			result += "_max";
+		}
+	}
+
 	return result;
 }
 
 static bool hasDestination(const ::ir::PTXInstruction& ptx)
 {
-	return ptx.opcode != ::ir::PTXInstruction::Bar;
+	return ptx.opcode != ::ir::PTXInstruction::Bar &&
+		ptx.opcode != ::ir::PTXInstruction::Membar &&
+		ptx.opcode != ::ir::PTXInstruction::Reconverge;
 }
 
 static bool destinationIsSource(const ::ir::PTXInstruction& ptx)
@@ -875,7 +1011,20 @@ void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 	
 	if(hasDestination(ptx))
 	{
-		call->addReturn(_newTranslatedOperand(ptx.d));
+		if(ptx.d.isVector())
+		{
+			for(auto operand = ptx.d.array.begin();
+				operand != ptx.d.array.end(); ++operand)
+			{
+				assert(operand->isRegister());
+
+				call->addReturn(_newTranslatedOperand(*operand));
+			}
+		}
+		else
+		{
+			call->addReturn(_newTranslatedOperand(ptx.d));
+		}
 	}
 	else if(destinationIsSource(ptx))
 	{
@@ -888,7 +1037,20 @@ void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 	{
 		if(operand->addressMode == PTXOperand::Invalid) continue;
 		
-		call->addArgument(_newTranslatedOperand(*operand));
+		if(operand->isVector())
+		{
+			for(auto argument = operand->array.begin();
+				argument != operand->array.end(); ++argument)
+			{
+				assert(argument->isRegister());
+
+				call->addArgument(_newTranslatedOperand(*argument));
+			}
+		}
+		else
+		{
+			call->addArgument(_newTranslatedOperand(*operand));
+		}
 	}
 	
 	std::stringstream stream;
@@ -909,9 +1071,54 @@ void PTXToVIRTranslator::_translateSimpleIntrinsic(const PTXInstruction& ptx)
 	
 	_addPrototype(stream.str(), *call);
 	
-	call->setTarget(new ir::AddressOperand(_getGlobal(stream.str()),	
+	call->setTarget(new ir::AddressOperand(_getGlobal(stream.str()),
 		_instruction));
 
+	_block->push_back(call);
+	
+	report("    to " << call->toString());
+}
+
+void PTXToVIRTranslator::_translateCall(const PTXInstruction& ptx)
+{	
+	ir::Call* call = new ir::Call(_block);
+	
+	call->setGuard(static_cast<ir::PredicateOperand*>(
+		_translatePredicateOperand(ptx.pg)));
+	
+	if(ptx.a.addressMode == PTXOperand::FunctionName)
+	{
+		// direct call
+		_addPrototype(ptx.a.identifier, *call);
+		
+		auto function = _getGlobal(ptx.a.identifier);
+			
+		assert(function != nullptr);
+		
+		call->setTarget(new ir::AddressOperand(function, _instruction));
+	}
+	else
+	{
+		// indirect call
+		call->setTarget(_newTranslatedOperand(ptx.a));
+	}
+
+	for(auto operand = ptx.d.array.begin();
+		operand != ptx.d.array.end(); ++operand)
+	{
+		assert(operand->isRegister());
+
+		call->addReturn(_newTranslatedOperand(*operand));
+	}
+
+	for(auto operand = ptx.b.array.begin();
+		operand != ptx.b.array.end(); ++operand)
+	{
+		assert(operand->isRegister());
+
+		call->addArgument(_newTranslatedOperand(*operand));
+	}
+	
 	_block->push_back(call);
 	
 	report("    to " << call->toString());
@@ -953,6 +1160,10 @@ ir::Operand* PTXToVIRTranslator::_newTranslatedOperand(const PTXOperand& ptx)
 	{
 		return new ir::AddressOperand(_getBasicBlock(ptx.identifier),
 			_instruction);
+	}
+	case PTXOperand::FunctionName:
+	{
+		return new ir::AddressOperand(_getGlobal(ptx.identifier), _instruction);
 	}
 	case PTXOperand::Special:
 	{
@@ -1259,9 +1470,46 @@ unsigned int PTXToVIRTranslator::_translateAddressSpace(unsigned int space)
 
 ir::Constant* PTXToVIRTranslator::_translateInitializer(const PTXGlobal& g)
 {
-	assertM(false, "Not implemented.");
+	if(g.statement.elements() == 1)
+	{
+		assert(g.statement.elements() == 1);
 	
-	return 0;
+		if(PTXOperand::isFloat(g.statement.type))
+		{
+			if(g.statement.type == PTXOperand::f32)
+			{
+				float value = 0.0f;
+				
+				g.statement.copy(&value);
+			
+				return new ir::FloatingPointConstant(value);
+			}
+			else
+			{
+				double value = 0.0;
+				
+				g.statement.copy(&value);
+				
+				return new ir::FloatingPointConstant(value);
+			}
+		}
+		else
+		{
+			uint64_t value = 0;
+			
+			g.statement.copy(&value);
+				
+			return new ir::IntegerConstant(value,
+				8 * PTXOperand::bytes(g.statement.type));
+		}
+	}
+	
+	auto array = new ir::ArrayConstant(g.statement.elements(),
+		_getType(g.statement.type));	
+	
+	g.statement.copy(array->storage());
+	
+	return array;
 }
 
 bool PTXToVIRTranslator::_isArgument(const std::string& name)

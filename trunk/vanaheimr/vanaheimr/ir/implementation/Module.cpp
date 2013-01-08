@@ -104,6 +104,8 @@ Module::iterator Module::insertFunction(iterator position, const Function& f)
 Module::iterator Module::newFunction(const std::string& name,
 	Variable::Linkage l, Variable::Visibility v, const ir::Type* t)
 {
+	assert(getFunction(name) == end());
+	
 	return _functions.insert(end(), Function(name, this, l, v, t));
 }
 

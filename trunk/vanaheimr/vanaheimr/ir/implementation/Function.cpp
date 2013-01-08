@@ -67,7 +67,9 @@ Function& Function::operator=(const Function& f)
 	
 		auto newBlock = _blocks.insert(exit_block(), *block);
 		newBlock->setFunction(this);
-	
+		
+		assert(newBlock->id() < _nextBlockId);
+		
 		basicBlockMapping.insert(std::make_pair(newBlock->id(), &*newBlock));
 	}
 	
@@ -299,6 +301,16 @@ void Function::addAttribute(const std::string& attribute)
 	_attributes.insert(attribute);	
 }
 
+void Function::removeAttribute(const std::string& name)
+{
+	auto attribute = _attributes.find(name);
+
+	if(attribute == _attributes.end())
+	{
+		_attributes.erase(attribute);
+	}
+}
+
 Function::argument_iterator Function::argument_begin()
 {
 	return _arguments.begin();
@@ -474,7 +486,7 @@ void Function::clear()
 	_nextRegisterId = 0;
 
 	_entry = newBasicBlock(end(), "__Entry");
-	_exit  = newBasicBlock(end(), "__Exit");
+	_exit  = newBasicBlock(end(), "__Exit" );
 }
 
 void Function::interpretType()

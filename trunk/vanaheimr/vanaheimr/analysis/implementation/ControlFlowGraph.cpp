@@ -11,6 +11,9 @@
 #include <vanaheimr/ir/interface/BasicBlock.h>
 #include <vanaheimr/ir/interface/Instruction.h>
 
+// Standard Library Includes
+#include <cassert>
+
 namespace vanaheimr
 {
 
@@ -18,7 +21,7 @@ namespace analysis
 {
 
 ControlFlowGraph::ControlFlowGraph()
-: FunctionAnalysis("ControlFlowGraph")
+: FunctionAnalysis("ControlFlowGraph"), _function(nullptr)
 {
 
 }
@@ -26,12 +29,14 @@ ControlFlowGraph::ControlFlowGraph()
 ControlFlowGraph::BasicBlockSet
 	ControlFlowGraph::getSuccessors(const BasicBlock& b)
 {
+	assert(b.id() < _successors.size());
 	return _successors[b.id()];
 }
 
 ControlFlowGraph::BasicBlockSet
 	ControlFlowGraph::getPredecessors(const BasicBlock& b)
 {
+	assert(b.id() < _predecessors.size());
 	return _predecessors[b.id()];
 }
 
@@ -49,6 +54,7 @@ bool ControlFlowGraph::isBranchEdge(const BasicBlock& head,
 	
 	if  (terminator == nullptr) return false;
 	if(!terminator->isBranch()) return false;
+	if(terminator->isCall())    return false;
 	
 	const ir::Bra* branch = static_cast<const ir::Bra*>(terminator);
 	
@@ -79,6 +85,8 @@ void ControlFlowGraph::analyze(Function& function)
 	  _successors.resize(function.size());
 	_predecessors.resize(function.size());
 		
+	_function = &function;
+		
 	// should be for-all
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
@@ -105,12 +113,17 @@ void ControlFlowGraph::_initializePredecessorsAndSuccessors(BasicBlock* block,
 	ir::Instruction* terminator = block->terminator();
 	
 	ir::Bra* branch = nullptr;
+	ir::Ret* ret    = nullptr;
 	
 	if(terminator != nullptr)
 	{
-		if(terminator->isBranch())
+		if(terminator->isBranch() && !terminator->isCall())
 		{
 			branch = static_cast<ir::Bra*>(terminator);
+		}
+		else if(terminator->isReturn())
+		{
+			ret = static_cast<ir::Ret*>(terminator);
 		}
 	}
 	
@@ -124,6 +137,11 @@ void ControlFlowGraph::_initializePredecessorsAndSuccessors(BasicBlock* block,
 		{
 			fallthrough = next;
 		}
+	}
+	
+	if(ret != nullptr)
+	{
+		target = &*function()->exit_block();
 	}
 	
 	if(branch != nullptr)

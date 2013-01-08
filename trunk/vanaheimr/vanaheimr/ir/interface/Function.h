@@ -98,6 +98,7 @@ public:
 
 public:
 	void addAttribute(const std::string& attribute);
+	void removeAttribute(const std::string& attribute);
 
 public:
 	argument_iterator       argument_begin();

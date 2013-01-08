@@ -63,12 +63,12 @@ public:
 	operator double();
 
 public:
-	FloatingPointConstant(const FloatingPointConstant& f);
-	FloatingPointConstant& operator=(const FloatingPointConstant& f);
-
-public:
 	bool isNullValue() const;
 	DataVector data() const;
+
+public:
+	size_t bytes() const;
+	Constant* clone() const;
 	
 private:
 	union
@@ -83,7 +83,7 @@ private:
 class IntegerConstant : public Constant
 {
 public:
-	IntegerConstant(uint64_t i);	
+	IntegerConstant(uint64_t i, unsigned int bits = 64);	
 
 public:
 	operator uint64_t() const;
@@ -92,14 +92,15 @@ public:
 	operator int32_t()  const;
 	
 public:
-	IntegerConstant& operator=(uint64_t i);
-
-public:
 	bool isNullValue() const;
 	DataVector data() const;
 
+public:
+	size_t bytes() const;
+	Constant* clone() const;
+
 private:
-	uint64_t _value;
+	uint64_t     _value;
 };
 
 /*! \brief A pointer constant */
@@ -153,7 +154,8 @@ private:
 class ArrayConstant : public Constant
 {
 public:
-	ArrayConstant(const void* data, uint64_t size);
+	ArrayConstant(const void* data, uint64_t size, const Type* t);
+	ArrayConstant(uint64_t size, const Type* t);
 
 public:
 	uint64_t size() const;
@@ -165,7 +167,10 @@ public:
 public:
 	size_t bytes() const;
 	Constant* clone() const;
-	
+
+public:
+	void* storage();
+
 private:
 	DataVector _value;
 };

@@ -125,7 +125,7 @@ static void addGlobal(compiler::Compiler* compiler,
 		ir::Global::ExternalLinkage,  ir::Global::Shared);
 
 	auto constant = new ir::ArrayConstant(globalValue.c_str(),
-		globalValue.size() + 1);
+		globalValue.size() + 1, compiler->getType("i8"));
 	
 	global->setInitializer(constant);
 }
@@ -143,7 +143,7 @@ static void addGlobal(compiler::Compiler* compiler,
 		ir::Global::ExternalLinkage, ir::Global::Shared);
 
 	auto constant = new ir::ArrayConstant(globalValue.data(),
-		globalValue.size());
+		globalValue.size(), compiler->getType("i8"));
 	
 	global->setInitializer(constant);
 }

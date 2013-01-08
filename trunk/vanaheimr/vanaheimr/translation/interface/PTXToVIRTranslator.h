@@ -86,11 +86,12 @@ private:
 	void _translateSetp(const PTXInstruction& );
 	void _translateBra(const PTXInstruction& );
 	void _translateExit(const PTXInstruction& );
+	void _translateNeg(const PTXInstruction& );
+	void _translateNot(const PTXInstruction& );
 	
 	void _translateSimpleIntrinsic(const PTXInstruction&);
-	
-	void _translateFma(const PTXInstruction& );
-	void _translateSelp(const PTXInstruction& );
+
+	void _translateCall(const PTXInstruction& );
 
 private:
 	typedef std::unordered_map<PTXRegisterId,
