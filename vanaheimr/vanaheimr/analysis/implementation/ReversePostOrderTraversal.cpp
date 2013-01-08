@@ -24,7 +24,7 @@
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 0
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -79,6 +79,9 @@ void ReversePostOrderTraversal::analyze(Function& function)
 			}
 		}
 		
+		assertM(!stack.empty(), (function.size() - order.size())
+			<< " blocks are not connected.");
+		
 		while(!stack.empty())
 		{
 			BasicBlock* top = stack.top();
@@ -90,7 +93,7 @@ void ReversePostOrderTraversal::analyze(Function& function)
 			{
 				assert(successor != nullptr);
 				
-				auto predecessors = cfg->getSuccessors(*successor);
+				auto predecessors = cfg->getPredecessors(*successor);
 				
 				bool allPredecessorsVisited = true;
 		
@@ -110,6 +113,7 @@ void ReversePostOrderTraversal::analyze(Function& function)
 					stack.push(successor);
 				}
 			}
+
 			order.push_back(top);
 		
 			report(" " << top->name());

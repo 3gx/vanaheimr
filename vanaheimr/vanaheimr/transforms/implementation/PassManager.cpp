@@ -594,8 +594,6 @@ PassManager::Analysis* PassManager::getAnalysis(const std::string& type)
 {
 	assert(_analyses != 0);
 
-	PassUseCountMap uses;
-
 	AnalysisMap::iterator analysis = _analyses->find(type);
 	if(analysis == _analyses->end())
 	{
