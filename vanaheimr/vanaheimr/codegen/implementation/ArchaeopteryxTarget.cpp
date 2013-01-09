@@ -75,6 +75,8 @@ void ArchaeopteryxTarget::lower()
 	{
 		throw std::runtime_error("Failed to create spill code pass.");
 	}
+	
+	manager.addPass(spiller);
 
 	manager.addDependence(scheduler->name, abiLowering->name);
 	manager.addDependence(allocator->name, scheduler->name);

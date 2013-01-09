@@ -32,7 +32,7 @@ namespace codegen
 {
 
 EnforceArchaeopteryxABIPass::EnforceArchaeopteryxABIPass()
-: ModulePass({""}, "EnforceArchaeopteryxABIPass")
+: ModulePass({}, "EnforceArchaeopteryxABIPass")
 {
 
 }
@@ -40,18 +40,20 @@ EnforceArchaeopteryxABIPass::EnforceArchaeopteryxABIPass()
 typedef util::LargeMap<std::string, uint64_t> GlobalToAddressMap;
 typedef util::SmallMap<std::string, uint64_t>  LocalToAddressMap;
 
-void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
+static void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
 	const abi::ApplicationBinaryInterface& abi);
-void layoutLocals(ir::Function& function, LocalToAddressMap& globals,
+static void layoutLocals(ir::Function& function, LocalToAddressMap& globals,
 	const abi::ApplicationBinaryInterface& abi);
-void lowerFunction(ir::Function& function,
+static void lowerFunction(ir::Function& function,
 	const abi::ApplicationBinaryInterface& abi,
 	const GlobalToAddressMap& globals, const LocalToAddressMap& locals);
 
-const abi::ApplicationBinaryInterface* getABI();
+static const abi::ApplicationBinaryInterface* getABI();
 
 void EnforceArchaeopteryxABIPass::runOnModule(Module& m)
 {
+	report("Lowering " << m.name << " to target the archaeopteryx ABI.");
+
 	const abi::ApplicationBinaryInterface* abi = getABI();
 
 	GlobalToAddressMap globals;
@@ -59,6 +61,7 @@ void EnforceArchaeopteryxABIPass::runOnModule(Module& m)
 	layoutGlobals(m, globals, *abi);
 	
 	// barrier
+	report(" Lowering functions...");
 	
 	// For-all
 	for(auto function = m.begin(); function != m.end(); ++function)
@@ -81,15 +84,19 @@ static unsigned int align(unsigned int address, unsigned int alignment)
 	return address + offset;	
 }
 
-void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
+static void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
 	const abi::ApplicationBinaryInterface& abi)
 {
 	unsigned int offset = 0;
+
+	report(" Lowering globals...");
 
 	for(auto global = module.global_begin();
 		global != module.global_end(); ++global)
 	{
 		offset = align(offset, global->type().alignment());
+		
+		report("  Laying out '" << global->name() << "' at " << offset);
 		
 		globals.insert(std::make_pair(global->name(), offset));
 
@@ -97,23 +104,33 @@ void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
 	}
 }
 
-void layoutLocals(ir::Function& function, LocalToAddressMap& locals,
+static void layoutLocals(ir::Function& function, LocalToAddressMap& locals,
 	const abi::ApplicationBinaryInterface& abi)
 {
-	// TODO
+	assertM(function.local_empty(), "Lowering locals not implemented.");
 }
 
-void lowerCall(ir::Instruction* i, const abi::ApplicationBinaryInterface& abi)
+static void lowerCall(ir::Instruction* i,
+	const abi::ApplicationBinaryInterface& abi)
 {
-	assertM(false, "not implemented.");
+	assertM(false, "call lowering not implemented.");
 }
 
-void lowerReturn(ir::Instruction* i, const abi::ApplicationBinaryInterface& abi)
+static void lowerIntrinsic(ir::Instruction* i,
+	const abi::ApplicationBinaryInterface& abi)
 {
-	assertM(false, "Not implemented.");
+	// This is a no-op
 }
 
-void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
+static void lowerReturn(ir::Instruction* i,
+	const abi::ApplicationBinaryInterface& abi)
+{
+	if(i->block->function()->hasAttribute("kernel")) return;
+
+	assertM(false, "function return lowering not implemented.");
+}
+
+static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 	const LocalToAddressMap& locals)
 {
 	auto variableRead = static_cast<ir::AddressOperand*>(read);
@@ -133,7 +150,8 @@ void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 
 	auto global = globals.find(variableRead->globalValue->name());
 
-	assert(global != globals.end());
+	assertM(global != globals.end(), "'" << variableRead->globalValue->name()
+		<< "' not lowered correctly.");
 
 	auto immediate = new ir::ImmediateOperand(global->second,
 		read->instruction(), read->type());
@@ -144,7 +162,7 @@ void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 
 }
 
-void lowerEntryPoint(ir::Function& function, 
+static void lowerEntryPoint(ir::Function& function, 
 	const abi::ApplicationBinaryInterface& abi)
 {
 	// kernels don't need explicit entry point code
@@ -154,10 +172,14 @@ void lowerEntryPoint(ir::Function& function,
 		"functions is not implemented yet");
 }
 
-void lowerFunction(ir::Function& function,
+static void lowerFunction(ir::Function& function,
 	const abi::ApplicationBinaryInterface& abi,
 	const GlobalToAddressMap& globals, const LocalToAddressMap& locals)
 {
+	if(function.isIntrinsic()) return;
+
+	report("  Lowering function '" << function.name() << "'");
+	
 	// add an entry point
 	lowerEntryPoint(function, abi);
 
@@ -169,20 +191,32 @@ void lowerFunction(ir::Function& function,
 			// lower calls
 			if(instruction->isCall())
 			{
-				lowerCall(instruction, abi);
+				if(instruction->isIntrinsic())
+				{
+					lowerIntrinsic(instruction, abi);
+					continue;
+				}
+				else
+				{
+					lowerCall(instruction, abi);
+					continue;
+				}
 			}
 			
 			// lower returns
 			if(instruction->isReturn())
 			{
 				lowerReturn(instruction, abi);
-			} 
+				continue;
+			}
 
 			// lower variable accesses
 			for(auto read : instruction->reads)
 			{
 				if(read->isAddress())
 				{
+					if(read->isBasicBlock()) continue;
+					
 					lowerAddress(read, globals, locals);
 				}
 			}
@@ -190,7 +224,7 @@ void lowerFunction(ir::Function& function,
 	}
 }
 
-const abi::ApplicationBinaryInterface* getABI()
+static const abi::ApplicationBinaryInterface* getABI()
 {
 	auto archaeopteryxABI =
 		abi::ApplicationBinaryInterface::getABI("archaeopteryx");

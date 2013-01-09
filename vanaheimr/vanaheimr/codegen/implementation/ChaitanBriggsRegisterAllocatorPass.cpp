@@ -21,7 +21,7 @@ namespace codegen
 {
 
 ChaitanBriggsRegisterAllocatorPass::ChaitanBriggsRegisterAllocatorPass()
-: RegisterAllocator({""}, "ChaitanBriggsRegisterAllocatorPass")
+: RegisterAllocator({}, "ChaitanBriggsRegisterAllocatorPass")
 {
 
 }
@@ -38,8 +38,8 @@ RegisterAllocator::VirtualRegisterSet
 }
 
 const machine::PhysicalRegister*
-	ChaitanBriggsRegisterAllocatorPass::getPhysicalRegisterName(
-	const ir::VirtualRegister& vr)
+	ChaitanBriggsRegisterAllocatorPass::getPhysicalRegister(
+	const ir::VirtualRegister& vr) const
 {
 	auto allocatedRegister = _allocated.find(vr.id);
 	

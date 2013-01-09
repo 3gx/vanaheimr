@@ -48,7 +48,7 @@ public:
 	
 	/*! \brief Get the mapping of a value to a named physical register */
 	virtual const machine::PhysicalRegister* getPhysicalRegister(
-		const ir::VirtualRegister&) = 0;
+		const ir::VirtualRegister&) const = 0;
 
 };
 

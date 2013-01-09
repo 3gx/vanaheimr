@@ -199,6 +199,17 @@ bool Instruction::isReturn() const
 	return opcode == Ret;
 }
 
+bool Instruction::isIntrinsic() const
+{
+	if(opcode != Call) return false;
+	
+	auto call = dynamic_cast<const ir::Call*>(this);
+	
+	assert(call != nullptr);
+	
+	return call->isIntrinsic();
+}
+
 bool Instruction::isPhi() const
 {
 	return opcode == Phi;

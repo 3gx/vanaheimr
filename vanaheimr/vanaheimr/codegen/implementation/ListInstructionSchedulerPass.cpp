@@ -14,8 +14,18 @@
 
 #include <vanaheimr/util/interface/LargeSet.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -24,7 +34,7 @@ namespace codegen
 {
 
 ListInstructionSchedulerPass::ListInstructionSchedulerPass()
-: FunctionPass({"DataflowAnalysis"}, "ListInstructionSchedulerPass")
+: FunctionPass({"DependenceAnalysis"}, "ListInstructionSchedulerPass")
 {
 
 }
@@ -32,17 +42,16 @@ ListInstructionSchedulerPass::ListInstructionSchedulerPass()
 typedef util::LargeSet<ir::Instruction*> InstructionSet;
 	
 static bool anyDependencies(ir::Instruction* instruction,
-	analysis::DataflowAnalysis& dfg,
-	const InstructionSet& remainingInstructions)
+	analysis::DependenceAnalysis& dep, const InstructionSet& remaining)
 {
-	auto reachingDefiningInstructions =
-			dfg.getReachingDefinitions(*instruction);
+	auto predecessors = dep.getPredecessors(*instruction);
 
-	bool anyDependencies = !reachingDefiningInstructions.empty();
+	bool anyDependencies = false;
 		
-	for(auto writer : reachingDefiningInstructions)
+	for(auto writer : predecessors)
 	{
 		if(writer->block != instruction->block) continue;
+		       if(remaining.count(writer) == 0) continue;
 		
 		if(writer->id() < instruction->id())
 		{
@@ -54,8 +63,10 @@ static bool anyDependencies(ir::Instruction* instruction,
 	return anyDependencies;
 }
 
-static void schedule(ir::BasicBlock& block, analysis::DataflowAnalysis& dfg)
+static void schedule(ir::BasicBlock& block, analysis::DependenceAnalysis& dep)
 {
+	report(" Scheduling basic block '" << block.name() << "'");
+
 	// TODO sort by priority, sort in parallel
 	ir::BasicBlock::InstructionList newInstructions;
 	
@@ -65,18 +76,33 @@ static void schedule(ir::BasicBlock& block, analysis::DataflowAnalysis& dfg)
 	
 	remainingInstructions.insert(block.begin(), block.end());
 
+	report("  Getting instructions with no dependencies...");
+	
 	for(auto instruction : block)
 	{
-		if(!anyDependencies(instruction, dfg, remainingInstructions))
+		if(!anyDependencies(instruction, dep, remainingInstructions))
 		{
-			readyInstructions.insert(instruction);
+			report("   " << instruction->toString());
+			
+			auto remaining = remainingInstructions.find(instruction);
+			
+			if(remaining != remainingInstructions.end())
+			{
+				remainingInstructions.erase(remaining);
+
+				readyInstructions.insert(instruction);
+			}
 		}
 	}
 
+	report("  Scheduling remaining instructions...");
+	
 	while(!readyInstructions.empty())
 	{
 		auto next = *readyInstructions.begin();
 		readyInstructions.erase(readyInstructions.begin());
+
+		report("   " << next->toString());
 
 		newInstructions.push_back(next);
 
@@ -85,8 +111,14 @@ static void schedule(ir::BasicBlock& block, analysis::DataflowAnalysis& dfg)
 
 		for(auto use : reachedUses)
 		{
+			auto remaining = remainingInstructions.find(use);
+
+			if(remaining == remainingInstructions.end()) continue;
+
 			if(!anyDependencies(use, dfg, remainingInstructions))
 			{
+				remainingInstructions.erase(remaining);
+
 				readyInstructions.insert(use);
 			}
 		}
@@ -99,13 +131,15 @@ static void schedule(ir::BasicBlock& block, analysis::DataflowAnalysis& dfg)
 
 void ListInstructionSchedulerPass::runOnFunction(Function& f)
 {
-	auto dfg = static_cast<analysis::DataflowAnalysis*>(
-		getAnalysis("DataflowAnalysis"));
+	auto dep = static_cast<analysis::DependenceAnalysis*>(
+		getAnalysis("DependenceAnalysis"));
+	
+	report("Running list scheduling on '" << f.name() << "'");
 	
 	// for all blocks
 	for(auto block = f.begin(); block != f.end(); ++block)
 	{
-		schedule(*block, *dfg);
+		schedule(*block, *dep);
 	}
 }
 

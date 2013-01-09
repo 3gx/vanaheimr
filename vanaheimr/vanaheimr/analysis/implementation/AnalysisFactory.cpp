@@ -12,6 +12,7 @@
 #include <vanaheimr/analysis/interface/DataflowAnalysis.h>
 #include <vanaheimr/analysis/interface/DominatorAnalysis.h>
 #include <vanaheimr/analysis/interface/ReversePostOrderTraversal.h>
+#include <vanaheimr/analysis/interface/DependenceAnalysis.h>
 
 namespace vanaheimr
 {
@@ -39,6 +40,10 @@ Analysis* AnalysisFactory::createAnalysis(const std::string& name,
 	else if (name == "ReversePostOrderTraversal")
 	{
 		analysis = new ReversePostOrderTraversal;
+	}
+	else if (name == "DependenceAnalysis")
+	{
+		analysis = new DependenceAnalysis;
 	}
 
 	if(analysis != nullptr)
