@@ -34,8 +34,8 @@ public:
 	VirtualRegisterSet getSpilledRegisters();
 	
 	/*! \brief Get the mapping of a value to a named physical register */
-	const machine::PhysicalRegister* getPhysicalRegisterName(
-		const ir::VirtualRegister&);
+	const machine::PhysicalRegister* getPhysicalRegister(
+		const ir::VirtualRegister&) const;
 
 private:
 	typedef util::LargeMap<unsigned int, unsigned int> RegisterMap;

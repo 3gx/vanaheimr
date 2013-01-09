@@ -112,14 +112,16 @@ public:
 	void replaceOperand(Operand* original, Operand* newOperand);
 
 public:
-	bool isLoad()       const;
-	bool isStore()      const;
-	bool isBranch()     const;
-	bool isCall()       const;
-	bool isReturn()     const;
-	bool isInstrinsic() const;
-	bool isPhi()        const;
-	bool isPsi()        const;
+	bool isLoad()      const;
+	bool isStore()     const;
+	bool isBranch()    const;
+	bool isCall()      const;
+	bool isReturn()    const;
+	bool isIntrinsic() const;
+	bool isPhi()       const;
+	bool isPsi()       const;
+
+	bool accessesMemory() const;
 
 public:
 	bool isUnary()      const;
