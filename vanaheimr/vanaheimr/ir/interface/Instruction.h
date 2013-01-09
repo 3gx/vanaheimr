@@ -121,7 +121,8 @@ public:
 	bool isPhi()       const;
 	bool isPsi()       const;
 
-	bool accessesMemory() const;
+	bool accessesMemory()  const;
+	bool isMemoryBarrier() const;
 
 public:
 	bool isUnary()      const;

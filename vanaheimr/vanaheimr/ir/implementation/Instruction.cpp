@@ -220,6 +220,16 @@ bool Instruction::isPsi() const
 	return opcode == Psi;
 }
 
+bool Instruction::accessesMemory() const
+{
+	return isLoad() || isStore();
+}
+
+bool Instruction::isMemoryBarrier() const
+{
+	return opcode == Membar || opcode == Bar;
+}
+
 bool Instruction::isUnary() const
 {
 	return dynamic_cast<const UnaryInstruction*>(this) != nullptr;

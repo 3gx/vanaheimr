@@ -13,6 +13,9 @@
 #include <vanaheimr/util/interface/LargeMap.h>
 
 // Forward Declarations
+namespace vanaheimr { namespace ir { class Instruction; } }
+namespace vanaheimr { namespace ir { class BasicBlock;  } }
+
 
 namespace vanaheimr
 {
@@ -39,15 +42,15 @@ public:
 		const Instruction& successor) const;
 
 public:
-	InstructionSet getLocalPredecessors(const Instruction& successor);
-	InstructionSet getLocalSuccessors(const Instruction& predecessor);
+	InstructionSet getLocalPredecessors(const Instruction& successor) const;
+	InstructionSet getLocalSuccessors(const Instruction& predecessor) const;
 	
 public:
 	virtual void analyze(Function& function);
 
 private:
 	typedef std::vector<InstructionSet>  InstructionSetVector;
-	typedef util::LargeSet<unsigned int, InstructionSet>
+	typedef util::LargeMap<unsigned int, InstructionSetVector>
 		BlockToInstructionSetMap;
 
 private:

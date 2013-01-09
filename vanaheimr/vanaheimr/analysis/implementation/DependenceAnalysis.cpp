@@ -4,10 +4,25 @@
 	\brief  The source file for the dependence analysis class.
 */
 
-#pragma once
-
 // Vanaheimr Includes
 #include <vanaheimr/analysis/interface/DependenceAnalysis.h>
+
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/BasicBlock.h>
+#include <vanaheimr/ir/interface/Instruction.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Standard Library Includes
+#include <cassert>
+
+// Preprocessor Macros
+#ifdef REPORT_BASE
+#undef REPORT_BASE
+#endif
+
+#define REPORT_BASE 1
 
 namespace vanaheimr
 {
@@ -26,7 +41,7 @@ bool DependenceAnalysis::hasLocalDependence(const Instruction& predecessor,
 {
 	auto predecessors = getLocalPredecessors(successor);
 	
-	return predecessors.count(&predecessor) != 0;
+	return predecessors.count(const_cast<Instruction*>(&predecessor)) != 0;
 }
 
 bool DependenceAnalysis::hasDependence(const Instruction& predecessor,
@@ -36,31 +51,33 @@ bool DependenceAnalysis::hasDependence(const Instruction& predecessor,
 }
 
 DependenceAnalysis::InstructionSet DependenceAnalysis::getLocalPredecessors(
-	const Instruction& successor)
+	const Instruction& successor) const
 {
-	auto block = _predecessors.find(successor.block->id());
+	auto block = _localPredecessors.find(successor.block->id());
 	
-	if(block == _predecessors.end()) return InstructionSet();
+	if(block == _localPredecessors.end()) return InstructionSet();
 	
-	assert(sucessor.id() < block->second.size());
+	assert(successor.index() < block->second.size());
 	
-	return block->second[successor.id()];
+	return block->second[successor.index()];
 }
 
 DependenceAnalysis::InstructionSet DependenceAnalysis::getLocalSuccessors(
-	const Instruction& predecessor)
+	const Instruction& predecessor) const
 {
-	auto block = _successors.find(predecessor.block->id());
+	auto block = _localSuccessors.find(predecessor.block->id());
 	
-	if(block == _successors.end()) return InstructionSet();
+	if(block == _localSuccessors.end()) return InstructionSet();
 	
-	assert(sucessor.id() < block->second.size());
+	assert(predecessor.index() < block->second.size());
 	
-	return block->second[predecessor.id()];
+	return block->second[predecessor.index()];
 }
 
 void DependenceAnalysis::analyze(Function& function)
 {
+	report("Running dependence analysis on '" << function.name() << "'");
+
 	// for all
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
@@ -75,33 +92,38 @@ static void addPredecessors(InstructionSet& predecessors,
 
 void DependenceAnalysis::_setLocalDependences(BasicBlock& block)
 {
-	auto predecessor = _predecessors.insert(std::make_pair(block.id(),
+	report(" for basic block '" << block.name() << "'");
+
+	auto predecessor = _localPredecessors.insert(std::make_pair(block.id(),
 			InstructionSetVector())).first;
-	auto successor   =   _successors.insert(std::make_pair(block.id(),
+	auto successor   =   _localSuccessors.insert(std::make_pair(block.id(),
 		InstructionSetVector())).first;
 		
 	predecessor->second.resize(block.size());
 	  successor->second.resize(block.size());
 	
+	if(block.empty()) return;
+	
 	// TODO: do this with a prefix scan
-	for(auto instruction : block)
+	auto instruction = block.begin();
+	for(++instruction; instruction != block.end(); ++instruction)
 	{
 		InstructionSet& instructionPredecessors =
-			predecessor->second[instruction.id()];
+			predecessor->second[(*instruction)->index()];
 	
-		_addPredecessors(instructionPredecessors, *instruction);
+		addPredecessors(instructionPredecessors, instruction);
 	}
 	
 	// TODO: collect successors in parallel
 	for(auto instruction : block)
 	{
 		InstructionSet& instructionPredecessors =
-			predecessor->second[instruction.id()];
+			predecessor->second[instruction->index()];
 		
 		for(auto predecessor : instructionPredecessors)
 		{
 			InstructionSet& instructionSuccessors =
-				successor->second[predecessor->id()];
+				successor->second[predecessor->index()];
 		
 			instructionSuccessors.insert(instruction);
 		}
@@ -139,13 +161,15 @@ static bool hasDataflowDependence(const ir::Instruction& predecessor,
 static bool hasControlflowDependence(const ir::Instruction& predecessor,
 	const ir::Instruction& successor)
 {
-	return predecessor.isBranch() || successor.isBranch();
+	return (predecessor.isBranch() && !predecessor.isIntrinsic()) ||
+		(successor.isBranch() && !successor.isIntrinsic());
 }
 
 static bool hasBarrierDependence(const ir::Instruction& predecessor,
 	const ir::Instruction& successor)
 {
-	return predecessor.isBarrier() || successor.isBarrier();
+	return (predecessor.isMemoryBarrier() && successor.accessesMemory()) ||
+		(predecessor.isMemoryBarrier() && successor.accessesMemory());
 }
 
 static bool hasMemoryDependence(const ir::Instruction& predecessor,
@@ -169,14 +193,18 @@ static bool hasDependence(const ir::Instruction& predecessor,
 static void addPredecessors(InstructionSet& predecessors,
 	ir::BasicBlock::const_iterator instruction)
 {
-	auto end = instruction->block->rend();
+	auto      end = (*instruction)->block->rend();
 	auto position = ir::BasicBlock::const_reverse_iterator(instruction);
 	
-	for(++position; position != end; ++position)
+	for(; position != end; ++position)
 	{
-		if(!hasDependence(*position, *instruction)) continue;
+		if(!hasDependence(**position, **instruction)) continue;
 		
-		predecessors.insert(position);
+		report("  " << (*position)->toString() << " (" << (*position)->index()
+			<< ") -> " << (*instruction)->toString() << " ("
+			<< (*instruction)->index() << ")");
+		
+		predecessors.insert(*position);
 	}
 }
 
