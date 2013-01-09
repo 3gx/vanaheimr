@@ -7,7 +7,7 @@
 // Vanaheimr Includes
 #include <vanaheimr/codegen/interface/ListInstructionSchedulerPass.h>
 
-#include <vanaheimr/analysis/interface/DataflowAnalysis.h>
+#include <vanaheimr/analysis/interface/DependenceAnalysis.h>
 
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
@@ -44,23 +44,21 @@ typedef util::LargeSet<ir::Instruction*> InstructionSet;
 static bool anyDependencies(ir::Instruction* instruction,
 	analysis::DependenceAnalysis& dep, const InstructionSet& remaining)
 {
-	auto predecessors = dep.getPredecessors(*instruction);
+	auto predecessors = dep.getLocalPredecessors(*instruction);
 
-	bool anyDependencies = false;
-		
 	for(auto writer : predecessors)
 	{
 		if(writer->block != instruction->block) continue;
 		       if(remaining.count(writer) == 0) continue;
 		
-		if(writer->id() < instruction->id())
-		{
-			anyDependencies = true;
-			break;
-		}
+		assertM(writer->index() < instruction->index(), "Instruction '"
+			<< writer->toString() << "' has a higher sequence number than '"
+			<< instruction->toString() << "'");
+
+		return true;
 	}
 	
-	return anyDependencies;
+	return false;
 }
 
 static void schedule(ir::BasicBlock& block, analysis::DependenceAnalysis& dep)
@@ -83,16 +81,19 @@ static void schedule(ir::BasicBlock& block, analysis::DependenceAnalysis& dep)
 		if(!anyDependencies(instruction, dep, remainingInstructions))
 		{
 			report("   " << instruction->toString());
-			
-			auto remaining = remainingInstructions.find(instruction);
-			
-			if(remaining != remainingInstructions.end())
-			{
-				remainingInstructions.erase(remaining);
-
-				readyInstructions.insert(instruction);
-			}
+		
+			readyInstructions.insert(instruction);
 		}
+	}
+	
+	// Remove them from the set of remaining instructions
+	for(auto instruction : readyInstructions)
+	{
+		auto remaining = remainingInstructions.find(instruction);
+
+		assert(remaining != remainingInstructions.end());
+
+		remainingInstructions.erase(remaining);
 	}
 
 	report("  Scheduling remaining instructions...");
@@ -107,19 +108,19 @@ static void schedule(ir::BasicBlock& block, analysis::DependenceAnalysis& dep)
 		newInstructions.push_back(next);
 
 		// free dependent instructions
-		auto reachedUses = dfg.getReachedUses(*next);
+		auto successors = dep.getLocalSuccessors(*next);
 
-		for(auto use : reachedUses)
+		for(auto successor : successors)
 		{
-			auto remaining = remainingInstructions.find(use);
+			auto remaining = remainingInstructions.find(successor);
 
 			if(remaining == remainingInstructions.end()) continue;
 
-			if(!anyDependencies(use, dfg, remainingInstructions))
+			if(!anyDependencies(successor, dep, remainingInstructions))
 			{
 				remainingInstructions.erase(remaining);
 
-				readyInstructions.insert(use);
+				readyInstructions.insert(successor);
 			}
 		}
 	}
