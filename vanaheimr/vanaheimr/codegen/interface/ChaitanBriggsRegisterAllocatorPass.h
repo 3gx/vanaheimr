@@ -1,7 +1,7 @@
-/*! \file   ChaitanBriggsRegisterAllocatorPass.h
+/*! \file   ChaitinBriggsRegisterAllocatorPass.h
 	\date   Wednesday January 2, 2013
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
-	\brief  The header file for the ChaitanBriggsRegisterAllocatorPass class.
+	\brief  The header file for the ChaitinBriggsRegisterAllocatorPass class.
 */
 
 #pragma once
@@ -20,10 +20,10 @@ namespace vanaheimr
 namespace codegen
 {
 
-class ChaitanBriggsRegisterAllocatorPass : public RegisterAllocator
+class ChaitinBriggsRegisterAllocatorPass : public RegisterAllocator
 {
 public:
-	ChaitanBriggsRegisterAllocatorPass();
+	ChaitinBriggsRegisterAllocatorPass();
 
 public:
 	/*! \brief Run the pass on a specific function in the module */

@@ -1,11 +1,11 @@
-/*! \file   ChaitanBriggsRegisterAllocatorPass.cpp
+/*! \file   ChaitinBriggsRegisterAllocatorPass.cpp
 	\date   Wednesday January 2, 2013
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
-	\brief  The source file for the ChaitanBriggsRegisterAllocatorPass class.
+	\brief  The source file for the ChaitinBriggsRegisterAllocatorPass class.
 */
 
 // Vanaheimr Includes
-#include <vanaheimr/codegen/interface/ChaitanBriggsRegisterAllocatorPass.h>
+#include <vanaheimr/codegen/interface/ChaitinBriggsRegisterAllocatorPass.h>
 
 #include <vanaheimr/machine/interface/MachineModel.h>
 
@@ -20,25 +20,34 @@ namespace vanaheimr
 namespace codegen
 {
 
-ChaitanBriggsRegisterAllocatorPass::ChaitanBriggsRegisterAllocatorPass()
-: RegisterAllocator({}, "ChaitanBriggsRegisterAllocatorPass")
+ChaitinBriggsRegisterAllocatorPass::ChaitinBriggsRegisterAllocatorPass()
+: RegisterAllocator({}, "ChaitinBriggsRegisterAllocatorPass")
 {
 
 }
 
-void ChaitanBriggsRegisterAllocatorPass::runOnFunction(Function& f)
+typedef util::SmallSet<ir::VirtualRegister*> VirtualRegisterSet;
+typedef util::LargeMap<ir::VirtualRegister*, VirtualRegisterSet>
+	InterferenceMap;
+
+static InterferenceMap buildInterferences(Function& f);
+
+void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 {
-	assertM(false, "Not implemented.");
+	auto interferences = buildInterferences(f);
+	
+	// attempt to color the interferences
+	color(_spilled, _allocated, f, interferences);
 }
 
 RegisterAllocator::VirtualRegisterSet
-	ChaitanBriggsRegisterAllocatorPass::getSpilledRegisters()
+	ChaitinBriggsRegisterAllocatorPass::getSpilledRegisters()
 {
 	return _spilled;
 }
 
 const machine::PhysicalRegister*
-	ChaitanBriggsRegisterAllocatorPass::getPhysicalRegister(
+	ChaitinBriggsRegisterAllocatorPass::getPhysicalRegister(
 	const ir::VirtualRegister& vr) const
 {
 	auto allocatedRegister = _allocated.find(vr.id);

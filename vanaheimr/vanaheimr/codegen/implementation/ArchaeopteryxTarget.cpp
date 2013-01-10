@@ -24,7 +24,7 @@ namespace codegen
 
 ArchaeopteryxTarget::ArchaeopteryxTarget()
 : Target("ArchaeopteryxSimulatorTarget"),
-	registerAllocatorName("chaitan-briggs"), instructionSchedulerName("list")
+	registerAllocatorName("chaitin-briggs"), instructionSchedulerName("list")
 {
 
 }

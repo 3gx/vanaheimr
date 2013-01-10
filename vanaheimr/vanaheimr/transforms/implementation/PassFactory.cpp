@@ -13,7 +13,7 @@
 
 #include <vanaheimr/codegen/interface/EnforceArchaeopteryxABIPass.h>
 #include <vanaheimr/codegen/interface/ListInstructionSchedulerPass.h>
-#include <vanaheimr/codegen/interface/ChaitanBriggsRegisterAllocatorPass.h>
+#include <vanaheimr/codegen/interface/ChaitinBriggsRegisterAllocatorPass.h>
 #include <vanaheimr/codegen/interface/GenericSpillCodePass.h>
 
 namespace vanaheimr
@@ -47,9 +47,9 @@ Pass* PassFactory::createPass(const std::string& name,
 		pass = new codegen::ListInstructionSchedulerPass();
 	}
 	
-	if(name == "chaitan-briggs" || name == "ChaitanBriggsRegisterAllocatorPass")
+	if(name == "chaitin-briggs" || name == "ChaitinBriggsRegisterAllocatorPass")
 	{
-		pass = new codegen::ChaitanBriggsRegisterAllocatorPass();
+		pass = new codegen::ChaitinBriggsRegisterAllocatorPass();
 	}
 	
 	if(name == "generic-spiller" || name == "GenericSpillCodePass")
