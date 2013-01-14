@@ -37,7 +37,7 @@ public:
 
 public:
 	VirtualRegisterSet&       getInterferences(const VirtualRegister&);
-	const VirtualRegisterSet& getIntereference(const VirtualRegister&) const;	
+	const VirtualRegisterSet& getInterferences(const VirtualRegister&) const;	
 
 public:
 	virtual void analyze(Function& function);
