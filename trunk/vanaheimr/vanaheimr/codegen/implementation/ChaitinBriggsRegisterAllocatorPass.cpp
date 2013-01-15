@@ -120,6 +120,9 @@ static unsigned int computeColor(const RegisterInfo& reg,
 		assert(interference->id < registerInfo.size());
 	
 		const RegisterInfo& info = registerInfo[interference->id];
+
+		if(info.schedulingOrder >= reg.schedulingOrder) continue;
+		if(info.schedulingOrder >  partitionSize) continue;
 	
 		usedColors.insert(info.color);
 	}
@@ -139,6 +142,9 @@ static unsigned int computeColor(const RegisterInfo& reg,
 static bool propagateColorsInParallel(RegisterInfoVector& registers,
 	unsigned int iteration, const InterferenceAnalysis& interferences)
 {
+	report("  -------------------- Iteration "
+		<< iteration << " ------------------");
+
 	unsigned int partitionSize = 1 << iteration;
 
 	RegisterInfoVector newRegisters;
@@ -154,7 +160,10 @@ static bool propagateColorsInParallel(RegisterInfoVector& registers,
 		newRegisters.push_back(RegisterInfo(reg->virtualRegister,
 			reg->nodeDegree, newColor, reg->schedulingOrder));
 
-		changed |= reg->color == newColor;
+		changed |= reg->color != newColor;
+
+		reportE(reg->color != newColor, "   vr" << reg->virtualRegister->id
+			<< " (color " << reg->color << ") -> (color " << newColor <<")");
 	}
 	
 	registers = std::move(newRegisters);
@@ -222,7 +231,7 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 			iteration++, interferences);
 		
 		// Check iteration count
-		assertM((1ULL << iteration) < registers.size(),
+		assertM((1ULL << iteration/4) < registers.size(),
 			"Too many iterations: " << iteration);
 	}
 	
