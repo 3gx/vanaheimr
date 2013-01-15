@@ -13,6 +13,8 @@
 #include <vanaheimr/analysis/interface/DominatorAnalysis.h>
 #include <vanaheimr/analysis/interface/ReversePostOrderTraversal.h>
 #include <vanaheimr/analysis/interface/DependenceAnalysis.h>
+#include <vanaheimr/analysis/interface/LiveRangeAnalysis.h>
+#include <vanaheimr/analysis/interface/InterferenceAnalysis.h>
 
 namespace vanaheimr
 {
@@ -44,6 +46,14 @@ Analysis* AnalysisFactory::createAnalysis(const std::string& name,
 	else if (name == "DependenceAnalysis")
 	{
 		analysis = new DependenceAnalysis;
+	}
+	else if (name == "LiveRangeAnalysis")
+	{
+		analysis = new LiveRangeAnalysis;
+	}
+	else if (name == "InterferenceAnalysis")
+	{
+		analysis = new InterferenceAnalysis;
 	}
 
 	if(analysis != nullptr)

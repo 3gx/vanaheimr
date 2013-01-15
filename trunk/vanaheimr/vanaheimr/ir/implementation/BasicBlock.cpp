@@ -151,6 +151,28 @@ Instruction* const& BasicBlock::back() const
 	return _instructions.back();
 }
 
+
+BasicBlock::iterator BasicBlock::getIterator(const Instruction* instruction)
+{
+	for(auto i = begin(); i != end(); ++i)
+	{
+		if(*i == instruction) return i;
+	}
+	
+	return end();
+}
+
+BasicBlock::const_iterator BasicBlock::getIterator(
+	const Instruction* instruction) const
+{
+	for(auto i = begin(); i != end(); ++i)
+	{
+		if(*i == instruction) return i;
+	}
+	
+	return end();
+}
+
 bool BasicBlock::empty() const
 {
 	return _instructions.empty();
