@@ -9,6 +9,13 @@
 
 #include <vanaheimr/analysis/interface/LiveRangeAnalysis.h>
 
+#include <vanaheimr/ir/interface/Function.h>
+#include <vanaheimr/ir/interface/VirtualRegister.h>
+
+// Standard Library Includes
+#include <cassert>
+#include <algorithm>
+
 namespace vanaheimr
 {
 
@@ -26,7 +33,7 @@ bool InterferenceAnalysis::doLiveRangesInterfere(const VirtualRegister& one,
 {
 	const VirtualRegisterSet& interferences = getInterferences(one);
 
-	return interferences.count(&two) != 0;
+	return interferences.count(const_cast<VirtualRegister*>(&two)) != 0;
 }
 
 InterferenceAnalysis::VirtualRegisterSet&
@@ -55,18 +62,83 @@ typedef std::vector<Range> RangeVector;
 
 static BlockToRangeVector mapBlocksToLiveRanges(LiveRangeAnalysis*);
 static RangeVector partition(BlockToRangeVector&);
+static void checkIntersectionsInOverlappingRanges(InterferenceAnalysis*,
+	const RangeVector&);
 
+// TODO: Segregate ranges into fully covered and partially covered sets.
+//       Processor them independently to reduce the complexity of the cross
+//       product
 void InterferenceAnalysis::analyze(Function& function)
 {
 	auto ranges = static_cast<LiveRangeAnalysis*>(
 		getAnalysis("LiveRangeAnalysis"));
 	assert(ranges != nullptr);
 
-	// partition into ranges with equal blocks
+	_interferences.resize(function.register_size());
+
+	// map live ranges into partiions that are alive in the same blocks
 	auto blocksToRanges = mapBlocksToLiveRanges(ranges);
 
 	auto partitions = partition(blocksToRanges);
 
+	// compute intersections among live ranges in the same partition
+	checkIntersectionsInOverlappingRanges(this, partitions);
+}
+	
+static BlockToRangeVector mapBlocksToLiveRanges(LiveRangeAnalysis* ranges)
+{
+	BlockToRangeVector blocksToRanges;
+	
+	// TODO: for all
+	for(auto range = ranges->begin(); range != ranges->end(); ++range)
+	{
+		// Add an entry for each block used by the range
+		auto blocks = range->allBlocksWithLiveValue();
+		
+		for(auto block : blocks)
+		{
+			blocksToRanges.push_back(std::make_pair(block, &*range));
+		}
+	}
+	
+	return blocksToRanges;
+}
+
+static RangeVector partition(BlockToRangeVector& blocksToRanges)
+{
+	// Group live ranges by blocks that they reference 
+	std::sort(blocksToRanges.begin(), blocksToRanges.end());
+
+	// Partition the live ranges by blocks that they reference
+	RangeVector blockRanges;
+	
+	Range currentRange(blocksToRanges.begin(), blocksToRanges.begin());
+	
+	// TODO: Partition the array in parallel using recursive binary search
+	for(auto blockToRange = blocksToRanges.begin();
+		blockToRange != blocksToRanges.end(); ++blockToRange)
+	{
+		currentRange.second = blockToRange;
+		
+		if(currentRange.first->first != currentRange.second->first)
+		{
+			// We found a new block
+			blockRanges.push_back(currentRange);
+			
+			currentRange.first = currentRange.second;
+		}
+	}
+	
+	blockRanges.push_back(currentRange);
+	
+	return blockRanges;
+}
+
+
+static void checkIntersectionsInOverlappingRanges(
+	InterferenceAnalysis* interefernceAnalysis,
+	const RangeVector& partitions)
+{
 	// check all partitions (TODO in parallel)
 	for(auto partition : partitions)
 	{
@@ -76,23 +148,16 @@ void InterferenceAnalysis::analyze(Function& function)
 			{
 				if(one == two) continue;
 
-				if(one->second->intersect(*two->second))
+				if(one->second->interferesWith(*two->second))
 				{
-					getInterference(*one->second->virtualRegister()).insert(
-						two->second->virtualRegister());
+					interefernceAnalysis->getInterferences(
+						*one->second->virtualRegister()).insert(
+							two->second->virtualRegister());
 				}
 			}
 		}
 	}
 }
-	
-
-
-	// Determine group live ranges by blocks that they reference 
-	BlockToRangeVector blocksToRanges;
-
-	std::sort(blocksToRanges.begin(), blocksToRanges.end());
-
 
 }
 

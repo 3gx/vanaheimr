@@ -74,6 +74,12 @@ public:
 	Instruction* const & back() const;
 
 public:
+	/*! \brief Get an iterator to a function in the block */
+	iterator       getIterator(const Instruction*);
+	/*! \brief Get an iterator to a function in the block */
+	const_iterator getIterator(const Instruction*) const;
+
+public:
 	bool   empty() const;
 	size_t size()  const;
 

@@ -43,7 +43,14 @@ public:
 		  VirtualRegister*   virtualRegister() const;
 
 	public:
-		BasicBlockSet fullyUsedBlocks;
+		BasicBlockSet allBlocksWithLiveValue() const;
+
+	public:
+		/* \brief Do live ranges interfere? */
+		bool interferesWith(const LiveRange& range) const;
+
+	public:
+		BasicBlockSet fullyCoveredBlocks;
 
 	public:
 		InstructionSet definingInstructions;
@@ -54,6 +61,10 @@ public:
 		VirtualRegister*   _virtualRegister;
 	};
 
+	typedef std::vector<LiveRange> LiveRangeVector;
+
+	typedef LiveRangeVector::iterator       iterator;
+	typedef LiveRangeVector::const_iterator const_iterator;
 
 public:
 	LiveRangeAnalysis();
@@ -69,8 +80,16 @@ public:
 	LiveRangeAnalysis(const LiveRangeAnalysis& ) = delete;
 	LiveRangeAnalysis& operator=(const LiveRangeAnalysis& ) = delete;
 	
-private:
-	typedef std::vector<LiveRange> LiveRangeVector;
+public:
+	      iterator begin();
+	const_iterator begin() const;
+
+	      iterator end();
+	const_iterator end() const;
+
+public:
+	bool   empty() const;
+	size_t  size() const;
 
 private:
 	void _initializeLiveRanges(ir::Function& );
@@ -79,6 +98,8 @@ private:
 	LiveRangeVector _liveRanges;
 
 };
+
+typedef LiveRangeAnalysis::LiveRange LiveRange;
 
 }
 

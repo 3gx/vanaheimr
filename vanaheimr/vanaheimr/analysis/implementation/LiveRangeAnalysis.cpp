@@ -22,8 +22,6 @@ namespace vanaheimr
 namespace analysis
 {
 
-typedef LiveRangeAnalysis::LiveRange LiveRange;
-
 LiveRange::LiveRange(LiveRangeAnalysis* liveRangeAnalysis, VirtualRegister* vr)
 : _analysis(liveRangeAnalysis), _virtualRegister(vr)
 {
@@ -40,8 +38,74 @@ ir::VirtualRegister* LiveRangeAnalysis::LiveRange::virtualRegister() const
 	return _virtualRegister;
 }
 
+LiveRangeAnalysis::BasicBlockSet
+	LiveRangeAnalysis::LiveRange::allBlocksWithLiveValue() const
+{
+	BasicBlockSet blocks = fullyCoveredBlocks;
+	
+	for(auto instruction : definingInstructions)
+	{
+		blocks.insert(instruction->block);
+	}
+
+	for(auto instruction : usingInstructions)
+	{
+		blocks.insert(instruction->block);
+	}
+	
+	return blocks;
+}
+
+bool LiveRangeAnalysis::LiveRange::interferesWith(const LiveRange& range) const
+{
+	// easy case, live ranges intersect in fully covered blocks
+	for(auto block : range.fullyCoveredBlocks)
+	{
+		if(fullyCoveredBlocks.count(block) != 0) return true;
+	}
+	
+	// hard case, live ranges intersect in a partially covered block
+	for(auto instruction : range.usingInstructions)
+	{
+		auto block = instruction->block;
+	
+		if(fullyCoveredBlocks.count(block) != 0) return true;
+		
+		auto user = ir::BasicBlock::reverse_iterator(
+			block->getIterator(instruction));
+		
+		while(user != block->rend())
+		{
+			if(usingInstructions.count(*user) != 0)    return true;
+			if(definingInstructions.count(*user) != 0) return true;
+		
+			++user;
+		}
+	}
+
+	for(auto instruction : range.definingInstructions)
+	{
+		auto block = instruction->block;
+	
+		if(fullyCoveredBlocks.count(block) != 0) return true;
+		
+		auto definer = block->getIterator(instruction);
+		
+		while(definer != block->end())
+		{
+			if(usingInstructions.count(*definer) != 0)    return true;
+			if(definingInstructions.count(*definer) != 0) return true;
+		
+			++definer;
+		}
+	}
+	
+	return false;
+}
+
 LiveRangeAnalysis::LiveRangeAnalysis()
-: FunctionAnalysis("LiveRangeAnalysis", {"DataflowAnalysis", "ControlFlowGraph"})
+: FunctionAnalysis("LiveRangeAnalysis",
+  {"DataflowAnalysis", "ControlFlowGraph"})
 {
 
 }
@@ -82,6 +146,36 @@ void LiveRangeAnalysis::analyze(Function& function)
 	{
 		findLiveRange(*getLiveRange(*virtualRegister), dfg, cfg);
 	}
+}
+
+LiveRangeAnalysis::iterator LiveRangeAnalysis::begin()
+{
+	return _liveRanges.begin();
+}
+
+LiveRangeAnalysis::const_iterator LiveRangeAnalysis::begin() const
+{
+	return _liveRanges.begin();
+}
+
+LiveRangeAnalysis::iterator LiveRangeAnalysis::end()
+{
+	return _liveRanges.end();
+}
+
+LiveRangeAnalysis::const_iterator LiveRangeAnalysis::end() const
+{
+	return _liveRanges.end();
+}
+
+bool LiveRangeAnalysis::empty() const
+{
+	return _liveRanges.empty();
+}
+
+size_t LiveRangeAnalysis::size() const
+{
+	return _liveRanges.size();
 }
 
 void LiveRangeAnalysis::_initializeLiveRanges(Function& function)
@@ -131,7 +225,7 @@ static void walkUpPredecessor(BasicBlockSet& visited, LiveRange& liveRange,
 	if(blockHasDefinitions(block, liveRange)) return;
 
 	// add the block to the live range
-	liveRange.fullyUsedBlocks.insert(block);
+	liveRange.fullyCoveredBlocks.insert(block);
 
 	// recurse on predecessors with the value as a live out
 	auto predecessors = cfg->getPredecessors(*block);
