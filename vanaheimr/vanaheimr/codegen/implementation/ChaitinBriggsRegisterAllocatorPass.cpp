@@ -10,6 +10,7 @@
 #include <vanaheimr/analysis/interface/InterferenceAnalysis.h>
 
 #include <vanaheimr/machine/interface/MachineModel.h>
+#include <vanaheimr/compiler/interface/Compiler.h>
 
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/VirtualRegister.h>
@@ -47,7 +48,7 @@ typedef util::LargeMap<unsigned int, unsigned int> RegisterMap;
 
 static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	RegisterMap& allocated, const ir::Function& function,
-	const InterferenceAnalysis& interferences);
+	const InterferenceAnalysis& interferences, unsigned int colors);
 
 void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 {
@@ -58,13 +59,17 @@ void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 		getAnalysis("InterferenceAnalysis"));
 	assert(interferenceAnalysis != nullptr);
 	
+	auto machineModel = compiler::Compiler::getSingleton()->getMachineModel();
+	
 	// attempt to color the interferences
-	color(_spilled, _allocated, f, *interferenceAnalysis);
+	color(_spilled, _allocated, f, *interferenceAnalysis,
+		machineModel->totalRegisterCount());
 	
 	// TODO: spill if allocation fails
+	assertM(_spilled.empty(), "No support for spills yet.");
 	
 	// TODO: Map colors to registers
-	 
+	
 }
 
 RegisterAllocator::VirtualRegisterSet
@@ -163,7 +168,9 @@ static bool propagateColorsInParallel(RegisterInfoVector& registers,
 		changed |= reg->color != newColor;
 
 		reportE(reg->color != newColor, "   vr" << reg->virtualRegister->id
-			<< " (color " << reg->color << ") -> (color " << newColor <<")");
+			<< " (degree " << reg->nodeDegree
+			<< ") | (color " << reg->color << ") -> (color " << newColor
+			<< ")");
 	}
 	
 	registers = std::move(newRegisters);
@@ -202,7 +209,7 @@ static void initializeSchedulingOrder(RegisterInfoVector& registerInfo)
 
 static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	RegisterMap& allocated, const ir::Function& function,
-	const InterferenceAnalysis& interferences)
+	const InterferenceAnalysis& interferences, unsigned int colors)
 {
 	// Create a map from node degree to virtual register
 	RegisterInfoVector registers;
@@ -231,8 +238,7 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 			iteration++, interferences);
 		
 		// Check iteration count
-		assertM((1ULL << iteration/4) < registers.size(),
-			"Too many iterations: " << iteration);
+		assertM(iteration <= colors, "Too many iterations: " << iteration);
 	}
 	
 }

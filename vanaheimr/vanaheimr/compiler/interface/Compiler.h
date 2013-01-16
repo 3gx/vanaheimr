@@ -9,7 +9,8 @@
 #include <vanaheimr/ir/interface/Module.h>
 
 // Forward Declarations
-namespace vanaheimr { namespace ir { class Type;   } }
+namespace vanaheimr { namespace ir      { class Type;         } }
+namespace vanaheimr { namespace machine { class MachineModel; } }
 
 namespace vanaheimr
 {
@@ -60,13 +61,15 @@ public:
 public:
 	module_iterator newModule(const std::string& name);
 	iterator newType(const ir::Type& type);
+
+public:
+	      module_iterator getModule(const std::string& name);
+	const_module_iterator getModule(const std::string& name) const;
+
+public:
 	iterator getOrInsertType(const ir::Type& type);
 	iterator getOrInsertType(const std::string& signature);
 	
-public:
-	module_iterator getModule(const std::string& name);
-	const_module_iterator getModule(const std::string& name) const;
-
 public:
 	/*! \brief Lookup a type by name, return 0 if it doesn't exist */
 	ir::Type*       getType(const std::string& name);
@@ -78,11 +81,15 @@ public:
 	const ir::Type* getBasicBlockType() const;
 
 public:
+	const machine::MachineModel* getMachineModel() const;
+
+public:
 	static Compiler* getSingleton();
 
 private:
-	TypeVector _types;
-	ModuleList _modules;
+	TypeVector                   _types;
+	ModuleList                   _modules;
+	const machine::MachineModel* _machineModel;
 
 };	
 
