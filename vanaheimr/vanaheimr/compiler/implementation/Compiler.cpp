@@ -9,6 +9,9 @@
 #include <vanaheimr/compiler/interface/Compiler.h>
 #include <vanaheimr/compiler/interface/TypeParser.h>
 
+#include <vanaheimr/machine/interface/MachineModelFactory.h>
+#include <vanaheimr/machine/interface/MachineModel.h>
+
 #include <vanaheimr/ir/interface/Type.h>
 
 // Hydrazine Includes
@@ -46,11 +49,18 @@ Compiler::Compiler()
 	_types.push_back(new ir::DoubleType(this));
 
 	_types.push_back(new ir::BasicBlockType(this));
+
+	// Create the machine model
+	_machineModel = machine::MachineModelFactory::createDefaultMachine();
+
+	assert(_machineModel != nullptr);
 }
 
 Compiler::~Compiler()
 {
 	for(auto type : *this) delete type;
+
+	delete getMachineModel();
 }
 
 Compiler::iterator Compiler::begin()
@@ -191,6 +201,11 @@ const ir::Type* Compiler::getType(const std::string& typeName) const
 const ir::Type* Compiler::getBasicBlockType() const
 {
 	return getType("_ZTBasicBlock");
+}
+
+const machine::MachineModel* Compiler::getMachineModel() const
+{
+	return _machineModel;
 }
 
 Compiler* Compiler::getSingleton()

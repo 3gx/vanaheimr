@@ -44,6 +44,10 @@ public:
 	unsigned int totalRegisterCount() const;
 
 public:
+	/*! \brief Configure the machine model with a set of options */
+	void configure(const StringVector& options);
+
+public:
 	const std::string name;
 
 };

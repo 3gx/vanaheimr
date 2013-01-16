@@ -7,25 +7,33 @@
 
 #pragma once
 
-// Vanaheimr Includes
-#include <vanaheimr/analysis/interface/Analysis.h>
+// Standard Library Includes
+#include <string>
+#include <vector>
+
+// Forward Declarations
+namespace vanaheimr { namespace machine { class MachineModel; } }
 
 namespace vanaheimr
 {
 
-namespace analysis
+namespace machine
 {
 
 /*! \brief Used to create passes by name */
 class MachineModelFactory
 {
 public:
-	typedef MachineModel::StringVector StringVector;
+	typedef std::vector<std::string> StringVector;
 
 public:
 	/*! \brief Create a machine model object from the specified name */
-	static Analysis* createMachineModel(const std::string& name,
+	static MachineModel* createMachineModel(const std::string& name,
 		const StringVector& options = StringVector());
+
+public:
+	/*! \brief Create the default machine model */
+	static MachineModel* createDefaultMachine();
 
 };
 
