@@ -29,6 +29,18 @@ const PhysicalRegister* MachineModel::getPhysicalRegister(RegisterId id) const
 	return nullptr;
 }
 
+unsigned int MachineModel::totalRegisterCount() const
+{
+	assertM(false, "Not implemented.");
+
+	return 0;
+}
+
+void MachineModel::configure(const StringVector& )
+{
+	// TODO
+}
+
 }
 
 }
