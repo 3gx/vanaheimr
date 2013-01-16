@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <vector>
 
 // Forward Declarations
 namespace vanaheimr { namespace machine { class PhysicalRegister; } }
@@ -23,7 +24,8 @@ namespace machine
 class MachineModel
 {
 public:
-	typedef unsigned int RegisterId;
+	typedef unsigned int             RegisterId;
+	typedef std::vector<std::string> StringVector;
 
 public:
 	/*! \brief Construct a machine model */
@@ -36,6 +38,10 @@ public:
 public:
 	/*! \brief Get the named physical register */
 	const PhysicalRegister* getPhysicalRegister(RegisterId id) const;
+
+public:
+	/*! \brief Get the total register count */
+	unsigned int totalRegisterCount() const;
 
 public:
 	const std::string name;
