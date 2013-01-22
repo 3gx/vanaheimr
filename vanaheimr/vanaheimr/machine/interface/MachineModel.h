@@ -6,9 +6,14 @@
 
 #pragma once
 
+// Vanaheimr Includes
+#include <vanaheimr/machine/interface/RegisterFile.h>
+
 // Standard Library Includes
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <map>
 
 // Forward Declarations
 namespace vanaheimr { namespace machine { class PhysicalRegister; } }
@@ -50,6 +55,17 @@ public:
 public:
 	const std::string name;
 
+protected:
+	void addRegisterFile(const std::string& name, unsigned int registers);
+
+protected:
+	typedef std::unordered_map<unsigned int,
+		const PhysicalRegister*> RegisterMap;
+	typedef std::map<std::string, RegisterFile> RegisterFileMap;
+
+protected:
+	RegisterMap     _idToRegisters;
+	RegisterFileMap _registerFiles;
 };
 
 }

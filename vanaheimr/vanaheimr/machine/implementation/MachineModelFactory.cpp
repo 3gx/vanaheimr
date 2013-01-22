@@ -8,6 +8,7 @@
 #include <vanaheimr/machine/interface/MachineModelFactory.h>
 
 #include <vanaheimr/machine/interface/MachineModel.h>
+#include <vanaheimr/machine/interface/ArchaeopteryxSimulatorMachineModel.h>
 
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
@@ -22,6 +23,11 @@ MachineModel* MachineModelFactory::createMachineModel(const std::string& name,
 	const StringVector& options)
 {
 	MachineModel* machine = nullptr;
+
+	if(name == "ArchaeopteryxSimulator")
+	{
+		machine = new ArchaeopteryxSimulatorMachineModel;
+	}
 
 	if(machine != nullptr)
 	{
