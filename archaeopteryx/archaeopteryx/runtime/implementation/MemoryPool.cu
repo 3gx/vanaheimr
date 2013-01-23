@@ -13,7 +13,7 @@
 #undef REPORT_BASE
 #endif
 
-#define REPORT_BASE 0
+#define REPORT_BASE 1
 
 namespace archaeopteryx
 {
@@ -29,10 +29,25 @@ __device__ bool MemoryPool::allocate(uint64_t size, Address address)
 
 	if(page != _pages.end())
 	{
-		if(page->second.endAddress() > address)
+		// check against the next allocation
+		if(page->second.address() < address + size)
 		{
-			device_report(" failed, collision with previous allocation\n");
+			device_report(" failed, collision with subsequent "
+				"allocation at 0x%p\n", page->second.address());
 			return false;
+		}
+
+		if(page != _pages.begin())
+		{
+			--page;
+
+			// check against the previous allocation
+			if(page->second.endAddress() > address)
+			{
+				device_report(" failed, collision with next "
+					"allocation at 0x%p\n", page->second.address());
+				return false;
+			}
 		}
 	}
 
