@@ -8,6 +8,8 @@
 #include <vanaheimr/translation/interface/OcelotToVIRTraceTranslator.h>
 #include <vanaheimr/translation/interface/PTXToVIRTranslator.h>
 
+#include <vanaheimr/abi/interface/ApplicationBinaryInterface.h>
+
 #include <vanaheimr/codegen/interface/ArchaeopteryxTarget.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
@@ -29,6 +31,8 @@ namespace vanaheimr
 namespace translation
 {
 
+typedef ::util::ExtractedDeviceState ExtractedDeviceState;
+
 OcelotToVIRTraceTranslator::OcelotToVIRTraceTranslator(compiler::Compiler* c)
 : _compiler(c)
 {
@@ -36,11 +40,11 @@ OcelotToVIRTraceTranslator::OcelotToVIRTraceTranslator(compiler::Compiler* c)
 }
 
 static void translatePTX(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state);
+	const ExtractedDeviceState& state);
 static void addVariablesForTraceData(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state);
+	const ExtractedDeviceState& state);
 static void archaeopteryxCodeGen(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state);
+	const ExtractedDeviceState& state);
 
 void OcelotToVIRTraceTranslator::translate(const std::string& traceFileName)
 {
@@ -52,7 +56,7 @@ void OcelotToVIRTraceTranslator::translate(const std::string& traceFileName)
 			traceFileName + "' for reading.\n");
 	}
 	
-	util::ExtractedDeviceState state;
+	ExtractedDeviceState state;
 	
 	state.deserialize(stream);
 	
@@ -70,7 +74,7 @@ std::string OcelotToVIRTraceTranslator::translatedModuleName() const
 }
 
 static void translatePTX(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	PTXToVIRTranslator ptxTranslator(compiler);
 	
@@ -90,7 +94,7 @@ static void translatePTX(compiler::Compiler* compiler,
 }
 
 static void addTextures(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	auto module = state.modules.find(state.launch.moduleName);
 	
@@ -114,7 +118,7 @@ static const ir::Type* getStringType(compiler::Compiler* compiler,
 }
 
 static void addGlobal(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state,
+	const ExtractedDeviceState& state,
 	const std::string& globalName, const std::string& globalValue)
 {
 	auto module = compiler->getModule(state.launch.moduleName);
@@ -131,7 +135,7 @@ static void addGlobal(compiler::Compiler* compiler,
 }
 
 static void addGlobal(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state,
+	const ExtractedDeviceState& state,
 	const std::string& globalName, const ::util::ByteVector& globalValue)
 {
 	auto module = compiler->getModule(state.launch.moduleName);
@@ -150,7 +154,7 @@ static void addGlobal(compiler::Compiler* compiler,
 
 template <typename T>
 static void addGlobal(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state,
+	const ExtractedDeviceState& state,
 	const std::string& globalName, const T& globalValue)
 {
 	std::stringstream stream;
@@ -160,8 +164,23 @@ static void addGlobal(compiler::Compiler* compiler,
 	addGlobal(compiler, state, globalName, stream.str());
 }
 
+static size_t getParameterMemoryAddress()
+{
+	auto abi = abi::ApplicationBinaryInterface::getABI("archaeopteryx");
+	assert(abi != nullptr);
+	
+	auto region = abi->findRegion("parameter");
+	assert(region != nullptr);
+	
+	assert(region->isFixed());
+	
+	auto fixedRegion = static_cast<const abi::FixedAddressRegion*>(region);
+	
+	return fixedRegion->address;
+}
+
 static void addLaunch(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	if(state.launch.gridDim.y > 1 || state.launch.gridDim.z > 1)
 	{
@@ -177,6 +196,8 @@ static void addLaunch(compiler::Compiler* compiler,
 
 	addGlobal(compiler, state, "simulated-parameter-memory-size",
 		state.launch.parameterMemory.size());
+	addGlobal(compiler, state, "simulated-parameter-memory-address",
+		getParameterMemoryAddress());
 	addGlobal(compiler, state, "simulated-parameter-memory",
 		state.launch.parameterMemory);
 	
@@ -192,7 +213,7 @@ static void addLaunch(compiler::Compiler* compiler,
 }
 
 static void addAllocations(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	if(!state.globalVariables.empty())
 	{
@@ -211,7 +232,7 @@ static void addAllocations(compiler::Compiler* compiler,
 }
 
 static void addAllocationChecks(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	if(!state.postLaunchGlobalVariables.empty())
 	{
@@ -231,7 +252,7 @@ static void addAllocationChecks(compiler::Compiler* compiler,
 }
 
 static void addVariablesForTraceData(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	addTextures(compiler, state);
 	addLaunch(compiler, state);
@@ -240,7 +261,7 @@ static void addVariablesForTraceData(compiler::Compiler* compiler,
 }
 
 static void archaeopteryxCodeGen(compiler::Compiler* compiler,
-	const util::ExtractedDeviceState& state)
+	const ExtractedDeviceState& state)
 {
 	codegen::ArchaeopteryxTarget target;
 

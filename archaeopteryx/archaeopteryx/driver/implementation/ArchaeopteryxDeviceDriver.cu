@@ -121,12 +121,13 @@ __device__ void ArchaeopteryxDeviceDriver::_extractSimulatorParameters()
 	
 	ir::Binary* binary = rt::Runtime::getSelectedBinary();
 
-	addKnobFromBinary(binary, "simulated-ctas"                 );
-	addKnobFromBinary(binary, "simulated-parameter-memory-size");
-	addKnobFromBinary(binary, "simulated-parameter-memory"     );
-	addKnobFromBinary(binary, "simulated-threads-per-cta"      );
-	addKnobFromBinary(binary, "simulated-shared-memory-per-cta");
-	addKnobFromBinary(binary, "simulated-kernel-name"          );
+	addKnobFromBinary(binary, "simulated-ctas"                    );
+	addKnobFromBinary(binary, "simulated-parameter-memory-size"   );
+	addKnobFromBinary(binary, "simulated-parameter-memory"        );
+	addKnobFromBinary(binary, "simulated-parameter-memory-address");
+	addKnobFromBinary(binary, "simulated-threads-per-cta"         );
+	addKnobFromBinary(binary, "simulated-shared-memory-per-cta"   );
+	addKnobFromBinary(binary, "simulated-kernel-name"             );
 }
 
 __device__ rt::Runtime::Address getAddress(const util::string& symbol)

@@ -44,6 +44,8 @@ static void layoutGlobals(ir::Module& module, GlobalToAddressMap& globals,
 	const abi::ApplicationBinaryInterface& abi);
 static void layoutLocals(ir::Function& function, LocalToAddressMap& globals,
 	const abi::ApplicationBinaryInterface& abi);
+static void layoutArguments(ir::Function& function, LocalToAddressMap& globals,
+	const abi::ApplicationBinaryInterface& abi);
 static void lowerFunction(ir::Function& function,
 	const abi::ApplicationBinaryInterface& abi,
 	const GlobalToAddressMap& globals, const LocalToAddressMap& locals);
@@ -69,6 +71,7 @@ void EnforceArchaeopteryxABIPass::runOnModule(Module& m)
 		LocalToAddressMap locals;
 	
 		layoutLocals(*function, locals, *abi);
+		layoutArguments(*function, locals, *abi);
 		
 		// barrier
 
@@ -110,6 +113,32 @@ static void layoutLocals(ir::Function& function, LocalToAddressMap& locals,
 	assertM(function.local_empty(), "Lowering locals not implemented.");
 }
 
+static void layoutArguments(ir::Function& function, LocalToAddressMap& locals,
+	const abi::ApplicationBinaryInterface& abi)
+{
+	// functions put their parameters on the stack
+	if(!function.hasAttribute("kernel")) return;
+
+	report(" Lowering parameters...");
+
+	unsigned int offset = 0;
+
+	for(auto argument = function.argument_begin();
+		argument != function.argument_end(); ++argument)
+	{
+		offset = align(offset, argument->type().alignment());
+	
+		report("  Laying out '" << argument->name() << "' at " << offset);
+		
+		locals.insert(std::make_pair(argument->name(), offset));
+		
+		offset += argument->type().bytes();
+	}
+	
+	// Kernels shouldn't return anything
+	assert(function.returned_empty());
+}
+
 static void lowerCall(ir::Instruction* i,
 	const abi::ApplicationBinaryInterface& abi)
 {
@@ -133,6 +162,10 @@ static void lowerReturn(ir::Instruction* i,
 static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 	const LocalToAddressMap& locals)
 {
+	report("   Lowering address read '" << read->toString()
+		<< "' in instruction '"
+		<< read->instruction()->toString() << "'");
+
 	auto variableRead = static_cast<ir::AddressOperand*>(read);
 
 	auto local = locals.find(variableRead->globalValue->name());
@@ -143,6 +176,8 @@ static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 			read->instruction(), read->type());
 
 		read = immediate;
+
+		report("    to '" << read->toString() << "'");
 
 		delete variableRead;
 		return;
@@ -158,8 +193,48 @@ static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 
 	read = immediate;
 
+	report("    to '" << read->toString() << "'");
+
 	delete variableRead;
 
+}
+
+typedef abi::ApplicationBinaryInterface::FixedAddressRegion FixedAddressRegion;
+
+static void lowerArgument(ir::Operand*& read, const LocalToAddressMap& locals,
+	const abi::ApplicationBinaryInterface& abi)
+{
+
+	report("   Lowering argument read '" << read->toString()
+		<< "' in instruction '"
+		<< read->instruction()->toString() << "'");
+
+	auto argumentRead = static_cast<ir::ArgumentOperand*>(read);
+
+	auto local = locals.find(argumentRead->argument->name());
+	assert(local != locals.end());
+	
+	auto region = abi.findRegion("parameter");
+	assert(region != nullptr);
+	
+	if(region->isFixed())
+	{
+		auto fixedRegion = static_cast<const FixedAddressRegion*>(region);
+
+		auto immediate = new ir::ImmediateOperand(
+			local->second + fixedRegion->address,
+			read->instruction(), read->type());
+
+		read = immediate;
+
+		report("    to '" << read->toString() << "'");
+
+		delete argumentRead;
+	}
+	else
+	{
+		assertM(false, "Not implemented.");
+	}
 }
 
 static void lowerEntryPoint(ir::Function& function, 
@@ -211,13 +286,18 @@ static void lowerFunction(ir::Function& function,
 			}
 
 			// lower variable accesses
-			for(auto read : instruction->reads)
+			for(auto read = instruction->reads.begin();
+				read != instruction->reads.end(); ++read)
 			{
-				if(read->isAddress())
+				if((*read)->isAddress())
 				{
-					if(read->isBasicBlock()) continue;
+					if((*read)->isBasicBlock()) continue;
 					
-					lowerAddress(read, globals, locals);
+					lowerAddress(*read, globals, locals);
+				}
+				else if((*read)->isArgument())
+				{
+					lowerArgument(*read, locals, abi);
 				}
 			}
 		}

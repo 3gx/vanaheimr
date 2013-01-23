@@ -34,7 +34,7 @@ public:
 	const RegisterFile* registerFile() const;
 	Id                  id()           const;
 	Id                  uniqueId()     const;
-	std::string         name()         const;
+	const std::string&  name()         const;
 
 private:
 	const RegisterFile* _registerFile;

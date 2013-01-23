@@ -45,6 +45,10 @@ public:
 	public:
 		Binding binding() const;
 	
+		bool isRegister() const;
+		bool    isFixed() const;
+		bool isIndirect() const;
+	
 	public:
 		std::string  name;
 		unsigned int bytes;
@@ -195,6 +199,8 @@ private:
 	BoundVariableMap     _variables;
 	
 };
+
+typedef ApplicationBinaryInterface::FixedAddressRegion FixedAddressRegion;
 
 }
 

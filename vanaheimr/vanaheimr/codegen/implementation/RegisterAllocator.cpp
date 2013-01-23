@@ -15,7 +15,7 @@ namespace codegen
 
 RegisterAllocator::RegisterAllocator(const StringVector& analyses,
 	const std::string& n)
-: transforms::FunctionPass(analyses, n)
+: transforms::FunctionPass(analyses, n, {"register-allocator"})
 {
 	
 }
