@@ -112,7 +112,7 @@ __device__ void Runtime::loadKnobs()
 		util::KnobDatabase::getKnob<Address>(
 			"simulated-parameter-memory-address");
 	
-	device_report("Allocating parameter memory at address 0x%p\n",
+	device_report("Allocating parameter memory at address %p\n",
 		parameterMemoryAddress);
 
 	state->parameterMemoryAddress = parameterMemoryAddress;
@@ -123,7 +123,7 @@ __device__ void Runtime::loadKnobs()
 
 	device_assert(success);
 			
-	device_report(" Allocated parameter memory at address 0x%p\n",
+	device_report(" Allocated parameter memory at address %p\n",
 		state->parameterMemoryAddress);
 }
 
