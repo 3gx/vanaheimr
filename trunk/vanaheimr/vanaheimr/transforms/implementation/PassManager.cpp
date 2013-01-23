@@ -629,20 +629,46 @@ void PassManager::invalidateAnalysis(const std::string& type)
 	}
 }
 
+static bool passContainsClass(const Pass& pass, const std::string& className)
+{
+	for(auto passClassName : pass.classes)
+	{
+		if(passClassName == className) return true;
+	}
+	
+	return false;
+}
+
 Pass* PassManager::getPass(const std::string& name)
 {
-	PassMap::iterator pass = _previouslyRunPasses.find(name);
-	if(pass == _previouslyRunPasses.end()) return 0;
+	auto pass = _previouslyRunPasses.find(name);
+	if(pass != _previouslyRunPasses.end()) return pass->second;
 	
-	return pass->second;
+	for(auto pass : _previouslyRunPasses)
+	{
+		if(passContainsClass(*pass.second, name))
+		{
+			return pass.second;
+		}
+	}
+	
+	return nullptr;
 }
 
 const Pass* PassManager::getPass(const std::string& name) const
 {
-	PassMap::const_iterator pass = _previouslyRunPasses.find(name);
-	if(pass == _previouslyRunPasses.end()) return 0;
+	auto pass = _previouslyRunPasses.find(name);
+	if(pass != _previouslyRunPasses.end()) return pass->second;
 	
-	return pass->second;
+	for(auto pass : _previouslyRunPasses)
+	{
+		if(passContainsClass(*pass.second, name))
+		{
+			return pass.second;
+		}
+	}
+	
+	return nullptr;
 }
 
 PassManager::PassWaveList PassManager::_schedulePasses()

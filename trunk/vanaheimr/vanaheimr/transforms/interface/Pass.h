@@ -57,11 +57,16 @@ public:
 	
 	/*! \brief The name of the pass */
 	const std::string name;
+	
+	/*! \brief Classes of passes that this pass falls into
+		(e.g. register-allocators) */
+	const StringVector classes;
 
 public:
 	/*! \brief The default constructor sets the type */
 	Pass(Type t = InvalidPass, const StringVector& analyses = StringVector(),
-		const std::string& n = "");
+		const std::string& n = "",
+		const StringVector& classes = StringVector());
 	/*! \brief Virtual destructor */
 	virtual ~Pass();
 	
@@ -112,7 +117,8 @@ class ImmutablePass : public Pass
 public:
 	/*! \brief The default constructor sets the type */
 	ImmutablePass(const StringVector& analyses = StringVector(),
-		const std::string& n = "");
+		const std::string& n = "",
+		const StringVector& classes = StringVector());
 	/*! \brief Virtual destructor */
 	virtual ~ImmutablePass();
 	
@@ -127,7 +133,8 @@ class ModulePass : public Pass
 public:
 	/*! \brief The default constructor sets the type */
 	ModulePass(const StringVector& analyses = StringVector(),
-		const std::string& n = "");
+		const std::string& n = "",
+		const StringVector& classes = StringVector());
 	/*! \brief Virtual destructor */
 	virtual ~ModulePass();
 	
@@ -142,7 +149,8 @@ class FunctionPass : public Pass
 public:
 	/*! \brief The default constructor sets the type */
 	FunctionPass(const StringVector& analyses = StringVector(),
-		const std::string& n = "");
+		const std::string& n = "",
+		const StringVector& classes = StringVector());
 	/*! \brief Virtual destructor */
 	virtual ~FunctionPass();
 	
@@ -161,7 +169,8 @@ class ImmutableFunctionPass : public Pass
 public:
 	/*! \brief The default constructor sets the type */
 	ImmutableFunctionPass(const StringVector& analyses = StringVector(),
-		const std::string& n = "");
+		const std::string& n = "",
+		const StringVector& classes = StringVector());
 	/*! \brief Virtual destructor */
 	virtual ~ImmutableFunctionPass();
 	
@@ -180,7 +189,8 @@ class BasicBlockPass : public Pass
 public:
 	/*! \brief The default constructor sets the type */
 	BasicBlockPass(const StringVector& analyses = StringVector(),
-		const std::string& n = "");
+		const std::string& n = "",
+		const StringVector& classes = StringVector());
 	/*! \brief Virtual destructor */
 	virtual ~BasicBlockPass();
 	

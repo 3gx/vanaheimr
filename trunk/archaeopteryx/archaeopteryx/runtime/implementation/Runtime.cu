@@ -110,7 +110,9 @@ __device__ void Runtime::loadKnobs()
 
 	state->parameterMemoryAddress =
 		mmap(util::KnobDatabase::getKnob<size_t>(
-			"simulated-parameter-memory-size"));
+			"simulated-parameter-memory-size"),
+			util::KnobDatabase::getKnob<Address>(
+			"simulated-parameter-memory-address"));
 			
 	device_report("Allocated parameter memory at address 0x%p\n",
 		state->parameterMemoryAddress);

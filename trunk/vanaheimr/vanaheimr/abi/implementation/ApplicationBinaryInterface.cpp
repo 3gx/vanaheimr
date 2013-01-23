@@ -30,6 +30,20 @@ ApplicationBinaryInterface::MemoryBinding
 	return _binding;
 }
 
+bool ApplicationBinaryInterface::MemoryRegion::isRegister() const
+{
+	return binding() == Register;
+}
+
+bool ApplicationBinaryInterface::MemoryRegion::isFixed() const
+{
+	return binding() == Fixed;
+}
+
+bool ApplicationBinaryInterface::MemoryRegion::isIndirect() const
+{
+	return binding() == Indirect;
+}
 
 ApplicationBinaryInterface::RegisterBoundRegion::RegisterBoundRegion(
 	const std::string& name, unsigned int bytes,

@@ -24,16 +24,16 @@ MachineModel::MachineModel(const std::string& n)
 
 const PhysicalRegister* MachineModel::getPhysicalRegister(RegisterId id) const
 {
-	assertM(false, "Not implemented.");
+	auto reg = _idToRegisters.find(id);
 	
-	return nullptr;
+	if(reg == _idToRegisters.end()) return nullptr;
+	
+	return reg->second;
 }
 
 unsigned int MachineModel::totalRegisterCount() const
 {
-	assertM(false, "Not implemented.");
-
-	return 0;
+	return _idToRegisters.size();
 }
 
 void MachineModel::configure(const StringVector& )
@@ -59,7 +59,13 @@ void MachineModel::addRegisterFile(const std::string& name,
 	for(unsigned int i = 0; i < registers; ++i)
 	{
 		file->second.registers.push_back(PhysicalRegister(&file->second, i,
-			_idToRegisters.size(), makeRegisterName(file->second, i)));
+			_idToRegisters.size() + i, makeRegisterName(file->second, i)));
+	}
+	
+	for(auto reg = file->second.registers.begin();
+		reg != file->second.registers.end(); ++reg)
+	{
+		_idToRegisters.insert(std::make_pair(reg->uniqueId(), &*reg));
 	}
 }
 

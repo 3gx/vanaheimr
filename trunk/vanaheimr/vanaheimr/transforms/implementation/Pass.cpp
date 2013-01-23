@@ -17,8 +17,9 @@ namespace vanaheimr
 namespace transforms
 {
 
-Pass::Pass(Type t, const StringVector& a, const std::string& n)
-	: type(t), analyses(a), name(n), _manager(0)
+Pass::Pass(Type t, const StringVector& a, const std::string& n,
+	const StringVector& c)
+	: type(t), analyses(a), name(n), classes(c), _manager(0)
 {
 
 }
@@ -83,8 +84,9 @@ std::string Pass::toString() const
 	return name;
 }
 
-ImmutablePass::ImmutablePass(const StringVector& a, const std::string& n) 
- : Pass(Pass::ImmutablePass, a, n)
+ImmutablePass::ImmutablePass(const StringVector& a, const std::string& n,
+	const StringVector& c) 
+ : Pass(Pass::ImmutablePass, a, n, c)
 {
 
 }
@@ -94,8 +96,9 @@ ImmutablePass::~ImmutablePass()
 
 }
 
-ModulePass::ModulePass(const StringVector& a, const std::string& n) 
- : Pass( Pass::ModulePass, a, n)
+ModulePass::ModulePass(const StringVector& a, const std::string& n,
+	const StringVector& c) 
+ : Pass( Pass::ModulePass, a, n, c)
 {
 
 }
@@ -105,8 +108,9 @@ ModulePass::~ModulePass()
 
 }
 
-FunctionPass::FunctionPass(const StringVector& a, const std::string& n)
- : Pass(Pass::FunctionPass, a, n)
+FunctionPass::FunctionPass(const StringVector& a, const std::string& n,
+	const StringVector& c)
+ : Pass(Pass::FunctionPass, a, n, c)
 {
 
 }
@@ -127,8 +131,8 @@ void FunctionPass::finalize()
 }
 
 ImmutableFunctionPass::ImmutableFunctionPass(
-	const StringVector& a, const std::string& n)
- : Pass(Pass::ImmutableFunctionPass, a, n)
+	const StringVector& a, const std::string& n, const StringVector& c)
+ : Pass(Pass::ImmutableFunctionPass, a, n, c)
 {
 
 }
@@ -148,8 +152,9 @@ void ImmutableFunctionPass::finalize()
 
 }
 
-BasicBlockPass::BasicBlockPass(const StringVector& a, const std::string& n)
- : Pass(Pass::BasicBlockPass, a, n)
+BasicBlockPass::BasicBlockPass(const StringVector& a, const std::string& n,
+	const StringVector& c)
+ : Pass(Pass::BasicBlockPass, a, n, c)
 {
 
 }

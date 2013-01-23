@@ -7,6 +7,8 @@
 // Vanaheimr Includes
 #include <vanaheimr/codegen/interface/GenericSpillCodePass.h>
 
+#include <vanaheimr/codegen/interface/RegisterAllocator.h>
+
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
@@ -24,7 +26,12 @@ GenericSpillCodePass::GenericSpillCodePass()
 
 void GenericSpillCodePass::runOnFunction(Function& f)
 {
-	assertM(false, "Not implemented.");
+	auto pass = static_cast<RegisterAllocator*>(getPass("register-allocator"));
+	assert(pass != nullptr);
+	
+	auto spilled = pass->getSpilledRegisters();
+	
+	assertM(spilled.empty(), "Spilling not implemented");	
 }
 
 }

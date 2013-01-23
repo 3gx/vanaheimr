@@ -1064,7 +1064,7 @@
 /* Module saxpy_small.cu */
 
 /* Function prototypes */
-.entry _Z5saxpyPdPKddm (.param  .u64 _Z5saxpyPdPKddm_param_0, .param  .u64 _Z5saxpyPdPKddm_param_1, .param  .f64 _Z5saxpyPdPKddm_param_2, .param  .u64 _Z5saxpyPdPKddm_param_3)
+.entry _Z5saxpyPdPKddm (.param  .u64 _Z5saxpyPdPKddm_param_0, .param  .u64 _Z5saxpyPdPKddm_param_1, .param  .f64 _Z5saxpyPdPKddm_param_2, .param  .u64 _Z5saxpyPdPKddm_param_3);
 
 /* Globals */
 

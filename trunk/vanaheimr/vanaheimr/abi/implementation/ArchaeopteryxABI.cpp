@@ -8,6 +8,8 @@
 #include <vanaheimr/abi/interface/ArchaeopteryxABI.h>
 #include <vanaheimr/abi/interface/ApplicationBinaryInterface.h>
 
+#include <vanaheimr/ir/interface/Global.h>
+
 namespace vanaheimr
 {
 
@@ -18,7 +20,8 @@ ApplicationBinaryInterface* getArchaeopteryxABI()
 {
 	auto archaeopteryxABI = new ApplicationBinaryInterface;
 
-	// TODO initialize this
+	archaeopteryxABI->insert(new ApplicationBinaryInterface::FixedAddressRegion(
+		"parameter", 1024, 8, ir::Global::Shared, 4096));
 
 	return archaeopteryxABI;
 }
