@@ -448,6 +448,9 @@ static __device__ ir::Binary::PC executeLd(Instruction* instruction,
 
 	Value physical = parentBlock->translateVirtualToPhysical(a);
 
+	device_report(" Thread %d, loading from (%p virtual) (%p physical)\n",
+		threadId, a, physical);
+
 	Value d = 0;
 	
 	switch(ld->d.asIndirect.type)

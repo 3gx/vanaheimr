@@ -36,21 +36,21 @@ __device__ bool MemoryPool::allocate(uint64_t size, Address address)
 				"allocation at 0x%p\n", page->second.address());
 			return false;
 		}
-
-		if(page != _pages.begin())
-		{
-			--page;
-
-			// check against the previous allocation
-			if(page->second.endAddress() > address)
-			{
-				device_report(" failed, collision with next "
-					"allocation at 0x%p\n", page->second.address());
-				return false;
-			}
-		}
 	}
 
+	if(page != _pages.begin())
+	{
+		--page;
+
+		// check against the previous allocation
+		if(page->second.endAddress() > address)
+		{
+			device_report(" failed, collision with next "
+				"allocation at 0x%p\n", page->second.address());
+			return false;
+		}
+	}
+	
 	_pages.insert(util::make_pair(address, Page(size, address)));
 
 	device_report(" success\n");
@@ -91,12 +91,26 @@ __device__ MemoryPool::Address MemoryPool::translate(Address address)
 {
 	PageMap::iterator page = _pages.lower_bound(address);
 
-	if(page == _pages.end()) return InvalidAddress;
-
-	if(address < page->second.endAddress())
+	if(page != _pages.end())
 	{
-		return address - page->second.address() +
-			page->second.physicalAddress();
+		// check against the next allocation
+		if(page->second.address() == address)
+		{
+			return address - page->second.address() +
+				page->second.physicalAddress();
+		}
+	}
+
+	if(page != _pages.begin())
+	{
+		--page;
+
+		// check against the previous allocation
+		if(page->second.endAddress() > address)
+		{
+			return address - page->second.address() +
+				page->second.physicalAddress();
+		}
 	}
 	
 	return InvalidAddress;
