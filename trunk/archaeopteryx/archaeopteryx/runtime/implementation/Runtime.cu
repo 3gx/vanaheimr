@@ -108,13 +108,22 @@ __device__ void Runtime::loadKnobs()
 	state->kernel.linkRegister =
 		util::KnobDatabase::getKnob<unsigned int>("simulated-link-register");
 
-	state->parameterMemoryAddress =
-		mmap(util::KnobDatabase::getKnob<size_t>(
+	Address parameterMemoryAddress = 
+		util::KnobDatabase::getKnob<Address>(
+			"simulated-parameter-memory-address");
+	
+	device_report("Allocating parameter memory at address 0x%p\n",
+		parameterMemoryAddress);
+
+	state->parameterMemoryAddress = parameterMemoryAddress;
+
+	bool success = mmap(util::KnobDatabase::getKnob<size_t>(
 			"simulated-parameter-memory-size"),
-			util::KnobDatabase::getKnob<Address>(
-			"simulated-parameter-memory-address"));
+			parameterMemoryAddress);
+
+	device_assert(success);
 			
-	device_report("Allocated parameter memory at address 0x%p\n",
+	device_report(" Allocated parameter memory at address 0x%p\n",
 		state->parameterMemoryAddress);
 }
 
