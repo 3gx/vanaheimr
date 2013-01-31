@@ -145,10 +145,76 @@ static void lowerCall(ir::Instruction* i,
 	assertM(false, "call lowering not implemented.");
 }
 
+static void getVariable(const abi::BoundVariable& variable,
+	ir::Operand* destination)
+{
+	auto    block = destination->instruction()->block();
+	auto function = block->function;
+
+	switch(variable.binding())
+	{
+	case abi::BoundVariable::Register:
+	{
+		const abi::RegisterBoundVariable& registerBinding =
+			static_cast<const abi::RegisterBoundVariable&>(variable);
+	
+		auto move = new ir::Bitcast(block);
+
+		auto vr = function->findVirtualRegister(variable.name);
+		
+		if(vr == function->register_end())
+		{
+			vr = function->newVirtualRegister();
+		}
+
+		move->setD(destination);
+		move->setA();
+	}
+	case abi::BoundVariable::Memory:
+	{
+
+	}
+	}
+}
+
+static bool tryLoweringSpecialRegisterAccess(ir::Instruction* i,
+	const abi::ApplicationBinaryInterface& abi)
+{
+	typedef std::map<std::string, std::string> StringMap;
+
+	auto call = static_cast<ir::Call*>(i);
+
+	assert(call->target()->isAddress());
+
+	auto targetOperand = static_cast<ir::AddressOperand*>(call->target());
+
+	auto specifier = "_Zintrinsic_getspecial_";
+
+	if(targetOperand->globalValue->name().find(specifier) != 0)
+	{
+		return false;
+	}
+
+	auto special = targetOperand->globalValue->name().substr(
+		std::strlen(specifier));
+
+	auto variable = abi.findVariable(special);
+
+	if(variable == nullptr) return false;
+
+	assert(call->returned().size() == 1);
+
+	getVariable(*variable, call->returned.back()->clone());
+
+	call->eraseFromBlock();
+}
+
 static void lowerIntrinsic(ir::Instruction* i,
 	const abi::ApplicationBinaryInterface& abi)
 {
-	// This is a no-op
+	if(tryLoweringSpecialRegisterAccess(i, abi)) return;
+
+
 }
 
 static void lowerReturn(ir::Instruction* i,

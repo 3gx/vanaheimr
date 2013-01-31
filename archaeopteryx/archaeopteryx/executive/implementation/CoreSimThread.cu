@@ -8,6 +8,7 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/executive/interface/CoreSimThread.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
+#include <archaeopteryx/executive/interface/Intrinsics.h>
 
 #include <archaeopteryx/util/interface/debug.h>
 
@@ -304,6 +305,13 @@ static __device__ ir::Binary::PC executeCall(Instruction* instruction,
 	typedef vanaheimr::as::Call Call;
 
 	Call* call = static_cast<Call*>(instruction);
+
+	if(isIntrinsic(call))
+	{
+		executeIntrinsic(instruction, parentBlock, threadId);
+
+		return pc + 1;
+	}
 
 	Value a = getOperand(call->target, parentBlock, threadId);
 
