@@ -10,6 +10,8 @@
 
 #include <vanaheimr/ir/interface/Global.h>
 
+#include <vanaheimr/compiler/interface/Compiler.h>
+
 namespace vanaheimr
 {
 
@@ -20,8 +22,15 @@ ApplicationBinaryInterface* getArchaeopteryxABI()
 {
 	auto archaeopteryxABI = new ApplicationBinaryInterface;
 
-	archaeopteryxABI->insert(new ApplicationBinaryInterface::FixedAddressRegion(
+	// Memory Regions
+	archaeopteryxABI->insert(new FixedAddressRegion(
 		"parameter", 1024, 8, ir::Global::Shared, 4096));
+
+	// Bound Variables
+	archaeopteryxABI->insert(new RegisterBoundVariable(
+		"ctaid_x", , "r0"));
+
+	
 
 	return archaeopteryxABI;
 }

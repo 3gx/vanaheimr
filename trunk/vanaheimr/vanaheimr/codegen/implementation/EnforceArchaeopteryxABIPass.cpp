@@ -18,6 +18,9 @@
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
+// Standard Library Includes
+#include <cstring>
+
 // Preprocessor Macros
 #ifdef REPORT_BASE
 #undef REPORT_BASE
@@ -148,8 +151,8 @@ static void lowerCall(ir::Instruction* i,
 static void getVariable(const abi::BoundVariable& variable,
 	ir::Operand* destination)
 {
-	auto    block = destination->instruction()->block();
-	auto function = block->function;
+	auto    block = destination->instruction()->block;
+	auto function = block->function();
 
 	switch(variable.binding())
 	{
@@ -160,19 +163,22 @@ static void getVariable(const abi::BoundVariable& variable,
 	
 		auto move = new ir::Bitcast(block);
 
-		auto vr = function->findVirtualRegister(variable.name);
+		auto vr = function->findVirtualRegister(registerBinding.registerName);
 		
 		if(vr == function->register_end())
 		{
-			vr = function->newVirtualRegister();
+			vr = function->newVirtualRegister(registerBinding.type,
+				registerBinding.registerName);
 		}
 
+		move->setGuard(new ir::PredicateOperand(
+			ir::PredicateOperand::PredicateTrue, move));
 		move->setD(destination);
-		move->setA();
+		move->setA(new ir::RegisterOperand(&*vr, move));
 	}
 	case abi::BoundVariable::Memory:
 	{
-
+		assertM(false, "Memory bound variables not implemented.");
 	}
 	}
 }
@@ -195,18 +201,30 @@ static bool tryLoweringSpecialRegisterAccess(ir::Instruction* i,
 		return false;
 	}
 
+	report("   Trying to lower special register access " << i->toString());
+
 	auto special = targetOperand->globalValue->name().substr(
 		std::strlen(specifier));
 
 	auto variable = abi.findVariable(special);
 
-	if(variable == nullptr) return false;
-
+	if(variable == nullptr)
+	{
+		report("    could not find special variable '" << special
+			<< "' in the machine model." );
+	
+		return false;
+	}
+	
 	assert(call->returned().size() == 1);
 
-	getVariable(*variable, call->returned.back()->clone());
+	auto returned = call->returned();
+
+	getVariable(*variable, returned.back()->clone());
 
 	call->eraseFromBlock();
+	
+	return true;
 }
 
 static void lowerIntrinsic(ir::Instruction* i,
@@ -214,7 +232,8 @@ static void lowerIntrinsic(ir::Instruction* i,
 {
 	if(tryLoweringSpecialRegisterAccess(i, abi)) return;
 
-
+	// TODO add other intrinsics
+	assertM(false, "Lowering not implemented for intrisic - " << i->toString());
 }
 
 static void lowerReturn(ir::Instruction* i,

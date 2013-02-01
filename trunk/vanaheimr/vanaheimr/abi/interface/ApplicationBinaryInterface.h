@@ -200,9 +200,10 @@ private:
 	
 };
 
-typedef ApplicationBinaryInterface::FixedAddressRegion FixedAddressRegion;
-typedef ApplicationBinaryInterface::BoundVariable      BoundVariable;
-typedef ApplicationBinaryInterface::MemoryRegion       MemoryRegion;
+typedef ApplicationBinaryInterface::FixedAddressRegion    FixedAddressRegion;
+typedef ApplicationBinaryInterface::BoundVariable         BoundVariable;
+typedef ApplicationBinaryInterface::RegisterBoundVariable RegisterBoundVariable;
+typedef ApplicationBinaryInterface::MemoryRegion          MemoryRegion;
 
 }
 
