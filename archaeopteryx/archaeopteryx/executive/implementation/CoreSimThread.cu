@@ -306,9 +306,9 @@ static __device__ ir::Binary::PC executeCall(Instruction* instruction,
 
 	Call* call = static_cast<Call*>(instruction);
 
-	if(isIntrinsic(call))
+	if(Intrinsics::isIntrinsic(call, parentBlock))
 	{
-		executeIntrinsic(instruction, parentBlock, threadId);
+		Intrinsics::execute(call, parentBlock, threadId);
 
 		return pc + 1;
 	}

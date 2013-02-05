@@ -77,7 +77,8 @@ class CoreSimBlock
         __device__ void setupCoreSimBlock(unsigned int blockId,
         	unsigned int registers, const CoreSimKernel* kernel);
         __device__ void setupBinary(ir::Binary* binary);
-    
+		__device__ ir::Binary* binary();   
+ 
     public:
         // Entry point to the block simulation
         //  It performs the following operations

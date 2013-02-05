@@ -86,6 +86,8 @@ public:
 
 public:
 	/*! \brief Get the name of a symbol */
+	__device__ util::string getSymbolName(unsigned int symbolTableOffset);
+	/*! \brief Get the name of a symbol */
 	__device__ util::string getSymbolName(SymbolTableEntry* symbol);
 	/*! \brief Get the size of a symbol */
 	__device__ size_t getSymbolSize(const char* name);

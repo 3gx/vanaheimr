@@ -188,6 +188,14 @@ __device__ util::string Binary::getSymbolName(SymbolTableEntry* symbol)
 	return name;
 }
 
+__device__ util::string Binary::getSymbolName(unsigned int offset)
+{
+	SymbolTableEntry* symbol = _symbolTable +
+		(offset - _header.symbolOffset) / sizeof(SymbolTableEntry);
+
+	return getSymbolName(symbol);
+}
+
 __device__ size_t Binary::getSymbolSize(const char* name)
 {
 	SymbolTableEntry* symbol = findSymbol(name);
