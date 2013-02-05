@@ -28,10 +28,14 @@ ApplicationBinaryInterface* getArchaeopteryxABI()
 
 	// Bound Variables
 	archaeopteryxABI->insert(new RegisterBoundVariable(
-		"ctaid_x", , "r0"));
-
+		"tid_x", compiler::Compiler::getSingleton()->getType("i16"),   "r32"));
 	
-
+	archaeopteryxABI->insert(new RegisterBoundVariable(
+		"ntid_x", compiler::Compiler::getSingleton()->getType("i16"), "r34"));
+	archaeopteryxABI->insert(new RegisterBoundVariable(
+		"ctaid_x", compiler::Compiler::getSingleton()->getType("i16"), "r33"));
+	
+	
 	return archaeopteryxABI;
 }
 

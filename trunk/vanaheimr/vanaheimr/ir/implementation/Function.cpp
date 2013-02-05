@@ -419,7 +419,26 @@ Function::register_iterator Function::erase(const VirtualRegister* r)
 		}
 	}
 	
+	assert(registerIterator != register_end());
+	
 	return erase(registerIterator);
+}
+
+Function::register_iterator Function::findVirtualRegister(
+	const std::string& name)
+{
+	register_iterator registerIterator = register_end();
+	
+	for(auto reg = register_begin(); reg != register_end(); ++reg)
+	{
+		if(reg->name == name)
+		{
+			registerIterator = reg;
+			break;
+		}
+	}
+	
+	return registerIterator;
 }
 
 Function::local_iterator Function::local_begin()
