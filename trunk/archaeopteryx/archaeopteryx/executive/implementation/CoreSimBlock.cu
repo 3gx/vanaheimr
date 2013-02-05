@@ -65,6 +65,11 @@ __device__ void CoreSimBlock::setupBinary(ir::Binary* binary)
 	m_blockState.binary = binary;
 }
 
+__device__ ir::Binary* CoreSimBlock::binary()
+{
+	return m_blockState.binary;
+}
+
 __device__ bool CoreSimBlock::areAllThreadsFinished()
 {
 	__shared__ bool tempFinished[WARP_SIZE];
@@ -86,9 +91,9 @@ __device__ bool CoreSimBlock::areAllThreadsFinished()
 		if (getThreadIdInWarp() % i == 0)
 		{
 			tempFinished[getThreadIdInWarp()] = finished;
-		}
-
+		
 		// barrier
+		}
 	}
 	
 	finished = tempFinished[0];
