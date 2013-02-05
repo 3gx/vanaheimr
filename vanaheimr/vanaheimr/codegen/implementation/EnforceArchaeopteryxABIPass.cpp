@@ -175,10 +175,17 @@ static void getVariable(const abi::BoundVariable& variable,
 			ir::PredicateOperand::PredicateTrue, move));
 		move->setD(destination);
 		move->setA(new ir::RegisterOperand(&*vr, move));
+
+		report("    to " << move->toString());
+
+		block->insert(destination->instruction(), move);
+
+		break;
 	}
 	case abi::BoundVariable::Memory:
 	{
 		assertM(false, "Memory bound variables not implemented.");
+		break;
 	}
 	}
 }
@@ -227,10 +234,19 @@ static bool tryLoweringSpecialRegisterAccess(ir::Instruction* i,
 	return true;
 }
 
+static bool isSupportedIntrinsic(ir::Instruction* i,
+	const abi::ApplicationBinaryInterface& abi)
+{
+	// TODO: query the machine model to match the intrinsic name
+
+	return true;
+}
+
 static void lowerIntrinsic(ir::Instruction* i,
 	const abi::ApplicationBinaryInterface& abi)
 {
 	if(tryLoweringSpecialRegisterAccess(i, abi)) return;
+	if(isSupportedIntrinsic(i, abi))             return;
 
 	// TODO add other intrinsics
 	assertM(false, "Lowering not implemented for intrisic - " << i->toString());
@@ -346,33 +362,35 @@ static void lowerFunction(ir::Function& function,
 	// for all 
 	for(auto block = function.begin(); block != function.end(); ++block)
 	{
-		for(auto instruction : *block)
+		for(auto instruction = block->begin(); instruction != block->end(); )
 		{
+			auto current = *instruction; ++instruction;
+		
 			// lower calls
-			if(instruction->isCall())
+			if(current->isCall())
 			{
-				if(instruction->isIntrinsic())
+				if(current->isIntrinsic())
 				{
-					lowerIntrinsic(instruction, abi);
+					lowerIntrinsic(current, abi);
 					continue;
 				}
 				else
 				{
-					lowerCall(instruction, abi);
+					lowerCall(current, abi);
 					continue;
 				}
 			}
 			
 			// lower returns
-			if(instruction->isReturn())
+			if(current->isReturn())
 			{
-				lowerReturn(instruction, abi);
+				lowerReturn(current, abi);
 				continue;
 			}
 
 			// lower variable accesses
-			for(auto read = instruction->reads.begin();
-				read != instruction->reads.end(); ++read)
+			for(auto read = current->reads.begin();
+				read != current->reads.end(); ++read)
 			{
 				if((*read)->isAddress())
 				{
