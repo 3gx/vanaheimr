@@ -8,6 +8,7 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/executive/interface/CoreSimKernel.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
+#include <archaeopteryx/executive/interface/Intrinsics.h>
 
 #include <archaeopteryx/runtime/interface/Runtime.h>
 #include <archaeopteryx/runtime/interface/MemoryPool.h>
@@ -57,6 +58,8 @@ __device__ void Runtime::create()
 	device_report("Creating runtime.\n");
 
 	state = new RuntimeState;
+
+	executive::Intrinsics::loadIntrinsics();
 }
 
 __device__ void Runtime::destroy()
@@ -67,6 +70,8 @@ __device__ void Runtime::destroy()
 	unloadBinaries();
 
 	device_report(" destroying runtime state..\n");
+
+	executive::Intrinsics::unloadIntrinsics();
 	
 	delete state; state = 0;
 
@@ -105,6 +110,7 @@ __device__ void Runtime::loadKnobs()
 		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
 	state->hardwareCTAs.resize(ctas);
 
+	state->kernel.ctas = ctas;
 	state->kernel.linkRegister =
 		util::KnobDatabase::getKnob<unsigned int>("simulated-link-register");
 
