@@ -8,6 +8,7 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/executive/interface/Intrinsics.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
+#include <archaeopteryx/executive/interface/OperandAccess.h>
 
 #include <archaeopteryx/ir/interface/Binary.h>
 
@@ -66,6 +67,9 @@ __device__ bool Intrinsics::isIntrinsic(const vanaheimr::as::Call* call,
 
 class Intrinsic
 {
+public:
+	__device__ virtual ~Intrinsic() {}
+
 public:
 	__device__ virtual void execute(const vanaheimr::as::Call* call,
 		CoreSimBlock* block, unsigned int threadId) = 0;
@@ -140,19 +144,17 @@ __device__ void IntrinsicDatabase::addIntrinsic(const util::string& name,
 	_database[name] = intrinsic;
 }
 
-
 class GetNumberOfCtasInX : public Intrinsic
 {
 public:
 	__device__ virtual void execute(const vanaheimr::as::Call* call,
 		CoreSimBlock* block, unsigned int threadId)
 	{
-		uint64_t d = block->gridDimensions().x;
+		uint64_t d = block->getSimulatedBlockCount();
 
-		setRegister(getReturnValue(call), block, threadId, d);
+		setRegister(getReturnRegister(call, block), block, threadId, d);
 	}
 };
-
 
 __device__ void Intrinsics::loadIntrinsics()
 {

@@ -1,15 +1,16 @@
-/*	\file   Operand.cu
+/*	\file   OperandAccess.cu
 	\date   Tuesday February 5, 2013
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\brief  The source file for Operand accessor functions.
 */
 
 // Archaeopteryx Includes
-#include <archaeopteryx/executive/interface/Operand.h>
+#include <archaeopteryx/executive/interface/OperandAccess.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
 
 // Vanaheimr Includes
 #include <vanaheimr/asm/interface/Operand.h>
+#include <vanaheimr/asm/interface/Instruction.h>
 
 // Forward Declarations
 namespace archaeopteryx { namespace executive { class CoreSimBlock; } }
@@ -115,6 +116,35 @@ __device__ uint64_t getOperand(
 	CoreSimBlock* parentBlock, unsigned threadId)
 {
 	return getOperand(operandContainer.asOperand, parentBlock, threadId);
+}
+
+__device__ unsigned int getReturnRegister(const vanaheimr::as::Call* call,
+	CoreSimBlock* block)
+{
+	device_assert(call->returnArguments > 0);
+	
+	vanaheimr::as::OperandContainer operand;
+	
+	block->binary()->copyDataToAddress(&operand, call->returnArgumentOffset,
+		sizeof(vanaheimr::as::OperandContainer));
+
+	device_assert(operand.asOperand.mode == vanaheimr::as::Operand::Register);
+	
+	return operand.asRegister.reg;
+}
+
+__device__ void setRegister(OperandContainer& operandContainer,
+	CoreSimBlock* parentBlock, unsigned threadId, uint64_t result)
+{
+	const RegisterOperand& reg = operandContainer.asRegister;
+
+	parentBlock->setRegister(threadId, reg.reg, result);
+}
+
+__device__ void setRegister(unsigned int reg, CoreSimBlock* parentBlock,
+	unsigned threadId, const uint64_t result)
+{
+	parentBlock->setRegister(threadId, reg, result);
 }
 
 }
