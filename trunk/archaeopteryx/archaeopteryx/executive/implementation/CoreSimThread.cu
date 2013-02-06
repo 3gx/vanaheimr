@@ -9,6 +9,7 @@
 #include <archaeopteryx/executive/interface/CoreSimThread.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/executive/interface/Intrinsics.h>
+#include <archaeopteryx/executive/interface/Operand.h>
 
 #include <archaeopteryx/util/interface/debug.h>
 
@@ -64,7 +65,7 @@ __device__ void CoreSimThread::setThreadId(unsigned id)
 }
 
 template<typename T, typename F>
-__device__ T bitcast(const F& from)
+__device__ static T bitcast(const F& from)
 {
 	union UnionCast
 	{
@@ -79,96 +80,6 @@ __device__ T bitcast(const F& from)
 	
 	return cast.to;
 
-}
-
-static __device__ CoreSimThread::Value getRegisterOperand(
-	const Operand& operand, CoreSimBlock* block, unsigned threadId)
-{
-	const RegisterOperand& reg =
-		static_cast<const RegisterOperand&>(operand); 
-
-	CoreSimThread::Value value = block->getRegister(threadId, reg.reg);
-
-	return value;
-}
-
-static __device__ CoreSimThread::Value getImmediateOperand(
-	const Operand& operand, CoreSimBlock* block, unsigned threadId)
-{
-	const ImmediateOperand& imm =
-		static_cast<const ImmediateOperand&>(operand); 
-
-	return imm.uint;
-}
-
-static __device__ CoreSimThread::Value getPredicateOperand(
-	const Operand& operand, CoreSimBlock* block, unsigned threadId)
-{
-	const PredicateOperand& reg =
-		static_cast<const PredicateOperand&>(operand); 
-	//FIX ME	
-	
-	Value value = block->getRegister(threadId, reg.reg);
-
-	switch(reg.modifier)
-	{
-	case PredicateOperand::StraightPredicate:
-	{
-		value = value;
-		break;
-	}
-	// TODO
-	}
-
-	return value;
-}
-
-static __device__ CoreSimThread::Value getIndirectOperand(
-	const Operand& operand, CoreSimBlock* block, unsigned threadId)
-{
-	const IndirectOperand& indirect =
-		static_cast<const IndirectOperand&>(operand); 
-	
-	Value address = block->getRegister(threadId, indirect.reg) +
-		indirect.offset;
-
-	//FIXMe	
-	return address;
-}
-
-static __device__ CoreSimThread::Value getSymbolOperand(
-	const Operand& operand, CoreSimBlock* block, unsigned threadId)
-{
-	device_assert_m(false, "Symbol operands not supported in emulator, "
-		"they should have been lowered!");
-
-	return 0;
-}
-
-typedef Value (*GetOperandValuePointer)(const Operand&,
-	CoreSimBlock*, unsigned);
-
-static __device__ GetOperandValuePointer getOperandFunctionTable[] = {
-	getRegisterOperand,
-	getImmediateOperand,
-	getPredicateOperand,
-	getIndirectOperand,
-	getSymbolOperand
-};
-
-static __device__ CoreSimThread::Value getOperand(const Operand& operand,
-	CoreSimBlock* parentBlock, unsigned threadId)
-{
-	GetOperandValuePointer function = getOperandFunctionTable[operand.mode];
-
-	return function(operand, parentBlock, threadId);
-}
-
-static __device__ CoreSimThread::Value getOperand(
-	const OperandContainer& operandContainer,
-	CoreSimBlock* parentBlock, unsigned threadId)
-{
-	return getOperand(operandContainer.asOperand, parentBlock, threadId);
 }
 
 template<typename T>

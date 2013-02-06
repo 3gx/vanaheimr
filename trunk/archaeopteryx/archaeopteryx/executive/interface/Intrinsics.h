@@ -17,6 +17,8 @@ namespace archaeopteryx
 namespace executive
 {
 
+class IntrinsicDatabase;
+
 class Intrinsics
 {
 public:
@@ -24,6 +26,10 @@ public:
 		CoreSimBlock* block);
 	__device__ static void execute(const vanaheimr::as::Call* call,
 		CoreSimBlock* block, unsigned int threadId);
+
+public:
+	__device__ static void loadIntrinsics();
+	__device__ static void unloadIntrinsics();
 
 };
 
