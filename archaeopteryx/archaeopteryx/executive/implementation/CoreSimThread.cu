@@ -9,7 +9,7 @@
 #include <archaeopteryx/executive/interface/CoreSimThread.h>
 #include <archaeopteryx/executive/interface/CoreSimBlock.h>
 #include <archaeopteryx/executive/interface/Intrinsics.h>
-#include <archaeopteryx/executive/interface/Operand.h>
+#include <archaeopteryx/executive/interface/OperandAccess.h>
 
 #include <archaeopteryx/util/interface/debug.h>
 
@@ -91,20 +91,6 @@ static __device__ CoreSimThread::FValue getOperandAs(
 		parentBlock, threadId);
 
 	return bitcast<T>(value);
-}
-
-static void __device__ setRegister(OperandContainer& operandContainer,
-	CoreSimBlock* parentBlock, unsigned threadId, const Value& result)
-{
-	const RegisterOperand& reg = operandContainer.asRegister;
-
-	parentBlock->setRegister(threadId, reg.reg, result);
-}
-
-static void __device__ setRegister(unsigned int reg, CoreSimBlock* parentBlock,
-	unsigned threadId, const Value& result)
-{
-	parentBlock->setRegister(threadId, reg, result);
 }
 
 static __device__ ir::Binary::PC executeAdd(Instruction* instruction,

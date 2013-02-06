@@ -110,7 +110,7 @@ __device__ void Runtime::loadKnobs()
 		util::KnobDatabase::getKnob<unsigned int>("simulator-ctas");
 	state->hardwareCTAs.resize(ctas);
 
-	state->kernel.ctas = ctas;
+	state->kernel.simulatedBlocks = ctas;
 	state->kernel.linkRegister =
 		util::KnobDatabase::getKnob<unsigned int>("simulated-link-register");
 
@@ -189,8 +189,8 @@ __global__ void launchSimulationInParallel()
     kernel_report("Booting up parallel simulation entry point with "
     	"(%d ctas, %d threads)\n", gridDim.x, blockDim.x);
     
-    state->kernel.launchKernel(state->simulatedBlockCount, 	
-        &state->hardwareCTAs[0], Runtime::getSelectedBinary());    
+    state->kernel.launchKernel(&state->hardwareCTAs[0],
+    	Runtime::getSelectedBinary());    
 }
 
 // Start a new asynchronous kernel with the right number of HW CTAs/threads
@@ -201,6 +201,7 @@ __device__ void Runtime::launchSimulation()
 	unsigned int threads =
 		util::KnobDatabase::getKnob<unsigned int>("simulator-threads-per-cta");
 	
+	state->kernel.simulatedBlocks = ctas;
 	launchSimulationInParallel<<<ctas, threads>>>();
 	cudaDeviceSynchronize();
 

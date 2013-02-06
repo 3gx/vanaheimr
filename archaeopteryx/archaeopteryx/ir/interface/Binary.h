@@ -99,6 +99,11 @@ public:
 	/*! \brief Get symbol names that match a substring */
 	__device__ StringVector getSymbolNamesThatMatch(const char* substring);
 
+public:
+	/*! \brief Copy from the data section to an address */
+	__device__ void copyDataToAddress(void* address, uint64_t offset,
+		uint64_t bytes);
+
 private:
 
 	/*! \brief Get a particular code page */

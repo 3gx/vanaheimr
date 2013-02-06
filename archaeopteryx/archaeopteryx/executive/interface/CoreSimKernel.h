@@ -12,7 +12,7 @@
 
 // Forward declarations
 namespace archaeopteryx { namespace executive { class CoreSimBlock; } }
-namespace archaeopteryx { namespace        ir { class Binary;       } }
+namespace archaeopteryx { namespace	       ir { class Binary;       } }
 
 namespace archaeopteryx
 {
@@ -26,17 +26,17 @@ public:
 	typedef uint64_t Address;
 
 public:
-   __device__ void launchKernel(unsigned int simulatedBlocks,
-		executive::CoreSimBlock* blocks, ir::Binary* binary);
-    
+   __device__ void launchKernel(executive::CoreSimBlock* blocks,
+   ir::Binary* binary);
+	
 public:
 	// Interface to CoreSimBlock
 	__device__ Address translateVirtualToPhysicalAddress(
 		Address virtualAddress) const;
-	__device__ unsigned int getLinkRegister() const;
 
 public:
 	unsigned int linkRegister;
+	unsigned int simulatedBlocks;
 
 };
 

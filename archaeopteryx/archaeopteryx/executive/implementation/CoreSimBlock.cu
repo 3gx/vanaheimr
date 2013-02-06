@@ -46,13 +46,6 @@ __device__ void CoreSimBlock::setupCoreSimBlock(unsigned int blockId,
 	m_threads = new CoreSimThread[m_blockState.threadsPerBlock];
 	m_warp    = m_threads + (threadIdx.x - getThreadIdInWarp());
 	
-	device_report("Setting up core sim block shared (%d bytes) "
-		"and local (%d bytes) memory\n",
-		m_blockState.sharedMemoryPerBlock, m_blockState.localMemoryPerThread);
-	
-	m_sharedMemory = new SharedMemory[m_blockState.sharedMemoryPerBlock];
-	m_localMemory  = new LocalMemory[m_blockState.localMemoryPerThread];
-	
 	for(unsigned i = 0; i < m_blockState.threadsPerBlock; ++i)
 	{
 		m_threads[i].setParentBlock(this);
@@ -334,7 +327,12 @@ __device__ unsigned int CoreSimBlock::returned(unsigned int threadId,
 
 __device__ unsigned int CoreSimBlock::getLinkRegister() const
 {
-	return m_kernel->getLinkRegister();
+	return m_kernel->linkRegister;
+}
+
+__device__ unsigned int CoreSimBlock::getSimulatedBlockCount() const
+{
+	return m_kernel->simulatedBlocks;
 }
 
 __device__ void CoreSimBlock::clearAllBarrierBits()

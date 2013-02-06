@@ -18,8 +18,8 @@ namespace archaeopteryx
 namespace executive
 {
 
-__device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks, 
-	CoreSimBlock* blocks, ir::Binary* binary)
+__device__ void CoreSimKernel::launchKernel(CoreSimBlock* blocks,
+	ir::Binary* binary)
 {
 	unsigned int registerCount = util::KnobDatabase::getKnob<unsigned int>(
 			"simulator-registers-per-thread");
@@ -38,18 +38,12 @@ __device__ void CoreSimKernel::launchKernel(unsigned int simulatedBlocks,
 
 		blocks[blockIdx.x].runBlock();
 	}
-    
 }
 
 __device__ CoreSimKernel::Address
 	CoreSimKernel::translateVirtualToPhysicalAddress(Address va) const
 {
     return rt::Runtime::translateVirtualToPhysicalAddress(va);
-}
-
-__device__ unsigned int CoreSimKernel::getLinkRegister() const
-{
-	return linkRegister;
 }
 
 }

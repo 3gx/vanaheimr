@@ -760,7 +760,7 @@ public:
 
 private:
         __device__ const __node_allocator& __node_alloc() const
-        {return __pair1_.second();}
+        {return __pair1_.second;}
               __device__ __node_pointer& __begin_node() {return __begin_node_;}
         __device__ const __node_pointer& __begin_node() const {return __begin_node_;}
 public:
@@ -772,7 +772,7 @@ public:
         __device__ const size_type& size() const {return __pair3_.first;}
 		__device__ value_compare& value_comp() {return __pair3_.second;}
         __device__ const value_compare& value_comp() const
-        	{return __pair3_.second();}
+        	{return __pair3_.second;}
 public:
 		__device__ __node_pointer __root()
         {return static_cast<__node_pointer>      (__end_node()->__left_);}
