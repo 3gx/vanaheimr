@@ -84,7 +84,7 @@ __device__ Binary::SymbolTableEntry* Binary::findSymbol(const char* name)
 	for(unsigned int i = 0; i < _header.symbols; ++i)
 	{
 		SymbolTableEntry* symbol = _symbolTable + i;
-			
+		
 		if(_strcmp(_header.stringsOffset + symbol->stringOffset, name) == 0)
 		{
 			return symbol;
@@ -215,9 +215,9 @@ __device__ util::string Binary::getSymbolDataAsString(const char* symbolName)
 	
 	device_assert(symbol->type == SymbolTableEntry::VariableType);
 	
-	util::string result(symbol->size, '\0');
-	
 	device_report("    data size is '%d' bytes\n", symbol->size);
+	
+	util::string result(symbol->size, '\0');
 	
 	_datacpy((char*)result.data(), symbol->offset, symbol->size);
 	
@@ -260,6 +260,12 @@ __device__ Binary::StringVector Binary::getSymbolNamesThatMatch(
 	}
 	
 	return matches;
+}
+
+__device__ void Binary::copyDataToAddress(void* address, uint64_t offset,
+	uint64_t bytes)
+{
+	_datacpy((char*)address, _header.dataOffset + offset, bytes);
 }
 
 __device__ Binary::PC Binary::findFunctionsPC(const char* name)
@@ -307,18 +313,22 @@ __device__ Binary::page_iterator Binary::string_end()
 
 __device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
 {
-	if(*page == 0)
+	while(*page == 0)
 	{
-		// TODO lock the page
-		
+		if(!_lock(page)) continue;
+	
 		size_t offset = _getCodePageOffset(page);
 
 		device_report("Loading code page (%p) at offset (%p) now...\n",
 			page, offset);
-		
+	
 		_file->seekg(offset);
 		*page = (PageDataType*)new PageDataType;
 		_file->read(*page, sizeof(PageDataType));
+
+		_unlock(page);
+	
+		break;
 	}
 	
 	return *page;
@@ -326,17 +336,22 @@ __device__ Binary::PageDataType* Binary::getCodePage(page_iterator page)
 
 __device__ Binary::PageDataType* Binary::getDataPage(page_iterator page)
 {
-	if(*page == 0)
+	while(*page == 0)
 	{
-		// TODO lock the page
-		size_t offset = _getDataPageOffset(page);
+		if(!_lock(page)) continue;
 		
+		size_t offset = _getDataPageOffset(page);
+	
 		device_report("Loading data page (%p) at offset (%p) now...\n",
 			page, offset);
 
 		_file->seekg(offset);
 		*page = (PageDataType*)new PageDataType;
 		_file->read(*page, sizeof(PageDataType));
+		
+		_unlock(page);
+
+		break;
 	}
 	
 	return *page;
@@ -346,10 +361,10 @@ __device__ Binary::PageDataType* Binary::getStringPage(page_iterator page)
 {
 	device_assert(page < string_end());
 
-	if(*page == 0)
+	while(*page == 0)
 	{
-		// TODO lock the page
-	
+		if(!_lock(page)) continue;
+		
 		size_t offset = _getStringPageOffset(page);
 
 		device_report("Loading string page (%p) at offset (%p) now...\n",
@@ -358,6 +373,10 @@ __device__ Binary::PageDataType* Binary::getStringPage(page_iterator page)
 		_file->seekg(offset);
 		*page = (PageDataType*)new PageDataType;
 		_file->read(*page, sizeof(PageDataType));
+		
+		_unlock(page);
+		
+		break;
 	}
 	
 	return *page;
@@ -381,6 +400,21 @@ __device__ void Binary::_loadHeader()
 	util::memset(_dataSection,   0, _header.dataPages   * sizeof(PagePointer));
 	util::memset(_codeSection,   0, _header.codePages   * sizeof(PagePointer));
 	util::memset(_stringSection, 0, _header.stringPages * sizeof(PagePointer));
+	
+	for(page_iterator page = code_begin(); page != code_end(); ++page)
+	{
+		_locks.insert(util::make_pair(page, Lock()));
+	}
+
+	for(page_iterator page = data_begin(); page != data_end(); ++page)
+	{
+		_locks.insert(util::make_pair(page, Lock()));
+	}
+
+	for(page_iterator page = string_begin(); page != string_end(); ++page)
+	{
+		_locks.insert(util::make_pair(page, Lock()));
+	}
 	
 	device_report("Loaded binary (%d data pages, %d code pages, "
 		"%d symbols, %d string pages)\n", _header.dataPages, _header.codePages,
@@ -467,8 +501,8 @@ __device__ void Binary::_datacpy(char* string, unsigned int dataOffset,
 	unsigned int offset = _getDataPageOffset(dataOffset);
 	unsigned int bytesCopied = 0;
 
-	device_report("copying data from file offset (0x%x) to (%p)\n",
-		dataOffset, string);
+	//device_report("copying data from file offset (0x%x) to (%p)\n",
+	//	dataOffset, string);
 	
 	for(; page != data_end(); ++page, offset = 0)
 	{
@@ -492,8 +526,8 @@ __device__ void Binary::_strcpy(char* string, unsigned int stringTableOffset)
 	page_iterator page  = string_begin() + _getStringPageId(stringTableOffset);
 	unsigned int offset = _getStringPageOffset(stringTableOffset);
 
-	device_report("copying string from file offset (0x%x) to (%p)\n",
-		stringTableOffset, string);
+	//device_report("copying string from file offset (0x%x) to (%p)\n",
+	//	stringTableOffset, string);
 	
 	for(; page != string_end(); ++page, offset = 0)
 	{
@@ -595,6 +629,47 @@ __device__ unsigned int Binary::_getStringPageOffset(size_t offset)
 	size_t stringsOffset = offset - _header.stringsOffset;
 	
 	return stringsOffset % sizeof(PageDataType);
+}
+
+__device__ bool Binary::_lock(page_iterator page)
+{
+	LockMap::iterator lock = _locks.find(page);
+	
+	device_assert(lock != _locks.end());
+	
+	return lock->second.lock();
+}
+
+__device__ bool Binary::_unlock(page_iterator page)
+{
+	LockMap::iterator lock = _locks.find(page);
+	
+	device_assert(lock != _locks.end());
+	
+	return lock->second.unlock();
+}
+
+__device__ Binary::Lock::Lock()
+{
+	_lock = 0xffffffff;
+}
+
+__device__ bool Binary::Lock::lock()
+{
+	unsigned int gid = threadIdx.x + blockIdx.x * blockDim.x;
+
+	unsigned int original = atomicCAS(&_lock, 0xffffffff, gid);
+
+	return original == 0xffffffff;
+}
+
+__device__ bool Binary::Lock::unlock()
+{
+	unsigned int gid = threadIdx.x + blockIdx.x * blockDim.x;
+
+	unsigned int original = atomicCAS(&_lock, gid, 0xffffffff);
+
+	return original == gid;
 }
 
 }

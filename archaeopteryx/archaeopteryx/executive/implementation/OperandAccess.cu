@@ -133,6 +133,20 @@ __device__ unsigned int getReturnRegister(const vanaheimr::as::Call* call,
 	return operand.asRegister.reg;
 }
 
+__device__ uint64_t getOperand(const vanaheimr::as::Call* call,
+	CoreSimBlock* block, unsigned threadId, unsigned int index)
+{
+	device_assert(call->arguments > index);
+	
+	vanaheimr::as::OperandContainer operand;
+	
+	block->binary()->copyDataToAddress(&operand,
+		call->argumentOffset + index * sizeof(vanaheimr::as::OperandContainer),
+		sizeof(vanaheimr::as::OperandContainer));
+	
+	return getOperand(operand, block, threadId);
+}
+
 __device__ void setRegister(OperandContainer& operandContainer,
 	CoreSimBlock* parentBlock, unsigned threadId, uint64_t result)
 {

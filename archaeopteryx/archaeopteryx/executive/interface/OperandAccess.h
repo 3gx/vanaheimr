@@ -30,6 +30,9 @@ __device__ uint64_t getOperand(const vanaheimr::as::Operand& operand,
 
 __device__ unsigned int getReturnRegister(const vanaheimr::as::Call* call,
 	CoreSimBlock* parentBlock);
+	
+__device__ uint64_t getOperand(const vanaheimr::as::Call* call,
+	CoreSimBlock* parentBlock, unsigned threadId, unsigned int index);
 
 // Register Access
 __device__ void setRegister(vanaheimr::as::OperandContainer& operandContainer,

@@ -24,7 +24,7 @@ class HostReflectionShared
 public:
 	typedef unsigned int HandlerId;
 	
-	static const size_t MaxMessageSize = 512;
+	static const size_t MaxMessageSize = 16384;
 	
 	enum MessageHandler
 	{

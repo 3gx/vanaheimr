@@ -113,9 +113,9 @@ public:
     __device__ void operator()(pointer __p)
     {
         if (__second_constructed)
-            __alloc_traits::destroy(__na_, _Vaddressof(__p->__value_.second));
+            __alloc_traits::destroy(__na_, addressof(__p->__value_.second));
         if (__first_constructed)
-            __alloc_traits::destroy(__na_, _Vaddressof(__p->__value_.first));
+            __alloc_traits::destroy(__na_, addressof(__p->__value_.first));
         if (__p)
             __alloc_traits::deallocate(__na_, __p, 1);
     }
@@ -404,7 +404,204 @@ public:
 private:
 	__base __tree_;
 
+private:
+    typedef typename __base::__node                    __node;
+    typedef typename __base::__node_allocator          __node_allocator;
+    typedef typename __base::__node_pointer            __node_pointer;
+    typedef typename __base::__node_const_pointer      __node_const_pointer;
+    typedef typename __base::__node_base_pointer       __node_base_pointer;
+    typedef typename __base::__node_base_const_pointer __node_base_const_pointer;
+    typedef __map_node_destructor<__node_allocator> _Dp;
+    typedef unique_ptr<__node, _Dp> __node_holder;
+
+private:
+	__device__ __node_holder __construct_node(const key_type& __k);
+	__device__ __node_base_pointer& 
+		__find_equal_key(__node_base_pointer& __parent, const key_type& __k);
+	__device__ __node_base_pointer& __find_equal_key(const_iterator __hint,
+		             __node_base_pointer& __parent, const key_type& __k);
+	__device__ __node_base_const_pointer
+		__find_equal_key(__node_base_const_pointer& __parent, const key_type& __k) const;
+
 };
+
+// Find place to insert if __k doesn't exist
+// Set __parent to parent of null leaf
+// Return reference to null leaf
+// If __k exists, set parent to node of __k and return reference to node of __k
+template <class _Key, class _Tp, class _Compare, class _Allocator>
+__device__ typename map<_Key, _Tp, _Compare, _Allocator>::__node_base_pointer&
+map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__node_base_pointer& __parent,
+                                                       const key_type& __k)
+{
+    __node_pointer __nd = __tree_.__root();
+    if (__nd != 0)
+    {
+        while (true)
+        {
+            if (__tree_.value_comp().key_comp()(__k, __nd->__value_.first))
+            {
+                if (__nd->__left_ != 0)
+                    __nd = static_cast<__node_pointer>(__nd->__left_);
+                else
+                {
+                    __parent = __nd;
+                    return __parent->__left_;
+                }
+            }
+            else if (__tree_.value_comp().key_comp()(__nd->__value_.first, __k))
+            {
+                if (__nd->__right_ != 0)
+                    __nd = static_cast<__node_pointer>(__nd->__right_);
+                else
+                {
+                    __parent = __nd;
+                    return __parent->__right_;
+                }
+            }
+            else
+            {
+                __parent = __nd;
+                return __parent;
+            }
+        }
+    }
+    __parent = __tree_.__end_node();
+    return __parent->__left_;
+}
+
+// Find place to insert if __k doesn't exist
+// First check prior to __hint.
+// Next check after __hint.
+// Next do O(log N) search.
+// Set __parent to parent of null leaf
+// Return reference to null leaf
+// If __k exists, set parent to node of __k and return reference to node of __k
+template <class _Key, class _Tp, class _Compare, class _Allocator>
+__device__ typename map<_Key, _Tp, _Compare, _Allocator>::__node_base_pointer&
+map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(const_iterator __hint,
+                                                       __node_base_pointer& __parent,
+                                                       const key_type& __k)
+{
+    if (__hint == end() || __tree_.value_comp().key_comp()(__k, __hint->first))  // check before
+    {
+        // __k < *__hint
+        const_iterator __prior = __hint;
+        if (__prior == begin() || __tree_.value_comp().key_comp()((--__prior)->first, __k))
+        {
+            // *prev(__hint) < __k < *__hint
+            if (__hint.__ptr_->__left_ == nullptr)
+            {
+                __parent = const_cast<__node_pointer&>(__hint.__ptr_);
+                return __parent->__left_;
+            }
+            else
+            {
+                __parent = const_cast<__node_pointer&>(__prior.__ptr_);
+                return __parent->__right_;
+            }
+        }
+        // __k <= *prev(__hint)
+        return __find_equal_key(__parent, __k);
+    }
+    else if (__tree_.value_comp().key_comp()(__hint->first, __k))  // check after
+    {
+        // *__hint < __k
+        const_iterator __next = _VSTD::next(__hint);
+        if (__next == end() || __tree_.value_comp().key_comp()(__k, __next->first))
+        {
+            // *__hint < __k < *next(__hint)
+            if (__hint.__ptr_->__right_ == 0)
+            {
+                __parent = const_cast<__node_pointer&>(__hint.__ptr_);
+                return __parent->__right_;
+            }
+            else
+            {
+                __parent = const_cast<__node_pointer&>(__next.__ptr_);
+                return __parent->__left_;
+            }
+        }
+        // *next(__hint) <= __k
+        return __find_equal_key(__parent, __k);
+    }
+    // else __k == *__hint
+    __parent = const_cast<__node_pointer&>(__hint.__ptr_);
+    return __parent;
+}
+
+// Find __k
+// Set __parent to parent of null leaf and
+//    return reference to null leaf iv __k does not exist.
+// If __k exists, set parent to node of __k and return reference to node of __k
+template <class _Key, class _Tp, class _Compare, class _Allocator>
+__device__ typename map<_Key, _Tp, _Compare, _Allocator>::__node_base_const_pointer
+map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__node_base_const_pointer& __parent,
+                                                       const key_type& __k) const
+{
+    __node_const_pointer __nd = __tree_.__root();
+    if (__nd != 0)
+    {
+        while (true)
+        {
+            if (__tree_.value_comp().key_comp()(__k, __nd->__value_.first))
+            {
+                if (__nd->__left_ != nullptr)
+                    __nd = static_cast<__node_pointer>(__nd->__left_);
+                else
+                {
+                    __parent = __nd;
+                    return const_cast<const __node_base_const_pointer&>(__parent->__left_);
+                }
+            }
+            else if (__tree_.value_comp().key_comp()(__nd->__value_.first, __k))
+            {
+                if (__nd->__right_ != nullptr)
+                    __nd = static_cast<__node_pointer>(__nd->__right_);
+                else
+                {
+                    __parent = __nd;
+                    return const_cast<const __node_base_const_pointer&>(__parent->__right_);
+                }
+            }
+            else
+            {
+                __parent = __nd;
+                return __parent;
+            }
+        }
+    }
+    __parent = __tree_.__end_node();
+    return const_cast<const __node_base_const_pointer&>(__parent->__left_);
+}
+
+template <class _Key, class _Tp, class _Compare, class _Allocator>
+__device__ typename map<_Key, _Tp, _Compare, _Allocator>::__node_holder
+map<_Key, _Tp, _Compare, _Allocator>::__construct_node(const key_type& __k)
+{
+    __node_allocator& __na = __tree_.__node_alloc();
+    __node_holder __h(__node_traits::allocate(__na, 1), _Dp(__na));
+    __node_traits::construct(__na, addressof(__h->__value_.first), __k);
+    __h.get_deleter().__first_constructed = true;
+    __node_traits::construct(__na, addressof(__h->__value_.second));
+    __h.get_deleter().__second_constructed = true;
+    return move(__h);
+}
+
+template <class _Key, class _Tp, class _Compare, class _Allocator>
+__device__ _Tp& map<_Key, _Tp, _Compare, _Allocator>::operator[](const key_type& __k)
+{
+    __node_base_pointer __parent;
+    __node_base_pointer& __child = __find_equal_key(__parent, __k);
+    __node_pointer __r = static_cast<__node_pointer>(__child);
+    if (__child == 0)
+    {
+        __node_holder __h = __construct_node(__k);
+        __tree_.__insert_node_at(__parent, __child, __h.get());
+        __r = __h.release();
+    }
+    return __r->__value_.second;
+}
 
 }
 
