@@ -9,6 +9,7 @@
 // Archaeopteryx Includes
 #include <archaeopteryx/util/interface/string.h>
 #include <archaeopteryx/util/interface/vector.h>
+#include <archaeopteryx/util/interface/map.h>
 
 // Vanaheimr Includes
 #include <vanaheimr/asm/interface/BinaryHeader.h>
@@ -104,16 +105,6 @@ public:
 	__device__ void copyDataToAddress(void* address, uint64_t offset,
 		uint64_t bytes);
 
-private:
-
-	/*! \brief Get a particular code page */
-	__device__ PageDataType* getCodePage(page_iterator page);
-	/*! \brief Get a pointer to a particular data page */
-	__device__ PageDataType* getDataPage(page_iterator page);
-	/*! \brief Get a pointer to a particular string page */
-	__device__ PageDataType* getStringPage(page_iterator page);
-
-
 public:
 	/*! \brief Get an iterator to the first code page */
 	__device__ page_iterator code_begin();
@@ -129,6 +120,16 @@ public:
 	__device__ page_iterator string_begin();
 	/*! \brief Get an iterator to one past the last string page */
 	__device__ page_iterator string_end();
+
+private:
+
+	/*! \brief Get a particular code page */
+	__device__ PageDataType* getCodePage(page_iterator page);
+	/*! \brief Get a pointer to a particular data page */
+	__device__ PageDataType* getDataPage(page_iterator page);
+	/*! \brief Get a pointer to a particular string page */
+	__device__ PageDataType* getStringPage(page_iterator page);
+
 
 private:
 	/*! \brief Load the binary header */
@@ -167,6 +168,13 @@ private:
 	__device__ unsigned int _getStringPageOffset(size_t offset);
 
 private:
+	/*! \brief Attempt to lock a page */
+	__device__ bool _lock(page_iterator);
+	/*! \brief Attempt to unlock a page */
+	__device__ bool _unlock(page_iterator);
+	
+
+private:
 	/*! \brief A handle to the file */
 	File* _file;
 	/*! \brief A handle to a file owned by this binary */
@@ -186,6 +194,30 @@ private:
 
 	/*! \brief The actual symbol table */
 	SymbolTableEntry* _symbolTable;
+
+private:
+	class Lock
+	{
+	public:
+		/*! \brief Construct the lock in the unlocked state */
+		__device__ Lock();
+	
+	public:
+		/*! \brief attempt to aquire the lock (may fail) */
+		__device__ bool lock();
+		/*! \brief attempt to release the lock */
+		__device__ bool unlock();
+	
+	private:
+		unsigned int _lock;	
+	
+	};
+
+	typedef util::map<page_iterator, Lock> LockMap;
+
+private:
+	LockMap _locks;
+
 
 };
 

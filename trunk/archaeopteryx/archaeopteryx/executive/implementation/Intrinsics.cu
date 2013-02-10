@@ -156,6 +156,22 @@ public:
 	}
 };
 
+class MadLoI32 : public Intrinsic
+{
+public:
+	__device__ virtual void execute(const vanaheimr::as::Call* call,
+		CoreSimBlock* block, unsigned int threadId)
+	{
+		uint32_t a = getOperand(call, block, threadId, 0);
+		uint32_t b = getOperand(call, block, threadId, 1);
+		uint32_t c = getOperand(call, block, threadId, 2);
+		
+		uint32_t d = a * b + c;
+
+		setRegister(getReturnRegister(call, block), block, threadId, d);
+	}
+};
+
 __device__ void Intrinsics::loadIntrinsics()
 {
 	_intrinsics = new IntrinsicDatabase;
@@ -163,6 +179,8 @@ __device__ void Intrinsics::loadIntrinsics()
 	// TODO add intrinsics
 	_intrinsics->addIntrinsic("_Zintrinsic_getspecial_nctaid_x",
 		new GetNumberOfCtasInX);
+	_intrinsics->addIntrinsic("_Zintrinsic_mad_lo_i32",
+		new MadLoI32);
 }
 
 __device__ void Intrinsics::unloadIntrinsics()
