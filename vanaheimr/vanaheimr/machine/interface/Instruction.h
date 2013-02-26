@@ -8,15 +8,15 @@
 
 #pragma once
 
+// Vanaheimr Includes
+#include <vanaheimr/ir/interface/Instruction.h>
+
 // Standard Library Includes
 #include <vector>
 #include <list>
 
-// Forward Declarations
-namespace vanaheimr { namespace machine { class Operand;    } }
-namespace vanaheimr { namespace machine { class BasicBlock; } }
-namespace vanaheimr { namespace machine { class Operation;  } }
-namespace vanaheimr { namespace machine { class MetaData;   } }
+// Forward Declaration
+namespace vanaheimr { namespace machine { class Operation; } }
 
 namespace vanaheimr
 {
@@ -25,17 +25,10 @@ namespace machine
 {
 
 /*! \brief A model for an abstract machine instruction */
-class Instruction
+class Instruction : public vanaheimr::ir::Instruction
 {
 public:
-	typedef Operand* OperandPointer;
-	typedef std::vector<OperandPointer> OperandVector;
-
-	typedef OperandVector::iterator       iterator;
-	typedef OperandVector::const_iterator const_iterator;
-		
-public:
-	Instruction(const Operations* op, BasicBlock* block);
+	Instruction(const Operation* op, BasicBlock* block = 0, Id id = 0);
 	~Instruction();
 	
 public:
@@ -43,58 +36,15 @@ public:
 	Instruction(const Instruction&);
 	
 public:
-	bool isBranch()                 const;
-	bool isReturn()                 const;
-	bool isLoad()                   const;
-	bool isStore()                  const;
-	bool isVectorLoad()             const;
-	bool isVectorStore()            const;
-	bool hasImmediate()             const;
-	bool isBarrier()                const;
-	bool isFence()                  const;
-	bool isCall()                   const;
-	bool isAtom()                   const;
-	bool isTexture()                const;
-	bool explicitlyHasSideEffects() const;
-	bool isPhi()                    const;
-	bool isPsi()                    const;
+	virtual std::string toString() const;
+	virtual std::string modifierString() const;
 
 public:
-	bool hasAttribute(const std::string& attribute) const;
+	virtual Instruction* clone() const;
 
 public:
-	iterator       read_begin();
-	const_iterator read_begin() const;
-
-	iterator       read_end();
-	const_iterator read_end() const;
-
-	iterator       write_begin();
-	const_iterator write_begin() const;
-
-	iterator       write_end();
-	const_iterator write_end() const;
-
-public:
-	void output(std::ostream& stream) const;
-	std::string toString() const;
-
-public:
-	OperandVector  reads;
-	OperandVector  writes;
-	
-	OperandPointer guard;
-
-public:
-	Block* basicBlock;
-
-private:
 	 /*! \brief The machine operation performed by the instruction. */
-	const Operation* _operation;
-
-private:
-	// debugging
-	MetaData* _metadata;
+	const Operation* operation;
 
 };
 
