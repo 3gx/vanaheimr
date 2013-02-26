@@ -28,6 +28,7 @@ public:
 	ir::ModuleBase* getLoweredModule();
 
 public:
+	std::string instructionSelectorName;
 	std::string registerAllocatorName;
 	std::string instructionSchedulerName;
 

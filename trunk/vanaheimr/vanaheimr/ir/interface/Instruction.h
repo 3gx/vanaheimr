@@ -24,7 +24,7 @@ namespace vanaheimr
 namespace ir
 {
 
-/*! \brief A space efficient class for representing a single instruction */
+/*! \brief A programmer efficient class for representing a single instruction */
 class Instruction
 {
 public:
@@ -72,6 +72,9 @@ public:
 		Phi,
 		Psi,
 		
+		// Machine
+		Machine,
+		
 		// Invalid
 		InvalidOpcode
 	};
@@ -112,17 +115,21 @@ public:
 	void replaceOperand(Operand* original, Operand* newOperand);
 
 public:
-	bool isLoad()      const;
-	bool isStore()     const;
-	bool isBranch()    const;
-	bool isCall()      const;
-	bool isReturn()    const;
-	bool isIntrinsic() const;
+	virtual bool isLoad()      const;
+	virtual bool isStore()     const;
+	virtual bool isBranch()    const;
+	virtual bool isCall()      const;
+	virtual bool isReturn()    const;
+	virtual bool isIntrinsic() const;
+	
+	virtual bool accessesMemory()  const;
+	virtual bool isMemoryBarrier() const;
+
+public:	
 	bool isPhi()       const;
 	bool isPsi()       const;
 
-	bool accessesMemory()  const;
-	bool isMemoryBarrier() const;
+	bool isMachineInstruction() const;
 
 public:
 	bool isUnary()      const;
