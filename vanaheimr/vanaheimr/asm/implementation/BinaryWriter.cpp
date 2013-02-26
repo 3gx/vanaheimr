@@ -1,7 +1,8 @@
 /*!	\file   BinaryWriter.cpp
 	\date   Saturday February 25, 2012
 	\author Sudnya Diamos <mailsudnya@gmail.com>
-	\brief  The implementation file for the helper class that traslates compiler IR to a binary.
+	\brief  The implementation file for the helper class that traslates
+	        compiler IR to a binary.
 */
 
 // Vanaheimr Includes
