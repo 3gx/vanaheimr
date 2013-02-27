@@ -721,8 +721,10 @@ PassManager::PassWaveList PassManager::_schedulePasses()
 	
 	PassMap unscheduledInWaves = unscheduled;
 
+	report("  Setting up waves:");
 	while(!unscheduledInWaves.empty())
 	{
+		report("   Wave: " << scheduled.size());
 		scheduled.push_back(PassVector());
 		
 		for(auto pass = unscheduledInWaves.begin();
@@ -731,22 +733,25 @@ PassManager::PassWaveList PassManager::_schedulePasses()
 			bool unscheduledPredecessorsTransition = false;
 			
 			auto dependentPasses = _getAllDependentPasses(pass->second);
-		
+			
+			report("   checking pass '" << pass->first << "'");
+								
 			for(auto dependentPassName = dependentPasses.begin();
 				dependentPassName != dependentPasses.end(); ++dependentPassName)
 			{
-				if(unscheduledInWaves.count(*dependentPassName) == 0) continue;
-
-				Pass* dependentPass = _findPass(*dependentPassName);
-				
-				if(pass->second->type == dependentPass->type) continue;
-				
-				unscheduledPredecessorsTransition = true;
-				break;
+				if(unscheduledInWaves.count(*dependentPassName) != 0)
+				{
+					report("    would violate dependency '"
+						<< *dependentPassName << "'");
+								
+					unscheduledPredecessorsTransition = true;
+					break;
+				}
 			}
 			
 			if(!unscheduledPredecessorsTransition)
 			{
+				report("    adding '" << pass->first << "'");
 				scheduled.back().push_back(pass->second);
 				unscheduledInWaves.erase(pass++);
 				continue;
