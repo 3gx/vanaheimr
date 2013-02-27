@@ -15,6 +15,7 @@
 #include <vanaheimr/codegen/interface/ListInstructionSchedulerPass.h>
 #include <vanaheimr/codegen/interface/ChaitinBriggsRegisterAllocatorPass.h>
 #include <vanaheimr/codegen/interface/GenericSpillCodePass.h>
+#include <vanaheimr/codegen/interface/TranslationTableInstructionSelectionPass.h>
 
 namespace vanaheimr
 {
@@ -55,6 +56,12 @@ Pass* PassFactory::createPass(const std::string& name,
 	if(name == "generic-spiller" || name == "GenericSpillCodePass")
 	{
 		pass = new codegen::GenericSpillCodePass();
+	}
+	
+	if(name == "translation-table" ||
+		name == "TranslationTableInstructionSelectionPass")
+	{
+		pass = new codegen::TranslationTableInstructionSelectionPass();
 	}
 	
 	if(pass != nullptr)

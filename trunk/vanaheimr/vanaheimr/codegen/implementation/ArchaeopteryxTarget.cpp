@@ -21,10 +21,9 @@ namespace vanaheimr
 namespace codegen
 {
 
-
 ArchaeopteryxTarget::ArchaeopteryxTarget()
 : Target("ArchaeopteryxSimulatorTarget"),
-	instructionSelectorName("greedy"),
+	instructionSelectorName("translation-table"),
 	registerAllocatorName("chaitin-briggs"), instructionSchedulerName("list")
 {
 
@@ -57,18 +56,6 @@ void ArchaeopteryxTarget::lower()
 	}
 
 	manager.addPass(abiLowering);
-
-	// Instruction Legalization
-	auto legalizer = transforms::PassFactory::createPass(
-		"ArchaeopteryxLegalizeMachineCodePass");
-	
-	if(legalizer == nullptr)
-	{
-		throw std::runtime_error("Failed to create archaeopteryx"
-			" machine code legalizer pass.");
-	}
-	
-	manager.addPass(legalizer);
 
 	// Instruction Scheduler
 	auto scheduler = transforms::PassFactory::createPass(
@@ -104,8 +91,7 @@ void ArchaeopteryxTarget::lower()
 	manager.addPass(spiller);
 
 	manager.addDependence(abiLowering->name, selector->name);
-	manager.addDependence(legalizer->name,   abiLowering->name);
-	manager.addDependence(scheduler->name,   legalizer->name);
+	manager.addDependence(scheduler->name,   abiLowering->name);
 	manager.addDependence(allocator->name,   scheduler->name);
 	manager.addDependence(spiller->name,     allocator->name);
 	

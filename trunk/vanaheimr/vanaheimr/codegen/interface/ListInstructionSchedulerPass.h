@@ -15,7 +15,7 @@ namespace vanaheimr
 namespace codegen
 {
 
-/*! \brief Convert a program IR not in SSA form to SSA */
+/*! \brief Perform instruction scheduling using the list algorithm */
 class ListInstructionSchedulerPass : public transforms::FunctionPass
 {
 public:

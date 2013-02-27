@@ -358,6 +358,7 @@ std::string Instruction::toString(Opcode o)
 	case Zext:    return "zext";
 	case Phi:     return "phi";
 	case Psi:     return "psi";
+	case Machine: return "MACHINE-SPECIFIC";
 	case InvalidOpcode: break;
 	}
 	
@@ -366,7 +367,7 @@ std::string Instruction::toString(Opcode o)
 
 Instruction* Instruction::create(Opcode o, BasicBlock* b)
 {
-	ir::Instruction* instruction = 0;
+	ir::Instruction* instruction = nullptr;
 
 	switch(o)
 	{
@@ -408,8 +409,11 @@ Instruction* Instruction::create(Opcode o, BasicBlock* b)
 	case Zext:    instruction = new ir::Zext;    break;
 	case Phi:     instruction = new ir::Phi;     break;
 	case Psi:     instruction = new ir::Psi;     break;
+	case Machine:       break;
 	case InvalidOpcode: break;
 	}
+	
+	assert(instruction != nullptr);
 	
 	instruction->block = b;
 
