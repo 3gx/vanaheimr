@@ -10,6 +10,9 @@
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <sstream>
 #include <cstring>
@@ -57,12 +60,12 @@ FloatingPointConstant::FloatingPointConstant(double d)
 
 }
 
-FloatingPointConstant::operator float()
+float FloatingPointConstant::asFloat() const
 {
 	return _float;
 }
 
-FloatingPointConstant::operator double()
+double FloatingPointConstant::asDouble() const
 {
 	return _double;
 }
@@ -95,6 +98,11 @@ IntegerConstant::IntegerConstant(uint64_t i, unsigned int bits)
 : Constant(compiler::Compiler::getSingleton()->getType("i" + toString(bits)))
 {
 
+}
+
+IntegerConstant::operator uint64_t() const
+{
+	return _value;
 }
 
 bool IntegerConstant::isNullValue() const
@@ -133,9 +141,23 @@ ArrayConstant::ArrayConstant(uint64_t size, const Type* t)
 
 }
 
+Constant* ArrayConstant::getMember(unsigned int index)
+{
+	assertM(false, "Not implemented.");
+
+	return nullptr;
+}
+
+const Constant* ArrayConstant::getMember(unsigned int index) const
+{
+	assertM(false, "Not implemented.");
+
+	return nullptr;
+}
+
 uint64_t ArrayConstant::size() const
 {
-	return _value.size();
+	return bytes() / type()->bytes();
 }
 
 bool ArrayConstant::isNullValue() const
@@ -155,7 +177,7 @@ Constant::DataVector ArrayConstant::data() const
 
 size_t ArrayConstant::bytes() const
 {
-	return size();
+	return _value.size();
 }
 
 Constant* ArrayConstant::clone() const

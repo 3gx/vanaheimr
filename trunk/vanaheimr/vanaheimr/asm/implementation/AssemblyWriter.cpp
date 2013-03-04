@@ -246,7 +246,11 @@ void AssemblyWriter::writeInitializer(std::ostream& stream,
 		{
 			if(i > 0) stream << ", ";
 
-			writeInitializer(stream, *array.getMember(i));
+			auto temporary = array.getMember(i);
+
+			writeInitializer(stream, *temporary);
+
+			delete temporary;
 		}
 
 		stream << " }";	
