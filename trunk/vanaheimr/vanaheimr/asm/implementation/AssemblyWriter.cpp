@@ -214,7 +214,48 @@ void AssemblyWriter::writeType(std::ostream& stream, const ir::Type& type)
 void AssemblyWriter::writeInitializer(std::ostream& stream,
 	const ir::Constant& constant)
 {
-	assertM(false, "Not implemented.");
+	if(constant.type()->isInteger())
+	{
+		const ir::IntegerConstant& integer =
+			static_cast<const ir::IntegerConstant&>(constant);
+
+		stream << (uint64_t) integer;
+	}
+	else if(constant.type()->isFloatingPoint())
+	{
+		const ir::FloatingPointConstant& floating =
+			static_cast<const ir::FloatingPointConstant&>(constant);
+
+		if(constant.type()->isSinglePrecisionFloat())
+		{
+			stream << floating.asFloat();
+		}
+		else
+		{
+			stream << floating.asDouble();
+		}
+	}
+	else if(constant.type()->isArray())
+	{
+		const ir::ArrayConstant& array =
+			static_cast<const ir::ArrayConstant&>(constant);
+	
+		stream << "{ ";
+
+		for(unsigned int i = 0; i != array.size(); ++i)
+		{
+			if(i > 0) stream << ", ";
+
+			writeInitializer(stream, *array.getMember(i));
+		}
+
+		stream << " }";	
+		
+	}
+	else
+	{
+		assertM(false, "Not implemented.");
+	}
 }
 
 void AssemblyWriter::writeOpcode(std::ostream& stream, unsigned int opcode)

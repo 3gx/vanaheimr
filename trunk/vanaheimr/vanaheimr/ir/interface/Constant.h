@@ -59,8 +59,8 @@ public:
 	FloatingPointConstant(double d);
 
 public:
-	operator float();
-	operator double();
+	float  asFloat()  const;
+	double asDouble() const;
 
 public:
 	bool isNullValue() const;
@@ -156,6 +156,10 @@ class ArrayConstant : public Constant
 public:
 	ArrayConstant(const void* data, uint64_t size, const Type* t);
 	ArrayConstant(uint64_t size, const Type* t);
+
+public:
+	Constant*       getMember(unsigned int index);
+	const Constant* getMember(unsigned int index) const;
 
 public:
 	uint64_t size() const;
