@@ -72,6 +72,11 @@ bool Type::isFunction() const
 	return typeid(FunctionType) == typeid(*this);
 }
 
+bool Type::isArray() const
+{
+	return typeid(ArrayType) == typeid(*this);
+}
+
 size_t Type::alignment() const
 {
 	return bytes();
