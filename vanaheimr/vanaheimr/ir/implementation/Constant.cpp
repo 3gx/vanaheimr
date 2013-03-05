@@ -10,6 +10,8 @@
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
+#include <vanaheimr/parser/interface/ConstantValueParser.h>
+
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
 
@@ -37,6 +39,17 @@ Constant::~Constant()
 const Type* Constant::type() const
 {
 	return _type;
+}
+
+Constant* Constant::parseConstantFromString(const std::string& value)
+{
+	std::stringstream stream(value);
+	
+	parser::ConstantValueParser parser;
+	
+	parser.parse(stream);
+
+	return parser.parsedConstant()->clone();
 }
 
 const std::string toString(unsigned int bits)
