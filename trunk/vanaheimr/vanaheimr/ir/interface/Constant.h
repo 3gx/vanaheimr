@@ -10,6 +10,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include <string>
 
 // Forward Declarations
 namespace vanaheimr { namespace ir { class BasicBlock; } }
@@ -46,6 +47,9 @@ public:
 	
 public:
 	const Type* type() const;
+	
+public:
+	static Constant* parseConstantFromString(const std::string& value);
 	
 private:
 	const Type* _type;
