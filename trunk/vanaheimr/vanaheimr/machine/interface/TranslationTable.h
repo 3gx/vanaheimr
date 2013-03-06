@@ -26,6 +26,9 @@ namespace machine
 class TranslationTable
 {
 public:
+	typedef std::vector<machine::Instruction*> MachineInstructionVector;
+
+public:
 	TranslationTable();
 	~TranslationTable();
 
@@ -34,7 +37,8 @@ public:
 	TranslationTable& operator=(const TranslationTable&) = delete;
 
 public:
-	machine::Instruction* translateInstruction(const ir::Instruction*);
+	/*! \brief Translate an IR instruction into equivalent machine instructions*/
+	MachineInstructionVector translateInstruction(const ir::Instruction*) const;
 
 public:
 	const TranslationTableEntry* getTranslation(const std::string& name) const;

@@ -41,12 +41,14 @@ TranslationTable::~TranslationTable()
 	delete _translations;
 }
 
-machine::Instruction* TranslationTable::translateInstruction(
-	const ir::Instruction*)
+TranslationTable::MachineInstructionVector
+	TranslationTable::translateInstruction(const ir::Instruction*) const
 {
 	assertM(false, "Not implemented");
 	
-	return nullptr;
+	MachineInstructionVector translatedInstructions;
+
+	return translatedInstructions;
 }
 
 const TranslationTableEntry* TranslationTable::getTranslation(

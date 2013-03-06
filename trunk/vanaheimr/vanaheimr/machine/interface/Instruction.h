@@ -28,6 +28,9 @@ namespace machine
 class Instruction : public vanaheimr::ir::Instruction
 {
 public:
+	typedef ir::BasicBlock BasicBlock;
+
+public:
 	Instruction(const Operation* op, BasicBlock* block = 0, Id id = 0);
 	~Instruction();
 	
