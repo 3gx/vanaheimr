@@ -6,6 +6,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/machine/interface/MachineModel.h>
+#include <vanaheimr/machine/interface/TranslationTable.h>
 
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
@@ -17,7 +18,7 @@ namespace machine
 {
 
 MachineModel::MachineModel(const std::string& n)
-: name(n)
+: name(n), _translationTable(nullptr)
 {
 
 }
@@ -34,6 +35,11 @@ const PhysicalRegister* MachineModel::getPhysicalRegister(RegisterId id) const
 unsigned int MachineModel::totalRegisterCount() const
 {
 	return _idToRegisters.size();
+}
+
+const TranslationTable* MachineModel::translationTable() const
+{
+	return _translationTable;
 }
 
 void MachineModel::configure(const StringVector& )

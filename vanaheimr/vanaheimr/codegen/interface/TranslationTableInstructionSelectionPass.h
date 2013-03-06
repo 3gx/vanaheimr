@@ -25,6 +25,9 @@ public:
 public:
 	void runOnFunction(Function& f);
 
+private:
+	void _lowerBlock(BasicBlock& b);
+
 };
 
 }

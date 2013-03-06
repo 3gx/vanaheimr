@@ -17,6 +17,7 @@
 
 // Forward Declarations
 namespace vanaheimr { namespace machine { class PhysicalRegister; } }
+namespace vanaheimr { namespace machine { class TranslationTable; } }
 
 namespace vanaheimr
 {
@@ -49,6 +50,9 @@ public:
 	unsigned int totalRegisterCount() const;
 
 public:
+	const TranslationTable* translationTable() const;
+
+public:
 	/*! \brief Configure the machine model with a set of options */
 	void configure(const StringVector& options);
 
@@ -66,6 +70,10 @@ protected:
 protected:
 	RegisterMap     _idToRegisters;
 	RegisterFileMap _registerFiles;
+
+protected:
+	TranslationTable* _translationTable;
+
 };
 
 }
