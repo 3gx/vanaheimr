@@ -39,11 +39,12 @@ private:
 	// Specialized Parsing
 	ir::Constant* _parseConstant(std::istream& stream);
 
+	ir::Constant* _parseIntegerConstant(std::istream& stream);
+	ir::Constant* _parseFloatingPointConstant(std::istream& stream);
+
 private:
 	// Parser methods
 	std::string _peek(std::istream& stream);
-	
-	bool _parse(std::string& token, std::istream& stream);
 
 private:
 	// Lexer methods
