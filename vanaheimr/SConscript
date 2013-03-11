@@ -53,6 +53,9 @@ directories = ['vanaheimr/asm/implementation',
 	'vanaheimr/abi/implementation',
 	'vanaheimr/machine/implementation',
 	'vanaheimr/parser/implementation']
+if not haveOcelot():
+	directories.append('hydrazine/implementation')
+
 extensions = ['*.cpp']
 
 for dir in directories:
@@ -123,6 +126,9 @@ if env['install']:
 		'vanaheimr/abi/interface',
 		'vanaheimr/machine/interface',
 		'vanaheimr/parser/interface' ]
+	if not haveOcelot():
+		directories.append('hydrazine/interface')
+
 	extensions = ['*.h']
 
 	for dir in directories:
