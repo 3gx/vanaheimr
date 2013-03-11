@@ -51,7 +51,8 @@ directories = ['vanaheimr/asm/implementation',
 	'vanaheimr/transforms/implementation',
 	'vanaheimr/codegen/implementation',
 	'vanaheimr/abi/implementation',
-	'vanaheimr/machine/implementation']
+	'vanaheimr/machine/implementation',
+	'vanaheimr/parser/implementation']
 extensions = ['*.cpp']
 
 for dir in directories:
@@ -120,7 +121,8 @@ if env['install']:
 		'vanaheimr/transforms/interface',
 		'vanaheimr/codegen/interface',
 		'vanaheimr/abi/interface',
-		'vanaheimr/machine/interface' ]
+		'vanaheimr/machine/interface',
+		'vanaheimr/parser/interface' ]
 	extensions = ['*.h']
 
 	for dir in directories:

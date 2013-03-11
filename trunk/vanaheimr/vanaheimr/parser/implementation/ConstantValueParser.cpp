@@ -5,11 +5,10 @@
 */
 
 // Vanaheimr Includes
-#include <vanaheimr/compiler/interface/TypeParser.h>
-
-#include <vanaheimr/compiler/interface/Compiler.h>
+#include <vanaheimr/parser/interface/ConstantValueParser.h>
 
 #include <vanaheimr/ir/interface/Type.h>
+#include <vanaheimr/ir/interface/Constant.h>
 
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
@@ -30,6 +29,11 @@ ConstantValueParser::ConstantValueParser()
 
 }
 
+ConstantValueParser::~ConstantValueParser()
+{
+	delete _parsedConstant;
+}
+
 void ConstantValueParser::parse(std::istream& stream)
 {
 	delete _parsedConstant;
@@ -40,100 +44,6 @@ void ConstantValueParser::parse(std::istream& stream)
 const ir::Constant* ConstantValueParser::parsedConstant() const
 {
 	return _parsedConstant;
-}
-
-static bool isInteger(const std::string& token)
-{
-	
-}
-
-static bool isFloatingPoint(const std::string& token)
-{
-
-}
-
-ir::Constant* ConstantValueParser::_parseConstant(std::istream& stream)
-{
-	std::string nextToken = _peek(stream);
-	
-	ir::Type* type = nullptr;
-	
-	if(isInteger(nextToken))
-	{
-		type = _parseIntegerConstant(stream);
-	}
-	else if(isFloatingPoint(_compiler, nextToken))
-	{
-		
-	}
-	
-	if(type == nullptr)
-	{
-		throw std::runtime_error("Failed to parse type.");
-	}
-	
-	return type;
-}
-
-ir::Type* TypeParser::_parseFunction(std::istream& stream)
-{
-	ir::Type* returnType = nullptr;
-	ir::Type::TypeVector argumentTypes;
-
-	if(!_scan("(", stream))
-	{
-		throw std::runtime_error("Failed to parse function "
-			"type, expecting '('.");
-	}
-
-	std::string closeBrace = _peek(stream);
-
-	if(closeBrace != ")")
-	{
-		returnType = _parseType(stream);
-	}
-
-	if(!_scan(")", stream))
-	{
-		throw std::runtime_error("Failed to parse function "
-			"type, expecting ')'.");
-	}
-
-	if(!_scan("(", stream))
-	{
-		throw std::runtime_error("Failed to parse function "
-			"type, expecting '('.");
-	}
-	
-	closeBrace = _peek(stream);
-
-	if(closeBrace != ")")
-	{
-		do
-		{
-			argumentTypes.push_back(_parseType(stream));
-		
-			std::string comma = _peek(stream);
-			
-			if(comma == ",")
-			{
-				_scan(",", stream);
-			}
-			else
-			{
-				break;
-			}
-		}
-		while(true);
-	}
-
-	if(!_scan(")", stream))
-	{
-		throw std::runtime_error("Failed to parse function "
-			"type, expecting ')'.");
-	}
-
-	return new ir::FunctionType(_compiler, returnType, argumentTypes);
 }
 
 static bool isNumeric(char c)
@@ -152,14 +62,36 @@ static bool isInteger(const std::string& integer)
 	return true;
 }
 
-static unsigned int parseInteger(const std::string& integer)
+static bool isFloatingPoint(const std::string& token)
 {
-	if(!isInteger(integer))
+	return !token.empty() && isNumeric(token[0]) && !isInteger(token);
+}
+
+ir::Constant* ConstantValueParser::_parseConstant(std::istream& stream)
+{
+	std::string nextToken = _peek(stream);
+	
+	ir::Constant* constant = nullptr;
+	
+	if(isInteger(nextToken))
 	{
-		throw std::runtime_error("Failed to parse array "
-			"type, expecting an integer.");
+		constant = _parseIntegerConstant(stream);
+	}
+	else if(isFloatingPoint(nextToken))
+	{
+		constant = _parseFloatingPointConstant(stream);
 	}
 	
+	if(constant == nullptr)
+	{
+		throw std::runtime_error("Failed to parse constant.");
+	}
+	
+	return constant;
+}
+
+static unsigned int parseInteger(const std::string& integer)
+{
 	std::stringstream stream(integer);
 	
 	unsigned int value = 0;
@@ -169,40 +101,26 @@ static unsigned int parseInteger(const std::string& integer)
 	return value;
 }
 
-ir::Type* TypeParser::_parseArray(const ir::Type* base, std::istream& stream)
+ir::Constant* ConstantValueParser::_parseIntegerConstant(std::istream& stream)
 {
-	if(!_scan("[", stream))
-	{
-		throw std::runtime_error("Failed to parse array "
-			"type, expecting '['.");
-	}
-	
-	std::string dimensionToken = _nextToken(stream);
-	
-	unsigned int dimension = parseInteger(dimensionToken);
-	
-	if(!_scan("]", stream))
-	{
-		throw std::runtime_error("Failed to parse array "
-			"type, expecting ']'.");
-	}
-	
-	return new ir::ArrayType(_compiler, base, dimension);
+	return new ir::IntegerConstant(parseInteger(_nextToken(stream)));
 }
 
-ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
+static double parseFloat(const std::string& floating)
 {
-	std::string token;
+	std::stringstream stream(floating);
 	
-	bool success = _parse(token, stream);
+	double value = 0.0;
 	
-	if(!success)
-	{
-		throw std::runtime_error("Hit end of stream while "
-			"searching for primitive type.");
-	}
+	stream >> value;
 	
-	return _compiler->getType(token)->clone();
+	return value;
+}
+
+ir::Constant* ConstantValueParser::_parseFloatingPointConstant(
+	std::istream& stream)
+{
+	return new ir::FloatingPointConstant(parseFloat(_nextToken(stream)));
 }
 
 static bool isWhitespace(char c)
@@ -215,13 +133,11 @@ static bool isToken(char c)
 	return c == '(' || c == ')' || c == ',' || c == '[' || c == ']';
 }
 
-std::string TypeParser::_peek(std::istream& stream)
+std::string ConstantValueParser::_peek(std::istream& stream)
 {
-	std::string result;
-	
 	size_t position = stream.tellg();
 	
-	_parse(result, stream);
+	std::string result = _nextToken(stream);
 	
 	stream.clear();
 	stream.seekg(position);
@@ -229,14 +145,7 @@ std::string TypeParser::_peek(std::istream& stream)
 	return result;
 }
 
-bool TypeParser::_parse(std::string& token, std::istream& stream)
-{
-	token = _nextToken(stream);
-
-	return !token.empty();
-}
-
-std::string TypeParser::_nextToken(std::istream& stream)
+std::string ConstantValueParser::_nextToken(std::istream& stream)
 {
 	while(stream.good() && isWhitespace(_snext(stream)));
 	stream.unget();
@@ -253,18 +162,15 @@ std::string TypeParser::_nextToken(std::istream& stream)
 		if(isToken(*result.rbegin())) break;
 	}
 
-	reportE(REPORT_LEXER, "scanned token '" << result << "'");
-
 	return result;
 }
 
-bool TypeParser::_scan(const std::string& token, std::istream& stream)
+bool ConstantValueParser::_scan(const std::string& token, std::istream& stream)
 {
-	reportE(REPORT_LEXER, "scanning for token '" << token << "'");
 	return _nextToken(stream) == token;
 }
 
-char TypeParser::_snext(std::istream& stream)
+char ConstantValueParser::_snext(std::istream& stream)
 {
 	char c = stream.get();
 		
