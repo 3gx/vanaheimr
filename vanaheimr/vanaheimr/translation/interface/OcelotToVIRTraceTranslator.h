@@ -6,6 +6,11 @@
 
 #pragma once
 
+// Vanaheimr Includes
+#include <configure.h>
+
+#if HAVE_OCELOT
+
 // Forward Declarations
 namespace vanaheimr { namespace compiler { class Compiler; } }
 
@@ -38,4 +43,6 @@ private:
 }
 
 }
+
+#endif
 

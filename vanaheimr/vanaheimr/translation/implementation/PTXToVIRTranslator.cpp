@@ -11,7 +11,11 @@
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
+#include <configure.h>
+
 // Ocelot Includes
+#if HAVE_OCELOT
+
 #include <ocelot/ir/interface/Module.h>
 #include <ocelot/ir/interface/PTXKernel.h>
 
@@ -1591,4 +1595,6 @@ void PTXToVIRTranslator::_addPrototype(const std::string& name,
 }
 
 }
+
+#endif
 
