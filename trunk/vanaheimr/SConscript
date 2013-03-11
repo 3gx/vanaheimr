@@ -140,7 +140,9 @@ if env['install']:
 		for ext in extensions:
 			regexp = os.path.join(dir, ext)
 			headers.extend(env.Glob(regexp))
-		
+	
+	headers.extend(env.Glob('configure.h'))
+	
 	for header in headers:
 		(directoryPath, headerName) = os.path.split( \
 			os.path.relpath(str(header), prefix))
