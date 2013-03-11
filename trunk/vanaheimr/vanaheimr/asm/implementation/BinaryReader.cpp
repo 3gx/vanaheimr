@@ -779,12 +779,12 @@ void BinaryReader::_addPhiInstruction(ir::Function::iterator block,
 
 	instruction->setD(static_cast<ir::RegisterOperand*>(destinationOperand));
 	
-	for(unsigned int source = 0, block = container.asPhi.sources;
-		source != container.asPhi.sources; ++source, ++block)
+	for(unsigned int source = 0, sourceBlock = container.asPhi.sources;
+		source != container.asPhi.sources; ++source, ++sourceBlock)
 	{
 		uint64_t offset = source * sizeof(OperandContainer) +
 			container.asPhi.sourcesOffset;
-		uint64_t blockOffset = block * sizeof(OperandContainer) +
+		uint64_t blockOffset = sourceBlock * sizeof(OperandContainer) +
 			container.asPhi.sourcesOffset;
 		
 		const OperandContainer* operandSource =
