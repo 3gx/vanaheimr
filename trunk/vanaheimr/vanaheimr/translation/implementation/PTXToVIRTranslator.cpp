@@ -14,7 +14,7 @@
 #include <configure.h>
 
 // Ocelot Includes
-#if HAVE_OCELOT
+#ifdef HAVE_OCELOT
 
 #include <ocelot/ir/interface/Module.h>
 #include <ocelot/ir/interface/PTXKernel.h>
