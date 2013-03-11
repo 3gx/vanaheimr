@@ -10,9 +10,13 @@
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/Variable.h>
 
+#include <configure.h>
+
 // Standard Library Includes
 #include <unordered_map>
 #include <string>
+
+#if HAVE_OCELOT
 
 // Forward Declarations
                       namespace ir       { class Module;           }
@@ -145,4 +149,6 @@ private:
 }
 
 }
+
+#endif
 

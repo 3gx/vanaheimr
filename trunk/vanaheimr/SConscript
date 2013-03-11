@@ -73,24 +73,29 @@ if env['install']:
 vanaheimr_dep_libs.insert(0, '-lvanaheimr')
 
 # Create programs
-PTXToVIRTranslator = env.Program('ptx-to-vir-translator',
-	['vanaheimr/tools/ptx-to-vir-translator.cpp'], LIBS=vanaheimr_dep_libs)
-env.Depends(PTXToVIRTranslator, libvanaheimr)
+programs = []
+
+if haveOcelot():
+	PTXToVIRTranslator = env.Program('ptx-to-vir-translator',
+		['vanaheimr/tools/ptx-to-vir-translator.cpp'], LIBS=vanaheimr_dep_libs)
+
+	programs.append(PTXToVIRTranslator)
+
 VanaheimrObjDump = env.Program('vir-objdump',
 	['vanaheimr/tools/vir-objdump.cpp'], LIBS=vanaheimr_dep_libs)
-env.Depends(VanaheimrObjDump, libvanaheimr)
 VanaheimrOptimizer = env.Program('vir-optimizer',
 	['vanaheimr/tools/vir-optimizer.cpp'], LIBS=vanaheimr_dep_libs)
-env.Depends(VanaheimrOptimizer, libvanaheimr)
 VanaheimrConfig = env.Program('vanaheimr-config', \
 	['vanaheimr/tools/vanaheimr-config.cpp'], LIBS=vanaheimr_dep_libs, \
 	CXXFLAGS = env['VANAHEIMR_CONFIG_FLAGS'])
-env.Depends(VanaheimrConfig, libvanaheimr)
 
-Default(VanaheimrConfig   )
-Default(PTXToVIRTranslator)
-Default(VanaheimrObjDump  )
-Default(VanaheimrOptimizer)
+programs.append(VanaheimrConfig   )
+programs.append(VanaheimrObjDump  )
+programs.append(VanaheimrOptimizer)
+
+for program in programs:
+	env.Depends(program, libvanaheimr)
+	Default(program)
 
 # Install rules
 if env['install']:
@@ -98,14 +103,10 @@ if env['install']:
 
 	installed = []
 	installed.append(libvanaheimr)
-	installed.append(env.Install(os.path.join( \
-		env['install_path'], "bin"), PTXToVIRTranslator))
-	installed.append(env.Install(os.path.join( \
-		env['install_path'], "bin"), VanaheimrObjDump))
-	installed.append(env.Install(os.path.join( \
-		env['install_path'], "bin"), VanaheimrOptimizer))
-	installed.append(env.Install(os.path.join( \
-		env['install_path'], "bin"), VanaheimrConfig))
+	
+	for program in programs:
+		installed.append(env.Install(os.path.join( \
+			env['install_path'], "bin"), program))
 	
 	# find all header files in the source tree
 	headers = []

@@ -16,7 +16,10 @@
 
 #include <vanaheimr/ir/interface/Type.h>
 
+#include <configure.h>
+
 // Ocelot Includes
+#if HAVE_OCELOT
 #include <ocelot/util/interface/ExtractedDeviceState.h>
 
 #include <ocelot/ir/interface/Module.h>
@@ -277,4 +280,6 @@ static void archaeopteryxCodeGen(compiler::Compiler* compiler,
 }
 
 }
+
+#endif
 

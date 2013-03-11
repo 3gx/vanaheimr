@@ -8,6 +8,14 @@ import re
 import subprocess
 from SCons import SConf
 
+def haveOcelot():
+	try:
+		which('OcelotConfig')
+		
+		return True
+	except:
+		return False
+
 def getOcelotPaths():
 	"""Determines Ocelot {bin,lib,include,cflags,lflags,libs} paths
 	
@@ -15,7 +23,7 @@ def getOcelotPaths():
 	"""
 	
 	try:
-		llvm_config_path = which('OcelotConfig')
+		ocelot_config_path = which('OcelotConfig')
 	except:
 		raise ValueError, 'Error: Failed to find OcelotConfig, make sure ' + \
 			'it is on your PATH'
@@ -220,8 +228,7 @@ def defineConfigFlags(env):
 			('-L', fixPath(library_path)),
 			('-DVANAHEIMR_INCLUDE_PATH=', fixPath(include_path)),
 			('-DVANAHEIMR_LIB_PATH=', fixPath(library_path)),
-			('-DVANAHEIMR_BIN_PATH=', fixPath(bin_path))
-		)])
+			('-DVANAHEIMR_BIN_PATH=', fixPath(bin_path))	)])
 
 	env.Replace(VANAHEIMR_CONFIG_FLAGS = configFlags)
 
@@ -290,11 +297,6 @@ def Environment():
 	if os.name != 'nt':
 		env['LINK'] = env['CXX']
 	
-	# get the absolute path to the directory containing
-	# this source file
-	thisFile = inspect.getabsfile(Environment)
-	thisDir = os.path.dirname(thisFile)
-
 	# get C compiler switches
 	env.AppendUnique(CFLAGS = getCFLAGS(env['mode'], env['Wall'], \
 		env['Werror'], env.subst('$CC')))
@@ -327,26 +329,27 @@ def Environment():
 	defineConfigFlags(env)
 
 	# get ocelot paths
-	(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
-		ocelot_lflags,ocelot_libs) = getOcelotPaths()
-	env.AppendUnique(LIBPATH = ocelot_lib_path)
-	env.AppendUnique(CPPPATH = ocelot_inc_path)
-	env.AppendUnique(CXXFLAGS = ocelot_cflags)
-	env.AppendUnique(LINKFLAGS = ocelot_lflags)
-	env.AppendUnique(EXTRA_LIBS = ocelot_libs)
+	if haveOcelot():
+		(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
+			ocelot_lflags,ocelot_libs) = getOcelotPaths()
+		env.AppendUnique(LIBPATH = ocelot_lib_path)
+		env.AppendUnique(CPPPATH = ocelot_inc_path)
+		env.AppendUnique(CXXFLAGS = ocelot_cflags)
+		env.AppendUnique(LINKFLAGS = ocelot_lflags)
+		env.AppendUnique(EXTRA_LIBS = ocelot_libs)
+		env.Replace(HAVE_OCELOT=True)
+	else:
+		env.Replace(HAVE_OCELOT=False)
 
 	# set the build path
 	env.Replace(BUILD_ROOT = str(env.Dir('.')))
 
 	# set vanaheimr include path
-	env.Prepend(CPPPATH = os.path.dirname(thisDir))
 	env.AppendUnique(LIBPATH = os.path.abspath('.'))
 	
 	# we need librt on linux
 	if os.name == 'posix':
 		env.AppendUnique(EXTRA_LIBS = ['-lrt']) 
-
-	print env['EXTRA_LIBS']
 
 	# generate help text
 	Help(vars.GenerateHelpText(env))
