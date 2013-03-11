@@ -53,8 +53,6 @@ directories = ['vanaheimr/asm/implementation',
 	'vanaheimr/abi/implementation',
 	'vanaheimr/machine/implementation',
 	'vanaheimr/parser/implementation']
-if not haveOcelot():
-	directories.append('hydrazine/implementation')
 
 extensions = ['*.cpp']
 
@@ -62,6 +60,13 @@ for dir in directories:
 	for ext in extensions:
 		regexp = os.path.join(dir, ext)
 		sources.extend(env.Glob(regexp))
+
+if not haveOcelot():
+	sources.extend(env.Glob('hydrazine/implementation/Timer.cpp'))
+	sources.extend(env.Glob('hydrazine/implementation/LowLevelTimer.cpp'))
+	sources.extend(env.Glob('hydrazine/implementation/debug.cpp'))
+	sources.extend(env.Glob('hydrazine/implementation/string.cpp'))
+	sources.extend(env.Glob('hydrazine/implementation/ArgumentParser.cpp'))
 
 # Set dependent libraries
 vanaheimr_dep_libs = env['EXTRA_LIBS']
