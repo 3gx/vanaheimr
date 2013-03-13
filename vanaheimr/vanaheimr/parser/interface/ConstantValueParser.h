@@ -41,6 +41,7 @@ private:
 
 	ir::Constant* _parseIntegerConstant(std::istream& stream);
 	ir::Constant* _parseFloatingPointConstant(std::istream& stream);
+	ir::Constant* _parseStringConstant(std::istream& stream);
 
 private:
 	// Parser methods

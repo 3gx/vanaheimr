@@ -7,6 +7,8 @@
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/ConstantValueParser.h>
 
+#include <vanaheimr/compiler/interface/Compiler.h>
+
 #include <vanaheimr/ir/interface/Type.h>
 #include <vanaheimr/ir/interface/Constant.h>
 
@@ -62,6 +64,16 @@ static bool isInteger(const std::string& integer)
 	return true;
 }
 
+static bool isString(const std::string& string)
+{
+	for(auto character : string)
+	{
+		if(isNumeric(character)) return false;
+	}
+	
+	return true;
+}
+
 static bool isFloatingPoint(const std::string& token)
 {
 	return !token.empty() && isNumeric(token[0]) && !isInteger(token);
@@ -80,6 +92,10 @@ ir::Constant* ConstantValueParser::_parseConstant(std::istream& stream)
 	else if(isFloatingPoint(nextToken))
 	{
 		constant = _parseFloatingPointConstant(stream);
+	}
+	else if(isString(nextToken))
+	{
+		constant = _parseStringConstant(stream);
 	}
 	
 	if(constant == nullptr)
@@ -121,6 +137,15 @@ ir::Constant* ConstantValueParser::_parseFloatingPointConstant(
 	std::istream& stream)
 {
 	return new ir::FloatingPointConstant(parseFloat(_nextToken(stream)));
+}
+
+ir::Constant* ConstantValueParser::_parseStringConstant(
+	std::istream& stream)
+{
+	std::string token = _nextToken(stream);
+
+	return new ir::ArrayConstant(token.c_str(), token.size(),
+		compiler::Compiler::getSingleton()->getType("i8"));
 }
 
 static bool isWhitespace(char c)
