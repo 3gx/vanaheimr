@@ -13,6 +13,9 @@
 // Forward Declarations
 namespace vanaheimr { namespace machine { class Operation; } }
 
+namespace vanaheimr { namespace ir { class Type;     } }
+namespace vanaheimr { namespace ir { class Constant; } }
+
 namespace vanaheimr
 {
 
@@ -23,35 +26,44 @@ namespace machine
 class TranslationTableEntry
 {
 public:
-	/*! \brief Describes how to translate a VIR instruction to a logical op */
+	typedef ir::Type     Type;
+	typedef ir::Constant Constant;
+
+	/*! \brief Describes how to translate a VIR instruction to a machine op */
 	class Translation
 	{
 	public:
 		class Argument
 		{
 		public:
-			enum Type
+			enum ArgumentType
 			{
 				Register  = 0,
 				Temporary = 1,
-				Immediate = 2,
-				Address   = 3
+				Immediate = 2
 			};
 
 		public:
-			Argument(Type _type, unsigned int index);
-			Argument(const std::string& _imm);
+			/*! \brief Construct a register argument */
+			Argument(unsigned int index, bool isSource);
+			/*! \brief Construct a temporary argument */
+			Argument(unsigned int index, const Type*);
+			/*! \brief Construct an immediate argument */
+			Argument(const Constant* constant);
 
 		public:
 			bool isTemporary() const;
 			bool isImmediate() const;
 			bool isRegister()  const;
-			bool isAddress()   const;
 
 		public:
-			Type         type;
-			std::string  immediate;
-			unsigned int index;
+			const Constant* immediate;
+			const Type*     type;
+			unsigned int    index;
+			bool            isSource;
+			
+		private:
+			ArgumentType    _argumentType;
 		};
 
 		typedef std::vector<Argument> ArgumentVector;
@@ -77,6 +89,9 @@ public:
 public:
 	unsigned int totalArguments() const;
 	unsigned int totalTemporaries() const;
+
+public:
+	Translation::ArgumentVector getTemporaries() const;
 
 public:
 	iterator       begin();

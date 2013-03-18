@@ -7,42 +7,49 @@
 // Vanaheimr Includes
 #include <vanaheimr/machine/interface/TranslationTableEntry.h>
 
+#include <vanaheimr/ir/interface/Constant.h>
+
 namespace vanaheimr
 {
 
 namespace machine
 {
 
-TranslationTableEntry::Translation::Argument::Argument(Type t, unsigned int i)
-: type(t), index(i)
+TranslationTableEntry::Translation::Argument::Argument(unsigned int i, bool s)
+: immediate(nullptr), type(nullptr), index(i), isSource(s),
+	_argumentType(Register)
 {
 
 }
 
-TranslationTableEntry::Translation::Argument::Argument(const std::string& _imm)
-: type(Immediate), immediate(_imm)
+TranslationTableEntry::Translation::Argument::Argument(unsigned int i,
+ const Type* t)
+: immediate(nullptr), type(t), index(i), isSource(false),
+	_argumentType(Temporary)
 {
-	
+
+}
+
+TranslationTableEntry::Translation::Argument::Argument(const Constant* c)
+: immediate(c), type(c->type()), index(0), isSource(false),
+	_argumentType(Immediate)
+{
+
 }
 
 bool TranslationTableEntry::Translation::Argument::isTemporary() const
 {
-	return type == Temporary;
+	return _argumentType == Temporary;
 }
 
 bool TranslationTableEntry::Translation::Argument::isImmediate() const
 {
-	return type == Immediate;
+	return _argumentType == Immediate;
 }
 
 bool TranslationTableEntry::Translation::Argument::isRegister() const
 {
-	return type == Register || type == Address;
-}
-
-bool TranslationTableEntry::Translation::Argument::isAddress() const
-{
-	return type == Address;
+	return _argumentType == Register;
 }
 
 TranslationTableEntry::Translation::Translation(const Operation* l)
@@ -81,15 +88,36 @@ unsigned int TranslationTableEntry::totalTemporaries() const
 {
 	unsigned int temps = 0;
 
-	for(TranslationVector::const_iterator entry = translations.begin();
+	for(auto entry = translations.begin();
 		entry != translations.end(); ++entry)
 	{
-		for(ArgumentVector::const_iterator argument = entry->arguments.begin();
+		for(auto argument = entry->arguments.begin();
 			argument != entry->arguments.end(); ++argument)
 		{
 			if(argument->isTemporary())
 			{
 				temps = std::max(temps, argument->index + 1);
+			}
+		}
+	}
+	
+	return temps;
+}
+
+TranslationTableEntry::ArgumentVector
+	TranslationTableEntry::getTemporaries() const
+{
+	ArgumentVector temps(totalTemporaries(), Translation::Argument(nullptr));
+	
+	for(auto entry = translations.begin();
+		entry != translations.end(); ++entry)
+	{
+		for(auto argument = entry->arguments.begin();
+			argument != entry->arguments.end(); ++argument)
+		{
+			if(argument->isTemporary())
+			{
+				temps[argument->index] = *argument;
 			}
 		}
 	}

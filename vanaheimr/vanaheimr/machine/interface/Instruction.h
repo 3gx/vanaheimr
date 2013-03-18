@@ -1,9 +1,7 @@
 /*! \file   Instruction.h
 	\date   Wednesday February 1, 2012
 	\author Gregory Diamos <gdiamos@nvidia.com>
-	\brief  The header file for the Operation class.
-
-	The best documentation is clear, understandable code.
+	\brief  The header file for the Instruction class.
 */
 
 #pragma once
@@ -32,18 +30,12 @@ public:
 
 public:
 	Instruction(const Operation* op, BasicBlock* block = 0, Id id = 0);
-	~Instruction();
 	
 public:
-	Instruction& operator=(const Instruction&);
-	Instruction(const Instruction&);
-	
-public:
-	virtual std::string toString() const;
-	virtual std::string modifierString() const;
+	virtual std::string opcodeString() const;
 
 public:
-	virtual Instruction* clone() const;
+	virtual vanaheimr::ir::Instruction* clone() const;
 
 public:
 	 /*! \brief The machine operation performed by the instruction. */

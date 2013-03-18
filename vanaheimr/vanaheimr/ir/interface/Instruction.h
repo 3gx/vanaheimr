@@ -139,6 +139,7 @@ public:
 public:
 	virtual std::string toString() const;
 	virtual std::string modifierString() const;
+	virtual std::string opcodeString() const;
 	
 public:
 	/*! \brief Erase the instruction from the parent block */

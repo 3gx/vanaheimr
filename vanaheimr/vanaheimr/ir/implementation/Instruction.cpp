@@ -44,6 +44,8 @@ Instruction::Instruction(const Instruction& i)
 		if(operand != nullptr)
 		{
 			reads.push_back(operand->clone());
+			
+			reads.back()->instruction = this;
 		}
 		else
 		{
@@ -56,6 +58,8 @@ Instruction::Instruction(const Instruction& i)
 		if(operand != nullptr)
 		{
 			writes.push_back(operand->clone());
+			
+			writes.back()->instruction = this;
 		}
 		else
 		{
@@ -80,6 +84,8 @@ Instruction& Instruction::operator=(const Instruction& i)
 		if(operand != nullptr)
 		{
 			reads.push_back(operand->clone());
+			
+			reads.back()->instruction = this;
 		}
 		else
 		{
@@ -92,6 +98,8 @@ Instruction& Instruction::operator=(const Instruction& i)
 		if(operand != nullptr)
 		{
 			writes.push_back(operand->clone());
+			
+			writes.back()->instruction = this;
 		}
 		else
 		{
@@ -148,7 +156,7 @@ unsigned int Instruction::index() const
 
 void Instruction::replaceOperand(Operand* original, Operand* newOperand)
 {
-	assert(original->instruction() == this);
+	assert(original->instruction == this);
 
 	for(auto read = reads.begin(); read != reads.end(); ++read)
 	{
@@ -254,7 +262,7 @@ std::string Instruction::toString() const
 		stream << guard()->toString() << " ";
 	}
 	
-	stream << toString(opcode) << " ";
+	stream << opcodeString() << " ";
 	
 	std::string modifier = modifierString();
 	
@@ -300,6 +308,11 @@ std::string Instruction::toString() const
 std::string Instruction::modifierString() const
 {
 	return "";
+}
+
+std::string Instruction::opcodeString() const
+{
+	return toString(opcode);
 }
 
 void Instruction::eraseFromBlock()

@@ -208,6 +208,11 @@ const machine::MachineModel* Compiler::getMachineModel() const
 	return _machineModel;
 }
 
+machine::MachineModel* Compiler::getMachineModel()
+{
+	return _machineModel;
+}
+
 Compiler* Compiler::getSingleton()
 {
 	return &singleton;
