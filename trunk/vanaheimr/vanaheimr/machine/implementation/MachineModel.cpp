@@ -32,6 +32,15 @@ const PhysicalRegister* MachineModel::getPhysicalRegister(RegisterId id) const
 	return reg->second;
 }
 
+const Operation* MachineModel::getOperation(const std::string& name) const
+{
+	auto operation = _machineOperations.find(name);
+	
+	if(operation == _machineOperations.end()) return nullptr;
+	
+	return &operation->second;
+}
+
 unsigned int MachineModel::totalRegisterCount() const
 {
 	return _idToRegisters.size();
@@ -45,6 +54,13 @@ const TranslationTable* MachineModel::translationTable() const
 void MachineModel::configure(const StringVector& )
 {
 	// TODO
+}
+
+void MachineModel::addOperation(const Operation& op)
+{
+	assert(_machineOperations.count(op.name) == 0);
+
+	_machineOperations.insert(std::make_pair(op.name, op));
 }
 
 std::string makeRegisterName(const RegisterFile& file, unsigned int id)

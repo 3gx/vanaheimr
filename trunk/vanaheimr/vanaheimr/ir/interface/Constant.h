@@ -104,6 +104,7 @@ public:
 	Constant* clone() const;
 
 private:
+	// TODO: Arbitrary precision
 	uint64_t     _value;
 };
 

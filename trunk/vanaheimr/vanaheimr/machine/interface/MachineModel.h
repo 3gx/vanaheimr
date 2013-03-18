@@ -8,6 +8,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/machine/interface/RegisterFile.h>
+#include <vanaheimr/machine/interface/Operation.h>
 
 // Standard Library Includes
 #include <string>
@@ -44,6 +45,8 @@ public:
 public:
 	/*! \brief Get the named physical register */
 	const PhysicalRegister* getPhysicalRegister(RegisterId id) const;
+	/*! \brief Get the named physical operation */
+	const Operation* getOperation(const std::string& name) const;
 
 public:
 	/*! \brief Get the total register count */
@@ -57,6 +60,10 @@ public:
 	void configure(const StringVector& options);
 
 public:
+	/*! \brief Add a physical operation */
+	void addOperation(const Operation&);
+
+public:
 	const std::string name;
 
 protected:
@@ -66,10 +73,12 @@ protected:
 	typedef std::unordered_map<unsigned int,
 		const PhysicalRegister*> RegisterMap;
 	typedef std::map<std::string, RegisterFile> RegisterFileMap;
+	typedef std::unordered_map<std::string, Operation> OperationMap;
 
 protected:
 	RegisterMap     _idToRegisters;
 	RegisterFileMap _registerFiles;
+	OperationMap    _machineOperations;
 
 protected:
 	TranslationTable* _translationTable;

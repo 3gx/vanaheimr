@@ -67,7 +67,8 @@ static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 	ir::Instruction* instruction,
 	const machine::TranslationTable& translationTable)
 {
-	auto machineInstructions = translationTable.translateInstruction(instruction);
+	auto machineInstructions =
+		translationTable.translateInstruction(instruction);
 
 	if(machineInstructions.empty())
 	{

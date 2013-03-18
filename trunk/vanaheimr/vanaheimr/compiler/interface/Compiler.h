@@ -82,14 +82,15 @@ public:
 
 public:
 	const machine::MachineModel* getMachineModel() const;
+	machine::MachineModel* getMachineModel();
 
 public:
 	static Compiler* getSingleton();
 
 private:
-	TypeVector                   _types;
-	ModuleList                   _modules;
-	const machine::MachineModel* _machineModel;
+	TypeVector             _types;
+	ModuleList             _modules;
+	machine::MachineModel* _machineModel;
 
 };	
 

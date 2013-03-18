@@ -20,8 +20,8 @@ namespace vanaheimr
 namespace ir
 {
 
-Operand::Operand(OperandMode mode, Instruction* instruction)
-: _mode(mode), _instruction(instruction)
+Operand::Operand(OperandMode mode, Instruction* i)
+: instruction(i), _mode(mode)
 {
 
 }
@@ -76,11 +76,6 @@ bool Operand::isBasicBlock() const
 Operand::OperandMode Operand::mode() const
 {
 	return _mode;
-}
-
-Instruction* Operand::instruction() const
-{
-	return _instruction;
 }
 
 RegisterOperand::RegisterOperand(VirtualRegister* reg, Instruction* i)

@@ -151,7 +151,7 @@ static void lowerCall(ir::Instruction* i,
 static void getVariable(const abi::BoundVariable& variable,
 	ir::Operand* destination)
 {
-	auto    block = destination->instruction()->block;
+	auto    block = destination->instruction->block;
 	auto function = block->function();
 
 	switch(variable.binding())
@@ -178,7 +178,7 @@ static void getVariable(const abi::BoundVariable& variable,
 
 		report("    to " << move->toString());
 
-		block->insert(destination->instruction(), move);
+		block->insert(destination->instruction, move);
 
 		break;
 	}
@@ -265,7 +265,7 @@ static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 {
 	report("   Lowering address read '" << read->toString()
 		<< "' in instruction '"
-		<< read->instruction()->toString() << "'");
+		<< read->instruction->toString() << "'");
 
 	auto variableRead = static_cast<ir::AddressOperand*>(read);
 
@@ -274,7 +274,7 @@ static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 	if(local != locals.end())
 	{
 		auto immediate = new ir::ImmediateOperand(local->second,
-			read->instruction(), read->type());
+			read->instruction, read->type());
 
 		read = immediate;
 
@@ -290,7 +290,7 @@ static void lowerAddress(ir::Operand*& read, const GlobalToAddressMap& globals,
 		<< "' not lowered correctly.");
 
 	auto immediate = new ir::ImmediateOperand(global->second,
-		read->instruction(), read->type());
+		read->instruction, read->type());
 
 	read = immediate;
 
@@ -308,7 +308,7 @@ static void lowerArgument(ir::Operand*& read, const LocalToAddressMap& locals,
 
 	report("   Lowering argument read '" << read->toString()
 		<< "' in instruction '"
-		<< read->instruction()->toString() << "'");
+		<< read->instruction->toString() << "'");
 
 	auto argumentRead = static_cast<ir::ArgumentOperand*>(read);
 
@@ -324,7 +324,7 @@ static void lowerArgument(ir::Operand*& read, const LocalToAddressMap& locals,
 
 		auto immediate = new ir::ImmediateOperand(
 			local->second + fixedRegion->address,
-			read->instruction(), read->type());
+			read->instruction, read->type());
 
 		read = immediate;
 

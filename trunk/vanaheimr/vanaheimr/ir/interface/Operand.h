@@ -65,9 +65,6 @@ public:
 	/*! \brief The mode of the operand determines how it is accessed */
 	OperandMode mode() const;
 
-	/*! \brief The owning instruction */
-	Instruction* instruction() const;
-
 public:
 	/*! \brief Get the operand type */
 	virtual const Type* type() const = 0;
@@ -76,9 +73,12 @@ public:
 	virtual Operand* clone() const = 0;
 	virtual std::string toString() const = 0;
 
+public:
+	/*! \brief The owning instruction */
+	Instruction* instruction;
+
 private:
 	OperandMode  _mode;
-	Instruction* _instruction;
 };
 
 typedef Operand::RegisterType RegisterType;
