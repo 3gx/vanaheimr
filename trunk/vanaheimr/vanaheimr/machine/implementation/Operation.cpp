@@ -14,7 +14,7 @@ namespace machine
 {
 
 Operation::Operation(const std::string& n, unsigned int l, const std::string& s)
-: 
+: name(n), latency(l), special(s)
 {
 
 }
