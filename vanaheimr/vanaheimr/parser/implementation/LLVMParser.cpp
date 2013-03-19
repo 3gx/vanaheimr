@@ -43,7 +43,11 @@ private:
 	void _parseTopLevelDeclaration(const std::string& declaration,
 		std::istream& stream);
 	
-	void _parseGLo
+	void _parseGlobalVariable(std::istream& stream);
+	void _parseTypedef(std::istream& stream);
+	void _parseFunction(std::istream& stream);
+	void _parsePrototype(std::istream& stream);
+	void _parseMetadata(std::istream& stream);
 
 private:
 	// Parser Working State
@@ -90,11 +94,13 @@ std::string LLVMParser::getParsedModuleName() const
 static bool isTopLevelDeclaration(const std::string& token)
 {
 	return token == "@" || token == "define" || token == "declare"
-		|| token == "!";
+		|| token == "!" || token == "target";
 }
 
 void LLVMParserEngine::parse(std::istream& stream)
 {
+	_module = &*_compiler->newModule(moduleName);
+
 	auto token = _nextToken(stream);
 
 	while(isTopLevelDeclaration(token))
@@ -118,6 +124,10 @@ void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token,
 	{
 		_parseGlobalVariable(stream);
 	}
+	else if(token == "%")
+	{
+		_parseTypedef(stream);
+	}
 	else if(token == "define")
 	{
 		_parseFunction(stream);
@@ -126,10 +136,113 @@ void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token,
 	{
 		_parsePrototype(stream);
 	}
+	else if(token == "target")
+	{
+		_parseTarget(stream);
+	}
 	else
 	{
 		_parseMetadata(stream);
 	}
+}
+	
+void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
+{
+	auto name = _nextToken(stream);
+
+	if(!_scan("=", stream))
+	{
+		throw std::runtime_error("At " + _location() + ": expecting a '='.");
+	}
+	
+	auto linkage = _peek(stream);
+
+	if(isLinkage(linkage))
+	{
+		_nextToken();
+	}
+	else
+	{
+		linkage = "";
+	}
+	
+	_parseGlobalAttributes(stream);
+
+	auto type = _parseType(stream);
+
+	auto global = _module->newGlobal(name, type,
+		translateLinkage(linkage), _visibility);
+	
+	_parseInitializer(stream);
+}
+
+void LLVMParserEngine::_parseTypedef(std::istream& stream)
+{
+	auto name = _nextToken(stream);
+	
+	if(!_scan("=", stream))
+	{
+		throw std::runtime_error("At " + _location() + ": expecting a '='.");
+	}
+	
+	if(!_scan("type", stream))
+	{
+		throw std::runtime_error("At " + _location() + ": expecting 'type'.");
+	}
+
+	auto type = _parseType(type);
+
+	_addTypeAlias(name, type);
+}
+
+void LLVMParserEngine::_parseFunction(std::istream& stream)
+{
+	assertM(false, "Not implemented.");
+}
+
+void LLVMParserEngine::_parsePrototype(std::istream& stream)
+{
+	auto returnType = _parseType(type);
+
+	_scanThrow("@", stream);
+	
+	auto name = _nextToken(stream);
+
+	_scanThrow("(", stream);
+
+	auto end = _peek(stream);
+
+	Type::TypeVector argumentTypes;
+
+	if(end != ")")
+	{
+		while(true)
+		{
+			argumentTypes.push_back(_parseType(stream));
+			
+			auto next = _peek();
+
+			if(next != ",") break;
+			
+			_scan(",", stream);
+		}
+		
+	}
+
+	_scanThrow(")", stream);
+
+	auto type = &*_compiler->getOrInsertType(FunctionType(_compiler,
+		returnType, argumentTypes));
+
+	auto prototype = _module->newFunction(name, Variable::ExternalLinkage,
+		Variable::HiddenVisibility, type);
+}
+
+void LLVMParserEngine::_parseMetadata(std::istream& stream)
+{
+	hydrazine::log("LLVM:Parser:") << "Parsing metadata\n";
+
+	assertM(false, "Not Implemented.");
 }
 
 }
