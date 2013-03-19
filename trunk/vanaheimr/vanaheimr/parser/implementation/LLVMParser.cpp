@@ -50,6 +50,16 @@ private:
 	void _parseMetadata(std::istream& stream);
 
 private:
+	std::string _peek(std::istream& stream);
+	std::string _location() const;
+	std::string _nextToken(std::istream& stream);
+	std::string _getLine(std::istream& stream);
+	bool _scan(const std::string& token, std::istream& stream);
+	bool _scanPeek(const std::string& token, std::istream& stream);
+	char _snext(std::istream& stream);
+	void _resetLexer(std::istream& stream);
+
+private:
 	// Parser Working State
 	Compiler*   _compiler;
 	Module*     _module;
@@ -58,8 +68,8 @@ private:
 
 private:
 	// Lexer Working State
-	unsigned int line;
-	unsigned int column;
+	unsigned int _line;
+	unsigned int _column;
 
 };
 
@@ -197,7 +207,15 @@ void LLVMParserEngine::_parseTypedef(std::istream& stream)
 
 void LLVMParserEngine::_parseFunction(std::istream& stream)
 {
-	assertM(false, "Not implemented.");
+	 _parsePrototype(stream);
+	_parseAttributes(stream);
+
+	_scanThrow("{", stream);
+
+	_parseFunctionBody(stream);
+
+	_scanThrow("}", stream);
+
 }
 
 void LLVMParserEngine::_parsePrototype(std::istream& stream)
@@ -234,8 +252,9 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 	auto type = &*_compiler->getOrInsertType(FunctionType(_compiler,
 		returnType, argumentTypes));
 
-	auto prototype = _module->newFunction(name, Variable::ExternalLinkage,
+	_function = &*_module->newFunction(name, Variable::ExternalLinkage,
 		Variable::HiddenVisibility, type);
+
 }
 
 void LLVMParserEngine::_parseMetadata(std::istream& stream)
@@ -243,6 +262,122 @@ void LLVMParserEngine::_parseMetadata(std::istream& stream)
 	hydrazine::log("LLVM:Parser:") << "Parsing metadata\n";
 
 	assertM(false, "Not Implemented.");
+}
+
+
+std::string LLVMParserEngine::_peek(std::istream& stream)
+{
+	size_t position = stream.tellg();
+	
+	unsigned int line   = _line;
+	unsigned int column = _column;
+	
+	std::string result = _nextToken(stream);
+	
+	stream.seekg(position);
+	
+	_line   = line;
+	_column = column;
+	
+	return result;
+}
+
+std::string LLVMParserEngine::_location() const
+{
+	std::stringstream stream;
+	
+	stream << "(" << _line << ":" << _column << ")";
+	
+	return stream.str();
+}
+
+static bool isWhitespace(char c)
+{
+	return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '"';
+}
+
+static bool isToken(char c)
+{
+	return c == '|' || c == '(' || c == ')' || c == ';' || c == ',' || c == '=';
+}
+
+std::string LLVMParserEngine::_nextToken(std::istream& stream)
+{
+	while(stream.good() && isWhitespace(_snext(stream)));
+	stream.unget(); --_column;
+	
+	std::string result;
+	
+	while(stream.good() && !isWhitespace(stream.peek()))
+	{
+		if(!result.empty() && isToken(stream.peek())) break;
+	
+		result.push_back(_snext(stream));
+		
+		if(isToken(*result.rbegin())) break;
+	}
+
+	hydrazine::log("LLVM::Lexer") << "scanned token '" << result << "'\n";
+
+	return result;
+}
+
+std::string LLVMParserEngine::_getLine(std::istream& stream)
+{
+	std::string result;
+
+	while(stream.good())
+	{
+		char next = _snext(stream);
+		
+		if(next == '\n') break;
+		
+		result += next;
+	}
+
+	hydrazine::log("LLVM::Lexer") << "scanned line '" << result << "'\n";
+
+	return result;
+}
+
+bool LLVMParserEngine::_scan(const std::string& token, std::istream& stream)
+{
+	hydrazine::log("LLVM::Lexer") << "scanning for token '" << token << "'\n";
+	
+	return _nextToken(stream) == token;
+}
+
+bool LLVMParserEngine::_scanPeek(const std::string& token, std::istream& stream)
+{
+	hydrazine::log("LLVM::Lexer") << "scanning/peek for token '"
+		<< token << "'\n";
+	
+	return _peek(stream) == token;
+}
+
+char LLVMParserEngine::_snext(std::istream& stream)
+{
+	char c = stream.get();
+	
+	if(c == '\n')
+	{
+		++_line;
+		_column = 0;
+	}
+	else
+	{
+		++_column;
+	}
+	
+	return c;
+}
+
+void LLVMParserEngine::_resetLexer(std::istream& stream)
+{
+	stream.clear();
+	stream.seekg(0, std::ios::beg);
+	_line = 0;
+	_column = 0;
 }
 
 }
