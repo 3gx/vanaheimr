@@ -7,8 +7,17 @@
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/LLVMParser.h>
 
+#include <vanaheimr/compiler/interface/Compiler.h>
+
+#include <vanaheimr/ir/interface/Module.h>
+#include <vanaheimr/ir/interface/Type.h>
+
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <fstream>
+#include <stdexcept>
 
 namespace vanaheimr
 {
@@ -24,9 +33,13 @@ LLVMParser::LLVMParser(compiler::Compiler* compiler)
 
 typedef compiler::Compiler Compiler;
 
-typedef ir::Module     Module;
-typedef ir::Function   Function;
-typedef ir::BasicBlock BasicBlock;
+typedef ir::Module       Module;
+typedef ir::Function     Function;
+typedef ir::BasicBlock   BasicBlock;
+typedef ir::Type         Type;
+typedef ir::Variable     Variable;
+typedef ir::Global       Global;
+typedef ir::FunctionType FunctionType;
 
 class LLVMParserEngine
 {
@@ -47,14 +60,25 @@ private:
 	void _parseTypedef(std::istream& stream);
 	void _parseFunction(std::istream& stream);
 	void _parsePrototype(std::istream& stream);
+	void _parseTarget(std::istream& stream);
 	void _parseMetadata(std::istream& stream);
 
+private:
+	void _parseGlobalAttributes(std::istream& stream);
+	
+	const Type* _parseType(std::istream& stream);
+	void _addTypeAlias(const std::string& alias, const Type*);
+	
+	void _parseFunctionAttributes(std::istream& stream);
+	void _parseFunctionBody(std::istream& stream);
+	
 private:
 	std::string _peek(std::istream& stream);
 	std::string _location() const;
 	std::string _nextToken(std::istream& stream);
 	std::string _getLine(std::istream& stream);
 	bool _scan(const std::string& token, std::istream& stream);
+	void _scanThrow(const std::string& token, std::istream& stream);
 	bool _scanPeek(const std::string& token, std::istream& stream);
 	char _snext(std::istream& stream);
 	void _resetLexer(std::istream& stream);
@@ -63,7 +87,7 @@ private:
 	// Parser Working State
 	Compiler*   _compiler;
 	Module*     _module;
-	Functin*    _function;
+	Function*   _function;
 	BasicBlock* _block;
 
 private:
@@ -83,17 +107,11 @@ void LLVMParser::parse(const std::string& filename)
 			filename + "' for reading.");
 	}
 
-	LLVMParserEngine engine(compiler, filename);
+	LLVMParserEngine engine(_compiler, filename);
 
 	engine.parse(file);
 
 	_moduleName = engine.moduleName;
-}
-
-LLVMParserEngine(compiler::Compiler* compiler, const std::string& filename);
-: moduleName(filename), _compiler(compiler)
-{
-
 }
 
 std::string LLVMParser::getParsedModuleName() const
@@ -101,10 +119,17 @@ std::string LLVMParser::getParsedModuleName() const
 	return _moduleName;
 }
 
+LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
+	const std::string& filename)
+: moduleName(filename), _compiler(compiler)
+{
+
+}
+
 static bool isTopLevelDeclaration(const std::string& token)
 {
-	return token == "@" || token == "define" || token == "declare"
-		|| token == "!" || token == "target";
+	return token == "@" || token == "define" || token == "declare" ||
+		token == "!" || token == "target";
 }
 
 void LLVMParserEngine::parse(std::istream& stream)
@@ -115,7 +140,7 @@ void LLVMParserEngine::parse(std::istream& stream)
 
 	while(isTopLevelDeclaration(token))
 	{
-		_parseTokenLevelDeclaration(token, stream);
+		_parseTopLevelDeclaration(token, stream);
 	
 		token = _nextToken(stream);
 	}
@@ -155,7 +180,34 @@ void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token,
 		_parseMetadata(stream);
 	}
 }
-	
+
+static bool isLinkage(const std::string& token)
+{
+	return token == "private" ||
+		token == "linker_private" ||
+		token == "linker_private_weak" ||
+		token == "internal" ||
+		token == "available_externally" ||
+		token == "linkonce" ||
+		token == "weak" ||
+		token == "common" ||
+		token == "appending" ||
+		token == "extern_weak" ||
+		token == "linkonce_odr" ||
+		token == "weak_odr" ||
+		token == "linkonce_odr_auto_hide" ||
+		token == "external" ||
+		token == "dllimport" ||
+		token == "dllexport";
+}
+
+static Variable::Linkage translateLinkage(const std::string& token)
+{
+	assertM(false, "Not implemented.");
+
+	return Variable::ExternalLinkage;
+}
+
 void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 {
 	auto name = _nextToken(stream);
@@ -169,7 +221,7 @@ void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 
 	if(isLinkage(linkage))
 	{
-		_nextToken();
+		_nextToken(stream);
 	}
 	else
 	{
@@ -180,10 +232,9 @@ void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 
 	auto type = _parseType(stream);
 
-	auto global = _module->newGlobal(name, type,
-		translateLinkage(linkage), _visibility);
+	_module->newGlobal(name, type, translateLinkage(linkage), Global::Shared);
 	
-	_parseInitializer(stream);
+	//_parseInitializer(stream);
 }
 
 void LLVMParserEngine::_parseTypedef(std::istream& stream)
@@ -200,7 +251,7 @@ void LLVMParserEngine::_parseTypedef(std::istream& stream)
 		throw std::runtime_error("At " + _location() + ": expecting 'type'.");
 	}
 
-	auto type = _parseType(type);
+	auto type = _parseType(stream);
 
 	_addTypeAlias(name, type);
 }
@@ -208,7 +259,7 @@ void LLVMParserEngine::_parseTypedef(std::istream& stream)
 void LLVMParserEngine::_parseFunction(std::istream& stream)
 {
 	 _parsePrototype(stream);
-	_parseAttributes(stream);
+	_parseFunctionAttributes(stream);
 
 	_scanThrow("{", stream);
 
@@ -220,7 +271,7 @@ void LLVMParserEngine::_parseFunction(std::istream& stream)
 
 void LLVMParserEngine::_parsePrototype(std::istream& stream)
 {
-	auto returnType = _parseType(type);
+	auto returnType = _parseType(stream);
 
 	_scanThrow("@", stream);
 	
@@ -238,7 +289,7 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 		{
 			argumentTypes.push_back(_parseType(stream));
 			
-			auto next = _peek();
+			auto next = _peek(stream);
 
 			if(next != ",") break;
 			
@@ -249,12 +300,11 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 
 	_scanThrow(")", stream);
 
-	auto type = &*_compiler->getOrInsertType(FunctionType(_compiler,
+	auto type = _compiler->getOrInsertType(FunctionType(_compiler,
 		returnType, argumentTypes));
 
 	_function = &*_module->newFunction(name, Variable::ExternalLinkage,
-		Variable::HiddenVisibility, type);
-
+		Variable::HiddenVisibility, *type);
 }
 
 void LLVMParserEngine::_parseMetadata(std::istream& stream)
