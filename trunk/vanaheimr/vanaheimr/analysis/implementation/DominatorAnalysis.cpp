@@ -98,8 +98,8 @@ void DominatorAnalysis::analyze(Function& function)
 	report("Running dominator analysis over function " << function.name());
 	
 	_determineImmediateDominators(function);
-	     _determineDominatedSets(function);
-	_determineDominanceFrontiers(function);
+	      _determineDominatedSets(function);
+	 _determineDominanceFrontiers(function);
 }
 
 void DominatorAnalysis::_determineImmediateDominators(Function& function)

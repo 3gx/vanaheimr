@@ -6,6 +6,12 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
+// Forward Declarations
+namespace vanaheimr { namespace compiler { class Compiler; } }
+
 namespace vanaheimr
 {
 
@@ -16,7 +22,10 @@ namespace parser
 class LLVMParser
 {
 public:
-	LLVMParser(compiler::Compiler* compiler);
+	typedef compiler::Compiler Compiler;
+
+public:
+	LLVMParser(Compiler* compiler);
 
 public:
 	void parse(const std::string& filename);
