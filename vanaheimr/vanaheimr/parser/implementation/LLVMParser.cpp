@@ -307,6 +307,13 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 		Variable::HiddenVisibility, *type);
 }
 
+void LLVMParserEngine::_parseTarget(std::istream& stream)
+{
+	hydrazine::log("LLVM:Parser:") << "Parsing target\n";
+
+	assertM(false, "Not Implemented.");
+}
+
 void LLVMParserEngine::_parseMetadata(std::istream& stream)
 {
 	hydrazine::log("LLVM:Parser:") << "Parsing metadata\n";
@@ -395,6 +402,14 @@ bool LLVMParserEngine::_scan(const std::string& token, std::istream& stream)
 	hydrazine::log("LLVM::Lexer") << "scanning for token '" << token << "'\n";
 	
 	return _nextToken(stream) == token;
+}
+
+void LLVMParserEngine::_scanThrow(const std::string& token, std::istream& stream)
+{
+	if(!_scan(token, stream))
+	{
+		throw std::runtime_error(_location() + ": expecting a '" + token + "'");
+	}
 }
 
 bool LLVMParserEngine::_scanPeek(const std::string& token, std::istream& stream)
