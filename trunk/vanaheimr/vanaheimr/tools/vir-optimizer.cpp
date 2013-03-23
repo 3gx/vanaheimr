@@ -179,6 +179,8 @@ int main(int argc, char** argv)
 	std::string outputFileName;
 	std::string optimizations;
 
+	bool verbose = false;
+
 	parser.description("This program reads in a VIR binary, optimizes it, "
 		"and writes it out again a new binary.");
 
@@ -186,9 +188,16 @@ int main(int argc, char** argv)
 		"", "The input VIR file path.");
 	parser.parse("-o", "--output",  outputFileName,
 		"", "The output VIR file path.");
+	parser.parse("-v", "--verbose", verbose, false,
+		"Print out log messages during execution");
 	parser.parse("", "--optimizations",  optimizations,
 		"", "Comma separated list of optimizations (ConvertToSSA).");
 	parser.parse();
+
+	if(verbose)
+	{
+		hydrazine::enableAllLogs();
+	}
 	
 	vanaheimr::optimize(virFileName, outputFileName, optimizations);
 
