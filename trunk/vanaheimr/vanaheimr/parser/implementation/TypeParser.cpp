@@ -17,14 +17,6 @@
 // Standard Library Includes
 #include <stdexcept>
 
-// Preprocessor Macros
-#ifdef REPORT_BASE
-#undef REPORT_BASE
-#endif
-
-#define REPORT_BASE  0
-#define REPORT_LEXER 0
-
 namespace vanaheimr
 {
 
@@ -68,7 +60,8 @@ static bool isArray(const std::string& token)
 
 static bool isPrimitive(compiler::Compiler* compiler, const std::string& token)
 {
-	report("Checking if " << token << " is a primitive type.");
+	hydrazine::log("TypeParser::Parser") << "Checking if " << token
+		<< " is a primitive type.\n";
 	
 	ir::Type* primitive = compiler->getType(token);
 
@@ -285,14 +278,15 @@ std::string TypeParser::_nextToken(std::istream& stream)
 		if(isToken(*result.rbegin())) break;
 	}
 
-	reportE(REPORT_LEXER, "scanned token '" << result << "'");
+	hydrazine::log("TypeParser::Lexer") << "scanned token '" << result << "'\n";
 
 	return result;
 }
 
 bool TypeParser::_scan(const std::string& token, std::istream& stream)
 {
-	reportE(REPORT_LEXER, "scanning for token '" << token << "'");
+	hydrazine::log("TypeParser::Lexer") << "scanning for token '" << token << "'\n";
+	
 	return _nextToken(stream) == token;
 }
 
