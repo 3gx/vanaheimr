@@ -1,4 +1,4 @@
-/*! 	\file   vir-objdump.cpp
+/*! \file   vir-objdump.cpp
 	\author Gregory Diamos <gregory.diamos@gatech.edu>
 	\date   Monday May 7, 2012
 	\brief  The source file for the vir-objdump tool.

@@ -16,12 +16,15 @@ namespace vanaheimr { namespace ir       { class Type; } }
 namespace vanaheimr
 {
 
-namespace compiler
+namespace parser
 {
 
 /*! \brief A class for parsing a type from a string */
 class TypeParser
 {
+public:
+	typedef compiler::Compiler Compiler;
+	
 public:
 	TypeParser(Compiler* c);
 	~TypeParser();
