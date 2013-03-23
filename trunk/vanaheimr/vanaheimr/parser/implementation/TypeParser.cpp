@@ -53,6 +53,11 @@ static bool isFunction(const std::string& token)
 	return token.find("(") == 0;
 }
 
+static bool isStructure(const std::string& token)
+{
+	return token.find("{") == 0;
+}
+
 static bool isArray(const std::string& token)
 {
 	return token.find("[") == 0;
@@ -79,6 +84,10 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 	if(isFunction(nextToken))
 	{
 		type = _parseFunction(stream);
+	}
+	else if(isStructure(nextToken))
+	{
+		type = _parseStructure(stream);
 	}
 	else if(isPrimitive(_compiler, nextToken))
 	{
@@ -159,6 +168,47 @@ ir::Type* TypeParser::_parseFunction(std::istream& stream)
 	}
 
 	return new ir::FunctionType(_compiler, returnType, argumentTypes);
+}
+
+ir::Type* TypeParser::_parseStructure(std::istream& stream)
+{
+	if(!_scan("{", stream))
+	{
+		throw std::runtime_error("Failed to parse structure "
+			"type, expecting '{'.");
+	}
+
+	ir::Type::TypeVector types;
+
+	auto closeBrace = _peek(stream);
+
+	if(closeBrace != "}")
+	{
+		do
+		{
+			types.push_back(_parseType(stream));
+		
+			std::string comma = _peek(stream);
+			
+			if(comma == ",")
+			{
+				_scan(",", stream);
+			}
+			else
+			{
+				break;
+			}
+		}
+		while(true);
+	}
+	
+	if(!_scan("}", stream))
+	{
+		throw std::runtime_error("Failed to parse structure "
+			"type, expecting '}'.");
+	}
+
+	return new ir::StructureType(_compiler, types);
 }
 
 static bool isNumeric(char c)

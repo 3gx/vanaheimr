@@ -370,6 +370,9 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 	
 	parser.parse(stream);
 	
+	hydrazine::log("LLVM:Parser:") << "Parsed type '"
+		<< parser.parsedType()->name() << "'\n";
+	
 	return parser.parsedType();
 }
 
