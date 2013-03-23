@@ -8,7 +8,11 @@
 #include <vanaheimr/transforms/interface/PassManager.h>
 #include <vanaheimr/transforms/interface/PassFactory.h>
 
+#include <vanaheimr/parser/interface/LLVMParser.h>
+
 #include <vanaheimr/asm/interface/BinaryReader.h>
+
+#include <vanaheimr/compiler/interface/Compiler.h>
 
 #include <vanaheimr/ir/interface/Module.h>
 
@@ -44,34 +48,85 @@ static void optimizeModule(ir::Module* module, const std::string& optimizations)
 	manager.runOnModule();
 }
 
-static void optimize(const std::string& inputFileName,
-	const std::string& outputFileName, const std::string& optimizations)
-{	
+static ir::Module* loadBinaryModule(const std::string& inputFileName)
+{
 	std::ios_base::openmode mode = std::ios_base::in | std::ios_base::binary;
 	
 	std::ifstream virFile(inputFileName.c_str(), mode);
 	
 	if(!virFile.is_open())
 	{
-		std::cerr << "ObjDump Failed: could not open VIR file '"
+		std::cerr << "VIR Optimizer Failed: could not open VIR bytecode file '"
 			<< inputFileName << "' for reading.\n"; 
-		return;
 	}
 	
-	ir::Module* module = 0;
-
 	try
 	{
 		as::BinaryReader reader;
 
-		module = reader.read(virFile, inputFileName);
+		return reader.read(virFile, inputFileName);
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << "VIR Optimizer Failed: binary reading failed.\n"; 
 		std::cerr << "  Message: " << e.what() << "\n"; 
-		return;
 	}
+
+	return nullptr;
+}
+
+static ir::Module* loadAssemblyModule(const std::string& inputFileName)
+{
+	try
+	{
+		parser::LLVMParser parser(compiler::Compiler::getSingleton());
+
+		parser.parse(inputFileName);
+	
+		return &*compiler::Compiler::getSingleton()->getModule(inputFileName);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "VIR Optimizer Failed: llvm parsing failed.\n"; 
+		std::cerr << "  Message: " << e.what() << "\n"; 
+	}
+
+	return nullptr;
+}
+
+static std::string getExt(const std::string& path)
+{
+	auto segments = hydrazine::split(path, ".");
+
+	if(!segments.empty()) return segments.back();
+
+	return "";
+}
+
+static bool isAssembly(const std::string& inputFileName)
+{
+	return getExt(inputFileName) == "llvm";
+}
+
+static ir::Module* loadModule(const std::string& inputFileName)
+{
+	if(isAssembly(inputFileName))
+	{
+		return loadAssemblyModule(inputFileName);
+	}
+
+	return loadBinaryModule(inputFileName);
+
+}
+
+static void optimize(const std::string& inputFileName,
+	const std::string& outputFileName,
+	const std::string& optimizations)
+{	
+	
+	ir::Module* module = loadModule(inputFileName);
+
+	if(module == nullptr) return;
 	
 	try
 	{

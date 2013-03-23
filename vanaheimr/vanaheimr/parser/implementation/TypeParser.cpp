@@ -5,7 +5,7 @@
 */
 
 // Vanaheimr Includes
-#include <vanaheimr/compiler/interface/TypeParser.h>
+#include <vanaheimr/parser/interface/TypeParser.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
@@ -28,7 +28,7 @@
 namespace vanaheimr
 {
 
-namespace compiler
+namespace parser
 {
 
 TypeParser::TypeParser(Compiler* c)
@@ -66,7 +66,7 @@ static bool isArray(const std::string& token)
 	return token.find("[") == 0;
 }
 
-static bool isPrimitive(Compiler* compiler, const std::string& token)
+static bool isPrimitive(compiler::Compiler* compiler, const std::string& token)
 {
 	report("Checking if " << token << " is a primitive type.");
 	

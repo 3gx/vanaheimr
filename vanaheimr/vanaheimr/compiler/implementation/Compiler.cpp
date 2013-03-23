@@ -7,10 +7,11 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/compiler/interface/Compiler.h>
-#include <vanaheimr/compiler/interface/TypeParser.h>
 
 #include <vanaheimr/machine/interface/MachineModelFactory.h>
 #include <vanaheimr/machine/interface/MachineModel.h>
+
+#include <vanaheimr/parser/interface/TypeParser.h>
 
 #include <vanaheimr/ir/interface/Type.h>
 
@@ -141,7 +142,7 @@ Compiler::iterator Compiler::getOrInsertType(const std::string& signature)
 {
 	report("Parsing type with signature: '" << signature << "'");
 	
-	TypeParser parser(this);
+	parser::TypeParser parser(this);
 	
 	std::stringstream stream(signature);
 	

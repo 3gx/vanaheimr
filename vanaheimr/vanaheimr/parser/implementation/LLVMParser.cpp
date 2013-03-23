@@ -7,6 +7,8 @@
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/LLVMParser.h>
 
+#include <vanaheimr/parser/interface/TypeParser.h>
+
 #include <vanaheimr/compiler/interface/Compiler.h>
 
 #include <vanaheimr/ir/interface/Module.h>
@@ -121,7 +123,7 @@ std::string LLVMParser::getParsedModuleName() const
 
 LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	const std::string& filename)
-: moduleName(filename), _compiler(compiler)
+: moduleName(filename), _compiler(compiler), _line(0), _column(0)
 {
 
 }
@@ -321,6 +323,34 @@ void LLVMParserEngine::_parseMetadata(std::istream& stream)
 	assertM(false, "Not Implemented.");
 }
 
+void LLVMParserEngine::_parseGlobalAttributes(std::istream& stream)
+{
+	assertM(false, "Not Implemented.");
+}
+
+const Type* LLVMParserEngine::_parseType(std::istream& stream)
+{
+	TypeParser parser(_compiler);
+	
+	parser.parse(stream);
+	
+	return parser.parsedType();
+}
+
+void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
+{
+	assertM(false, "Not Implemented.");
+}
+
+void LLVMParserEngine::_parseFunctionAttributes(std::istream& stream)
+{
+	assertM(false, "Not Implemented.");
+}
+
+void LLVMParserEngine::_parseFunctionBody(std::istream& stream)
+{
+	assertM(false, "Not Implemented.");
+}
 
 std::string LLVMParserEngine::_peek(std::istream& stream)
 {
