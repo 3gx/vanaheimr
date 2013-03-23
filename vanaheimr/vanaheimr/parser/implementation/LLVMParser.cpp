@@ -73,17 +73,43 @@ private:
 	
 	void _parseFunctionAttributes(std::istream& stream);
 	void _parseFunctionBody(std::istream& stream);
+
+private:
+	class LexerContext
+	{
+	public:
+		LexerContext(size_t position, unsigned int line, unsigned column);
+	
+	public:
+		size_t       position;
+		unsigned int line;
+		unsigned int column;
+		
+	};
+	
+	typedef std::vector<LexerContext> LexerContextVector;
 	
 private:
 	std::string _peek(std::istream& stream);
 	std::string _location() const;
 	std::string _nextToken(std::istream& stream);
 	std::string _getLine(std::istream& stream);
+	
+	void _getSimpleToken(std::string& result, std::istream& stream);
+	bool _getComplexToken(std::string& result, std::istream& stream);
+
+	bool _lexRegex(std::string& result, const std::string& expression,
+		std::istream& stream);
+	
 	bool _scan(const std::string& token, std::istream& stream);
 	void _scanThrow(const std::string& token, std::istream& stream);
 	bool _scanPeek(const std::string& token, std::istream& stream);
 	char _snext(std::istream& stream);
+	
 	void _resetLexer(std::istream& stream);
+	void _checkpointLexer(std::istream& stream);
+	void _restoreLexer(std::istream& stream);
+	void _discardCheckpoint();
 
 private:
 	// Parser Working State
@@ -97,6 +123,7 @@ private:
 	unsigned int _line;
 	unsigned int _column;
 
+	LexerContextVector _checkpoints;
 };
 
 void LLVMParser::parse(const std::string& filename)
@@ -131,7 +158,7 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 static bool isTopLevelDeclaration(const std::string& token)
 {
 	return token == "@" || token == "define" || token == "declare" ||
-		token == "!" || token == "target";
+		token == "!" || token == "target" || token == "%";
 }
 
 void LLVMParserEngine::parse(std::istream& stream)
@@ -313,7 +340,16 @@ void LLVMParserEngine::_parseTarget(std::istream& stream)
 {
 	hydrazine::log("LLVM:Parser:") << "Parsing target\n";
 
-	assertM(false, "Not Implemented.");
+	auto name = _nextToken(stream);
+
+	_scanThrow("=", stream);
+
+	auto targetString = _nextToken(stream);
+
+	hydrazine::log("LLVM:Parser:") << " target:'" << name << " = "
+		<< targetString << "'\n";
+
+	// TODO: use this
 }
 
 void LLVMParserEngine::_parseMetadata(std::istream& stream)
@@ -380,12 +416,43 @@ std::string LLVMParserEngine::_location() const
 
 static bool isWhitespace(char c)
 {
-	return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '"';
+	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
 static bool isToken(char c)
 {
-	return c == '|' || c == '(' || c == ')' || c == ';' || c == ',' || c == '=';
+	return c == '|' || c == '(' || c == ')' || c == ';' || c == ',' || c == '='
+		|| c == '%' || c == '@';
+}
+
+bool LLVMParserEngine::_getComplexToken(std::string& result,
+	std::istream& stream)
+{
+	// comment: ';*\n'
+	if(_lexRegex(result, ";*\n", stream))
+	{
+		result.clear();
+		return false;
+	}
+
+	// string: '"*"'
+	if(_lexRegex(result, "\"*\"", stream)) return true;
+
+	return false;
+}
+
+void LLVMParserEngine::_getSimpleToken(std::string& result,
+	std::istream& stream)
+{
+	// Simple tokens
+	while(stream.good() && !isWhitespace(stream.peek()))
+	{
+		if(!result.empty() && isToken(stream.peek())) break;
+	
+		result.push_back(_snext(stream));
+			
+		if(result.size() == 1 && isToken(*result.rbegin())) break;
+	}
 }
 
 std::string LLVMParserEngine::_nextToken(std::istream& stream)
@@ -394,14 +461,10 @@ std::string LLVMParserEngine::_nextToken(std::istream& stream)
 	stream.unget(); --_column;
 	
 	std::string result;
-	
-	while(stream.good() && !isWhitespace(stream.peek()))
+
+	if(!_getComplexToken(result, stream))
 	{
-		if(!result.empty() && isToken(stream.peek())) break;
-	
-		result.push_back(_snext(stream));
-		
-		if(isToken(*result.rbegin())) break;
+		_getSimpleToken(result, stream);
 	}
 
 	hydrazine::log("LLVM::Lexer") << "scanned token '" << result << "'\n";
@@ -425,6 +488,64 @@ std::string LLVMParserEngine::_getLine(std::istream& stream)
 	hydrazine::log("LLVM::Lexer") << "scanned line '" << result << "'\n";
 
 	return result;
+}
+
+static bool isWildcard(char c)
+{
+	return c == '*';
+}
+
+static bool matchedWildcard(std::string::const_iterator next,
+	const std::string& expression, char c)
+{
+	if(!isWildcard(*next)) return false;
+	
+	auto following = next; ++following;
+	
+	if(following == expression.end()) return false;
+	
+	return isWildcard(*next) && *following != c;
+}
+
+static bool regexMatch(std::string::const_iterator next,
+	const std::string& expression, char c)
+{
+	if(isWildcard(*next)) return true;
+	
+	return *next == c;
+}
+
+bool LLVMParserEngine::_lexRegex(std::string& result,
+	const std::string& expression, std::istream& stream)
+{
+	if(expression.empty()) return false;
+
+	assert(!isWildcard(expression.back()));
+
+	auto next = expression.begin();
+	
+	if(!regexMatch(next, expression, stream.peek())) return false;
+	
+	_checkpointLexer(stream);
+	
+	for(; next != expression.end(); )
+	{
+		if(!regexMatch(next, expression, stream.peek()))
+		{
+			_restoreLexer(stream);
+			result.clear();
+			return false;
+		}
+		
+		result.push_back(_snext(stream));
+		
+		if(!matchedWildcard(next, expression, stream.peek()))
+		{
+			++next;
+		}
+	}
+	
+	return true;
 }
 
 bool LLVMParserEngine::_scan(const std::string& token, std::istream& stream)
@@ -473,6 +594,39 @@ void LLVMParserEngine::_resetLexer(std::istream& stream)
 	stream.seekg(0, std::ios::beg);
 	_line = 0;
 	_column = 0;
+	
+	_checkpoints.clear();
+}
+
+void LLVMParserEngine::_checkpointLexer(std::istream& stream)
+{
+	_checkpoints.push_back(LexerContext(stream.tellg(), _line, _column));
+}
+
+void LLVMParserEngine::_restoreLexer(std::istream& stream)
+{
+	assert(!_checkpoints.empty());
+
+	stream.clear();
+	stream.seekg(_checkpoints.back().position, std::ios::beg);
+	_line = _checkpoints.back().line;
+	_column = _checkpoints.back().column;
+	
+	_checkpoints.pop_back();
+}
+
+void LLVMParserEngine::_discardCheckpoint()
+{
+	assert(!_checkpoints.empty());
+
+	_checkpoints.pop_back();
+}
+
+LLVMParserEngine::LexerContext::LexerContext(size_t p,
+	unsigned int l, unsigned int c)
+: position(p), line(l), column(c)
+{
+
 }
 
 }
