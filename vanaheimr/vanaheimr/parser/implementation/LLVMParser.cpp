@@ -20,6 +20,7 @@
 // Standard Library Includes
 #include <fstream>
 #include <stdexcept>
+#include <unordered_map>
 
 namespace vanaheimr
 {
@@ -73,23 +74,12 @@ private:
 	
 	void _parseFunctionAttributes(std::istream& stream);
 	void _parseFunctionBody(std::istream& stream);
-
-private:
-	class LexerContext
-	{
-	public:
-		LexerContext(size_t position, unsigned int line, unsigned column);
 	
-	public:
-		size_t       position;
-		unsigned int line;
-		unsigned int column;
-		
-	};
-	
-	typedef std::vector<LexerContext> LexerContextVector;
+public:
+	void _resetParser(std::istream& stream);
 	
 private:
+	// Lexer Interface
 	std::string _peek(std::istream& stream);
 	std::string _location() const;
 	std::string _nextToken(std::istream& stream);
@@ -112,11 +102,29 @@ private:
 	void _discardCheckpoint();
 
 private:
+	class LexerContext
+	{
+	public:
+		LexerContext(size_t position, unsigned int line, unsigned column);
+	
+	public:
+		size_t       position;
+		unsigned int line;
+		unsigned int column;
+		
+	};
+	
+	typedef std::vector<LexerContext> LexerContextVector;
+	typedef std::unordered_map<std::string, const Type*> TypeAliasMap;
+
+private:
 	// Parser Working State
 	Compiler*   _compiler;
 	Module*     _module;
 	Function*   _function;
 	BasicBlock* _block;
+
+	TypeAliasMap _typedefs;
 
 private:
 	// Lexer Working State
@@ -164,6 +172,8 @@ static bool isTopLevelDeclaration(const std::string& token)
 void LLVMParserEngine::parse(std::istream& stream)
 {
 	_module = &*_compiler->newModule(moduleName);
+
+	_resetParser(stream);
 
 	auto token = _nextToken(stream);
 
@@ -338,7 +348,7 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 
 void LLVMParserEngine::_parseTarget(std::istream& stream)
 {
-	hydrazine::log("LLVM:Parser:") << "Parsing target\n";
+	hydrazine::log("LLVM::Parser") << "Parsing target\n";
 
 	auto name = _nextToken(stream);
 
@@ -346,7 +356,7 @@ void LLVMParserEngine::_parseTarget(std::istream& stream)
 
 	auto targetString = _nextToken(stream);
 
-	hydrazine::log("LLVM:Parser:") << " target:'" << name << " = "
+	hydrazine::log("LLVM::Parser") << " target:'" << name << " = "
 		<< targetString << "'\n";
 
 	// TODO: use this
@@ -354,7 +364,7 @@ void LLVMParserEngine::_parseTarget(std::istream& stream)
 
 void LLVMParserEngine::_parseMetadata(std::istream& stream)
 {
-	hydrazine::log("LLVM:Parser:") << "Parsing metadata\n";
+	hydrazine::log("LLVM::Parser") << "Parsing metadata\n";
 
 	assertM(false, "Not Implemented.");
 }
@@ -370,7 +380,7 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 	
 	parser.parse(stream);
 	
-	hydrazine::log("LLVM:Parser:") << "Parsed type '"
+	hydrazine::log("LLVM::Parser") << "Parsed type '"
 		<< parser.parsedType()->name() << "'\n";
 	
 	return parser.parsedType();
@@ -378,7 +388,24 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 
 void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 {
-	assertM(false, "Not Implemented.");
+	auto existingType = _typedefs.find(alias);
+	
+	if(existingType != _typedefs.end())
+	{
+		if(existingType->second != type)
+		{
+			throw std::runtime_error("At " + _location() + ": typedef '"
+				+ alias + "' declared with type '" + type->name()
+				+ "', which is incompatible with previous declaration '"
+				+ existingType->second->name() + "'.");
+		}
+		
+		return;
+	}
+
+	hydrazine::log("LLVM::Parser") << " alias '" << alias << "'\n";
+
+	_typedefs.insert(std::make_pair(alias, type));
 }
 
 void LLVMParserEngine::_parseFunctionAttributes(std::istream& stream)
@@ -389,6 +416,13 @@ void LLVMParserEngine::_parseFunctionAttributes(std::istream& stream)
 void LLVMParserEngine::_parseFunctionBody(std::istream& stream)
 {
 	assertM(false, "Not Implemented.");
+}
+
+void LLVMParserEngine::_resetParser(std::istream& stream)
+{
+	_resetLexer(stream);
+	
+	_typedefs.clear();
 }
 
 std::string LLVMParserEngine::_peek(std::istream& stream)
@@ -558,7 +592,8 @@ bool LLVMParserEngine::_scan(const std::string& token, std::istream& stream)
 	return _nextToken(stream) == token;
 }
 
-void LLVMParserEngine::_scanThrow(const std::string& token, std::istream& stream)
+void LLVMParserEngine::_scanThrow(const std::string& token,
+	std::istream& stream)
 {
 	if(!_scan(token, stream))
 	{

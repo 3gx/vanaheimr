@@ -10,8 +10,9 @@
 #include <istream>
 
 // Forward Declarations
-namespace vanaheimr { namespace compiler { class Compiler; } }
-namespace vanaheimr { namespace ir       { class Type; } }
+namespace vanaheimr { namespace compiler { class Compiler;     } }
+namespace vanaheimr { namespace ir       { class Type;         } }
+namespace vanaheimr { namespace parser   { class TypeAliasSet; } }
 
 namespace vanaheimr
 {
@@ -26,7 +27,7 @@ public:
 	typedef compiler::Compiler Compiler;
 	
 public:
-	TypeParser(Compiler* c);
+	TypeParser(Compiler* c, const TypeAliasSet* a = nullptr);
 	~TypeParser();
 
 public:
@@ -40,12 +41,18 @@ public:
 	const ir::Type* parsedType() const;
 
 private:
+	// High Level Parser methods
 	ir::Type* _parseType(std::istream& stream);
 
 	ir::Type* _parseFunction(std::istream& stream);
+	ir::Type* _parseFunction(const ir::Type* type, std::istream& stream);
 	ir::Type* _parseStructure(std::istream& stream);
 	ir::Type* _parseArray(const ir::Type* base, std::istream& stream);
 	ir::Type* _parsePrimitive(std::istream& stream);
+	ir::Type* _parseTypeAlias(std::istream& stream);
+
+private:
+	ir::Type* _getTypeAlias(const std::string& token);
 
 private:
 	// Parser methods
@@ -60,8 +67,10 @@ private:
 	char        _snext(std::istream& stream);
 
 private:
-	Compiler* _compiler;
-	ir::Type* _parsedType;
+	Compiler*    _compiler;
+	ir::Type*    _parsedType;
+	
+	const TypeAliasSet* _typedefs;
 };
 
 }

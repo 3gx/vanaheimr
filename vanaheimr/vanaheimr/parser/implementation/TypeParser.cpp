@@ -6,6 +6,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/TypeParser.h>
+#include <vanaheimr/parser/interface/TypeAliasSet.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
@@ -23,8 +24,8 @@ namespace vanaheimr
 namespace parser
 {
 
-TypeParser::TypeParser(Compiler* c)
-: _compiler(c), _parsedType(nullptr)
+TypeParser::TypeParser(Compiler* c, const TypeAliasSet* a)
+: _compiler(c), _parsedType(nullptr), _typedefs(a)
 {
 
 }
@@ -63,6 +64,21 @@ static bool isArray(const std::string& token)
 	return token.find("[") == 0;
 }
 
+static bool isPointer(const std::string& token)
+{
+	return token.find("*") == 0;
+}
+
+static bool isVariadic(const std::string& token)
+{
+	return token == "...";
+}
+
+static bool isTypeAlias(const std::string& token)
+{
+	return token.find("%") == 0;
+}
+
 static bool isPrimitive(compiler::Compiler* compiler, const std::string& token)
 {
 	hydrazine::log("TypeParser::Parser") << "Checking if " << token
@@ -99,12 +115,38 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 		{
 			type = _parseArray(type, stream);
 		}
+		else if(isFunction(nextToken))
+		{
+			type = _parseFunction(type, stream);
+		}
+	}
+	else if(isVariadic(nextToken))
+	{
+		_scan("...", stream);
+		type = new ir::VariadicType(_compiler);
+	}
+	else if(isTypeAlias(nextToken))
+	{
+		_parseTypeAlias(stream);
+	}
+
+	nextToken = _peek(stream);
+
+	while(isPointer(nextToken))
+	{
+		_scan("*", stream);
+		type = new ir::PointerType(_compiler, type);
+	
+		nextToken = _peek(stream);
 	}
 	
 	if(type == nullptr)
 	{
 		throw std::runtime_error("Failed to parse type.");
 	}
+	
+	hydrazine::log("TypeParser::Parser") << "Parsed type " << type->name()
+		<< ".\n";
 	
 	return type;
 }
@@ -140,6 +182,48 @@ ir::Type* TypeParser::_parseFunction(std::istream& stream)
 	}
 	
 	closeBrace = _peek(stream);
+
+	if(closeBrace != ")")
+	{
+		do
+		{
+			argumentTypes.push_back(_parseType(stream));
+		
+			std::string comma = _peek(stream);
+			
+			if(comma == ",")
+			{
+				_scan(",", stream);
+			}
+			else
+			{
+				break;
+			}
+		}
+		while(true);
+	}
+
+	if(!_scan(")", stream))
+	{
+		throw std::runtime_error("Failed to parse function "
+			"type, expecting ')'.");
+	}
+
+	return new ir::FunctionType(_compiler, returnType, argumentTypes);
+}
+
+ir::Type* TypeParser::_parseFunction(const ir::Type* returnType,
+	std::istream& stream)
+{
+	ir::Type::TypeVector argumentTypes;
+
+	if(!_scan("(", stream))
+	{
+		throw std::runtime_error("Failed to parse function "
+			"type, expecting '('.");
+	}
+	
+	auto closeBrace = _peek(stream);
 
 	if(closeBrace != ")")
 	{
@@ -280,6 +364,13 @@ ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
 	return _compiler->getType(token)->clone();
 }
 
+ir::Type* TypeParser::_getTypeAlias(const std::string& token)
+{
+	if(_typedefs == nullptr) return nullptr;
+
+	return _typedefs->getType(token)->clone();
+}
+
 static bool isWhitespace(char c)
 {
 	return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '"';
@@ -287,7 +378,8 @@ static bool isWhitespace(char c)
 
 static bool isToken(char c)
 {
-	return c == '(' || c == ')' || c == ',' || c == '[' || c == ']';
+	return c == '(' || c == ')' || c == ',' || c == '[' || c == ']' || c == '{' ||
+		c == '}' || c == '*' || c == '%';
 }
 
 std::string TypeParser::_peek(std::istream& stream)
