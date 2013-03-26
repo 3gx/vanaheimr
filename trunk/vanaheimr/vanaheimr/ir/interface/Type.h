@@ -165,6 +165,10 @@ public:
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
 
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+
 private:
 	const Type* _pointedToType;
 
@@ -213,6 +217,16 @@ public:
 	Type*  clone() const;
 };
 
+/*! \brief A type for a variadic function argument */
+class VariadicType : public Type
+{
+public:
+	VariadicType(Compiler* c);
+
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+};
 }
 
 }

@@ -203,8 +203,26 @@ Type* ArrayType::clone() const
 	return new ArrayType(*this);
 }
 
+static std::string structureTypeName(const Type::TypeVector& types)
+{
+	std::stringstream stream;
+	
+	stream << "{";
+
+	for(auto type = types.begin(); type != types.end(); ++type)
+	{
+		if(type != types.begin()) stream << ", ";
+	
+		stream << (*type)->name();
+	}
+	
+	stream << "}";
+	
+	return stream.str();
+}
+
 StructureType::StructureType(Compiler* c, const TypeVector& types)
-: AggregateType(c), _types(types)
+: AggregateType(c, structureTypeName(types)), _types(types)
 {
 
 }
@@ -244,7 +262,7 @@ Type* StructureType::clone() const
 }
 
 PointerType::PointerType(Compiler* c, const Type* t)
-: AggregateType(c), _pointedToType(t)
+: AggregateType(c, t->name() + "*"), _pointedToType(t)
 {
 
 }
@@ -264,6 +282,18 @@ bool PointerType::isIndexValid(unsigned int index) const
 unsigned int PointerType::numberOfSubTypes() const
 {
 	return 1;
+}
+
+size_t PointerType::bytes() const
+{
+	// TODO Get the target pointer size
+
+	return sizeof(void*);
+}
+
+Type* PointerType::clone() const
+{
+	return new PointerType(*this);
 }
 
 FunctionType::FunctionType(Compiler* c, const Type* returnType,
@@ -368,6 +398,22 @@ size_t BasicBlockType::bytes() const
 Type* BasicBlockType::clone() const
 {
 	return new BasicBlockType(*this);
+}
+
+VariadicType::VariadicType(Compiler* c)
+: Type("_ZTVariadic", c)
+{
+
+}
+
+size_t VariadicType::bytes() const
+{
+	return 0;
+}
+
+Type* VariadicType::clone() const
+{
+	return new VariadicType(*this);
 }
 
 }
