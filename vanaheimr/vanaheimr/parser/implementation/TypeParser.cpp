@@ -364,11 +364,39 @@ ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
 	return _compiler->getType(token)->clone();
 }
 
+ir::Type* TypeParser::_parseTypeAlias(std::istream& stream)
+{
+	if(!_scan("%", stream))
+	{
+		throw std::runtime_error("Failed to parse type alias, expecting '%'.");
+	}
+	
+	std::string token;
+
+	bool success = _parse(token, stream);
+	
+	if(!success)
+	{
+		throw std::runtime_error("Hit end of stream while "
+			"searching for type alias type.");
+	}
+	
+	auto alias = _getTypeAlias(token);
+
+	if(alias == nullptr)
+	{
+		throw std::runtime_error("Failed to parse type alias, unknown "
+			"typename '" + token + "'.");
+	}
+
+	return alias;
+}
+
 ir::Type* TypeParser::_getTypeAlias(const std::string& token)
 {
 	if(_typedefs == nullptr) return nullptr;
 
-	return _typedefs->getType(token)->clone();
+ _typedefs->getType(token)->clone();
 }
 
 static bool isWhitespace(char c)

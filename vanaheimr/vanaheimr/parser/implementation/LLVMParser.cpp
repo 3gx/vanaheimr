@@ -8,6 +8,7 @@
 #include <vanaheimr/parser/interface/LLVMParser.h>
 
 #include <vanaheimr/parser/interface/TypeParser.h>
+#include <vanaheimr/parser/interface/TypeAliasSet.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
@@ -115,7 +116,6 @@ private:
 	};
 	
 	typedef std::vector<LexerContext> LexerContextVector;
-	typedef std::unordered_map<std::string, const Type*> TypeAliasMap;
 
 private:
 	// Parser Working State
@@ -124,7 +124,7 @@ private:
 	Function*   _function;
 	BasicBlock* _block;
 
-	TypeAliasMap _typedefs;
+	TypeAliasSet _typedefs;
 
 private:
 	// Lexer Working State
@@ -388,16 +388,22 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 
 void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 {
-	auto existingType = _typedefs.find(alias);
+	auto existingType = _typedefs.getType(alias);
 	
-	if(existingType != _typedefs.end())
+	if(existingType != nullptr)
 	{
-		if(existingType->second != type)
+		if(existingType->isAlias())
+		{
+			_typedefs.updateAlias(alias, type);
+			return;
+		}
+
+		if(existingType != type)
 		{
 			throw std::runtime_error("At " + _location() + ": typedef '"
 				+ alias + "' declared with type '" + type->name()
 				+ "', which is incompatible with previous declaration '"
-				+ existingType->second->name() + "'.");
+				+ existingType->name() + "'.");
 		}
 		
 		return;
@@ -405,7 +411,7 @@ void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 
 	hydrazine::log("LLVM::Parser") << " alias '" << alias << "'\n";
 
-	_typedefs.insert(std::make_pair(alias, type));
+	_typedefs.addAlias(alias, type);
 }
 
 void LLVMParserEngine::_parseFunctionAttributes(std::istream& stream)
