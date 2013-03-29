@@ -32,12 +32,11 @@ TypeParser::TypeParser(Compiler* c, const TypeAliasSet* a)
 
 TypeParser::~TypeParser()
 {
-	delete _parsedType;
 }
 
 void TypeParser::parse(std::istream& stream)
 {
-	delete _parsedType; _parsedType = nullptr;
+	_parsedType = nullptr;
 	
 	_parsedType = _parseType(stream);
 }
@@ -79,6 +78,11 @@ static bool isTypeAlias(const std::string& token)
 	return token.find("%") == 0;
 }
 
+static bool isOpaqueType(const std::string& token)
+{
+	return token.find("opaque") == 0;
+}
+
 static bool isPrimitive(compiler::Compiler* compiler, const std::string& token)
 {
 	hydrazine::log("TypeParser::Parser") << "Checking if " << token
@@ -108,26 +112,23 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 	else if(isPrimitive(_compiler, nextToken))
 	{
 		type = _parsePrimitive(stream);
-		
-		nextToken = _peek(stream);
-		
-		if(isArray(nextToken))
-		{
-			type = _parseArray(type, stream);
-		}
-		else if(isFunction(nextToken))
-		{
-			type = _parseFunction(type, stream);
-		}
+	}
+	else if(isArray(nextToken))
+	{
+		type = _parseArray(stream);
 	}
 	else if(isVariadic(nextToken))
 	{
 		_scan("...", stream);
-		type = new ir::VariadicType(_compiler);
+		type = *_compiler->getOrInsertType(ir::VariadicType(_compiler));
 	}
 	else if(isTypeAlias(nextToken))
 	{
-		_parseTypeAlias(stream);
+		type = _parseTypeAlias(stream);
+	}
+	else if(isOpaqueType(nextToken))
+	{
+		type = *_compiler->getOrInsertType(ir::OpaqueType(_compiler));
 	}
 
 	nextToken = _peek(stream);
@@ -135,7 +136,7 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 	while(isPointer(nextToken))
 	{
 		_scan("*", stream);
-		type = new ir::PointerType(_compiler, type);
+		type = *_compiler->getOrInsertType(ir::PointerType(_compiler, type));
 	
 		nextToken = _peek(stream);
 	}
@@ -209,49 +210,8 @@ ir::Type* TypeParser::_parseFunction(std::istream& stream)
 			"type, expecting ')'.");
 	}
 
-	return new ir::FunctionType(_compiler, returnType, argumentTypes);
-}
-
-ir::Type* TypeParser::_parseFunction(const ir::Type* returnType,
-	std::istream& stream)
-{
-	ir::Type::TypeVector argumentTypes;
-
-	if(!_scan("(", stream))
-	{
-		throw std::runtime_error("Failed to parse function "
-			"type, expecting '('.");
-	}
-	
-	auto closeBrace = _peek(stream);
-
-	if(closeBrace != ")")
-	{
-		do
-		{
-			argumentTypes.push_back(_parseType(stream));
-		
-			std::string comma = _peek(stream);
-			
-			if(comma == ",")
-			{
-				_scan(",", stream);
-			}
-			else
-			{
-				break;
-			}
-		}
-		while(true);
-	}
-
-	if(!_scan(")", stream))
-	{
-		throw std::runtime_error("Failed to parse function "
-			"type, expecting ')'.");
-	}
-
-	return new ir::FunctionType(_compiler, returnType, argumentTypes);
+	return *_compiler->getOrInsertType(ir::FunctionType(
+		_compiler, returnType, argumentTypes));
 }
 
 ir::Type* TypeParser::_parseStructure(std::istream& stream)
@@ -292,7 +252,7 @@ ir::Type* TypeParser::_parseStructure(std::istream& stream)
 			"type, expecting '}'.");
 	}
 
-	return new ir::StructureType(_compiler, types);
+	return *_compiler->getOrInsertType(ir::StructureType(_compiler, types));
 }
 
 static bool isNumeric(char c)
@@ -328,7 +288,7 @@ static unsigned int parseInteger(const std::string& integer)
 	return value;
 }
 
-ir::Type* TypeParser::_parseArray(const ir::Type* base, std::istream& stream)
+ir::Type* TypeParser::_parseArray(std::istream& stream)
 {
 	if(!_scan("[", stream))
 	{
@@ -340,13 +300,21 @@ ir::Type* TypeParser::_parseArray(const ir::Type* base, std::istream& stream)
 	
 	unsigned int dimension = parseInteger(dimensionToken);
 	
+	if(!_scan("x", stream))
+	{
+		throw std::runtime_error("Failed to parse array "
+			"type, expecting 'x'.");
+	}
+
+	auto base = _parseType(stream);
+	
 	if(!_scan("]", stream))
 	{
 		throw std::runtime_error("Failed to parse array "
 			"type, expecting ']'.");
 	}
 	
-	return new ir::ArrayType(_compiler, base, dimension);
+	return *_compiler->getOrInsertType(ir::ArrayType(_compiler, base, dimension));
 }
 
 ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
@@ -361,7 +329,7 @@ ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
 			"searching for primitive type.");
 	}
 	
-	return _compiler->getType(token)->clone();
+	return _compiler->getType(token);
 }
 
 ir::Type* TypeParser::_parseTypeAlias(std::istream& stream)
@@ -396,12 +364,12 @@ ir::Type* TypeParser::_getTypeAlias(const std::string& token)
 {
 	if(_typedefs == nullptr) return nullptr;
 
- _typedefs->getType(token)->clone();
+ 	return *_compiler->getOrInsertType(*_typedefs->getType(token));
 }
 
 static bool isWhitespace(char c)
 {
-	return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '"';
+	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
 static bool isToken(char c)

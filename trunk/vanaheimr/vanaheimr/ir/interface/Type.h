@@ -10,6 +10,7 @@
 // Standard Library Includes
 #include <string>
 #include <vector>
+#include <list>
 
 // Forward Declarations
 namespace vanaheimr { namespace compiler { class Compiler; } }
@@ -25,6 +26,7 @@ class Type
 {
 public:
 	typedef std::vector<const Type*> TypeVector;
+	typedef std::list<std::string>   StringList;
 	typedef compiler::Compiler       Compiler;
 	
 public:
@@ -43,9 +45,14 @@ public:
 	bool isBasicBlock()           const;
 	bool isFunction()             const;
 	bool isArray()                const;
+	bool isAlias()                const;
 
 public:
 	virtual size_t alignment() const;
+
+public:
+	virtual StringList getAliasNames() const;
+	virtual void resolveAliases(const std::string& name, const Type* t);
 	
 public:
 	virtual size_t bytes() const = 0;
@@ -106,8 +113,13 @@ public:
 
 public:
 	virtual const Type*  getTypeAtIndex  (unsigned int index) const = 0;
+	virtual const Type*& getTypeAtIndex  (unsigned int index)       = 0;
 	virtual bool         isIndexValid    (unsigned int index) const = 0;
 	virtual unsigned int numberOfSubTypes(                  ) const = 0;
+
+public:
+	virtual StringList getAliasNames() const;
+	virtual void resolveAliases(const std::string& name, const Type* t);
 
 };
 
@@ -119,6 +131,7 @@ public:
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
+	const Type*& getTypeAtIndex  (unsigned int index);
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
 
@@ -142,6 +155,7 @@ public:
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
+	const Type*& getTypeAtIndex  (unsigned int index);
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
 
@@ -162,6 +176,7 @@ public:
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
+	const Type*& getTypeAtIndex  (unsigned int index);
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
 
@@ -186,6 +201,7 @@ public:
 
 public:
 	const Type*  getTypeAtIndex  (unsigned int index) const;
+	const Type*& getTypeAtIndex  (unsigned int index);
 	bool         isIndexValid    (unsigned int index) const;
 	unsigned int numberOfSubTypes(                  ) const;
 
@@ -227,6 +243,33 @@ public:
 	size_t bytes() const;
 	Type*  clone() const;
 };
+
+/*! \brief A type that is not visible to the compiler*/
+class OpaqueType : public Type
+{
+public:
+	OpaqueType(Compiler* c);
+
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+};
+
+/*! \brief A type that mapped to another type with a specific name.
+
+	Note that Aliased types are not legal in the pure form of the IR.
+*/
+class AliasedType : public Type
+{
+public:
+	AliasedType(Compiler* c, const std::string& name);
+
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+
+};
+
 }
 
 }
