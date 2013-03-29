@@ -57,6 +57,8 @@ public:
 	std::string moduleName;
 
 private:
+	void _parseTypedefs(std::istream& stream);
+
 	void _parseTopLevelDeclaration(const std::string& declaration,
 		std::istream& stream);
 	
@@ -68,6 +70,13 @@ private:
 	void _parseMetadata(std::istream& stream);
 
 private:
+	typedef std::list<std::string> StringList;
+
+private:
+	void _mergeTypeAliases();
+	void _mergeTypeAlias(const std::string&);
+	StringList _getTypedefDependencies(const std::string& alias);
+	
 	void _parseGlobalAttributes(std::istream& stream);
 	
 	const Type* _parseType(std::istream& stream);
@@ -88,6 +97,7 @@ private:
 	
 	void _getSimpleToken(std::string& result, std::istream& stream);
 	bool _getComplexToken(std::string& result, std::istream& stream);
+	std::string _getTypeString(std::istream& stream);
 
 	bool _lexRegex(std::string& result, const std::string& expression,
 		std::istream& stream);
@@ -116,6 +126,7 @@ private:
 	};
 	
 	typedef std::vector<LexerContext> LexerContextVector;
+	typedef std::unordered_map<std::string, std::string> StringMap;
 
 private:
 	// Parser Working State
@@ -125,6 +136,7 @@ private:
 	BasicBlock* _block;
 
 	TypeAliasSet _typedefs;
+	StringMap    _typedefStrings;
 
 private:
 	// Lexer Working State
@@ -175,6 +187,8 @@ void LLVMParserEngine::parse(std::istream& stream)
 
 	_resetParser(stream);
 
+	_parseTypedefs(stream);
+
 	auto token = _nextToken(stream);
 
 	while(isTopLevelDeclaration(token))
@@ -189,6 +203,32 @@ void LLVMParserEngine::parse(std::istream& stream)
 		throw std::runtime_error("At " + _location() +
 			": hit invalid top level declaration '" + token + "'" );
 	}
+}
+
+void LLVMParserEngine::_parseTypedefs(std::istream& stream)
+{
+	hydrazine::log("LLVM::Parser") << "Parsing typedefs\n";
+	
+	while(stream.good())
+	{
+		auto token = _nextToken(stream);
+
+		if(token != "%") continue;
+		
+		auto name = _nextToken(stream);
+
+		if(!_scan("=", stream)) continue;
+
+		if(!_scan("type", stream)) continue;
+
+		hydrazine::log("LLVM::Parser") << " Parsed '" << name << "'\n";
+		
+		_typedefStrings[name] = _getTypeString(stream);
+	}
+
+	_mergeTypeAliases();
+
+	_resetLexer(stream);
 }
 
 void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token,
@@ -245,6 +285,53 @@ static Variable::Linkage translateLinkage(const std::string& token)
 	assertM(false, "Not implemented.");
 
 	return Variable::ExternalLinkage;
+}
+
+void LLVMParserEngine::_mergeTypeAliases()
+{
+	hydrazine::log("LLVM::Parser") << "Merging typedefs before "
+		"parsing the remainder.\n";
+	
+	for(auto alias : _typedefStrings)
+	{
+		_mergeTypeAlias(alias.first);
+	}
+}
+
+void LLVMParserEngine::_mergeTypeAlias(const std::string& alias)
+{
+	hydrazine::log("LLVM::Parser") << " Resolving typedefs in '" << alias << "'.\n";
+	
+	auto typeString = _typedefStrings.find(alias);
+
+	if(typeString == _typedefStrings.end())
+	{
+		throw std::runtime_error("Could not find typedef entry for '" + alias + "'.");
+	}
+	
+	TypeParser parser(_compiler, &_typedefs);
+	
+	std::stringstream typeStream(typeString->second);
+	
+	parser.parse(typeStream);
+
+	_addTypeAlias(alias, parser.parsedType());
+
+	auto dependencies = parser.parsedType()->getAliasNames();
+
+	for(auto dependency : dependencies)
+	{
+		hydrazine::log("LLVM::Parser") << "  Resolving typedefs in dependency '"
+			<< dependency << "'.\n";
+		
+		_mergeTypeAlias(dependency);
+	
+		auto type = *_compiler->getOrInsertType(*_typedefs.getType(dependency));
+
+		auto parsedType = *_compiler->getOrInsertType(*parser.parsedType());
+
+		parsedType->resolveAliases(dependency, type);
+	}
 }
 
 void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
@@ -376,7 +463,7 @@ void LLVMParserEngine::_parseGlobalAttributes(std::istream& stream)
 
 const Type* LLVMParserEngine::_parseType(std::istream& stream)
 {
-	TypeParser parser(_compiler);
+	TypeParser parser(_compiler, &_typedefs);
 	
 	parser.parse(stream);
 	
@@ -392,12 +479,6 @@ void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 	
 	if(existingType != nullptr)
 	{
-		if(existingType->isAlias())
-		{
-			_typedefs.updateAlias(alias, type);
-			return;
-		}
-
 		if(existingType != type)
 		{
 			throw std::runtime_error("At " + _location() + ": typedef '"
@@ -409,7 +490,8 @@ void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 		return;
 	}
 
-	hydrazine::log("LLVM::Parser") << " alias '" << alias << "'\n";
+	hydrazine::log("LLVM::Parser") << " alias '" << alias << "' -> '"
+		<< type->name() << "'\n";
 
 	_typedefs.addAlias(alias, type);
 }
@@ -429,6 +511,7 @@ void LLVMParserEngine::_resetParser(std::istream& stream)
 	_resetLexer(stream);
 	
 	_typedefs.clear();
+	_typedefStrings.clear();
 }
 
 std::string LLVMParserEngine::_peek(std::istream& stream)
@@ -465,7 +548,7 @@ static bool isWhitespace(char c)
 static bool isToken(char c)
 {
 	return c == '|' || c == '(' || c == ')' || c == ';' || c == ',' || c == '='
-		|| c == '%' || c == '@';
+		|| c == '%' || c == '@' || c == '[' || c == ']' || c == '*';
 }
 
 bool LLVMParserEngine::_getComplexToken(std::string& result,
@@ -529,6 +612,34 @@ std::string LLVMParserEngine::_getLine(std::istream& stream)
 	}
 
 	hydrazine::log("LLVM::Lexer") << "scanned line '" << result << "'\n";
+
+	return result;
+}
+
+std::string LLVMParserEngine::_getTypeString(std::istream& stream)
+{
+	auto token = _nextToken(stream);
+
+	if(token != "{") return token;
+
+	std::string result;
+	unsigned int count = 1;
+
+	while(count > 0 && stream.good())
+	{
+		char next = _snext(stream);
+		
+		if(next == '{')
+		{
+			++count;
+		}
+		else if(next == '}')
+		{
+			--count;
+		}
+
+		result += next;
+	}
 
 	return result;
 }
