@@ -45,6 +45,7 @@ private:
 	ir::Type* _parseType(std::istream& stream);
 
 	ir::Type* _parseFunction(std::istream& stream);
+	ir::Type* _parseFunction(const ir::Type* base, std::istream& stream);
 	ir::Type* _parseStructure(std::istream& stream);
 	ir::Type* _parseArray(std::istream& stream);
 	ir::Type* _parsePrimitive(std::istream& stream);

@@ -112,6 +112,13 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 	else if(isPrimitive(_compiler, nextToken))
 	{
 		type = _parsePrimitive(stream);
+		
+		nextToken = _peek(stream);
+		
+		if(isFunction(nextToken))
+		{
+			type = _parseFunction(type, stream);
+		}
 	}
 	else if(isArray(nextToken))
 	{
@@ -214,6 +221,49 @@ ir::Type* TypeParser::_parseFunction(std::istream& stream)
 		_compiler, returnType, argumentTypes));
 }
 
+ir::Type* TypeParser::_parseFunction(const ir::Type* returnType,
+	std::istream& stream)
+{
+	ir::Type::TypeVector argumentTypes;
+
+	if(!_scan("(", stream))
+	{
+		throw std::runtime_error("Failed to parse function "
+			"type, expecting '('.");
+	}
+       
+	auto closeBrace = _peek(stream);
+
+	if(closeBrace != ")")
+	{
+		do
+		{
+			argumentTypes.push_back(_parseType(stream));
+	       
+			std::string comma = _peek(stream);
+		       
+			if(comma == ",")
+			{
+				_scan(",", stream);
+			}
+			else
+			{
+				break;
+			}
+		}
+		while(true);
+	}
+
+	if(!_scan(")", stream))
+	{
+		throw std::runtime_error("Failed to parse function "
+			"type, expecting ')'.");
+	}
+
+	return new ir::FunctionType(_compiler, returnType, argumentTypes);
+}
+
+
 ir::Type* TypeParser::_parseStructure(std::istream& stream)
 {
 	if(!_scan("{", stream))
@@ -314,7 +364,8 @@ ir::Type* TypeParser::_parseArray(std::istream& stream)
 			"type, expecting ']'.");
 	}
 	
-	return *_compiler->getOrInsertType(ir::ArrayType(_compiler, base, dimension));
+	return *_compiler->getOrInsertType(ir::ArrayType(_compiler,
+		base, dimension));
 }
 
 ir::Type* TypeParser::_parsePrimitive(std::istream& stream)
@@ -364,7 +415,11 @@ ir::Type* TypeParser::_getTypeAlias(const std::string& token)
 {
 	if(_typedefs == nullptr) return nullptr;
 
- 	return *_compiler->getOrInsertType(*_typedefs->getType(token));
+	auto type = _typedefs->getType(token);
+
+ 	if(type != nullptr) return *_compiler->getOrInsertType(*type);
+
+	return *_compiler->getOrInsertType(ir::AliasedType(_compiler, token));
 }
 
 static bool isWhitespace(char c)
