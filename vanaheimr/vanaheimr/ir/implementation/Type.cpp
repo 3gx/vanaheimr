@@ -8,6 +8,8 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Type.h>
 
+#include <vanaheimr/compiler/interface/Compiler.h>
+
 // Hydrazine Includes
 #include <hydrazine/interface/math.h>
 
@@ -22,7 +24,7 @@ namespace ir
 {
 
 Type::Type(const std::string& n, Compiler* c)
-: _name(n), _compiler(c)
+: _compiler(c), _name(n)
 {
 
 }
@@ -39,7 +41,7 @@ const std::string& Type::name() const
 
 bool Type::isPrimitive() const
 {
-	return isInteger() || isFloatingPoint();
+	return isInteger() || isFloatingPoint() || isVoid();
 }
 
 bool Type::isInteger() const
@@ -80,6 +82,11 @@ bool Type::isArray() const
 bool Type::isAlias() const
 {
 	return typeid(AliasedType) == typeid(*this);
+}
+
+bool Type::isVoid() const
+{
+	return typeid(VoidType) == typeid(*this);
 }
 
 size_t Type::alignment() const
@@ -198,6 +205,8 @@ void AggregateType::resolveAliases(const std::string& name, const Type* t)
 	{
 		auto type = getTypeAtIndex(i);
 	
+		(*_compiler->getOrInsertType(*type))->resolveAliases(name, t);
+	
 		if(!type->isAlias())     continue;
 		if(type->name() != name) continue;		
 
@@ -225,6 +234,11 @@ const Type* ArrayType::getTypeAtIndex(unsigned int index) const
 {
 	if(!isIndexValid(index)) return 0;
 
+	return _pointedToType;
+}
+
+const Type*& ArrayType::getTypeAtIndex(unsigned int index)
+{
 	return _pointedToType;
 }
 
@@ -284,6 +298,11 @@ const Type* StructureType::getTypeAtIndex(unsigned int index) const
 	return _types[index];
 }
 
+const Type*& StructureType::getTypeAtIndex(unsigned int index)
+{
+	return _types[index];
+}
+
 bool StructureType::isIndexValid(unsigned int index) const
 {
 	return index < numberOfSubTypes();
@@ -324,6 +343,11 @@ const Type* PointerType::getTypeAtIndex(unsigned int index) const
 	return _pointedToType;
 }
 
+const Type*& PointerType::getTypeAtIndex(unsigned int index)
+{
+	return _pointedToType;
+}
+
 bool PointerType::isIndexValid(unsigned int index) const
 {
 	return index == 0;
@@ -356,8 +380,23 @@ FunctionType::FunctionType(Compiler* c, const Type* returnType,
 
 const Type* FunctionType::getTypeAtIndex(unsigned int index) const
 {
-	if(!isIndexValid(index)) return 0;
+	if(!isIndexValid(index)) return nullptr;
 	
+	if(_returnType != 0)
+	{
+		if(index == 0)
+		{
+			return _returnType;
+		}
+		
+		index -= 1;
+	}
+	
+	return _argumentTypes[index];
+}
+
+const Type*& FunctionType::getTypeAtIndex(unsigned int index)
+{
 	if(_returnType != 0)
 	{
 		if(index == 0)
@@ -480,6 +519,22 @@ size_t OpaqueType::bytes() const
 Type* OpaqueType::clone() const
 {
 	return new OpaqueType(*this);
+}
+
+VoidType::VoidType(Compiler* c)
+: Type("void", c)
+{
+
+}
+
+size_t VoidType::bytes() const
+{
+	return 0;
+}
+
+Type* VoidType::clone() const
+{
+	return new VoidType(*this);
 }
 
 AliasedType::AliasedType(Compiler* c, const std::string& name)

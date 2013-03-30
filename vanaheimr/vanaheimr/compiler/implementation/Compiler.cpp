@@ -50,6 +50,7 @@ Compiler::Compiler()
 	_types.push_back(new ir::DoubleType(this));
 
 	_types.push_back(new ir::BasicBlockType(this));
+	_types.push_back(new ir::VoidType(this));
 
 	// Create the machine model
 	_machineModel = machine::MachineModelFactory::createDefaultMachine();

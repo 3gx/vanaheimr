@@ -46,6 +46,7 @@ public:
 	bool isFunction()             const;
 	bool isArray()                const;
 	bool isAlias()                const;
+	bool isVoid()                 const;
 
 public:
 	virtual size_t alignment() const;
@@ -58,9 +59,11 @@ public:
 	virtual size_t bytes() const = 0;
 	virtual Type*  clone() const = 0;
 
+protected:
+	Compiler*   _compiler;
+
 private:
 	std::string _name;
-	Compiler*   _compiler;
 	
 };
 
@@ -244,11 +247,22 @@ public:
 	Type*  clone() const;
 };
 
-/*! \brief A type that is not visible to the compiler*/
+/*! \brief A type that is not visible to the compiler */
 class OpaqueType : public Type
 {
 public:
 	OpaqueType(Compiler* c);
+
+public:
+	size_t bytes() const;
+	Type*  clone() const;
+};
+
+/*! \brief Corresponds to the C++ void type */
+class VoidType : public Type
+{
+public:
+	VoidType(Compiler* c);
 
 public:
 	size_t bytes() const;

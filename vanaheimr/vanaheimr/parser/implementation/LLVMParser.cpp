@@ -300,13 +300,15 @@ void LLVMParserEngine::_mergeTypeAliases()
 
 void LLVMParserEngine::_mergeTypeAlias(const std::string& alias)
 {
-	hydrazine::log("LLVM::Parser") << " Resolving typedefs in '" << alias << "'.\n";
+	hydrazine::log("LLVM::Parser") << " Resolving typedefs in '"
+		<< alias << "'.\n";
 	
 	auto typeString = _typedefStrings.find(alias);
 
 	if(typeString == _typedefStrings.end())
 	{
-		throw std::runtime_error("Could not find typedef entry for '" + alias + "'.");
+		throw std::runtime_error("Could not find typedef entry for '" +
+			alias + "'.");
 	}
 	
 	TypeParser parser(_compiler, &_typedefs);
@@ -316,6 +318,10 @@ void LLVMParserEngine::_mergeTypeAlias(const std::string& alias)
 	parser.parse(typeStream);
 
 	_addTypeAlias(alias, parser.parsedType());
+
+	auto parsedType = *_compiler->getOrInsertType(*parser.parsedType());
+
+	parsedType->resolveAliases(alias, parsedType);
 
 	auto dependencies = parser.parsedType()->getAliasNames();
 
@@ -327,8 +333,6 @@ void LLVMParserEngine::_mergeTypeAlias(const std::string& alias)
 		_mergeTypeAlias(dependency);
 	
 		auto type = *_compiler->getOrInsertType(*_typedefs.getType(dependency));
-
-		auto parsedType = *_compiler->getOrInsertType(*parser.parsedType());
 
 		parsedType->resolveAliases(dependency, type);
 	}
@@ -479,15 +483,18 @@ void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 	
 	if(existingType != nullptr)
 	{
-		if(existingType != type)
+		if(existingType->getAliasNames().empty())
 		{
-			throw std::runtime_error("At " + _location() + ": typedef '"
-				+ alias + "' declared with type '" + type->name()
-				+ "', which is incompatible with previous declaration '"
-				+ existingType->name() + "'.");
-		}
+			if(existingType != type)
+			{
+				throw std::runtime_error("At " + _location() + ": typedef '"
+					+ alias + "' declared with type '" + type->name()
+					+ "', which is incompatible with previous declaration '"
+					+ existingType->name() + "'.");
+			}
 		
-		return;
+			return;
+		}
 	}
 
 	hydrazine::log("LLVM::Parser") << " alias '" << alias << "' -> '"
@@ -622,7 +629,8 @@ std::string LLVMParserEngine::_getTypeString(std::istream& stream)
 
 	if(token != "{") return token;
 
-	std::string result;
+	std::string result("{");
+
 	unsigned int count = 1;
 
 	while(count > 0 && stream.good())
@@ -640,6 +648,8 @@ std::string LLVMParserEngine::_getTypeString(std::istream& stream)
 
 		result += next;
 	}
+	
+	hydrazine::log("LLVM::Lexer") << "scanned type string '" << result << "'\n";
 
 	return result;
 }
