@@ -135,6 +135,7 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 	}
 	else if(isOpaqueType(nextToken))
 	{
+		_scan("opaque", stream);
 		type = *_compiler->getOrInsertType(ir::OpaqueType(_compiler));
 	}
 

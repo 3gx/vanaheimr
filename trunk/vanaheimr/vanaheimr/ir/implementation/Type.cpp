@@ -8,8 +8,6 @@
 // Vanaheimr Includes
 #include <vanaheimr/ir/interface/Type.h>
 
-#include <vanaheimr/compiler/interface/Compiler.h>
-
 // Hydrazine Includes
 #include <hydrazine/interface/math.h>
 
@@ -42,6 +40,11 @@ const std::string& Type::name() const
 bool Type::isPrimitive() const
 {
 	return isInteger() || isFloatingPoint() || isVoid();
+}
+
+bool Type::isAggregate() const
+{
+	return dynamic_cast<const AggregateType*>(this) != nullptr;
 }
 
 bool Type::isInteger() const
@@ -92,16 +95,6 @@ bool Type::isVoid() const
 size_t Type::alignment() const
 {
 	return bytes();
-}
-
-Type::StringList Type::getAliasNames() const
-{
-	return StringList();
-}
-
-void Type::resolveAliases(const std::string& name, const Type* t)
-{
-	// Intentionall blank
 }
 
 IntegerType::IntegerType(Compiler* c, unsigned int bits)
@@ -175,43 +168,6 @@ AggregateType::AggregateType(Compiler* c, const std::string& name)
 : Type(name, c)
 {
 
-}
-
-Type::StringList AggregateType::getAliasNames() const
-{
-	StringList results;
-
-	for(unsigned int i = 0; i < numberOfSubTypes(); ++i)
-	{
-		auto type = getTypeAtIndex(i);
-	
-		if(type->isAlias())
-		{
-			results.push_back(type->name());
-			continue;
-		}
-
-		auto subAliases = type->getAliasNames();
-
-		results.insert(results.end(), subAliases.begin(), subAliases.end());
-	}
-
-	return results;
-}
-
-void AggregateType::resolveAliases(const std::string& name, const Type* t)
-{
-	for(unsigned int i = 0; i < numberOfSubTypes(); ++i)
-	{
-		auto type = getTypeAtIndex(i);
-	
-		(*_compiler->getOrInsertType(*type))->resolveAliases(name, t);
-	
-		if(!type->isAlias())     continue;
-		if(type->name() != name) continue;		
-
-		getTypeAtIndex(i) = t;
-	}
 }
 
 static std::string arrayTypeName(const Type* t, unsigned int count)

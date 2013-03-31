@@ -70,12 +70,12 @@ private:
 	void _parseMetadata(std::istream& stream);
 
 private:
-	typedef std::list<std::string> StringList;
+	typedef std::set<ir::Type*> TypeSet;
 
 private:
-	void _mergeTypeAliases();
-	void _mergeTypeAlias(const std::string&);
-	StringList _getTypedefDependencies(const std::string& alias);
+	void _resolveTypeAliases();
+	void _resolveTypeAlias(const std::string&);
+	void _resolveTypeAliasesInSubtypes(ir::Type* type, TypeSet& visited);
 	
 	void _parseGlobalAttributes(std::istream& stream);
 	
@@ -226,7 +226,7 @@ void LLVMParserEngine::_parseTypedefs(std::istream& stream)
 		_typedefStrings[name] = _getTypeString(stream);
 	}
 
-	_mergeTypeAliases();
+	_resolveTypeAliases();
 
 	_resetLexer(stream);
 }
@@ -287,54 +287,84 @@ static Variable::Linkage translateLinkage(const std::string& token)
 	return Variable::ExternalLinkage;
 }
 
-void LLVMParserEngine::_mergeTypeAliases()
+void LLVMParserEngine::_resolveTypeAliases()
 {
-	hydrazine::log("LLVM::Parser") << "Merging typedefs before "
+	hydrazine::log("LLVM::Parser") << "Initializing typedefs before "
 		"parsing the remainder.\n";
 	
 	for(auto alias : _typedefStrings)
 	{
-		_mergeTypeAlias(alias.first);
+		hydrazine::log("LLVM::Parser") << " Parsing type '"
+			<< alias.first << "' with aliases.\n";
+		
+		TypeParser parser(_compiler, &_typedefs);
+			
+		std::stringstream typeStream(alias.second);
+			
+		parser.parse(typeStream);
+
+		auto parsedType = *_compiler->getOrInsertType(*parser.parsedType());
+
+		_addTypeAlias(alias.first, parsedType);
+	}
+	
+	for(auto alias : _typedefStrings)
+	{
+		_resolveTypeAlias(alias.first);
 	}
 }
 
-void LLVMParserEngine::_mergeTypeAlias(const std::string& alias)
+void LLVMParserEngine::_resolveTypeAlias(const std::string& alias)
 {
-	hydrazine::log("LLVM::Parser") << " Resolving typedefs in '"
+	hydrazine::log("LLVM::Parser") << " Resolving type aliases in '"
 		<< alias << "'.\n";
 	
-	auto typeString = _typedefStrings.find(alias);
+	auto aliasType = *_compiler->getOrInsertType(*_typedefs.getType(alias));
 
-	if(typeString == _typedefStrings.end())
+	if(aliasType == nullptr)
 	{
 		throw std::runtime_error("Could not find typedef entry for '" +
 			alias + "'.");
 	}
+
+	TypeSet visited;
+
+	_resolveTypeAliasesInSubtypes(aliasType, visited);
+}
+
+void LLVMParserEngine::_resolveTypeAliasesInSubtypes(
+	ir::Type* type, TypeSet& visited)
+{
+	if(!visited.insert(type).second) return;
 	
-	TypeParser parser(_compiler, &_typedefs);
+	if( type->isAlias())     return;
+	if(!type->isAggregate()) return;
 	
-	std::stringstream typeStream(typeString->second);
+	hydrazine::log("LLVM::Parser") << "  Resolving type aliases in subtype '"
+		<< type->name() << "'.\n";
 	
-	parser.parse(typeStream);
-
-	_addTypeAlias(alias, parser.parsedType());
-
-	auto parsedType = *_compiler->getOrInsertType(*parser.parsedType());
-
-	parsedType->resolveAliases(alias, parsedType);
-
-	auto dependencies = parser.parsedType()->getAliasNames();
-
-	for(auto dependency : dependencies)
+	auto aggregate = static_cast<ir::AggregateType*>(type);
+	
+	for(unsigned int i = 0; i < aggregate->numberOfSubTypes(); ++i)
 	{
-		hydrazine::log("LLVM::Parser") << "  Resolving typedefs in dependency '"
-			<< dependency << "'.\n";
+		auto subtype = aggregate->getTypeAtIndex(i);
 		
-		_mergeTypeAlias(dependency);
-	
-		auto type = *_compiler->getOrInsertType(*_typedefs.getType(dependency));
-
-		parsedType->resolveAliases(dependency, type);
+		if(!subtype->isAlias())
+		{
+			auto originalSubtype = *_compiler->getOrInsertType(*subtype);
+			_resolveTypeAliasesInSubtypes(originalSubtype, visited);
+			continue;
+		}
+		
+		auto unaliasedType = _typedefs.getType(subtype->name());
+		
+		if(unaliasedType == nullptr)
+		{
+			throw std::runtime_error("Could not find typedef entry for '" +
+				subtype->name() + "'.");
+		}
+		
+		aggregate->getTypeAtIndex(i) = unaliasedType;
 	}
 }
 
@@ -479,24 +509,6 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 
 void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 {
-	auto existingType = _typedefs.getType(alias);
-	
-	if(existingType != nullptr)
-	{
-		if(existingType->getAliasNames().empty())
-		{
-			if(existingType != type)
-			{
-				throw std::runtime_error("At " + _location() + ": typedef '"
-					+ alias + "' declared with type '" + type->name()
-					+ "', which is incompatible with previous declaration '"
-					+ existingType->name() + "'.");
-			}
-		
-			return;
-		}
-	}
-
 	hydrazine::log("LLVM::Parser") << " alias '" << alias << "' -> '"
 		<< type->name() << "'\n";
 

@@ -38,6 +38,7 @@ public:
 
 public:
 	bool isPrimitive()            const;
+	bool isAggregate()            const;
 	bool isInteger()              const;
 	bool isFloatingPoint()        const;
 	bool isSinglePrecisionFloat() const;
@@ -51,10 +52,6 @@ public:
 public:
 	virtual size_t alignment() const;
 
-public:
-	virtual StringList getAliasNames() const;
-	virtual void resolveAliases(const std::string& name, const Type* t);
-	
 public:
 	virtual size_t bytes() const = 0;
 	virtual Type*  clone() const = 0;
@@ -119,10 +116,6 @@ public:
 	virtual const Type*& getTypeAtIndex  (unsigned int index)       = 0;
 	virtual bool         isIndexValid    (unsigned int index) const = 0;
 	virtual unsigned int numberOfSubTypes(                  ) const = 0;
-
-public:
-	virtual StringList getAliasNames() const;
-	virtual void resolveAliases(const std::string& name, const Type* t);
 
 };
 
