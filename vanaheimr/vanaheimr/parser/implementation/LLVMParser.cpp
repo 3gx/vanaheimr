@@ -341,7 +341,7 @@ void LLVMParserEngine::_resolveTypeAliasesInSubtypes(
 	if(!type->isAggregate()) return;
 	
 	hydrazine::log("LLVM::Parser") << "  Resolving type aliases in subtype '"
-		<< type->name() << "'.\n";
+		<< type->name << "'.\n";
 	
 	auto aggregate = static_cast<ir::AggregateType*>(type);
 	
@@ -356,12 +356,12 @@ void LLVMParserEngine::_resolveTypeAliasesInSubtypes(
 			continue;
 		}
 		
-		auto unaliasedType = _typedefs.getType(subtype->name());
+		auto unaliasedType = _typedefs.getType(subtype->name);
 		
 		if(unaliasedType == nullptr)
 		{
 			throw std::runtime_error("Could not find typedef entry for '" +
-				subtype->name() + "'.");
+				subtype->name + "'.");
 		}
 		
 		aggregate->getTypeAtIndex(i) = unaliasedType;
@@ -502,7 +502,7 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 	parser.parse(stream);
 	
 	hydrazine::log("LLVM::Parser") << "Parsed type '"
-		<< parser.parsedType()->name() << "'\n";
+		<< parser.parsedType()->name << "'\n";
 	
 	return parser.parsedType();
 }
@@ -510,7 +510,7 @@ const Type* LLVMParserEngine::_parseType(std::istream& stream)
 void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 {
 	hydrazine::log("LLVM::Parser") << " alias '" << alias << "' -> '"
-		<< type->name() << "'\n";
+		<< type->name << "'\n";
 
 	_typedefs.addAlias(alias, type);
 }

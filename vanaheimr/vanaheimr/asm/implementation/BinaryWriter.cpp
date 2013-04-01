@@ -125,7 +125,7 @@ void BinaryWriter::populateInstructions()
 		report("  " << function->name());
 		addSymbol(SymbolTableEntry::FunctionType, function->linkage(),
 			function->visibility(), ir::Global::InvalidLevel, function->name(),
-			0, 0, function->type().name(), flattenAttributes(*function));
+			0, 0, function->type().name, flattenAttributes(*function));
 	}
 	
 	report(" Adding functions.");
@@ -140,7 +140,7 @@ void BinaryWriter::populateInstructions()
 		{
 			addSymbol(SymbolTableEntry::ArgumentType, 0x0, 0x0,
 				ir::Global::InvalidLevel, argument->mangledName(),
-				m_data.size(), 0x0, argument->type().name());
+				m_data.size(), 0x0, argument->type().name);
 			m_data.resize(m_data.size() + argument->type().bytes());
 		}
 
@@ -403,7 +403,7 @@ OperandContainer BinaryWriter::convertOperand(
 			static_cast<const ir::RegisterOperand&>(operand);
 
 		report("     converting virtual register " << reg.virtualRegister->id
-			<< " (" << reg.virtualRegister->type->name() << ")");
+			<< " (" << reg.virtualRegister->type->name << ")");
 		
 		result.asRegister.reg  = reg.virtualRegister->id;
 		result.asRegister.type = convertType(reg.virtualRegister->type);
@@ -434,7 +434,7 @@ OperandContainer BinaryWriter::convertOperand(
 		{
 			report("     converting non-trivial predicate with virtual "
 				"register " << predicate.virtualRegister->id
-				<< " (" << predicate.virtualRegister->type->name() << ")");
+				<< " (" << predicate.virtualRegister->type->name << ")");
 			result.asPredicate.reg = predicate.virtualRegister->id;
 		}
 		else
@@ -721,7 +721,7 @@ size_t BinaryWriter::getBasicBlockSymbolTableOffset(const ir::Variable* g)
 
 		addSymbol(SymbolTableEntry::BasicBlockType, 0x0, 0x0,
 			ir::Global::InvalidLevel, g->name(), offset->second, 0,
-			g->type().name());
+			g->type().name);
 	}
 
 	return symbol->second;
@@ -814,7 +814,7 @@ void BinaryWriter::addGlobal(const ir::Global& global)
 
 	addSymbol(SymbolTableEntry::VariableType, global.linkage(),
 		global.visibility(), global.level(), global.name(), m_data.size(),
-		global.bytes(), global.type().name());
+		global.bytes(), global.type().name);
 	
 	std::copy(blob.begin(), blob.end(), std::back_inserter(m_data));
 }

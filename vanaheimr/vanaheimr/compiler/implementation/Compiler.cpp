@@ -122,9 +122,9 @@ Compiler::module_iterator Compiler::newModule(const std::string& name)
 	
 Compiler::iterator Compiler::newType(const ir::Type& type)
 {
-	assert(getType(type.name()) == nullptr);
+	assert(getType(type.name) == nullptr);
 
-	report("Added type: '" << type.name() << "'");
+	report("Added type: '" << type.name << "'");
 	
 	return _types.insert(_types.end(), type.clone());
 }
@@ -133,7 +133,7 @@ Compiler::iterator Compiler::getOrInsertType(const ir::Type& type)
 {
 	for(iterator t = begin(); t != end(); ++t)
 	{
-		if(type.name() == (*t)->name()) return t;
+		if(type.name == (*t)->name) return t;
 	}
 
 	return newType(type);
@@ -182,7 +182,7 @@ ir::Type* Compiler::getType(const std::string& name)
 	
 	for( ; type != _types.end(); ++type)
 	{
-		if((*type)->name() == name) return *type;
+		if((*type)->name == name) return *type;
 	}
 	
 	return 0;
@@ -194,7 +194,7 @@ const ir::Type* Compiler::getType(const std::string& typeName) const
 	
 	for( ; type != _types.end(); ++type)
 	{
-		if((*type)->name() == typeName) return *type;
+		if((*type)->name == typeName) return *type;
 	}
 	
 	return 0;

@@ -28,7 +28,7 @@ std::string VirtualRegister::toString() const
 {
 	std::stringstream stream;
 
-	stream << type->name() << " %r" << id;
+	stream << type->name << " %r" << id;
 
 	return stream.str();
 }

@@ -34,9 +34,6 @@ public:
 	virtual ~Type();
 
 public:
-	virtual const std::string& name() const;
-
-public:
 	bool isPrimitive()            const;
 	bool isAggregate()            const;
 	bool isInteger()              const;
@@ -56,11 +53,11 @@ public:
 	virtual size_t bytes() const = 0;
 	virtual Type*  clone() const = 0;
 
+public:
+	std::string name;
+
 protected:
 	Compiler*   _compiler;
-
-private:
-	std::string _name;
 	
 };
 
