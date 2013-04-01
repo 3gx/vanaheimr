@@ -208,7 +208,7 @@ void AssemblyWriter::writeBasicBlock(std::ostream& stream,
 
 void AssemblyWriter::writeType(std::ostream& stream, const ir::Type& type)
 {
-	stream << type.name() << " ";
+	stream << type.name << " ";
 }
 
 void AssemblyWriter::writeInitializer(std::ostream& stream,

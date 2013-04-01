@@ -154,7 +154,7 @@ ir::Type* TypeParser::_parseType(std::istream& stream)
 		throw std::runtime_error("Failed to parse type.");
 	}
 	
-	hydrazine::log("TypeParser::Parser") << "Parsed type " << type->name()
+	hydrazine::log("TypeParser::Parser") << "Parsed type " << type->name
 		<< ".\n";
 	
 	return type;

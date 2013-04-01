@@ -22,7 +22,7 @@ namespace ir
 {
 
 Type::Type(const std::string& n, Compiler* c)
-: _compiler(c), _name(n)
+: name(n), _compiler(c) 
 {
 
 }
@@ -30,11 +30,6 @@ Type::Type(const std::string& n, Compiler* c)
 Type::~Type()
 {
 
-}
-
-const std::string& Type::name() const
-{
-	return _name;
 }
 
 bool Type::isPrimitive() const
@@ -174,7 +169,7 @@ static std::string arrayTypeName(const Type* t, unsigned int count)
 {
 	std::stringstream stream;
 	
-	stream << t->name() << "[" << count << "]";
+	stream << t->name << "[" << count << "]";
 	
 	return stream.str();
 }
@@ -233,7 +228,7 @@ static std::string structureTypeName(const Type::TypeVector& types)
 	{
 		if(type != types.begin()) stream << ", ";
 	
-		stream << (*type)->name();
+		stream << (*type)->name;
 	}
 	
 	stream << "}";
@@ -287,7 +282,7 @@ Type* StructureType::clone() const
 }
 
 PointerType::PointerType(Compiler* c, const Type* t)
-: AggregateType(c, t->name() + "*"), _pointedToType(t)
+: AggregateType(c, t->name + "*"), _pointedToType(t)
 {
 
 }
@@ -397,7 +392,7 @@ std::string FunctionType::functionPrototypeName(const Type* returnType,
 
 	if(returnType != 0)
 	{
-		stream << "(" << returnType->name() << ") ";
+		stream << "(" << returnType->name << ") ";
 	}
 	else
 	{
@@ -411,7 +406,7 @@ std::string FunctionType::functionPrototypeName(const Type* returnType,
 	{
 		if(type != argumentTypes.begin()) stream << ", ";
 		
-		stream << (*type)->name();
+		stream << (*type)->name;
 	}
 	
 	stream << ")";
