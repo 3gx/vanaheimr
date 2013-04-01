@@ -71,13 +71,14 @@ private:
 
 private:
 	typedef std::set<ir::Type*> TypeSet;
+	typedef std::list<std::string> StringList;
 
 private:
 	void _resolveTypeAliases();
 	void _resolveTypeAlias(const std::string&);
 	void _resolveTypeAliasesInSubtypes(ir::Type* type, TypeSet& visited);
 	
-	void _parseGlobalAttributes(std::istream& stream);
+	StringList _parseGlobalAttributes(std::istream& stream);
 	
 	const Type* _parseType(std::istream& stream);
 	void _addTypeAlias(const std::string& alias, const Type*);
@@ -282,7 +283,11 @@ static bool isLinkage(const std::string& token)
 
 static Variable::Linkage translateLinkage(const std::string& token)
 {
-	assertM(false, "Not implemented.");
+	if(token == "internal") return Variable::InternalLinkage;
+	if(token == "external") return Variable::ExternalLinkage;
+	if(token == "private")  return Variable::PrivateLinkage;
+
+	assertM(false, "Linkage " + token + " implemented.");
 
 	return Variable::ExternalLinkage;
 }
@@ -388,7 +393,7 @@ void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 		linkage = "";
 	}
 	
-	_parseGlobalAttributes(stream);
+	auto arributes = _parseGlobalAttributes(stream);
 
 	auto type = _parseType(stream);
 
@@ -490,9 +495,33 @@ void LLVMParserEngine::_parseMetadata(std::istream& stream)
 	assertM(false, "Not Implemented.");
 }
 
-void LLVMParserEngine::_parseGlobalAttributes(std::istream& stream)
+static bool isGlobalAttribute(const std::string& token)
 {
-	assertM(false, "Not Implemented.");
+	if(token == "internal")     return true;
+	if(token == "external")     return true;
+	if(token == "private")      return true;
+	if(token == "unnamed_addr") return true;
+	if(token == "global")       return true;
+	if(token == "constant")     return true;
+
+	return false;
+}
+
+LLVMParserEngine::StringList LLVMParserEngine::_parseGlobalAttributes(
+	std::istream& stream)
+{
+	StringList attributes;
+
+	auto next = _peek(stream);
+
+	while(isGlobalAttribute(next))
+	{
+		attributes.push_back(_nextToken(stream));
+
+		next = _peek(stream);
+	}
+
+	return attributes;
 }
 
 const Type* LLVMParserEngine::_parseType(std::istream& stream)
