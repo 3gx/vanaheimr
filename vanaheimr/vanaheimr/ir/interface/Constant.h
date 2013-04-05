@@ -67,12 +67,12 @@ public:
 	double asDouble() const;
 
 public:
-	bool isNullValue() const;
-	DataVector data() const;
+	virtual bool isNullValue() const;
+	virtual DataVector data() const;
 
 public:
-	size_t bytes() const;
-	Constant* clone() const;
+	virtual size_t bytes() const;
+	virtual Constant* clone() const;
 	
 private:
 	union
@@ -96,12 +96,12 @@ public:
 	operator int32_t()  const;
 	
 public:
-	bool isNullValue() const;
-	DataVector data() const;
+	virtual bool isNullValue() const;
+	virtual DataVector data() const;
 
 public:
-	size_t bytes() const;
-	Constant* clone() const;
+	virtual size_t bytes() const;
+	virtual Constant* clone() const;
 
 private:
 	// TODO: Arbitrary precision
@@ -127,8 +127,12 @@ public:
 	PointerConstant& operator=(void*    i);
 
 public:
-	bool isNullValue() const;
-	DataVector data() const;
+	virtual bool isNullValue() const;
+	virtual DataVector data() const;
+
+public:
+	virtual size_t bytes() const;
+	virtual Constant* clone() const;
 
 private:
 	uint64_t _pointer;
@@ -145,8 +149,18 @@ public:
 	const Constant* getMember(unsigned int index) const;
 
 public:
-	bool isNullValue() const;
-	DataVector data() const;
+	void setMember(unsigned int index, Constant*);
+
+public:
+	unsigned int numberOfSubTypes() const;
+
+public:
+	virtual bool isNullValue() const;
+	virtual DataVector data() const;
+
+public:
+	virtual size_t bytes() const;
+	virtual Constant* clone() const;
 
 private:
 	typedef std::vector<Constant*> ConstantVector;
@@ -170,15 +184,15 @@ public:
 	uint64_t size() const;
 
 public:
-	bool isNullValue() const;
-	DataVector data() const;
-
-public:
-	size_t bytes() const;
-	Constant* clone() const;
-
-public:
 	void* storage();
+
+public:
+	virtual bool isNullValue() const;
+	virtual DataVector data() const;
+
+public:
+	virtual size_t bytes() const;
+	virtual Constant* clone() const;
 
 private:
 	DataVector _value;

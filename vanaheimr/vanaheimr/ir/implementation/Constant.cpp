@@ -142,6 +142,9 @@ Constant* IntegerConstant::clone() const
 	return new IntegerConstant(*this);
 }
 
+
+
+
 ArrayConstant::ArrayConstant(const void* data, uint64_t size, const Type* t)
 : Constant(t), _value((const uint8_t*)data, (const uint8_t*)data + size)
 {
