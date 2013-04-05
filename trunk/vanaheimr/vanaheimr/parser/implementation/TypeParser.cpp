@@ -445,6 +445,8 @@ std::string TypeParser::_peek(std::istream& stream)
 	stream.clear();
 	stream.seekg(position);
 	
+	hydrazine::log("TypeParser::Lexer") << "peeked at '" << result << "'\n";
+	
 	return result;
 }
 

@@ -43,6 +43,20 @@ void ConstantValueParser::parse(std::istream& stream)
 	_parsedConstant = _parseConstant(stream);
 }
 
+void ConstantValueParser::parse(const ir::Type* type, std::istream& stream)
+{
+	delete _parsedConstant;
+
+	if(type->isInteger() || type->isFloatingPoint())
+	{	
+		_parsedConstant = _parseConstant(stream);
+	}
+	else
+	{
+		_parsedConstant = _parseConstant(type, stream);
+	}
+}
+
 const ir::Constant* ConstantValueParser::parsedConstant() const
 {
 	return _parsedConstant;
@@ -102,6 +116,66 @@ ir::Constant* ConstantValueParser::_parseConstant(std::istream& stream)
 	{
 		throw std::runtime_error("Failed to parse constant.");
 	}
+
+	hydrazine::log("ConstantValueParser::Parser") << "Parsed constant with type '"
+		<< constant->type()->name << "'\n";
+	
+	return constant;
+}
+
+static ir::Constant* createZeroInitializer(const ir::Type* type)
+{
+	if(type->isInteger())
+	{
+		auto integer = static_cast<const ir::IntegerType*>(type);
+
+		return new ir::IntegerConstant(0, integer->bits());
+	}
+	else if(type->isSinglePrecisionFloat())
+	{
+		return new ir::FloatingPointConstant(0.0f);
+	}
+	else if(type->isDoublePrecisionFloat())
+	{
+		return new ir::FloatingPointConstant(0.0);
+	}
+	else if(type->isStructure())
+	{
+		auto structure = new ir::StructureConstant(type);
+
+		return structure;
+	}
+
+	assertM(false, "Zero initializer not implemented for " << type->name);
+
+	return nullptr;
+}
+
+static bool isZeroInitializer(const std::string& token)
+{
+	return token == "zeroinitializer";
+}
+
+ir::Constant* ConstantValueParser::_parseConstant(const ir::Type* type,
+	std::istream& stream)
+{
+	auto nextToken = _peek(stream);
+
+	ir::Constant* constant = nullptr;
+
+	if(isZeroInitializer(nextToken))
+	{
+		_nextToken(stream);
+		constant = createZeroInitializer(type);
+	}
+	
+	if(constant == nullptr)
+	{
+		throw std::runtime_error("Failed to parse constant.");
+	}
+	
+	hydrazine::log("ConstantValueParser::Parser") << "Parsed constant with type '"
+		<< constant->type()->name << "'\n";
 	
 	return constant;
 }
@@ -113,6 +187,9 @@ static unsigned int parseInteger(const std::string& integer)
 	unsigned int value = 0;
 	
 	stream >> value;
+	
+	hydrazine::log("ConstantValueParser::Parser") << " parsed integer constant '"
+		<< value << "'\n";
 	
 	return value;
 }
@@ -130,6 +207,9 @@ static double parseFloat(const std::string& floating)
 	
 	stream >> value;
 	
+	hydrazine::log("ConstantValueParser::Parser") << " parsed float constant '"
+		<< value << "'\n";
+	
 	return value;
 }
 
@@ -144,6 +224,9 @@ ir::Constant* ConstantValueParser::_parseStringConstant(
 {
 	std::string token = _nextToken(stream);
 
+	hydrazine::log("ConstantValueParser::Parser") << " parsed string constant '"
+		<< token << "'\n";
+	
 	return new ir::ArrayConstant(token.c_str(), token.size(),
 		compiler::Compiler::getSingleton()->getType("i8"));
 }
@@ -186,6 +269,9 @@ std::string ConstantValueParser::_nextToken(std::istream& stream)
 		
 		if(isToken(*result.rbegin())) break;
 	}
+	
+	hydrazine::log("ConstantValueParser::Lexer") << "Scanned token '"
+		<< result << "'\n";
 
 	return result;
 }

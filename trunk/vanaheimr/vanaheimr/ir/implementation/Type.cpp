@@ -72,6 +72,11 @@ bool Type::isFunction() const
 	return typeid(FunctionType) == typeid(*this);
 }
 
+bool Type::isStructure() const
+{
+	return typeid(StructureType) == typeid(*this);
+}
+
 bool Type::isArray() const
 {
 	return typeid(ArrayType) == typeid(*this);

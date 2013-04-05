@@ -8,6 +8,7 @@
 #include <vanaheimr/parser/interface/LLVMParser.h>
 
 #include <vanaheimr/parser/interface/TypeParser.h>
+#include <vanaheimr/parser/interface/ConstantValueParser.h>
 #include <vanaheimr/parser/interface/TypeAliasSet.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
@@ -44,6 +45,7 @@ typedef ir::Type         Type;
 typedef ir::Variable     Variable;
 typedef ir::Global       Global;
 typedef ir::FunctionType FunctionType;
+typedef ir::Constant     Constant;
 
 class LLVMParserEngine
 {
@@ -79,7 +81,8 @@ private:
 	void _resolveTypeAliasesInSubtypes(ir::Type* type, TypeSet& visited);
 	
 	StringList _parseGlobalAttributes(std::istream& stream);
-	
+	Constant* _parseInitializer(const Type*, std::istream& stream);
+
 	const Type* _parseType(std::istream& stream);
 	void _addTypeAlias(const std::string& alias, const Type*);
 	
@@ -397,9 +400,18 @@ void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 
 	auto type = _parseType(stream);
 
-	_module->newGlobal(name, type, translateLinkage(linkage), Global::Shared);
+	auto global = _module->newGlobal(name, type, translateLinkage(linkage),
+		Global::Shared);
+
+	hydrazine::log("LLVM::Parser") << " Parsed global variable '"
+		<< global->name() << "'.\n";
 	
-	//_parseInitializer(stream);
+	auto initializer = _parseInitializer(type, stream);
+
+	if(initializer != nullptr)
+	{
+		global->setInitializer(initializer);
+	}
 }
 
 void LLVMParserEngine::_parseTypedef(std::istream& stream)
@@ -512,17 +524,32 @@ LLVMParserEngine::StringList LLVMParserEngine::_parseGlobalAttributes(
 {
 	StringList attributes;
 
+	hydrazine::log("LLVM::Parser") << "Parsing global attributes...\n";
+	
+
 	auto next = _peek(stream);
 
 	while(isGlobalAttribute(next))
 	{
 		attributes.push_back(_nextToken(stream));
 
+		hydrazine::log("LLVM::Parser") << " parsed '" << attributes.back() << "'\n";
+
 		next = _peek(stream);
 	}
 
 	return attributes;
 }
+
+Constant* LLVMParserEngine::_parseInitializer(const Type* type,
+	std::istream& stream)
+{
+	ConstantValueParser parser;
+
+	parser.parse(type, stream);
+
+	return parser.parsedConstant()->clone();
+} 
 
 const Type* LLVMParserEngine::_parseType(std::istream& stream)
 {

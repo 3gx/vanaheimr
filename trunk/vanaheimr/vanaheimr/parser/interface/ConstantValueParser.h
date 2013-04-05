@@ -11,6 +11,7 @@
 
 // Forward Declarations
 namespace vanaheimr { namespace ir { class Constant; } }
+namespace vanaheimr { namespace ir { class Type;     } }
 
 namespace vanaheimr
 {
@@ -31,6 +32,7 @@ public:
 
 public:
 	void parse(std::istream& stream);
+	void parse(const ir::Type* type, std::istream& stream);
 
 public:
 	const ir::Constant* parsedConstant() const;
@@ -38,6 +40,7 @@ public:
 private:
 	// Specialized Parsing
 	ir::Constant* _parseConstant(std::istream& stream);
+	ir::Constant* _parseConstant(const ir::Type* type, std::istream& stream);
 
 	ir::Constant* _parseIntegerConstant(std::istream& stream);
 	ir::Constant* _parseFloatingPointConstant(std::istream& stream);
