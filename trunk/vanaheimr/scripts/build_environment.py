@@ -338,7 +338,7 @@ def Environment():
 	vanaheimr_libs = '-lvanaheimr'
 	
 	for lib in env['EXTRA_LIBS']:
-		vanaheimr_libs += ' -l' + lib
+		vanaheimr_libs += ' ' + lib
 	
 	env.Replace(VANAHEIMR_LDFLAGS=vanaheimr_libs)
 	
