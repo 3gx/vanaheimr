@@ -321,13 +321,6 @@ def Environment():
 	# set extra libs 
 	env.Replace(EXTRA_LIBS=getExtraLibs())
 
-	# set vanaheimr libs
-	vanaheimr_libs = '-lvanaheimr'
-	env.Replace(VANAHEIMR_LDFLAGS=vanaheimr_libs)
-	
-	# generate vanaheimr-config flags
-	defineConfigFlags(env)
-
 	# get ocelot paths
 	if haveOcelot():
 		(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
@@ -340,6 +333,17 @@ def Environment():
 		env.Replace(HAVE_OCELOT=True)
 	else:
 		env.Replace(HAVE_OCELOT=False)
+
+	# set vanaheimr libs
+	vanaheimr_libs = '-lvanaheimr'
+	
+	for lib in env['EXTRA_LIBS']:
+		vanaheimr_libs += ' -l' + lib
+	
+	env.Replace(VANAHEIMR_LDFLAGS=vanaheimr_libs)
+	
+	# generate vanaheimr-config flags
+	defineConfigFlags(env)
 
 	# set the build path
 	env.Replace(BUILD_ROOT = str(env.Dir('.')))

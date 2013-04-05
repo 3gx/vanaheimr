@@ -225,7 +225,7 @@ void PTXToVIRTranslator::_translateRegisterValue(PTXRegisterId reg,
 	ir::Function::register_iterator newRegister = _function->newVirtualRegister(
 		_getType(type), name.str());
 
-	report("    to " << newRegister->type->name() << " r" << newRegister->id);
+	report("    to " << newRegister->type->name << " r" << newRegister->id);
 
 	_registers.insert(std::make_pair(reg, newRegister));
 }
