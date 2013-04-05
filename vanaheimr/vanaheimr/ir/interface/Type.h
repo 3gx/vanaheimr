@@ -42,6 +42,7 @@ public:
 	bool isDoublePrecisionFloat() const;
 	bool isBasicBlock()           const;
 	bool isFunction()             const;
+	bool isStructure()            const;
 	bool isArray()                const;
 	bool isAlias()                const;
 	bool isVoid()                 const;
