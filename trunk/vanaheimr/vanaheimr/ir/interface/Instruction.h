@@ -46,6 +46,7 @@ public:
 		Fptoui,
 		Fptrunc,
 		Frem,
+		Getelementpr,
 		Launch,
 		Ld,
 		Lshr,
@@ -506,6 +507,17 @@ class Frem : public BinaryInstruction
 {
 public:
 	explicit Frem(BasicBlock* b =  0);
+
+public:
+	Instruction* clone() const;
+
+};
+
+/*! \brief Get a pointer to a subtype of an aggregate */
+class Getelementpr : public Instruction
+{
+public:
+	explicit Getelementpr();
 
 public:
 	Instruction* clone() const;
