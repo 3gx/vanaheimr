@@ -277,7 +277,7 @@ public:
 	explicit Add(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -288,7 +288,7 @@ public:
 	explicit And(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -299,7 +299,7 @@ public:
 	explicit Ashr(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 };
 
 /*! \brief An atomic operation instruction */
@@ -346,7 +346,7 @@ public:
 	explicit Bar(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 	
 };
 
@@ -357,7 +357,7 @@ public:
 	explicit Bitcast(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -432,7 +432,7 @@ public:
 	ConstOperandVector arguments() const;
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -443,7 +443,7 @@ public:
 	explicit Fdiv(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -454,7 +454,7 @@ public:
 	explicit Fmul(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -465,7 +465,7 @@ public:
 	explicit Fpext(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -476,7 +476,7 @@ public:
 	explicit Fptosi(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -487,7 +487,7 @@ public:
 	explicit Fptoui(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -498,7 +498,7 @@ public:
 	explicit Fptrunc(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -509,7 +509,7 @@ public:
 	explicit Frem(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -527,7 +527,10 @@ public:
 	const Type* getSelectedType() const;
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
+
+public:
+	virtual std::string toString() const;
 
 public:
 	IndexVector indices;
@@ -541,7 +544,7 @@ public:
 	explicit Launch(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -552,7 +555,7 @@ public:
 	explicit Ld(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -563,7 +566,7 @@ public:
 	explicit Lshr(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -584,7 +587,7 @@ public:
 	explicit Membar(Level = InvalidLevel, BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 public:
 	Level level;	
@@ -598,7 +601,7 @@ public:
 	explicit Mul(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -609,7 +612,7 @@ public:
 	explicit Or(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -620,7 +623,7 @@ public:
 	explicit Ret(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -631,7 +634,7 @@ public:
 	explicit Setp(Comparison c = InvalidComparison, BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -642,7 +645,7 @@ public:
 	explicit Sext(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -653,7 +656,7 @@ public:
 	explicit Sdiv(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -664,7 +667,7 @@ public:
 	explicit Shl(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -675,7 +678,7 @@ public:
 	explicit Sitofp(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -686,7 +689,7 @@ public:
 	explicit Srem(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -711,7 +714,7 @@ public:
 	const OperandPointer& a() const;
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 	
 };
 
@@ -722,7 +725,7 @@ public:
 	explicit Sub(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -733,7 +736,7 @@ public:
 	explicit Trunc(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 	
 };
 
@@ -744,7 +747,7 @@ public:
 	explicit Udiv(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -755,7 +758,7 @@ public:
 	explicit Uitofp(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -766,7 +769,7 @@ public:
 	explicit Urem(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -777,7 +780,7 @@ public:
 	explicit Xor(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 };
 
@@ -788,7 +791,7 @@ public:
 	explicit Zext(BasicBlock* b = nullptr);
 
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 	
 };
 
@@ -859,7 +862,7 @@ public:
 	/*! \brief Remove a source associated with the specified predicate */
 	void removeSource(PredicateOperand* predicate);
 public:
-	Instruction* clone() const;
+	virtual Instruction* clone() const;
 
 public:
 	RegisterOperandPointer d();

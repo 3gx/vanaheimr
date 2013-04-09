@@ -939,6 +939,18 @@ const Type* Getelementptr::getSelectedType() const
 	return selected;
 }
 
+std::string Getelementptr::toString() const
+{
+	std::stringstream stream(UnaryInstruction::toString());
+	
+	for(auto index : indices)
+	{
+		stream << ", " << index;
+	}
+	
+	return stream.str();
+}
+
 /*! \brief Launch a new HTA at the specified entry point */
 Launch::Launch(BasicBlock* b)
 : Instruction(Instruction::Launch, b)
