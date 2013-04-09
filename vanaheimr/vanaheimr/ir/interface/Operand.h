@@ -124,6 +124,10 @@ public:
 	ImmediateOperand(double   d, Instruction* i, const Type* t);
 
 public:
+	virtual bool isConstant() const;
+	virtual Constant* getConstantValue() const;
+	
+public:
 	virtual const Type* type() const;
 	virtual Operand* clone() const;
 	virtual std::string toString() const;

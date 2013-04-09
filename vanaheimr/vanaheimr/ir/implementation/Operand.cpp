@@ -10,6 +10,7 @@
 #include <vanaheimr/ir/interface/Variable.h>
 #include <vanaheimr/ir/interface/Type.h>
 #include <vanaheimr/ir/interface/Argument.h>
+#include <vanaheimr/ir/interface/Constant.h>
 
 // Standard Library Includes
 #include <sstream>
@@ -152,6 +153,27 @@ std::string ImmediateOperand::toString() const
 	stream << "0x" << std::hex << uint << std::dec;
 
 	return stream.str();
+}
+
+bool ImmediateOperand::isConstant() const
+{
+	return true;
+}
+
+Constant* ImmediateOperand::getConstantValue() const
+{
+	if(dataType->isInteger())
+	{
+		return new IntegerConstant(uint, dataType->bytes() * 8);
+	}
+	
+	if(dataType->isSinglePrecisionFloat())
+	{
+		return new FloatingPointConstant((float)fp);
+	}
+	
+	// Assume double
+	return new FloatingPointConstant((double)fp);
 }
 
 PredicateOperand::PredicateOperand(VirtualRegister* reg,
