@@ -64,6 +64,11 @@ bool Operand::isImmediate() const
 	return mode() == Immediate;
 }
 
+bool Operand::isIndirect() const
+{
+	return mode() == Indirect;
+}
+
 bool Operand::isBasicBlock() const
 {
 	if(mode() != Address) return false;
