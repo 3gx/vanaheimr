@@ -50,6 +50,9 @@ public:
 	/*! \brief Is the operand a register */
 	bool isRegister() const;
 	
+	/*! \brief Is the operand an indirect */
+	bool isIndirect() const;
+	
 	/*! \brief Is the operand an address */
 	bool isAddress() const;
 	
