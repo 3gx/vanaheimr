@@ -16,6 +16,7 @@ namespace vanaheimr { namespace ir { class VirtualRegister; } }
 namespace vanaheimr { namespace ir { class Variable;        } }
 namespace vanaheimr { namespace ir { class Instruction;     } }
 namespace vanaheimr { namespace ir { class Type;            } }
+namespace vanaheimr { namespace ir { class Constant;        } }
 
 namespace vanaheimr
 {
@@ -39,7 +40,7 @@ public:
 	};
 	
 	/*! \brief A type to hold a register idenfitier */
-	typedef unsigned int RegisterType;
+	typedef uint64_t RegisterType;
 
 public:
 	Operand(OperandMode mode, Instruction* instruction);
@@ -66,13 +67,22 @@ public:
 	OperandMode mode() const;
 
 public:
+	/*! \brief Does the operand have a compile-time constant value? */
+	virtual bool isConstant() const;
+
+	/*! \brief Get a constant value of the operand if it isConstant. 
+	    
+	    Note that this function returns a new object owned by the caller. */
+	virtual Constant* getConstantValue() const;
+
+public:
 	/*! \brief Get the operand type */
 	virtual const Type* type() const = 0;
 
 public:
 	virtual Operand* clone() const = 0;
 	virtual std::string toString() const = 0;
-
+	
 public:
 	/*! \brief The owning instruction */
 	Instruction* instruction;

@@ -46,7 +46,7 @@ public:
 		Fptoui,
 		Fptrunc,
 		Frem,
-		Getelementpr,
+		Getelementptr,
 		Launch,
 		Ld,
 		Lshr,
@@ -87,7 +87,7 @@ public:
 	typedef unsigned int Id;
 
 public:
-	explicit Instruction(Opcode = InvalidOpcode, BasicBlock* b = 0, Id id = 0);
+	Instruction(Opcode = InvalidOpcode, BasicBlock* b = nullptr, Id id = 0);
 	virtual ~Instruction();
 
 	Instruction(const Instruction&);
@@ -179,7 +179,7 @@ private:
 class UnaryInstruction : public Instruction
 {
 public:
-	explicit UnaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
+	explicit UnaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -204,7 +204,7 @@ public:
 class BinaryInstruction : public Instruction
 {
 public:
-	explicit BinaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = 0);
+	explicit BinaryInstruction(Opcode = InvalidOpcode, BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -255,7 +255,7 @@ public:
 
 public:
 	ComparisonInstruction(Opcode o = InvalidOpcode,
-		Comparison c = InvalidComparison, BasicBlock* b = 0);
+		Comparison c = InvalidComparison, BasicBlock* b = nullptr);
 
 public:
 	virtual Instruction* clone() const = 0;
@@ -274,7 +274,7 @@ public:
 class Add : public BinaryInstruction
 {
 public:
-	explicit Add(BasicBlock* b = 0);
+	explicit Add(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -285,7 +285,7 @@ public:
 class And : public BinaryInstruction
 {
 public:
-	explicit And(BasicBlock* b = 0);
+	explicit And(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -296,7 +296,7 @@ public:
 class Ashr : public BinaryInstruction
 {
 public:
-	explicit Ashr(BasicBlock* b = 0);
+	explicit Ashr(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -323,7 +323,7 @@ public:
 	};
 
 public:
-	explicit Atom(Operation op = InvalidOperation, BasicBlock* b = 0);
+	explicit Atom(Operation op = InvalidOperation, BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Set the third source, the instruction takes ownership */
@@ -343,7 +343,7 @@ public:
 class Bar : public Instruction
 {
 public:
-	explicit Bar(BasicBlock* b = 0);
+	explicit Bar(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -354,7 +354,7 @@ public:
 class Bitcast : public UnaryInstruction
 {
 public:
-	explicit Bitcast(BasicBlock* b = 0);
+	explicit Bitcast(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -373,7 +373,7 @@ public:
 	};
 
 public:
-	explicit Bra(BranchModifier m = InvalidModifier, BasicBlock* b = 0);
+	explicit Bra(BranchModifier m = InvalidModifier, BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Set the target operand, the instruction takes onwership */
@@ -407,7 +407,7 @@ public:
 	typedef std::vector<const Operand*> ConstOperandVector;
 	
 public:
-	explicit Call(BasicBlock* b = 0);
+	explicit Call(BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Is the call to an intrinsic */
@@ -440,7 +440,7 @@ public:
 class Fdiv : public BinaryInstruction
 {
 public:
-	explicit Fdiv(BasicBlock* b =  0);
+	explicit Fdiv(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -451,7 +451,7 @@ public:
 class Fmul : public BinaryInstruction
 {
 public:
-	explicit Fmul(BasicBlock* b =  0);
+	explicit Fmul(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -462,7 +462,7 @@ public:
 class Fpext : public UnaryInstruction
 {
 public:
-	explicit Fpext(BasicBlock* b =  0);
+	explicit Fpext(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -473,7 +473,7 @@ public:
 class Fptosi : public UnaryInstruction
 {
 public:
-	explicit Fptosi(BasicBlock* b =  0);
+	explicit Fptosi(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -484,7 +484,7 @@ public:
 class Fptoui : public UnaryInstruction
 {
 public:
-	explicit Fptoui(BasicBlock* b =  0);
+	explicit Fptoui(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -495,7 +495,7 @@ public:
 class Fptrunc : public UnaryInstruction
 {
 public:
-	explicit Fptrunc(BasicBlock* b =  0);
+	explicit Fptrunc(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -506,7 +506,7 @@ public:
 class Frem : public BinaryInstruction
 {
 public:
-	explicit Frem(BasicBlock* b =  0);
+	explicit Frem(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -514,13 +514,23 @@ public:
 };
 
 /*! \brief Get a pointer to a subtype of an aggregate */
-class Getelementpr : public Instruction
+class Getelementptr : public UnaryInstruction
 {
 public:
-	explicit Getelementpr();
+	typedef std::vector<size_t> IndexVector;
+	
+public:
+	Getelementptr(const IndexVector& i = IndexVector(),
+		BasicBlock* b = nullptr);
+
+public:
+	const Type* getSelectedType() const;
 
 public:
 	Instruction* clone() const;
+
+public:
+	IndexVector indices;
 
 };
 
@@ -528,7 +538,7 @@ public:
 class Launch : public Instruction
 {
 public:
-	explicit Launch(BasicBlock* b =  0);
+	explicit Launch(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -539,7 +549,7 @@ public:
 class Ld : public UnaryInstruction
 {
 public:
-	explicit Ld(BasicBlock* b =  0);
+	explicit Ld(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -550,7 +560,7 @@ public:
 class Lshr : public BinaryInstruction
 {
 public:
-	explicit Lshr(BasicBlock* b =  0);
+	explicit Lshr(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -571,7 +581,7 @@ public:
 	};
 
 public:
-	explicit Membar(Level = InvalidLevel, BasicBlock* b = 0);
+	explicit Membar(Level = InvalidLevel, BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -585,7 +595,7 @@ public:
 class Mul : public BinaryInstruction
 {
 public:
-	explicit Mul(BasicBlock* b =  0);
+	explicit Mul(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -596,7 +606,7 @@ public:
 class Or : public BinaryInstruction
 {
 public:
-	explicit Or(BasicBlock* b =  0);
+	explicit Or(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -607,7 +617,7 @@ public:
 class Ret : public Instruction
 {
 public:
-	explicit Ret(BasicBlock* b =  0);
+	explicit Ret(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -618,7 +628,7 @@ public:
 class Setp : public ComparisonInstruction
 {
 public:
-	explicit Setp(Comparison c = InvalidComparison, BasicBlock* b = 0);
+	explicit Setp(Comparison c = InvalidComparison, BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -629,7 +639,7 @@ public:
 class Sext : public UnaryInstruction
 {
 public:
-	explicit Sext(BasicBlock* b =  0);
+	explicit Sext(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -640,7 +650,7 @@ public:
 class Sdiv : public BinaryInstruction
 {
 public:
-	explicit Sdiv(BasicBlock* b =  0);
+	explicit Sdiv(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -651,7 +661,7 @@ public:
 class Shl : public BinaryInstruction
 {
 public:
-	explicit Shl(BasicBlock* b =  0);
+	explicit Shl(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -662,7 +672,7 @@ public:
 class Sitofp : public UnaryInstruction
 {
 public:
-	explicit Sitofp(BasicBlock* b =  0);
+	explicit Sitofp(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -673,7 +683,7 @@ public:
 class Srem : public BinaryInstruction
 {
 public:
-	explicit Srem(BasicBlock* b =  0);
+	explicit Srem(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -684,7 +694,7 @@ public:
 class St : public Instruction
 {
 public:
-	explicit St(BasicBlock* b = 0);
+	explicit St(BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */
@@ -709,7 +719,7 @@ public:
 class Sub : public BinaryInstruction
 {
 public:
-	explicit Sub(BasicBlock* b =  0);
+	explicit Sub(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -720,7 +730,7 @@ public:
 class Trunc : public UnaryInstruction
 {
 public:
-	explicit Trunc(BasicBlock* b =  0);
+	explicit Trunc(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -731,7 +741,7 @@ public:
 class Udiv : public BinaryInstruction
 {
 public:
-	explicit Udiv(BasicBlock* b =  0);
+	explicit Udiv(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -742,7 +752,7 @@ public:
 class Uitofp : public UnaryInstruction
 {
 public:
-	explicit Uitofp(BasicBlock* b =  0);
+	explicit Uitofp(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -753,7 +763,7 @@ public:
 class Urem : public BinaryInstruction
 {
 public:
-	explicit Urem(BasicBlock* b =  0);
+	explicit Urem(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -764,7 +774,7 @@ public:
 class Xor : public BinaryInstruction
 {
 public:
-	explicit Xor(BasicBlock* b =  0);
+	explicit Xor(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -775,7 +785,7 @@ public:
 class Zext : public UnaryInstruction
 {
 public:
-	explicit Zext(BasicBlock* b =  0);
+	explicit Zext(BasicBlock* b = nullptr);
 
 public:
 	Instruction* clone() const;
@@ -797,7 +807,7 @@ public:
 	typedef std::vector<const AddressOperand*>  ConstAddressOperandVector;
 	
 public:
-	explicit Phi(BasicBlock* b = 0);
+	explicit Phi(BasicBlock* b = nullptr);
 
 	Phi(const Phi&);
 	Phi& operator=(const Phi&);
@@ -839,7 +849,7 @@ public:
 	typedef std::vector<PredicateOperand*> PredicateOperandVector;
 	
 public:
-	explicit Psi(BasicBlock* b = 0);
+	explicit Psi(BasicBlock* b = nullptr);
 
 public:
 	/*! \brief Set the destination, the instruction takes ownership */

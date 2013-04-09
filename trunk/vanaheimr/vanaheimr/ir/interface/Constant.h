@@ -33,14 +33,15 @@ public:
 	virtual ~Constant();
 
 public:
+	/*! \brief Get the size of the constant in bytes */
+	virtual size_t bytes() const;
+
+public:
 	/*! \brief Is the constant equivalent to 0 */
 	virtual bool isNullValue() const = 0;
 	
 	/*! \brief Get a binary representation of the constant */
 	virtual DataVector data() const = 0;
-	
-	/*! \brief Get the size of the constant in bytes */
-	virtual size_t bytes() const = 0;
 	
 	/*! \brief Create a new copy of the constant */
 	virtual Constant* clone() const = 0;
@@ -71,7 +72,6 @@ public:
 	virtual DataVector data() const;
 
 public:
-	virtual size_t bytes() const;
 	virtual Constant* clone() const;
 	
 private:
@@ -100,7 +100,6 @@ public:
 	virtual DataVector data() const;
 
 public:
-	virtual size_t bytes() const;
 	virtual Constant* clone() const;
 
 private:
@@ -131,7 +130,6 @@ public:
 	virtual DataVector data() const;
 
 public:
-	virtual size_t bytes() const;
 	virtual Constant* clone() const;
 
 private:
@@ -159,7 +157,6 @@ public:
 	virtual DataVector data() const;
 
 public:
-	virtual size_t bytes() const;
 	virtual Constant* clone() const;
 
 private:
@@ -191,7 +188,6 @@ public:
 	virtual DataVector data() const;
 
 public:
-	virtual size_t bytes() const;
 	virtual Constant* clone() const;
 
 private:

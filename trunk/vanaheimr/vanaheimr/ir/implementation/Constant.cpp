@@ -36,6 +36,11 @@ Constant::~Constant()
 
 }
 
+size_t Constant::bytes() const
+{
+	return type()->bytes();
+}
+
 const Type* Constant::type() const
 {
 	return _type;
@@ -97,11 +102,6 @@ Constant::DataVector FloatingPointConstant::data() const
 	return values;
 }
 
-size_t FloatingPointConstant::bytes() const
-{
-	return type()->bytes();
-}
-
 Constant* FloatingPointConstant::clone() const
 {
 	return new FloatingPointConstant(*this);
@@ -132,17 +132,65 @@ Constant::DataVector IntegerConstant::data() const
 	return values;
 }
 
-size_t IntegerConstant::bytes() const
-{
-	return type()->bytes();
-}
-
 Constant* IntegerConstant::clone() const
 {
 	return new IntegerConstant(*this);
 }
 
 
+StructureConstant::StructureConstant(const Type* a)
+: Constant(a),
+  _members(dynamic_cast<const AggregateType*>(a)->numberOfSubTypes(), nullptr)
+{
+
+}
+
+Constant* StructureConstant::getMember(unsigned int index)
+{
+	return _members[index];
+}
+
+const Constant* StructureConstant::getMember(unsigned int index) const
+{
+	return _members[index];
+}
+
+void StructureConstant::setMember(unsigned int index, Constant* c)
+{
+	_members[index] = c->clone();	
+}
+
+unsigned int StructureConstant::numberOfSubTypes() const
+{
+	return _members.size();
+}
+
+bool StructureConstant::isNullValue() const
+{
+	for(auto member : _members)
+	{
+		if(member != nullptr)
+		{
+			if(!member->isNullValue()) return false;
+		}
+	}	
+
+	return true;
+}
+
+Constant::DataVector StructureConstant::data() const
+{
+	assertM(false, "Not implemented.");
+
+	DataVector data;
+
+	return data;
+}
+
+Constant* StructureConstant::clone() const
+{
+	return new StructureConstant(*this);
+}
 
 
 ArrayConstant::ArrayConstant(const void* data, uint64_t size, const Type* t)
@@ -189,11 +237,6 @@ bool ArrayConstant::isNullValue() const
 Constant::DataVector ArrayConstant::data() const
 {
 	return _value;
-}
-
-size_t ArrayConstant::bytes() const
-{
-	return _value.size();
 }
 
 Constant* ArrayConstant::clone() const

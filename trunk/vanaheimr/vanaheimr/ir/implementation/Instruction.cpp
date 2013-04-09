@@ -333,45 +333,46 @@ std::string Instruction::toString(Opcode o)
 {
 	switch(o)
 	{
-	case Add:     return "add";
-	case And:     return "and";
-	case Ashr:    return "ashr";
-	case Atom:    return "atom";
-	case Bar:     return "bar";
-	case Bitcast: return "bitcast";
-	case Bra:     return "bra";
-	case Call:    return "call";
-	case Fdiv:    return "fdiv";
-	case Fmul:    return "fmul";
-	case Fpext:   return "fpext";
-	case Fptosi:  return "fptosi";
-	case Fptoui:  return "fptoui";
-	case Fptrunc: return "fptrunc";
-	case Frem:    return "frem";
-	case Launch:  return "launch";
-	case Ld:      return "ld";
-	case Lshr:    return "lshr";
-	case Membar:  return "membar";
-	case Mul:     return "mul";
-	case Or:      return "or";
-	case Ret:     return "ret";
-	case Setp:    return "setp";
-	case Sext:    return "sext";
-	case Sdiv:    return "sdiv";
-	case Shl:     return "shl";
-	case Sitofp:  return "sitofp";
-	case Srem:    return "srem";
-	case St:      return "st";
-	case Sub:     return "sub";
-	case Trunc:   return "trunc";
-	case Udiv:    return "udiv";
-	case Uitofp:  return "uitofp";
-	case Urem:    return "urem";
-	case Xor:     return "xor";
-	case Zext:    return "zext";
-	case Phi:     return "phi";
-	case Psi:     return "psi";
-	case Machine: return "MACHINE-SPECIFIC";
+	case Add:           return "add";
+	case And:           return "and";
+	case Ashr:          return "ashr";
+	case Atom:          return "atom";
+	case Bar:           return "bar";
+	case Bitcast:       return "bitcast";
+	case Bra:           return "bra";
+	case Call:          return "call";
+	case Fdiv:          return "fdiv";
+	case Fmul:          return "fmul";
+	case Fpext:         return "fpext";
+	case Fptosi:        return "fptosi";
+	case Fptoui:        return "fptoui";
+	case Fptrunc:       return "fptrunc";
+	case Frem:          return "frem";
+	case Getelementptr: return "getelementptr";
+	case Launch:        return "launch";
+	case Ld:            return "ld";
+	case Lshr:          return "lshr";
+	case Membar:        return "membar";
+	case Mul:           return "mul";
+	case Or:            return "or";
+	case Ret:           return "ret";
+	case Setp:          return "setp";
+	case Sext:          return "sext";
+	case Sdiv:          return "sdiv";
+	case Shl:           return "shl";
+	case Sitofp:        return "sitofp";
+	case Srem:          return "srem";
+	case St:            return "st";
+	case Sub:           return "sub";
+	case Trunc:         return "trunc";
+	case Udiv:          return "udiv";
+	case Uitofp:        return "uitofp";
+	case Urem:          return "urem";
+	case Xor:           return "xor";
+	case Zext:          return "zext";
+	case Phi:           return "phi";
+	case Psi:           return "psi";
+	case Machine:       return "MACHINE-SPECIFIC";
 	case InvalidOpcode: break;
 	}
 	
@@ -384,44 +385,45 @@ Instruction* Instruction::create(Opcode o, BasicBlock* b)
 
 	switch(o)
 	{
-	case Add:     instruction = new ir::Add;     break;
-	case And:     instruction = new ir::And;     break;
-	case Ashr:    instruction = new ir::Ashr;    break;
-	case Atom:    instruction = new ir::Atom;    break;
-	case Bar:     instruction = new ir::Bar;     break;
-	case Bitcast: instruction = new ir::Bitcast; break;
-	case Bra:     instruction = new ir::Bra;     break;
-	case Call:    instruction = new ir::Call;    break;
-	case Fdiv:    instruction = new ir::Fdiv;    break;
-	case Fmul:    instruction = new ir::Fmul;    break;
-	case Fpext:   instruction = new ir::Fpext;   break;
-	case Fptosi:  instruction = new ir::Fptosi;  break;
-	case Fptoui:  instruction = new ir::Fptoui;  break;
-	case Fptrunc: instruction = new ir::Fptrunc; break;
-	case Frem:    instruction = new ir::Frem;    break;
-	case Launch:  instruction = new ir::Launch;  break;
-	case Ld:      instruction = new ir::Ld;      break;
-	case Lshr:    instruction = new ir::Lshr;    break;
-	case Membar:  instruction = new ir::Membar;  break;
-	case Mul:     instruction = new ir::Mul;     break;
-	case Or:      instruction = new ir::Or;      break;
-	case Ret:     instruction = new ir::Ret;     break;
-	case Setp:    instruction = new ir::Setp;    break;
-	case Sext:    instruction = new ir::Sext;    break;
-	case Sdiv:    instruction = new ir::Sdiv;    break;
-	case Shl:     instruction = new ir::Shl;     break;
-	case Sitofp:  instruction = new ir::Sitofp;  break;
-	case Srem:    instruction = new ir::Srem;    break;
-	case St:      instruction = new ir::St;      break;
-	case Sub:     instruction = new ir::Sub;     break;
-	case Trunc:   instruction = new ir::Trunc;   break;
-	case Udiv:    instruction = new ir::Udiv;    break;
-	case Uitofp:  instruction = new ir::Uitofp;  break;
-	case Urem:    instruction = new ir::Urem;    break;
-	case Xor:     instruction = new ir::Xor;     break;
-	case Zext:    instruction = new ir::Zext;    break;
-	case Phi:     instruction = new ir::Phi;     break;
-	case Psi:     instruction = new ir::Psi;     break;
+	case Add:           instruction = new ir::Add;           break;
+	case And:           instruction = new ir::And;           break;
+	case Ashr:          instruction = new ir::Ashr;          break;
+	case Atom:          instruction = new ir::Atom;          break;
+	case Bar:           instruction = new ir::Bar;           break;
+	case Bitcast:       instruction = new ir::Bitcast;       break;
+	case Bra:           instruction = new ir::Bra;           break;
+	case Call:          instruction = new ir::Call;          break;
+	case Fdiv:          instruction = new ir::Fdiv;          break;
+	case Fmul:          instruction = new ir::Fmul;          break;
+	case Fpext:         instruction = new ir::Fpext;         break;
+	case Fptosi:        instruction = new ir::Fptosi;        break;
+	case Fptoui:        instruction = new ir::Fptoui;        break;
+	case Fptrunc:       instruction = new ir::Fptrunc;       break;
+	case Frem:          instruction = new ir::Frem;          break;
+	case Getelementptr: instruction = new ir::Getelementptr; break;
+	case Launch:        instruction = new ir::Launch;        break;
+	case Ld:            instruction = new ir::Ld;            break;
+	case Lshr:          instruction = new ir::Lshr;          break;
+	case Membar:        instruction = new ir::Membar;        break;
+	case Mul:           instruction = new ir::Mul;           break;
+	case Or:            instruction = new ir::Or;            break;
+	case Ret:           instruction = new ir::Ret;           break;
+	case Setp:          instruction = new ir::Setp;          break;
+	case Sext:          instruction = new ir::Sext;          break;
+	case Sdiv:          instruction = new ir::Sdiv;          break;
+	case Shl:           instruction = new ir::Shl;           break;
+	case Sitofp:        instruction = new ir::Sitofp;        break;
+	case Srem:          instruction = new ir::Srem;          break;
+	case St:            instruction = new ir::St;            break;
+	case Sub:           instruction = new ir::Sub;           break;
+	case Trunc:         instruction = new ir::Trunc;         break;
+	case Udiv:          instruction = new ir::Udiv;          break;
+	case Uitofp:        instruction = new ir::Uitofp;        break;
+	case Urem:          instruction = new ir::Urem;          break;
+	case Xor:           instruction = new ir::Xor;           break;
+	case Zext:          instruction = new ir::Zext;          break;
+	case Phi:           instruction = new ir::Phi;           break;
+	case Psi:           instruction = new ir::Psi;           break;
 	case Machine:       break;
 	case InvalidOpcode: break;
 	}
@@ -907,6 +909,27 @@ Instruction* Frem::clone() const
 {
 	return new Frem(*this);
 }
+
+/*! \brief Get a pointer to a subtype of an aggregate */
+
+Getelementptr::Getelementptr(const IndexVector& i, BasicBlock* b)
+: UnaryInstruction(Instruction::Getelementptr, b)
+{
+
+}
+
+Instruction* Getelementptr::clone() const
+{
+	return new Getelementptr(*this);
+}
+
+const Type* Getelementptr::getSelectedType() const
+{
+	// TODO
+
+	return nullptr;
+}
+
 
 /*! \brief Launch a new HTA at the specified entry point */
 Launch::Launch(BasicBlock* b)

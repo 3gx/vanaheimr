@@ -78,6 +78,16 @@ Operand::OperandMode Operand::mode() const
 	return _mode;
 }
 
+bool Operand::isConstant() const
+{
+	return false;
+}
+
+Constant* Operand::getConstantValue() const
+{
+	return nullptr;
+}
+
 RegisterOperand::RegisterOperand(VirtualRegister* reg, Instruction* i)
 : Operand(Register, i), virtualRegister(reg)
 {
