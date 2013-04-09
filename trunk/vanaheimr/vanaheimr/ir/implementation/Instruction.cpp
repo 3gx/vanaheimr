@@ -925,11 +925,19 @@ Instruction* Getelementptr::clone() const
 
 const Type* Getelementptr::getSelectedType() const
 {
-	// TODO
+	const Type* selected = a()->type();
 
-	return nullptr;
+	for(auto index : indices)
+	{
+		assert(selected->isAggregate());
+		
+		auto aggregate = static_cast<const AggregateType*>(selected);
+	
+		selected = aggregate->getTypeAtIndex(index);
+	}
+
+	return selected;
 }
-
 
 /*! \brief Launch a new HTA at the specified entry point */
 Launch::Launch(BasicBlock* b)
