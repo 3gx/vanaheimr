@@ -82,6 +82,7 @@ private:
 	
 	StringList _parseGlobalAttributes(std::istream& stream);
 	Constant* _parseInitializer(const Type*, std::istream& stream);
+	void _parseAlignment(ir::Global*, std::istream& stream);
 
 	const Type* _parseType(std::istream& stream);
 	void _addTypeAlias(const std::string& alias, const Type*);
@@ -412,6 +413,8 @@ void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 	{
 		global->setInitializer(initializer);
 	}
+
+	_parseAlignment(&*global, stream);
 }
 
 void LLVMParserEngine::_parseTypedef(std::istream& stream)
@@ -526,7 +529,6 @@ LLVMParserEngine::StringList LLVMParserEngine::_parseGlobalAttributes(
 
 	hydrazine::log("LLVM::Parser") << "Parsing global attributes...\n";
 	
-
 	auto next = _peek(stream);
 
 	while(isGlobalAttribute(next))
@@ -541,15 +543,45 @@ LLVMParserEngine::StringList LLVMParserEngine::_parseGlobalAttributes(
 	return attributes;
 }
 
+static bool isConstant(const std::string& token)
+{
+	if(token == "zeroinitializer") return true;
+	if(token.find("c\"") == 0)     return true;
+	if(token.find("[") == 0)       return true;
+
+	return false;
+}
+
 Constant* LLVMParserEngine::_parseInitializer(const Type* type,
 	std::istream& stream)
 {
+	auto next = _peek(stream);
+
+	if(!isConstant(next)) return nullptr;
+
 	ConstantValueParser parser;
 
 	parser.parse(type, stream);
 
 	return parser.parsedConstant()->clone();
 } 
+
+void LLVMParserEngine::_parseAlignment(ir::Global* global, std::istream& stream)
+{
+	auto next = _peek(stream);
+
+	while(next == ",")
+	{
+		_scan(",", stream);
+
+		_nextToken(stream);
+		_nextToken(stream);
+		
+		// TODO: store the alignment
+
+		next = _peek(stream);
+	}
+}
 
 const Type* LLVMParserEngine::_parseType(std::istream& stream)
 {
@@ -636,6 +668,9 @@ bool LLVMParserEngine::_getComplexToken(std::string& result,
 		return false;
 	}
 
+	// string constant: 'c"*"'
+	if(_lexRegex(result, "c\"*\"", stream)) return true;
+	
 	// string: '"*"'
 	if(_lexRegex(result, "\"*\"", stream)) return true;
 
