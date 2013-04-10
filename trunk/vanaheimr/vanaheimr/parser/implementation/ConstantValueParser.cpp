@@ -226,7 +226,7 @@ ir::Constant* ConstantValueParser::_parseStringConstant(
 
 	hydrazine::log("ConstantValueParser::Parser") << " parsed string constant '"
 		<< token << "'\n";
-	
+
 	return new ir::ArrayConstant(token.c_str(), token.size(),
 		compiler::Compiler::getSingleton()->getType("i8"));
 }
