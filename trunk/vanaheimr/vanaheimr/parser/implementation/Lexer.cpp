@@ -5,7 +5,7 @@
 */
 
 // Vanaheimr Includes
-#include <vanaheimr/parser/interace/Lexer.h>
+#include <vanaheimr/parser/interface/Lexer.h>
 
 namespace vanaheimr
 {
@@ -38,14 +38,16 @@ public:
 public:
 	Lexer::StringList tokenRules;
 	Lexer::StringList whiteSpaceRules;
-};
 
+public:
 	void getSimpleToken(std::string& result);
 	bool getComplexToken(std::string& result);
 
-	bool lexRegex(std::string& result, const std::string& expression, std::istream& stream);
+	bool lexRegex(std::string& result, const std::string& expression);
 
 	char snext(std::istream& stream);
+};
+
 
 Lexer::Lexer()
 : _engine(new LexerEngine)
@@ -158,13 +160,88 @@ void Lexer::reset()
 	_engine->checkpoints.clear();
 }
 
-void Lexer::checkpoint();
-void Lexer::restoreCheckpoint();
-void Lexer::discardCheckpoint();
+void Lexer::checkpoint()
+{
+	_engine->checkpoints.push_back(LexerEngine::LexerContext(_engine->stream.tellg(),
+		_engine->line, _engine->column));
+}
 
-void Lexer::addTokenRegex(const std::string& regex);
-void Lexer::addWhitespace(const std::string& whitespaceCharacters);	
-void Lexer::addTokens(const StringList& regexes);
+void Lexer::restoreCheckpoint()
+{
+	auto& checkpoints = _engine->checkpoints;
+
+	assert(!checkpoints.empty());
+
+	_engine->stream.clear();
+	_engine->stream.seekg(checkpoints.back().position, std::ios::beg);
+	
+	_engine->line   = checkpoints.back().line;
+	_engine->column = checkpoints.back().column;
+
+	checkpoints.pop_back();
+}
+
+void Lexer::discardCheckpoint()
+{
+	assert(!_engine->checkpoints.empty());
+
+	_engine->checkpoints.pop_back();
+}
+
+void Lexer::addTokenRegex(const std::string& regex)
+{
+	_engine->addRegex(regex);
+}
+
+void Lexer::addWhitespace(const std::string& whitespaceCharacters)
+{
+	_engine->whitespaceRules.push_back(whitespaceCharacters);
+}
+
+void Lexer::addTokens(const StringList& regexes)
+{
+	_engine->tokenRules.insert(_engine->tokenRules.end(), regexes.begin(),
+		regexes.end());
+}
+	
+void LexerEngine::getSimpleToken(std::string& result)
+{
+
+}
+
+bool LexerEngine::getComplexToken(std::string& result)
+{
+
+}
+
+static bool isWildcard(char c)
+{
+	return c == '*';
+}
+
+static bool matchedWildcard(std::string::const_iterator next,
+	const std::string& expression, char c)
+{
+	if(!isWildcard(*next)) return false;
+	
+	auto following = next; ++following;
+	
+	if(following == expression.end()) return false;
+	
+	return isWildcard(*next) && *following != c;
+}
+
+static bool regexMatch(std::string::const_iterator next,
+	const std::string& expression, char c)
+{
+	if(isWildcard(*next)) return true;
+	
+	return *next == c;
+}
+
+bool LexerEngine::lexRegex(std::string& result, const std::string& expression);
+
+char LexerEngine::snext(std::istream& stream);
 
 }
 
