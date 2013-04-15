@@ -23,6 +23,9 @@ namespace parser
 class Lexer
 {
 public:
+	typedef std::list<std::string> StringList;
+
+public:
 	Lexer();
 	~Lexer();
 
@@ -48,7 +51,6 @@ public:
 	std::string peek();
 	std::string location() const;
 	std::string nextToken();
-	std::string getLine();
 
 	bool scan(const std::string& token);
 	void scanThrow(const std::string& token);
@@ -59,9 +61,6 @@ public:
 	void checkpoint();
 	void restoreCheckpoint();
 	void discardCheckpoint();
-
-public:
-	typedef std::list<std::string> StringList;
 
 private:
 	LexerEngine* _engine;

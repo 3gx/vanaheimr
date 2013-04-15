@@ -7,6 +7,16 @@
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/Lexer.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
+// Standard Library Includes
+#include <vector>
+#include <sstream>
+#include <cassert>
+#include <stdexcept>
+#include <set>
+
 namespace vanaheimr
 {
 
@@ -16,16 +26,29 @@ namespace parser
 class LexerEngine
 {
 public:
-	class LexerContext
+	typedef std::set<std::string*> RuleSet;
+
+	class TokenDescriptor
 	{
 	public:
-		LexerContext(size_t position, size_t line, size_t column);
+		explicit TokenDescriptor(LexerEngine* engine);
 	
 	public:
-		size_t position;
+		size_t beginPosition;
+		size_t endPosition;
+	
+	public:
 		size_t line;
-		size_t column;	
+		size_t column;
+		
+	public:
+		RuleSet possibleMatches;
 	};
+	
+	typedef std::vector<TokenDescriptor> TokenVector;
+	typedef TokenVector::iterator LexerContext;
+
+	typedef std::vector<LexerContext> LexerContextVector;
 
 public:
 	std::istream* stream;
@@ -37,17 +60,38 @@ public:
 
 public:
 	Lexer::StringList tokenRules;
-	Lexer::StringList whiteSpaceRules;
+	Lexer::StringList whitespaceRules;
 
 public:
-	void getSimpleToken(std::string& result);
-	bool getComplexToken(std::string& result);
+	std::string nextToken();
+	std::string peek();
 
-	bool lexRegex(std::string& result, const std::string& expression);
+public:
+	void reset(std::istream* s);
 
-	char snext(std::istream& stream);
+	void checkpoint();
+	void restore();
+
+private:
+	TokenVector           _tokens;
+	TokenVector::iterator _nextToken;
+
+private:
+	void _createTokens();
+	void _mergeTokens();
+	
+	char _snext();
+
+private:
+	TokenDescriptor _mergeWithBegin(const TokenDescriptor& token);
+	TokenDescriptor _mergeWithEnd(const TokenDescriptor& token));
+	TokenDescriptor _mergeWithNext(const TokenDescriptor& token,
+		const TokenDescriptor& next);
+		
+	TokenDescriptor _canMerge(const TokenDescriptor& token,
+		const TokenDescriptor& next);
+	
 };
-
 
 Lexer::Lexer()
 : _engine(new LexerEngine)
@@ -62,25 +106,12 @@ Lexer::~Lexer()
 
 void Lexer::setStream(std::istream* stream)
 {
-	_engine->stream = stream;
-	_engine->reset();
+	_engine->reset(stream);
 }	
 
 std::string Lexer::peek()
 {
-	size_t position = _engine->stream->tellg();
-	
-	size_t line   = _engine->line;
-	size_t column = _engine->column;
-	
-	auto result = nextToken();
-	
-	_engine->stream->seekg(position);
-	
-	_engine->line   = line;
-	_engine->column = column;
-	
-	return result;
+	return _engine->peek();
 }
 
 std::string Lexer::location() const
@@ -94,35 +125,9 @@ std::string Lexer::location() const
 
 std::string Lexer::nextToken()
 {
-	while(_engine->stream->good() && _engine->isWhitespace(_engine->snext()));
-	_engine->stream->unget(); --_engine->column;
-	
-	std::string result;
-
-	if(!_engine->getComplexToken(result))
-	{
-		_engine->getSimpleToken(result);
-	}
+	auto result = _engine->nextToken();	
 
 	hydrazine::log("Lexer") << "scanned token '" << result << "'\n";
-
-	return result;
-}
-
-std::string Lexer::getLine()
-{
-	std::string result;
-
-	while(_engine->stream->good())
-	{
-		char next = _engine->snext();
-		
-		if(next == '\n') break;
-		
-		result += next;
-	}
-
-	hydrazine::log("Lexer") << "scanned line '" << result << "'\n";
 
 	return result;
 }
@@ -131,14 +136,14 @@ bool Lexer::scan(const std::string& token)
 {
 	hydrazine::log("Lexer") << "scanning for token '" << token << "'\n";
 	
-	return nextToken(stream) == token;
+	return nextToken() == token;
 }
 
 void Lexer::scanThrow(const std::string& token)
 {
 	if(!scan(token))
 	{
-		throw std::runtime_error(_location() + ": expecting a '" + token + "'");
+		throw std::runtime_error(location() + ": expecting a '" + token + "'");
 	}
 }
 
@@ -151,34 +156,17 @@ bool Lexer::scanPeek(const std::string& token)
 
 void Lexer::reset()
 {
-	_engine->stream->clear();
-	_engine->stream->seekg(_engine->position, std::ios::beg);
-	
-	_engine->line   = 0;
-	_engine->column = 0;
-	
-	_engine->checkpoints.clear();
+	_engine->reset(_engine->stream);
 }
 
 void Lexer::checkpoint()
 {
-	_engine->checkpoints.push_back(LexerEngine::LexerContext(_engine->stream.tellg(),
-		_engine->line, _engine->column));
+	_engine->checkpoint();
 }
 
 void Lexer::restoreCheckpoint()
 {
-	auto& checkpoints = _engine->checkpoints;
-
-	assert(!checkpoints.empty());
-
-	_engine->stream.clear();
-	_engine->stream.seekg(checkpoints.back().position, std::ios::beg);
-	
-	_engine->line   = checkpoints.back().line;
-	_engine->column = checkpoints.back().column;
-
-	checkpoints.pop_back();
+	_engine->restore();
 }
 
 void Lexer::discardCheckpoint()
@@ -190,7 +178,7 @@ void Lexer::discardCheckpoint()
 
 void Lexer::addTokenRegex(const std::string& regex)
 {
-	_engine->addRegex(regex);
+	_engine->tokenRules.push_back(regex);
 }
 
 void Lexer::addWhitespace(const std::string& whitespaceCharacters)
@@ -203,45 +191,137 @@ void Lexer::addTokens(const StringList& regexes)
 	_engine->tokenRules.insert(_engine->tokenRules.end(), regexes.begin(),
 		regexes.end());
 }
-	
-void LexerEngine::getSimpleToken(std::string& result)
-{
 
+void LexerEngine::reset(std::istream* s)
+{
+	stream = s;
+	
+	stream->clear();
+	stream->seekg(0, std::ios::beg);
+	
+	line   = 0;
+	column = 0;
+	
+	checkpoints.clear();
 }
 
-bool LexerEngine::getComplexToken(std::string& result)
+void LexerEngine::checkpoint()
 {
-
+	checkpoints.push_back(_nextToken);
 }
 
-static bool isWildcard(char c)
+void LexerEngine::restore()
 {
-	return c == '*';
+	assert(!checkpoints.empty());
+
+	_nextToken = checkpoints.back();
+
+	checkpoints.pop_back();
 }
 
-static bool matchedWildcard(std::string::const_iterator next,
-	const std::string& expression, char c)
+std::string LexerEngine::nextToken()
 {
-	if(!isWildcard(*next)) return false;
+	auto result = peek();
 	
-	auto following = next; ++following;
+	if(_nextToken != _tokens.end()) ++_nextToken;
 	
-	if(following == expression.end()) return false;
-	
-	return isWildcard(*next) && *following != c;
+	return result;
 }
 
-static bool regexMatch(std::string::const_iterator next,
-	const std::string& expression, char c)
+std::string LexerEngine::peek()
 {
-	if(isWildcard(*next)) return true;
+	if(_nextToken == _tokens.end()) return "";
+
+	std::string result(_nextToken->endPosition -
+		_nextToken->beginPosition, ' ');
+
+	stream->seekg(_nextToken->beginPosition);
 	
-	return *next == c;
+	stream->read((char*)result.data(), result.size());
+	
+	return result;
 }
 
-bool LexerEngine::lexRegex(std::string& result, const std::string& expression);
+void LexerEngine::_createTokens()
+{
+	_tokens.clear();
 
-char LexerEngine::snext(std::istream& stream);
+	while(stream->good())
+	{
+		_tokens.push_back(TokenDescriptor(this));
+	}
+}
+
+void LexerEngine::_mergeTokens()
+{
+	bool anyRemaining = !_tokens.empty();
+
+	while(anyRemaining)
+	{
+		anyRemaining = false;
+		
+		LexerContextVector newTokens;
+		
+		// merge with neighbors
+		for(auto token = _tokens.begin(); token != _tokens.end();)
+		{
+			if(token == _tokens.begin())
+			{
+				newTokens.push_back(_mergeWithBegin(*token));
+				++token;
+				continue;
+			}
+			
+			auto next = token; ++next;
+			
+			if(next == _tokens.end())
+			{
+				newTokens.push_back(_mergeWithEnd(*token));
+			}
+			
+			if(_canMerge(*token, *next))
+			{
+				newTokens.push_back(_mergeWithNext(*token, *next));
+			}
+			else
+			{
+				newTokens.push_back(*token);
+				newTokens.push_back(*next );
+			}
+			
+			token = ++next;
+		}
+		
+		_tokens = std::move(newTokens);
+	}
+	
+	_nextToken = _tokens.begin();
+}
+
+char LexerEngine::_snext()
+{
+	char c = stream->get();
+	
+	if(c == '\n')
+	{
+		++line;
+		column = 0;
+	}
+	else
+	{
+		++column;
+	}
+	
+	return c;
+}
+
+LexerEngine::TokenDescriptor LexerEngine::_mergeWithEnd(const TokenDescriptor& token);
+LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(const TokenDescriptor& token,
+	const TokenDescriptor& next);
+	
+LexerEngine::TokenDescriptor LexerEngine::_canMerge(const TokenDescriptor& token,
+	const TokenDescriptor& next);
+
 
 }
 
