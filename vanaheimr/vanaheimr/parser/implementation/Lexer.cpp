@@ -104,6 +104,8 @@ private:
 	TokenDescriptor _mergeWithNext(const LexerContext& token,
 		const LexerContext& next);
 		
+	bool _isAMergePossible(const LexerContext& token,
+		const LexerContext& next);
 	bool _canMerge(const LexerContext& token,
 		const LexerContext& next);
 	
@@ -300,6 +302,8 @@ void LexerEngine::_mergeTokens()
 	
 	while(true)
 	{
+		assertM(counter < _tokens.size(), "Lexing did not converge");
+
 		hydrazine::log("Lexer") << "============== Iteration "
 			<< counter++ << " ==============\n";
 
@@ -399,16 +403,16 @@ static bool isWildcard(char c)
 }
 
 static bool match(std::string::const_iterator& matchEnd,
-	std::string::const_iterator begin,
-	std::string::const_iterator end, const std::string& rule)
+	std::string::const_iterator begin, std::string::const_iterator end,
+	std::string::const_iterator ruleBegin, std::string::const_iterator ruleEnd)
 {
-	for(auto ruleCharacter = rule.begin(); ruleCharacter != rule.end(); )
+	for(auto ruleCharacter = ruleBegin; ruleCharacter != ruleEnd; )
 	{
 		auto ruleNextCharacter = ruleCharacter; ++ruleNextCharacter;
 
 		if(isWildcard(*ruleCharacter))
 		{
-			if(ruleNextCharacter != rule.end())
+			if(ruleNextCharacter != ruleEnd)
 			{
 				if(*ruleNextCharacter == *begin)
 				{
@@ -417,6 +421,9 @@ static bool match(std::string::const_iterator& matchEnd,
 			}
 			
 			++begin;
+			
+			if(begin == end) break;
+			
 			continue;
 		}
 		
@@ -434,6 +441,19 @@ static bool match(std::string::const_iterator& matchEnd,
 	matchEnd = begin;
 	
 	return true;
+}
+
+static bool match(std::string::const_iterator& matchEnd,
+	std::string::const_iterator begin,
+	std::string::const_iterator end, const std::string& rule)
+{
+	for(auto ruleCharacter = rule.begin(); ruleCharacter != rule.end();
+		++ruleCharacter)
+	{
+		if(match(matchEnd, begin, end, ruleCharacter, rule.end())) return true;
+	}
+	
+	return false;
 }
 
 static bool matchWithEnd(std::string::const_iterator begin,
@@ -457,6 +477,7 @@ static bool matchWithEnd(std::string::const_iterator begin,
 			}
 			
 			++rbegin;
+			if(rbegin == rend) break;
 			continue;
 		}
 		
@@ -469,6 +490,42 @@ static bool matchWithEnd(std::string::const_iterator begin,
 		++rbegin;
 		
 		if(rbegin == rend) break;
+	}
+	
+	return true;
+}
+
+static bool matchWithBegin(std::string::const_iterator begin,
+	std::string::const_iterator end, const std::string& rule)
+{
+	for(auto ruleCharacter = rule.begin(); ruleCharacter != rule.end(); )
+	{
+		auto ruleNextCharacter = ruleCharacter; ++ruleNextCharacter;
+
+		if(isWildcard(*ruleCharacter))
+		{
+			if(ruleNextCharacter != rule.end())
+			{
+				if(*ruleNextCharacter == *begin)
+				{
+					++ruleCharacter;
+				}
+			}
+			
+			++begin;
+			if(begin == end) break;
+			continue;
+		}
+		
+		if(*ruleCharacter != *begin)
+		{
+			return false;
+		}
+		
+		++ruleCharacter;
+		++begin;
+		
+		if(begin == end) break;
 	}
 	
 	return true;
@@ -493,13 +550,14 @@ static bool canMatchWithBegin(const std::string& rule, const std::string& text)
 	assert(!rule.empty());
 	assert(!text.empty());
 
-	std::string::const_iterator matchEnd = text.begin();
-	
-	return match(matchEnd, text.begin(), text.end(), rule);
+	return matchWithBegin(text.begin(), text.end(), rule);
 }
 
 void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 {
+	hydrazine::log("Lexer") << " checking token possible matches for '" <<
+		token->getString() << "'\n";
+	
 	bool isNewToken = _isNewToken(token);
 
 	auto next = token; ++next;
@@ -508,7 +566,7 @@ void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 	
 	if(!isTokenEnd)
 	{
-		isTokenEnd = next->isBeginMatched();
+		isTokenEnd = !_isAMergePossible(token, next);
 	}
 
 	if(!isTokenEnd && !isNewToken) return;
@@ -517,15 +575,23 @@ void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 
 	auto tokenString = token->getString();
 
+	hydrazine::log("Lexer") << "   possible matches for '" <<
+		tokenString << "'"
+		<< (isNewToken ? " (starts new token)":"") 
+		<< (isTokenEnd ? " (ends current token)":"") << "\n";
+
 	for(auto rule : token->possibleMatches)
 	{
 		if(isNewToken && !canMatchWithBegin(*rule, tokenString)) continue;
 		if(isTokenEnd &&   !canMatchWithEnd(*rule, tokenString)) continue;
+		
+		hydrazine::log("Lexer") << "    '" << *rule << "'\n";
 	
 		remainingRules.insert(rule);
 	}
 	
-	assert(!remainingRules.empty());
+	assertM(!remainingRules.empty(), "No possible matched for token '"
+		<< token->getString() << "'");
 	
 	token->possibleMatches = std::move(remainingRules);
 }
@@ -536,11 +602,14 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithEnd(
 	auto string = token->getString();
 	
 	TokenDescriptor newToken(*token);
+
+	hydrazine::log("Lexer") << "   possible matches:\n";
 	
 	for(auto possibleMatch : token->possibleMatches)
 	{
 		if(canMatchWithEnd(*possibleMatch, string))
 		{
+			hydrazine::log("Lexer") << "    '" << *possibleMatch << "'\n";
 			newToken.possibleMatches.insert(possibleMatch);
 		}
 	}
@@ -572,15 +641,26 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(
 		next->possibleMatches);
 	
 	// Only keep matches that handle the combined string
+	hydrazine::log("Lexer") << "   possible rule matches:\n";
 	for(auto possibleMatch : possibleMatches)
 	{
 		if(_canMatch(*possibleMatch, string))
 		{
+			hydrazine::log("Lexer") << "    '" << *possibleMatch << "'\n";
 			newToken.possibleMatches.insert(possibleMatch);
 		}
 	}
 	
 	return newToken;
+}
+
+bool LexerEngine::_isAMergePossible(
+	const LexerContext& token,
+	const LexerContext& next)
+{
+	auto mergedToken = _mergeWithNext(token, next);
+
+	return !mergedToken.possibleMatches.empty();
 }
 	
 bool LexerEngine::_canMerge(
@@ -691,8 +771,6 @@ LexerEngine::TokenDescriptor::TokenDescriptor(const TokenDescriptor& left,
   line(left.line), column(right.column), engine(left.engine)
 {
 	assert(left.endPosition == right.beginPosition);
-	
-	
 }
 
 bool LexerEngine::TokenDescriptor::isBeginMatched() const
