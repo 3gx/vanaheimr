@@ -39,7 +39,7 @@ public:
 
 public:
 	/*! \brief Add a rule for lexing whitespace */
-	void addWhitespace(const std::string& whitespaceCharacters);	
+	void addWhitespaceRules(const std::string& whitespaceCharacters);	
 	
 	/*! \brief Add a set of rules for lexing tokens */
 	void addTokens(const StringList& regexes);
