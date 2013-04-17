@@ -27,6 +27,7 @@ namespace parser
 class LexerEngine
 {
 public:
+	// TODO: use a better representation for rules than just the string
 	typedef std::set<std::string*> RuleSet;
 
 	class TokenDescriptor
@@ -80,6 +81,7 @@ public:
 public:
 	std::string nextToken();
 	std::string peek();
+	bool hitEndOfStream() const;
 
 public:
 	void reset(std::istream* s);
@@ -157,6 +159,11 @@ std::string Lexer::nextToken()
 	return result;
 }
 
+bool Lexer::hitEndOfStream() const
+{
+	return _engine->hitEndOfStream();
+}
+
 bool Lexer::scan(const std::string& token)
 {
 	hydrazine::log("Lexer") << "scanning for token '" << token << "'\n";
@@ -208,7 +215,10 @@ void Lexer::addTokenRegex(const std::string& regex)
 
 void Lexer::addWhitespaceRules(const std::string& whitespaceCharacters)
 {
-	_engine->whitespaceRules.push_back(whitespaceCharacters);
+	for(auto& character : whitespaceCharacters)
+	{
+		_engine->whitespaceRules.push_back(std::string(1, character));
+	}
 }
 
 void Lexer::addTokens(const StringList& regexes)
@@ -259,7 +269,7 @@ std::string LexerEngine::nextToken()
 
 std::string LexerEngine::peek()
 {
-	if(_nextToken == _tokens.end()) return "";
+	if(hitEndOfStream()) return "";
 
 	std::string result(_nextToken->endPosition -
 		_nextToken->beginPosition, ' ');
@@ -269,6 +279,11 @@ std::string LexerEngine::peek()
 	stream->read((char*)result.data(), result.size());
 	
 	return result;
+}
+
+bool LexerEngine::hitEndOfStream() const
+{
+	return _nextToken == _tokens.end();
 }
 
 void LexerEngine::_createTokens()
@@ -299,21 +314,22 @@ void LexerEngine::_mergeTokens()
 	hydrazine::log("Lexer") << "Merging partial tokens together...\n";
 
 	unsigned int counter = 0;
+	unsigned int unmatchedTokenCount = _tokens.size();
 	
 	while(true)
 	{
-		assertM(counter < _tokens.size(), "Lexing did not converge");
-
 		hydrazine::log("Lexer") << "============== Iteration "
 			<< counter++ << " ==============\n";
 
-		LexerContextVector unmatchedTokens;
-		
 		hydrazine::log("Lexer") << " Filtering out matched tokens:\n";
 		
 		// Filter out matched tokens
+		// Parallel for-all, start from previous unmatched count
+		unsigned int unmatchedCount = 0;
 		for(auto token = _tokens.begin(); token != _tokens.end(); ++token)
 		{
+			if(token->isMatched()) continue;
+			
 			_filterWithNeighbors(token);
 			
 			if(token->isMatched())
@@ -325,32 +341,43 @@ void LexerEngine::_mergeTokens()
 				continue;
 			}
 			
-			unmatchedTokens.push_back(token);
+			++unmatchedCount;
 		}
 		
-		if(unmatchedTokens.empty()) break;
+		if(unmatchedCount == 0) break;
 		
+		assertM(counter < 2 || unmatchedCount < unmatchedTokenCount,
+			"Lexing did not make forward progress during this iteration.");
+
+		unmatchedTokenCount = unmatchedCount;
+
 		hydrazine::log("Lexer") << " unmatched token count "
-			<< unmatchedTokens.size() << "\n";
+			<< unmatchedTokenCount << "\n";
 		
 		TokenVector newTokens;
 	
 		hydrazine::log("Lexer") << " Merging unmatched tokens with neighbors\n";
 		
 		// merge with neighbors
-		for(auto currentToken = unmatchedTokens.begin();
-			currentToken != unmatchedTokens.end(); ++currentToken)
+		// Parallel for-all
+		for(auto token = _tokens.begin(); token != _tokens.end(); ++token)
 		{
-			auto next = *currentToken; ++next;
+			if(token->isMatched())
+			{
+				newTokens.push_back(*token);
+				continue;
+			}
+		
+			auto next = token; ++next;
 
 			hydrazine::log("Lexer") << "  For unmatched token '"
-				<< (*currentToken)->getString() << "'\n";
+				<< token->getString() << "'\n";
 			
 			if(next == _tokens.end())
 			{
 				hydrazine::log("Lexer") << "   attempting to merge with "
 					"end of stream.\n";
-				newTokens.push_back(_mergeWithEnd(*currentToken));
+				newTokens.push_back(_mergeWithEnd(token));
 				continue;
 			}
 			else
@@ -358,22 +385,24 @@ void LexerEngine::_mergeTokens()
 				hydrazine::log("Lexer") << "   attempting to merge with '" <<
 					next->getString() << "'\n";
 				
-				if(_canMerge(*currentToken, next))
+				if(_canMerge(token, next))
 				{
 					hydrazine::log("Lexer") << "    success\n";
-					newTokens.push_back(_mergeWithNext(*currentToken, next));
+					newTokens.push_back(_mergeWithNext(token, next));
 				}
 				else
 				{
 					hydrazine::log("Lexer") << "    failed\n";
-					newTokens.push_back(**currentToken);
+					newTokens.push_back(*token);
 					newTokens.push_back(*next );
 				}
 			}
 			
-			++currentToken;
+			++token;
 		}
 		
+		// Update tokens
+		// Parallel stream compaction
 		_tokens = std::move(newTokens);
 	}
 	
@@ -555,7 +584,7 @@ static bool canMatchWithBegin(const std::string& rule, const std::string& text)
 
 void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 {
-	hydrazine::log("Lexer") << " checking token possible matches for '" <<
+	hydrazine::log("Lexer") << "  checking token possible matches for '" <<
 		token->getString() << "'\n";
 	
 	bool isNewToken = _isNewToken(token);
@@ -569,21 +598,20 @@ void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 		isTokenEnd = !_isAMergePossible(token, next);
 	}
 
-	if(!isTokenEnd && !isNewToken) return;
+	hydrazine::log("Lexer") << "   possible matches for '" <<
+		token->getString() << "'"
+		<< (isNewToken ? " (starts new token)":"") 
+		<< (isTokenEnd ? " (ends current token)":"") << "\n";
 
 	LexerEngine::RuleSet remainingRules;
 
 	auto tokenString = token->getString();
 
-	hydrazine::log("Lexer") << "   possible matches for '" <<
-		tokenString << "'"
-		<< (isNewToken ? " (starts new token)":"") 
-		<< (isTokenEnd ? " (ends current token)":"") << "\n";
-
 	for(auto rule : token->possibleMatches)
 	{
 		if(isNewToken && !canMatchWithBegin(*rule, tokenString)) continue;
 		if(isTokenEnd &&   !canMatchWithEnd(*rule, tokenString)) continue;
+		if(!_canMatch(*rule, tokenString)) continue;
 		
 		hydrazine::log("Lexer") << "    '" << *rule << "'\n";
 	
@@ -632,6 +660,9 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(
 	const LexerContext& token,
 	const LexerContext& next)
 {
+	hydrazine::log("Lexer") << "   merging '" << token->getString()
+		<< "' with '" << next->getString() << "':\n";
+	
 	TokenDescriptor newToken(*token, *next);
 	
 	auto string = newToken.getString();
@@ -641,12 +672,12 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(
 		next->possibleMatches);
 	
 	// Only keep matches that handle the combined string
-	hydrazine::log("Lexer") << "   possible rule matches:\n";
+	hydrazine::log("Lexer") << "    possible rule matches:\n";
 	for(auto possibleMatch : possibleMatches)
 	{
 		if(_canMatch(*possibleMatch, string))
 		{
-			hydrazine::log("Lexer") << "    '" << *possibleMatch << "'\n";
+			hydrazine::log("Lexer") << "     '" << *possibleMatch << "'\n";
 			newToken.possibleMatches.insert(possibleMatch);
 		}
 	}
@@ -667,24 +698,37 @@ bool LexerEngine::_canMerge(
 	const LexerContext& token,
 	const LexerContext& next)
 {
+	// Can merge if there is no ambiguity about the rule matched
+	//  and both tokens match the same rule
+	if(next->possibleMatches.size() == 1)
+	{
+		if(!_couldBeTokenBegin(next))
+		{
+			return true;
+		}
+	}
+	
 	// Can't match if there is ambiguity about the left being a token end
 	if(_couldBeTokenEnd(token))
 	{
 		if(!_isNewToken(token))
 		{
 			hydrazine::log("Lexer") << "     can't merge, "
-				"left could be a token end.'\n";
+				"left could be a token end.\n";
 			return false;
 		}
 	}
 	
-	// Or the right begin a token begin
-	if(_couldBeTokenBegin(next))
+	// Or the right being a token begin
+	if(!token->isBeginMatched())
 	{
-		hydrazine::log("Lexer") << "     can't merge, "
-			"right could be a token begin.'\n";
+		if(_couldBeTokenBegin(next))
+		{
+			hydrazine::log("Lexer") << "     can't merge, "
+				"right could be a token begin.\n";
 	
-		return false;
+			return false;
+		}
 	}
 	
 	return true;
