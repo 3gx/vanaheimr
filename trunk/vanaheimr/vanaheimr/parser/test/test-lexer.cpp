@@ -38,6 +38,16 @@ static void testLexer(const std::string& filename)
 	lexer.addTokenRegex("[*]");
 
 	lexer.setStream(&file);
+
+	std::cout << "Lexed tokens: '" << lexer.nextToken() << "'";
+
+
+	while(!lexer.hitEndOfStream())
+	{
+		std::cout << ", '" << lexer.nextToken() << "'";
+	}
+	
+	std::cout << "\n";
 }
 
 }

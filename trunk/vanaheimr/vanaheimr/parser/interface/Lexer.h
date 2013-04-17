@@ -51,6 +51,8 @@ public:
 	std::string peek();
 	std::string location() const;
 	std::string nextToken();
+	bool hitEndOfStream() const;
+
 
 	bool scan(const std::string& token);
 	void scanThrow(const std::string& token);
