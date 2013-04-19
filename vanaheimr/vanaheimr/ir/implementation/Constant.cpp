@@ -50,9 +50,9 @@ Constant* Constant::parseConstantFromString(const std::string& value)
 {
 	std::stringstream stream(value);
 	
-	parser::ConstantValueParser parser;
+	parser::ConstantValueParser parser(&stream);
 	
-	parser.parse(stream);
+	parser.parse();
 
 	return parser.parsedConstant()->clone();
 }

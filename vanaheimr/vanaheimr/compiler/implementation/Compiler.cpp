@@ -147,7 +147,7 @@ Compiler::iterator Compiler::getOrInsertType(const std::string& signature)
 	
 	std::stringstream stream(signature);
 	
-	parser.parse(stream);
+	parser.parse(&stream);
 	
 	return getOrInsertType(*parser.parsedType()->clone());
 }

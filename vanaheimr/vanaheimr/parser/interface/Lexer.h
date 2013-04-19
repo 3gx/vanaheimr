@@ -53,10 +53,13 @@ public:
 	std::string nextToken();
 	bool hitEndOfStream() const;
 
-
 	bool scan(const std::string& token);
 	void scanThrow(const std::string& token);
 	bool scanPeek(const std::string& token);
+
+public:
+	size_t   line() const;
+	size_t column() const;
 
 public:
 	void reset();

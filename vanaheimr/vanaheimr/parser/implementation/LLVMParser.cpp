@@ -10,6 +10,7 @@
 #include <vanaheimr/parser/interface/TypeParser.h>
 #include <vanaheimr/parser/interface/ConstantValueParser.h>
 #include <vanaheimr/parser/interface/TypeAliasSet.h>
+#include <vanaheimr/parser/interface/Lexer.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
@@ -59,17 +60,16 @@ public:
 	std::string moduleName;
 
 private:
-	void _parseTypedefs(std::istream& stream);
+	void _parseTypedefs();
 
-	void _parseTopLevelDeclaration(const std::string& declaration,
-		std::istream& stream);
+	void _parseTopLevelDeclaration(const std::string& declaration);
 	
-	void _parseGlobalVariable(std::istream& stream);
-	void _parseTypedef(std::istream& stream);
-	void _parseFunction(std::istream& stream);
-	void _parsePrototype(std::istream& stream);
-	void _parseTarget(std::istream& stream);
-	void _parseMetadata(std::istream& stream);
+	void _parseGlobalVariable();
+	void _parseTypedef();
+	void _parseFunction();
+	void _parsePrototype();
+	void _parseTarget();
+	void _parseMetadata();
 
 private:
 	typedef std::set<ir::Type*> TypeSet;
@@ -80,57 +80,20 @@ private:
 	void _resolveTypeAlias(const std::string&);
 	void _resolveTypeAliasesInSubtypes(ir::Type* type, TypeSet& visited);
 	
-	StringList _parseGlobalAttributes(std::istream& stream);
-	Constant* _parseInitializer(const Type*, std::istream& stream);
-	void _parseAlignment(ir::Global*, std::istream& stream);
+	StringList _parseGlobalAttributes();
+	Constant* _parseInitializer(const Type*);
+	void _parseAlignment(ir::Global*);
 
-	const Type* _parseType(std::istream& stream);
+	const Type* _parseType();
 	void _addTypeAlias(const std::string& alias, const Type*);
 	
-	void _parseFunctionAttributes(std::istream& stream);
-	void _parseFunctionBody(std::istream& stream);
-	
-public:
-	void _resetParser(std::istream& stream);
+	void _parseFunctionAttributes();
+	void _parseFunctionBody();
 	
 private:
-	// Lexer Interface
-	std::string _peek(std::istream& stream);
-	std::string _location() const;
-	std::string _nextToken(std::istream& stream);
-	std::string _getLine(std::istream& stream);
-	
-	void _getSimpleToken(std::string& result, std::istream& stream);
-	bool _getComplexToken(std::string& result, std::istream& stream);
-	std::string _getTypeString(std::istream& stream);
-
-	bool _lexRegex(std::string& result, const std::string& expression,
-		std::istream& stream);
-	
-	bool _scan(const std::string& token, std::istream& stream);
-	void _scanThrow(const std::string& token, std::istream& stream);
-	bool _scanPeek(const std::string& token, std::istream& stream);
-	char _snext(std::istream& stream);
-	
-	void _resetLexer(std::istream& stream);
-	void _checkpointLexer(std::istream& stream);
-	void _restoreLexer(std::istream& stream);
-	void _discardCheckpoint();
+	void _resetParser();
 
 private:
-	class LexerContext
-	{
-	public:
-		LexerContext(size_t position, unsigned int line, unsigned column);
-	
-	public:
-		size_t       position;
-		unsigned int line;
-		unsigned int column;
-		
-	};
-	
-	typedef std::vector<LexerContext> LexerContextVector;
 	typedef std::unordered_map<std::string, std::string> StringMap;
 
 private:
@@ -145,10 +108,7 @@ private:
 
 private:
 	// Lexer Working State
-	unsigned int _line;
-	unsigned int _column;
-
-	LexerContextVector _checkpoints;
+	Lexer _lexer;
 };
 
 void LLVMParser::parse(const std::string& filename)
@@ -175,9 +135,13 @@ std::string LLVMParser::getParsedModuleName() const
 
 LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	const std::string& filename)
-: moduleName(filename), _compiler(compiler), _line(0), _column(0)
+: moduleName(filename), _compiler(compiler)
 {
+	// Load up the lexer with token rules
+	_lexer.addTokens({"@", "define", "declare", "!", "target", "%",
+		"|", "(", ")", ";", ",", "=", "%", "@", "[", "]", "*"});
 
+	_lexer.addWhitespaceRules(" \t\n\r");
 }
 
 static bool isTopLevelDeclaration(const std::string& token)
@@ -190,78 +154,77 @@ void LLVMParserEngine::parse(std::istream& stream)
 {
 	_module = &*_compiler->newModule(moduleName);
 
-	_resetParser(stream);
+	_lexer.setStream(&stream);
 
-	_parseTypedefs(stream);
+	_parseTypedefs();
 
-	auto token = _nextToken(stream);
+	auto token = _lexer.nextToken();
 
 	while(isTopLevelDeclaration(token))
 	{
-		_parseTopLevelDeclaration(token, stream);
+		_parseTopLevelDeclaration(token);
 	
-		token = _nextToken(stream);
+		token = _lexer.nextToken();
 	}
 
-	if(!stream.eof())
+	if(!_lexer.hitEndOfStream())
 	{
-		throw std::runtime_error("At " + _location() +
+		throw std::runtime_error("At " + _lexer.location() +
 			": hit invalid top level declaration '" + token + "'" );
 	}
 }
 
-void LLVMParserEngine::_parseTypedefs(std::istream& stream)
+void LLVMParserEngine::_parseTypedefs()
 {
 	hydrazine::log("LLVM::Parser") << "Parsing typedefs\n";
 	
-	while(stream.good())
+	while(!_lexer.hitEndOfStream())
 	{
-		auto token = _nextToken(stream);
+		auto token = _lexer.nextToken();
 
 		if(token != "%") continue;
 		
-		auto name = _nextToken(stream);
+		auto name = _lexer.nextToken();
 
-		if(!_scan("=", stream)) continue;
+		if(!_lexer.scan("=")) continue;
 
-		if(!_scan("type", stream)) continue;
+		if(!_lexer.scan("type")) continue;
 
 		hydrazine::log("LLVM::Parser") << " Parsed '" << name << "'\n";
 		
-		_typedefStrings[name] = _getTypeString(stream);
+		//_typedefStrings[name] = _getTypeString();
 	}
 
 	_resolveTypeAliases();
 
-	_resetLexer(stream);
+	_lexer.reset();
 }
 
-void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token,
-	std::istream& stream)
+void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token)
 {
 	if(token == "@")
 	{
-		_parseGlobalVariable(stream);
+		_parseGlobalVariable();
 	}
 	else if(token == "%")
 	{
-		_parseTypedef(stream);
+		_parseTypedef();
 	}
 	else if(token == "define")
 	{
-		_parseFunction(stream);
+		_parseFunction();
 	}
 	else if(token == "declare")
 	{
-		_parsePrototype(stream);
+		_parsePrototype();
 	}
 	else if(token == "target")
 	{
-		_parseTarget(stream);
+		_parseTarget();
 	}
 	else
 	{
-		_parseMetadata(stream);
+		_parseMetadata();
 	}
 }
 
@@ -310,7 +273,7 @@ void LLVMParserEngine::_resolveTypeAliases()
 			
 		std::stringstream typeStream(alias.second);
 			
-		parser.parse(typeStream);
+		parser.parse(&typeStream);
 
 		auto parsedType = *_compiler->getOrInsertType(*parser.parsedType());
 
@@ -377,29 +340,30 @@ void LLVMParserEngine::_resolveTypeAliasesInSubtypes(
 	}
 }
 
-void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
+void LLVMParserEngine::_parseGlobalVariable()
 {
-	auto name = _nextToken(stream);
+	auto name = _lexer.nextToken();
 
-	if(!_scan("=", stream))
+	if(!_lexer.scan("="))
 	{
-		throw std::runtime_error("At " + _location() + ": expecting a '='.");
+		throw std::runtime_error("At " + _lexer.location() +
+			": expecting a '='.");
 	}
 	
-	auto linkage = _peek(stream);
+	auto linkage = _lexer.peek();
 
 	if(isLinkage(linkage))
 	{
-		_nextToken(stream);
+		_lexer.nextToken();
 	}
 	else
 	{
 		linkage = "";
 	}
 	
-	auto arributes = _parseGlobalAttributes(stream);
+	auto arributes = _parseGlobalAttributes();
 
-	auto type = _parseType(stream);
+	auto type = _parseType();
 
 	auto global = _module->newGlobal(name, type, translateLinkage(linkage),
 		Global::Shared);
@@ -407,59 +371,60 @@ void LLVMParserEngine::_parseGlobalVariable(std::istream& stream)
 	hydrazine::log("LLVM::Parser") << " Parsed global variable '"
 		<< global->name() << "'.\n";
 	
-	auto initializer = _parseInitializer(type, stream);
+	auto initializer = _parseInitializer(type);
 
 	if(initializer != nullptr)
 	{
 		global->setInitializer(initializer);
 	}
 
-	_parseAlignment(&*global, stream);
+	_parseAlignment(&*global);
 }
 
-void LLVMParserEngine::_parseTypedef(std::istream& stream)
+void LLVMParserEngine::_parseTypedef()
 {
-	auto name = _nextToken(stream);
+	auto name = _lexer.nextToken();
 	
-	if(!_scan("=", stream))
+	if(!_lexer.scan("="))
 	{
-		throw std::runtime_error("At " + _location() + ": expecting a '='.");
+		throw std::runtime_error("At " + _lexer.location() +
+			": expecting a '='.");
 	}
 	
-	if(!_scan("type", stream))
+	if(!_lexer.scan("type"))
 	{
-		throw std::runtime_error("At " + _location() + ": expecting 'type'.");
+		throw std::runtime_error("At " + _lexer.location() +
+			": expecting 'type'.");
 	}
 
-	auto type = _parseType(stream);
+	auto type = _parseType();
 
 	_addTypeAlias(name, type);
 }
 
-void LLVMParserEngine::_parseFunction(std::istream& stream)
+void LLVMParserEngine::_parseFunction()
 {
-	 _parsePrototype(stream);
-	_parseFunctionAttributes(stream);
+	_parsePrototype();
+	_parseFunctionAttributes();
 
-	_scanThrow("{", stream);
+	_lexer.scanThrow("{");
 
-	_parseFunctionBody(stream);
+	_parseFunctionBody();
 
-	_scanThrow("}", stream);
-
+	_lexer.scanThrow("}");
 }
 
-void LLVMParserEngine::_parsePrototype(std::istream& stream)
+void LLVMParserEngine::_parsePrototype()
 {
-	auto returnType = _parseType(stream);
+	auto returnType = _parseType();
 
-	_scanThrow("@", stream);
+	_lexer.scanThrow("@");
 	
-	auto name = _nextToken(stream);
+	auto name = _lexer.nextToken();
 
-	_scanThrow("(", stream);
+	_lexer.scanThrow("(");
 
-	auto end = _peek(stream);
+	auto end = _lexer.peek();
 
 	Type::TypeVector argumentTypes;
 
@@ -467,18 +432,18 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 	{
 		while(true)
 		{
-			argumentTypes.push_back(_parseType(stream));
+			argumentTypes.push_back(_parseType());
 			
-			auto next = _peek(stream);
+			auto next = _lexer.peek();
 
 			if(next != ",") break;
 			
-			_scan(",", stream);
+			_lexer.scan(",");
 		}
 		
 	}
 
-	_scanThrow(")", stream);
+	_lexer.scanThrow(")");
 
 	auto type = _compiler->getOrInsertType(FunctionType(_compiler,
 		returnType, argumentTypes));
@@ -487,15 +452,15 @@ void LLVMParserEngine::_parsePrototype(std::istream& stream)
 		Variable::HiddenVisibility, *type);
 }
 
-void LLVMParserEngine::_parseTarget(std::istream& stream)
+void LLVMParserEngine::_parseTarget()
 {
 	hydrazine::log("LLVM::Parser") << "Parsing target\n";
 
-	auto name = _nextToken(stream);
+	auto name = _lexer.nextToken();
 
-	_scanThrow("=", stream);
+	_lexer.scanThrow("=");
 
-	auto targetString = _nextToken(stream);
+	auto targetString = _lexer.nextToken();
 
 	hydrazine::log("LLVM::Parser") << " target:'" << name << " = "
 		<< targetString << "'\n";
@@ -503,7 +468,7 @@ void LLVMParserEngine::_parseTarget(std::istream& stream)
 	// TODO: use this
 }
 
-void LLVMParserEngine::_parseMetadata(std::istream& stream)
+void LLVMParserEngine::_parseMetadata()
 {
 	hydrazine::log("LLVM::Parser") << "Parsing metadata\n";
 
@@ -522,22 +487,22 @@ static bool isGlobalAttribute(const std::string& token)
 	return false;
 }
 
-LLVMParserEngine::StringList LLVMParserEngine::_parseGlobalAttributes(
-	std::istream& stream)
+LLVMParserEngine::StringList LLVMParserEngine::_parseGlobalAttributes()
 {
 	StringList attributes;
 
 	hydrazine::log("LLVM::Parser") << "Parsing global attributes...\n";
 	
-	auto next = _peek(stream);
+	auto next = _lexer.peek();
 
 	while(isGlobalAttribute(next))
 	{
-		attributes.push_back(_nextToken(stream));
+		attributes.push_back(_lexer.nextToken());
 
-		hydrazine::log("LLVM::Parser") << " parsed '" << attributes.back() << "'\n";
+		hydrazine::log("LLVM::Parser") << " parsed '"
+			<< attributes.back() << "'\n";
 
-		next = _peek(stream);
+		next = _lexer.peek();
 	}
 
 	return attributes;
@@ -552,42 +517,41 @@ static bool isConstant(const std::string& token)
 	return false;
 }
 
-Constant* LLVMParserEngine::_parseInitializer(const Type* type,
-	std::istream& stream)
+Constant* LLVMParserEngine::_parseInitializer(const Type* type)
 {
-	auto next = _peek(stream);
+	auto next = _lexer.peek();
 
 	if(!isConstant(next)) return nullptr;
 
-	ConstantValueParser parser;
+	ConstantValueParser parser(&_lexer);
 
-	parser.parse(type, stream);
+	parser.parse(type);
 
 	return parser.parsedConstant()->clone();
 } 
 
-void LLVMParserEngine::_parseAlignment(ir::Global* global, std::istream& stream)
+void LLVMParserEngine::_parseAlignment(ir::Global* global)
 {
-	auto next = _peek(stream);
+	auto next = _lexer.peek();
 
 	while(next == ",")
 	{
-		_scan(",", stream);
+		_lexer.scan(",");
 
-		_nextToken(stream);
-		_nextToken(stream);
+		_lexer.nextToken();
+		_lexer.nextToken();
 		
 		// TODO: store the alignment
 
-		next = _peek(stream);
+		next = _lexer.peek();
 	}
 }
 
-const Type* LLVMParserEngine::_parseType(std::istream& stream)
+const Type* LLVMParserEngine::_parseType()
 {
 	TypeParser parser(_compiler, &_typedefs);
 	
-	parser.parse(stream);
+	parser.parse(&_lexer);
 	
 	hydrazine::log("LLVM::Parser") << "Parsed type '"
 		<< parser.parsedType()->name << "'\n";
@@ -603,298 +567,22 @@ void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 	_typedefs.addAlias(alias, type);
 }
 
-void LLVMParserEngine::_parseFunctionAttributes(std::istream& stream)
+void LLVMParserEngine::_parseFunctionAttributes()
 {
 	assertM(false, "Not Implemented.");
 }
 
-void LLVMParserEngine::_parseFunctionBody(std::istream& stream)
+void LLVMParserEngine::_parseFunctionBody()
 {
 	assertM(false, "Not Implemented.");
 }
 
-void LLVMParserEngine::_resetParser(std::istream& stream)
+void LLVMParserEngine::_resetParser()
 {
-	_resetLexer(stream);
+	_lexer.reset();
 	
 	_typedefs.clear();
 	_typedefStrings.clear();
-}
-
-std::string LLVMParserEngine::_peek(std::istream& stream)
-{
-	size_t position = stream.tellg();
-	
-	unsigned int line   = _line;
-	unsigned int column = _column;
-	
-	std::string result = _nextToken(stream);
-	
-	stream.seekg(position);
-	
-	_line   = line;
-	_column = column;
-	
-	return result;
-}
-
-std::string LLVMParserEngine::_location() const
-{
-	std::stringstream stream;
-	
-	stream << "(" << _line << ":" << _column << ")";
-	
-	return stream.str();
-}
-
-static bool isWhitespace(char c)
-{
-	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
-}
-
-static bool isToken(char c)
-{
-	return c == '|' || c == '(' || c == ')' || c == ';' || c == ',' || c == '='
-		|| c == '%' || c == '@' || c == '[' || c == ']' || c == '*';
-}
-
-bool LLVMParserEngine::_getComplexToken(std::string& result,
-	std::istream& stream)
-{
-	// comment: ';*\n'
-	if(_lexRegex(result, ";*\n", stream))
-	{
-		result.clear();
-		return false;
-	}
-
-	// string constant: 'c"*"'
-	if(_lexRegex(result, "c\"*\"", stream)) return true;
-	
-	// string: '"*"'
-	if(_lexRegex(result, "\"*\"", stream)) return true;
-
-	return false;
-}
-
-void LLVMParserEngine::_getSimpleToken(std::string& result,
-	std::istream& stream)
-{
-	// Simple tokens
-	while(stream.good() && !isWhitespace(stream.peek()))
-	{
-		if(!result.empty() && isToken(stream.peek())) break;
-	
-		result.push_back(_snext(stream));
-			
-		if(result.size() == 1 && isToken(*result.rbegin())) break;
-	}
-}
-
-std::string LLVMParserEngine::_nextToken(std::istream& stream)
-{
-	while(stream.good() && isWhitespace(_snext(stream)));
-	stream.unget(); --_column;
-	
-	std::string result;
-
-	if(!_getComplexToken(result, stream))
-	{
-		_getSimpleToken(result, stream);
-	}
-
-	hydrazine::log("LLVM::Lexer") << "scanned token '" << result << "'\n";
-
-	return result;
-}
-
-std::string LLVMParserEngine::_getLine(std::istream& stream)
-{
-	std::string result;
-
-	while(stream.good())
-	{
-		char next = _snext(stream);
-		
-		if(next == '\n') break;
-		
-		result += next;
-	}
-
-	hydrazine::log("LLVM::Lexer") << "scanned line '" << result << "'\n";
-
-	return result;
-}
-
-std::string LLVMParserEngine::_getTypeString(std::istream& stream)
-{
-	auto token = _nextToken(stream);
-
-	if(token != "{") return token;
-
-	std::string result("{");
-
-	unsigned int count = 1;
-
-	while(count > 0 && stream.good())
-	{
-		char next = _snext(stream);
-		
-		if(next == '{')
-		{
-			++count;
-		}
-		else if(next == '}')
-		{
-			--count;
-		}
-
-		result += next;
-	}
-	
-	hydrazine::log("LLVM::Lexer") << "scanned type string '" << result << "'\n";
-
-	return result;
-}
-
-static bool isWildcard(char c)
-{
-	return c == '*';
-}
-
-static bool matchedWildcard(std::string::const_iterator next,
-	const std::string& expression, char c)
-{
-	if(!isWildcard(*next)) return false;
-	
-	auto following = next; ++following;
-	
-	if(following == expression.end()) return false;
-	
-	return isWildcard(*next) && *following != c;
-}
-
-static bool regexMatch(std::string::const_iterator next,
-	const std::string& expression, char c)
-{
-	if(isWildcard(*next)) return true;
-	
-	return *next == c;
-}
-
-bool LLVMParserEngine::_lexRegex(std::string& result,
-	const std::string& expression, std::istream& stream)
-{
-	if(expression.empty()) return false;
-
-	assert(!isWildcard(expression.back()));
-
-	auto next = expression.begin();
-	
-	if(!regexMatch(next, expression, stream.peek())) return false;
-	
-	_checkpointLexer(stream);
-	
-	for(; next != expression.end(); )
-	{
-		if(!regexMatch(next, expression, stream.peek()))
-		{
-			_restoreLexer(stream);
-			result.clear();
-			return false;
-		}
-		
-		result.push_back(_snext(stream));
-		
-		if(!matchedWildcard(next, expression, stream.peek()))
-		{
-			++next;
-		}
-	}
-	
-	return true;
-}
-
-bool LLVMParserEngine::_scan(const std::string& token, std::istream& stream)
-{
-	hydrazine::log("LLVM::Lexer") << "scanning for token '" << token << "'\n";
-	
-	return _nextToken(stream) == token;
-}
-
-void LLVMParserEngine::_scanThrow(const std::string& token,
-	std::istream& stream)
-{
-	if(!_scan(token, stream))
-	{
-		throw std::runtime_error(_location() + ": expecting a '" + token + "'");
-	}
-}
-
-bool LLVMParserEngine::_scanPeek(const std::string& token, std::istream& stream)
-{
-	hydrazine::log("LLVM::Lexer") << "scanning/peek for token '"
-		<< token << "'\n";
-	
-	return _peek(stream) == token;
-}
-
-char LLVMParserEngine::_snext(std::istream& stream)
-{
-	char c = stream.get();
-	
-	if(c == '\n')
-	{
-		++_line;
-		_column = 0;
-	}
-	else
-	{
-		++_column;
-	}
-	
-	return c;
-}
-
-void LLVMParserEngine::_resetLexer(std::istream& stream)
-{
-	stream.clear();
-	stream.seekg(0, std::ios::beg);
-	_line = 0;
-	_column = 0;
-	
-	_checkpoints.clear();
-}
-
-void LLVMParserEngine::_checkpointLexer(std::istream& stream)
-{
-	_checkpoints.push_back(LexerContext(stream.tellg(), _line, _column));
-}
-
-void LLVMParserEngine::_restoreLexer(std::istream& stream)
-{
-	assert(!_checkpoints.empty());
-
-	stream.clear();
-	stream.seekg(_checkpoints.back().position, std::ios::beg);
-	_line = _checkpoints.back().line;
-	_column = _checkpoints.back().column;
-	
-	_checkpoints.pop_back();
-}
-
-void LLVMParserEngine::_discardCheckpoint()
-{
-	assert(!_checkpoints.empty());
-
-	_checkpoints.pop_back();
-}
-
-LLVMParserEngine::LexerContext::LexerContext(size_t p,
-	unsigned int l, unsigned int c)
-: position(p), line(l), column(c)
-{
-
 }
 
 }
