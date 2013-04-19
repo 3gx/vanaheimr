@@ -6,6 +6,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/ConstantValueParser.h>
+#include <vanaheimr/parser/interface/Lexer.h>
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
@@ -25,8 +26,14 @@ namespace parser
 {
 
 
-ConstantValueParser::ConstantValueParser()
-: _parsedConstant(nullptr)
+ConstantValueParser::ConstantValueParser(std::istream* stream)
+: _parsedConstant(nullptr), _lexer(nullptr), _stream(stream)
+{
+
+}
+
+ConstantValueParser::ConstantValueParser(Lexer* l)
+: _parsedConstant(nullptr), _lexer(l), _stream(nullptr)
 {
 
 }
@@ -36,24 +43,56 @@ ConstantValueParser::~ConstantValueParser()
 	delete _parsedConstant;
 }
 
-void ConstantValueParser::parse(std::istream& stream)
+void ConstantValueParser::parse()
 {
 	delete _parsedConstant;
+
+	if(_stream != nullptr)
+	{
+		_lexer = new Lexer();
+		
+		_lexer->setStream(_stream);
+	}
 	
-	_parsedConstant = _parseConstant(stream);
+	try
+	{
+		_parsedConstant = _parseConstant();
+	}
+	catch(...)
+	{
+		if(_stream != nullptr) delete _lexer;
+	
+		throw;
+	}
 }
 
-void ConstantValueParser::parse(const ir::Type* type, std::istream& stream)
+void ConstantValueParser::parse(const ir::Type* type)
 {
 	delete _parsedConstant;
 
-	if(type->isInteger() || type->isFloatingPoint())
-	{	
-		_parsedConstant = _parseConstant(stream);
-	}
-	else
+	if(_stream != nullptr)
 	{
-		_parsedConstant = _parseConstant(type, stream);
+		_lexer = new Lexer();
+		
+		_lexer->setStream(_stream);
+	}
+	
+	try
+	{
+		if(type->isInteger() || type->isFloatingPoint())
+		{	
+			_parsedConstant = _parseConstant();
+		}
+		else
+		{
+			_parsedConstant = _parseConstant(type);
+		}
+	}
+	catch(...)
+	{
+		if(_stream != nullptr) delete _lexer;
+	
+		throw;
 	}
 }
 
@@ -93,23 +132,23 @@ static bool isFloatingPoint(const std::string& token)
 	return !token.empty() && isNumeric(token[0]) && !isInteger(token);
 }
 
-ir::Constant* ConstantValueParser::_parseConstant(std::istream& stream)
+ir::Constant* ConstantValueParser::_parseConstant()
 {
-	std::string nextToken = _peek(stream);
+	std::string nextToken = _lexer->peek();
 	
 	ir::Constant* constant = nullptr;
 	
 	if(isInteger(nextToken))
 	{
-		constant = _parseIntegerConstant(stream);
+		constant = _parseIntegerConstant();
 	}
 	else if(isFloatingPoint(nextToken))
 	{
-		constant = _parseFloatingPointConstant(stream);
+		constant = _parseFloatingPointConstant();
 	}
 	else if(isString(nextToken))
 	{
-		constant = _parseStringConstant(stream);
+		constant = _parseStringConstant();
 	}
 	
 	if(constant == nullptr)
@@ -156,16 +195,15 @@ static bool isZeroInitializer(const std::string& token)
 	return token == "zeroinitializer";
 }
 
-ir::Constant* ConstantValueParser::_parseConstant(const ir::Type* type,
-	std::istream& stream)
+ir::Constant* ConstantValueParser::_parseConstant(const ir::Type* type)
 {
-	auto nextToken = _peek(stream);
+	auto nextToken = _lexer->peek();
 
 	ir::Constant* constant = nullptr;
 
 	if(isZeroInitializer(nextToken))
 	{
-		_nextToken(stream);
+		_lexer->nextToken();
 		constant = createZeroInitializer(type);
 	}
 	
@@ -194,9 +232,9 @@ static unsigned int parseInteger(const std::string& integer)
 	return value;
 }
 
-ir::Constant* ConstantValueParser::_parseIntegerConstant(std::istream& stream)
+ir::Constant* ConstantValueParser::_parseIntegerConstant()
 {
-	return new ir::IntegerConstant(parseInteger(_nextToken(stream)));
+	return new ir::IntegerConstant(parseInteger(_lexer->nextToken()));
 }
 
 static double parseFloat(const std::string& floating)
@@ -213,79 +251,20 @@ static double parseFloat(const std::string& floating)
 	return value;
 }
 
-ir::Constant* ConstantValueParser::_parseFloatingPointConstant(
-	std::istream& stream)
+ir::Constant* ConstantValueParser::_parseFloatingPointConstant()
 {
-	return new ir::FloatingPointConstant(parseFloat(_nextToken(stream)));
+	return new ir::FloatingPointConstant(parseFloat(_lexer->nextToken()));
 }
 
-ir::Constant* ConstantValueParser::_parseStringConstant(
-	std::istream& stream)
+ir::Constant* ConstantValueParser::_parseStringConstant()
 {
-	std::string token = _nextToken(stream);
+	std::string token = _lexer->nextToken();
 
 	hydrazine::log("ConstantValueParser::Parser") << " parsed string constant '"
 		<< token << "'\n";
 
 	return new ir::ArrayConstant(token.c_str(), token.size(),
 		compiler::Compiler::getSingleton()->getType("i8"));
-}
-
-static bool isWhitespace(char c)
-{
-	return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '"';
-}
-
-static bool isToken(char c)
-{
-	return c == '(' || c == ')' || c == ',' || c == '[' || c == ']';
-}
-
-std::string ConstantValueParser::_peek(std::istream& stream)
-{
-	size_t position = stream.tellg();
-	
-	std::string result = _nextToken(stream);
-	
-	stream.clear();
-	stream.seekg(position);
-	
-	return result;
-}
-
-std::string ConstantValueParser::_nextToken(std::istream& stream)
-{
-	while(stream.good() && isWhitespace(_snext(stream)));
-	stream.unget();
-	
-	std::string result;
-	
-	while(stream.good() && !isWhitespace(stream.peek()))
-	{
-		if(!result.empty() && isToken(stream.peek())) break;
-		if(!stream.good()) break;
-	
-		result.push_back(_snext(stream));
-		
-		if(isToken(*result.rbegin())) break;
-	}
-	
-	hydrazine::log("ConstantValueParser::Lexer") << "Scanned token '"
-		<< result << "'\n";
-
-	return result;
-}
-
-bool ConstantValueParser::_scan(const std::string& token, std::istream& stream)
-{
-	return _nextToken(stream) == token;
-}
-
-char ConstantValueParser::_snext(std::istream& stream)
-{
-	char c = stream.get();
-		
-	return c;
 }
 
 }

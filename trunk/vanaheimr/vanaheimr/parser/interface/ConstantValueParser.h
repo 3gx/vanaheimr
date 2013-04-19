@@ -13,6 +13,8 @@
 namespace vanaheimr { namespace ir { class Constant; } }
 namespace vanaheimr { namespace ir { class Type;     } }
 
+namespace vanaheimr { namespace parser { class Lexer; } }
+
 namespace vanaheimr
 {
 
@@ -23,7 +25,8 @@ namespace parser
 class ConstantValueParser
 {
 public:
-	ConstantValueParser();
+	explicit ConstantValueParser(std::istream* stream);
+	explicit ConstantValueParser(Lexer* lexer);
 	~ConstantValueParser();
 
 public:
@@ -31,33 +34,28 @@ public:
 	ConstantValueParser&  operator=(const ConstantValueParser&) = delete;
 
 public:
-	void parse(std::istream& stream);
-	void parse(const ir::Type* type, std::istream& stream);
+	void parse();
+	void parse(const ir::Type* type);
 
 public:
 	const ir::Constant* parsedConstant() const;
 
 private:
 	// Specialized Parsing
-	ir::Constant* _parseConstant(std::istream& stream);
-	ir::Constant* _parseConstant(const ir::Type* type, std::istream& stream);
+	ir::Constant* _parseConstant();
+	ir::Constant* _parseConstant(const ir::Type* type);
 
-	ir::Constant* _parseIntegerConstant(std::istream& stream);
-	ir::Constant* _parseFloatingPointConstant(std::istream& stream);
-	ir::Constant* _parseStringConstant(std::istream& stream);
-
-private:
-	// Parser methods
-	std::string _peek(std::istream& stream);
-
-private:
-	// Lexer methods
-	std::string _nextToken(std::istream& stream);
-	bool        _scan(const std::string& token, std::istream& stream);
-	char        _snext(std::istream& stream);
+	ir::Constant* _parseIntegerConstant();
+	ir::Constant* _parseFloatingPointConstant();
+	ir::Constant* _parseStringConstant();
 
 private:
 	ir::Constant* _parsedConstant;
+	
+private:
+	Lexer*        _lexer;
+	std::istream* _stream;
+	
 };
 
 }
