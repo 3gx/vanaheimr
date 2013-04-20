@@ -9,6 +9,10 @@
 
 #include <vanaheimr/codegen/interface/ArchaeopteryxTarget.h>
 
+// Standard Library Includes
+#include <map>
+#include <cassert>
+
 namespace vanaheimr
 {
 
@@ -34,6 +38,35 @@ Target* Target::createTarget(const std::string& name)
 	}
 	
 	return nullptr;
+}
+
+class TargetDatabase
+{
+public:
+	typedef std::map<std::string, Target*> TargetMap;
+
+public:
+	TargetMap targets;
+
+public:
+	~TargetDatabase();
+};
+
+TargetDatabase::~TargetDatabase()
+{
+	for(auto target : targets)
+	{
+		delete target.second;
+	}
+}
+
+static TargetDatabase targetDatabase;
+
+void Target::registerTarget(Target* newTarget)
+{
+	assert(targetDatabase.targets.count(newTarget->name()) == 0);
+
+	targetDatabase.targets.insert(std::make_pair(newTarget->name(), newTarget));
 }
 
 void Target::assignModule(ir::Module* module)
