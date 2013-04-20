@@ -298,12 +298,9 @@ void LexerEngine::_createTokens()
 
 	stream->seekg(0, std::ios::beg);
 
-	for(size_t i = 0; i < streamSize - 1; ++i)
+	for(size_t i = 0; i < streamSize; ++i)
 	{
 		_tokens.push_back(TokenDescriptor(this));
-
-		hydrazine::log("Lexer") << " added token '"
-			<< _tokens.back().getString() << "'\n";
 			
 		_snext();
 	}
@@ -343,6 +340,9 @@ void LexerEngine::_mergeTokens()
 			
 			++unmatchedCount;
 		}
+
+		hydrazine::log("Lexer") << " unmatched token count "
+			<< unmatchedCount << "\n";
 		
 		if(unmatchedCount == 0) break;
 		
@@ -350,9 +350,6 @@ void LexerEngine::_mergeTokens()
 			"Lexing did not make forward progress during this iteration.");
 
 		unmatchedTokenCount = unmatchedCount;
-
-		hydrazine::log("Lexer") << " unmatched token count "
-			<< unmatchedTokenCount << "\n";
 		
 		TokenVector newTokens;
 	
@@ -432,10 +429,12 @@ static bool isWildcard(char c)
 }
 
 static bool match(std::string::const_iterator& matchEnd,
+	std::string::const_iterator& matchRuleEnd,
 	std::string::const_iterator begin, std::string::const_iterator end,
 	std::string::const_iterator ruleBegin, std::string::const_iterator ruleEnd)
 {
-	for(auto ruleCharacter = ruleBegin; ruleCharacter != ruleEnd; )
+	auto ruleCharacter = ruleBegin;
+	for( ; ruleCharacter != ruleEnd; )
 	{
 		auto ruleNextCharacter = ruleCharacter; ++ruleNextCharacter;
 
@@ -445,6 +444,7 @@ static bool match(std::string::const_iterator& matchEnd,
 			{
 				if(*ruleNextCharacter == *begin)
 				{
+					ruleCharacter = ruleNextCharacter;
 					++ruleCharacter;
 				}
 			}
@@ -467,7 +467,8 @@ static bool match(std::string::const_iterator& matchEnd,
 		if(begin == end) break;
 	}
 	
-	matchEnd = begin;
+	matchEnd     = begin;
+	matchRuleEnd = ruleCharacter;
 	
 	return true;
 }
@@ -476,13 +477,32 @@ static bool match(std::string::const_iterator& matchEnd,
 	std::string::const_iterator begin,
 	std::string::const_iterator end, const std::string& rule)
 {
+	auto ruleEnd = rule.begin();
+	
 	for(auto ruleCharacter = rule.begin(); ruleCharacter != rule.end();
 		++ruleCharacter)
 	{
-		if(match(matchEnd, begin, end, ruleCharacter, rule.end())) return true;
+		if(match(matchEnd, ruleEnd, begin, end, ruleCharacter, rule.end()))
+		{
+			return true;
+		}
 	}
 	
 	return false;
+}
+
+static bool exactMatch(const std::string& text, const std::string& rule)
+{
+	auto textMatchEnd = text.begin();
+	auto ruleMatchEnd = rule.begin();
+	
+	if(!match(textMatchEnd, ruleMatchEnd, text.begin(), text.end(),
+		rule.begin(), rule.end()))
+	{
+		return false;
+	}
+	
+	return textMatchEnd == text.end() && ruleMatchEnd == rule.end();
 }
 
 static bool matchWithEnd(std::string::const_iterator begin,
@@ -791,10 +811,13 @@ bool LexerEngine::_canMatch(const std::string& rule,
 
 
 LexerEngine::TokenDescriptor::TokenDescriptor(LexerEngine* e)
-: beginPosition(engine->stream->tellg()),
-  endPosition((size_t)engine->stream->tellg() + 1),
-  line(engine->line), column(engine->column), engine(e)
+: beginPosition(e->stream->tellg()),
+  endPosition((size_t)e->stream->tellg() + 1),
+  line(e->line), column(e->column), engine(e)
 {
+	hydrazine::log("Lexer") << " created new token '"
+		<< getString() << "'\n";
+
 	for(auto& rule : engine->tokenRules)
 	{
 		hydrazine::log("Lexer") << "  could match rule '" << rule << "'\n";
@@ -805,6 +828,13 @@ LexerEngine::TokenDescriptor::TokenDescriptor(LexerEngine* e)
 	{
 		hydrazine::log("Lexer") << "  could match rule '" << rule << "'\n";
 		possibleMatches.insert(&rule);
+	}
+	
+	if(isMatched())
+	{
+		hydrazine::log("Lexer") << "  Token '" << getString()
+			<< "' matched rule '" << **possibleMatches.begin()
+			<< "'\n";
 	}
 }
 
@@ -824,7 +854,8 @@ bool LexerEngine::TokenDescriptor::isBeginMatched() const
 	
 	if(possibleMatches.size() > 1) return false;
 
-	return canMatchWithBegin(**possibleMatches.begin(), getString());
+	return canMatchWithBegin(**possibleMatches.begin(), getString()) &&
+		!canMatchWithEnd(**possibleMatches.begin(), getString());
 }
 
 bool LexerEngine::TokenDescriptor::isEndMatched() const
@@ -833,12 +864,15 @@ bool LexerEngine::TokenDescriptor::isEndMatched() const
 	
 	if(possibleMatches.size() > 1) return false;
 
-	return canMatchWithEnd(**possibleMatches.begin(), getString());
+	return canMatchWithEnd(**possibleMatches.begin(), getString()) &&
+		!canMatchWithBegin(**possibleMatches.begin(), getString());
 }
 
 bool LexerEngine::TokenDescriptor::isMatched() const
 {
-	return isBeginMatched() && isEndMatched();	
+	if(possibleMatches.size() > 1) return false;
+
+	return exactMatch(getString(), **possibleMatches.begin());	
 }
 
 size_t LexerEngine::TokenDescriptor::size() const

@@ -941,7 +941,9 @@ const Type* Getelementptr::getSelectedType() const
 
 std::string Getelementptr::toString() const
 {
-	std::stringstream stream(UnaryInstruction::toString());
+	std::stringstream stream;
+	
+	stream << UnaryInstruction::toString();
 	
 	for(auto index : indices)
 	{

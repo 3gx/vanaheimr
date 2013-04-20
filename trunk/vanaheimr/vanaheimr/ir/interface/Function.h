@@ -139,6 +139,7 @@ public:
 
 public:
 	register_iterator findVirtualRegister(const std::string& name);
+	         iterator findBasicBlock(const std::string& name);
 	
 public:
 	local_iterator       local_begin();
