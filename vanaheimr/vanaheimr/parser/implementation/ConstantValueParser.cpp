@@ -43,6 +43,13 @@ ConstantValueParser::~ConstantValueParser()
 	delete _parsedConstant;
 }
 
+static void addRules(Lexer* lexer)
+{
+	lexer->addWhitespaceRules(" \t\r\n");
+
+	lexer->addTokens({"\"*\""});
+}
+
 void ConstantValueParser::parse()
 {
 	delete _parsedConstant;
@@ -50,6 +57,8 @@ void ConstantValueParser::parse()
 	if(_stream != nullptr)
 	{
 		_lexer = new Lexer();
+		
+		addRules(_lexer);
 		
 		_lexer->setStream(_stream);
 	}
@@ -64,6 +73,8 @@ void ConstantValueParser::parse()
 	
 		throw;
 	}
+	
+	if(_stream != nullptr) delete _lexer;
 }
 
 void ConstantValueParser::parse(const ir::Type* type)
@@ -73,6 +84,8 @@ void ConstantValueParser::parse(const ir::Type* type)
 	if(_stream != nullptr)
 	{
 		_lexer = new Lexer();
+		
+		addRules(_lexer);
 		
 		_lexer->setStream(_stream);
 	}
@@ -94,6 +107,8 @@ void ConstantValueParser::parse(const ir::Type* type)
 	
 		throw;
 	}
+	
+	if(_stream != nullptr) delete _lexer;
 }
 
 const ir::Constant* ConstantValueParser::parsedConstant() const
@@ -119,12 +134,9 @@ static bool isInteger(const std::string& integer)
 
 static bool isString(const std::string& string)
 {
-	for(auto character : string)
-	{
-		if(isNumeric(character)) return false;
-	}
+	if(string.size() < 2) return false;
 	
-	return true;
+	return string.front() == '\"' && string.back() == '\"';
 }
 
 static bool isFloatingPoint(const std::string& token)

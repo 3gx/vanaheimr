@@ -441,6 +441,16 @@ Function::register_iterator Function::findVirtualRegister(
 	return registerIterator;
 }
 
+Function::iterator  Function::findBasicBlock(const std::string& name)
+{
+	for(auto block = begin(); block != end(); ++block)
+	{
+		if(block->name() == name) return block;
+	}
+	
+	return end();
+}
+
 Function::local_iterator Function::local_begin()
 {
 	return _locals.begin();

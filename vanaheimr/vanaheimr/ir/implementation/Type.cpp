@@ -294,8 +294,6 @@ PointerType::PointerType(Compiler* c, const Type* t)
 
 const Type* PointerType::getTypeAtIndex(unsigned int index) const
 {
-	if(!isIndexValid(index)) return 0;
-	
 	return _pointedToType;
 }
 
@@ -306,7 +304,7 @@ const Type*& PointerType::getTypeAtIndex(unsigned int index)
 
 bool PointerType::isIndexValid(unsigned int index) const
 {
-	return index == 0;
+	return true;
 }
 
 unsigned int PointerType::numberOfSubTypes() const
