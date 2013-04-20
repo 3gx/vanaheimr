@@ -30,6 +30,9 @@ public:
 	/*! \brief Allocate and return a new target with the specified name */
 	static Target* createTarget(const std::string& name);
 
+	/*! \brief Register a new target */
+	static void registerTarget(Target*);
+
 public:
 	/*! \brief Assign a module to the target, it is allowed to be
 		modified by the target */
@@ -50,6 +53,7 @@ protected:
 
 private:
 	std::string _name;
+
 };
 
 }
