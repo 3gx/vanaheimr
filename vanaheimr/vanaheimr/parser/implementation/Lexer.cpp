@@ -6,6 +6,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/Lexer.h>
+#include <vanaheimr/parser/interface/LexerRule.h>
 
 // Hydrazine Includes
 #include <hydrazine/interface/debug.h>
@@ -27,8 +28,9 @@ namespace parser
 class LexerEngine
 {
 public:
-	// TODO: use a better representation for rules than just the string
-	typedef std::set<std::string*> RuleSet;
+	// TODO: Consider a rule representation that uses a state machine
+	// rather than an explicit set of rules that could be matched
+	typedef std::set<LexerRule*> RuleSet;
 
 	class TokenDescriptor
 	{
@@ -66,6 +68,8 @@ public:
 
 	typedef std::vector<LexerContext> LexerContextVector;
 
+	typedef std::vector<LexerRule> RuleVector;
+
 public:
 	std::istream* stream;
 
@@ -75,8 +79,8 @@ public:
 	LexerContextVector checkpoints;
 
 public:
-	Lexer::StringList tokenRules;
-	Lexer::StringList whitespaceRules;
+	RuleVector tokenRules;
+	RuleVector whitespaceRules;
 
 public:
 	std::string nextToken();
@@ -105,7 +109,7 @@ private:
 	TokenDescriptor _mergeWithEnd(const LexerContext& token);
 	TokenDescriptor _mergeWithNext(const LexerContext& token,
 		const LexerContext& next);
-		
+	
 	bool _isAMergePossible(const LexerContext& token,
 		const LexerContext& next);
 	bool _canMerge(const LexerContext& token,
@@ -210,21 +214,24 @@ void Lexer::discardCheckpoint()
 
 void Lexer::addTokenRegex(const std::string& regex)
 {
-	_engine->tokenRules.push_back(regex);
+	_engine->tokenRules.push_back(LexerRule(regex));
 }
 
 void Lexer::addWhitespaceRules(const std::string& whitespaceCharacters)
 {
 	for(auto& character : whitespaceCharacters)
 	{
-		_engine->whitespaceRules.push_back(std::string(1, character));
+		_engine->whitespaceRules.push_back(
+			LexerRule(std::string(1, character)));
 	}
 }
 
 void Lexer::addTokens(const StringList& regexes)
 {
-	_engine->tokenRules.insert(_engine->tokenRules.end(), regexes.begin(),
-		regexes.end());
+	for(auto& regex : regex)
+	{
+		addTokenRegex(regex);
+	}
 }
 
 void LexerEngine::reset(std::istream* s)
@@ -332,7 +339,7 @@ void LexerEngine::_mergeTokens()
 			if(token->isMatched())
 			{
 				hydrazine::log("Lexer") << "  Token '" << token->getString()
-					<< "' matched rule '" << **token->possibleMatches.begin()
+					<< "' matched rule '" << (*token->possibleMatches.begin())
 					<< "'\n";
 		
 				continue;
