@@ -228,7 +228,7 @@ void Lexer::addWhitespaceRules(const std::string& whitespaceCharacters)
 
 void Lexer::addTokens(const StringList& regexes)
 {
-	for(auto& regex : regex)
+	for(auto& regex : regexes)
 	{
 		addTokenRegex(regex);
 	}
@@ -636,11 +636,11 @@ void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 
 	for(auto rule : token->possibleMatches)
 	{
-		if(isNewToken && !canMatchWithBegin(*rule, tokenString)) continue;
-		if(isTokenEnd &&   !canMatchWithEnd(*rule, tokenString)) continue;
-		if(!_canMatch(*rule, tokenString)) continue;
+		if(isNewToken && !rule->canMatchWithBegin(tokenString)) continue;
+		if(isTokenEnd &&   !rule->canMatchWithEnd(tokenString)) continue;
+		if(!rule->canMatch(tokenString)) continue;
 		
-		hydrazine::log("Lexer") << "    '" << *rule << "'\n";
+		hydrazine::log("Lexer") << "    '" << rule->toString() << "'\n";
 	
 		remainingRules.insert(rule);
 	}
@@ -660,12 +660,12 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithEnd(
 
 	hydrazine::log("Lexer") << "   possible matches:\n";
 	
-	for(auto possibleMatch : token->possibleMatches)
+	for(auto rule : token->possibleMatches)
 	{
-		if(canMatchWithEnd(*possibleMatch, string))
+		if(rule->canMatchWithEnd(string))
 		{
-			hydrazine::log("Lexer") << "    '" << *possibleMatch << "'\n";
-			newToken.possibleMatches.insert(possibleMatch);
+			hydrazine::log("Lexer") << "    '" << rule->toString() << "'\n";
+			newToken.possibleMatches.insert(rule);
 		}
 	}
 	
@@ -700,12 +700,12 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(
 	
 	// Only keep matches that handle the combined string
 	hydrazine::log("Lexer") << "    possible rule matches:\n";
-	for(auto possibleMatch : possibleMatches)
+	for(auto rule : possibleMatches)
 	{
-		if(_canMatch(*possibleMatch, string))
+		if(_rule->canMatch(string))
 		{
-			hydrazine::log("Lexer") << "     '" << *possibleMatch << "'\n";
-			newToken.possibleMatches.insert(possibleMatch);
+			hydrazine::log("Lexer") << "     '" << rule->toString() << "'\n";
+			newToken.possibleMatches.insert(rule);
 		}
 	}
 	
@@ -729,16 +729,16 @@ bool LexerEngine::_canMerge(
 	//  and both tokens match the same rule
 	if(next->possibleMatches.size() == 1)
 	{
-		if(!_couldBeTokenBegin(next))
+		if(next->couldBeTokenBegin())
 		{
 			return true;
 		}
 	}
 	
 	// Can't match if there is ambiguity about the left being a token end
-	if(_couldBeTokenEnd(token))
+	if(token->couldBeTokenEnd())
 	{
-		if(!_isNewToken(token))
+		if(!token->isNewToken())
 		{
 			hydrazine::log("Lexer") << "     can't merge, "
 				"left could be a token end.\n";
@@ -749,7 +749,7 @@ bool LexerEngine::_canMerge(
 	// Or the right being a token begin
 	if(!token->isBeginMatched())
 	{
-		if(_couldBeTokenBegin(next))
+		if(next->couldBeTokenBegin())
 		{
 			hydrazine::log("Lexer") << "     can't merge, "
 				"right could be a token begin.\n";
