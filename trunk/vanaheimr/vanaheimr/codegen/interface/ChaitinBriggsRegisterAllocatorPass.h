@@ -27,7 +27,10 @@ public:
 
 public:
 	/*! \brief Run the pass on a specific function in the module */
-	void runOnFunction(Function& f);
+	virtual void runOnFunction(Function& f);
+
+public:
+	virtual Pass* clone() const;
 
 public:
 	/*! \brief Get the set of values that were spilled during allocation */

@@ -40,6 +40,11 @@ void TranslationTableInstructionSelectionPass::runOnFunction(Function& f)
 	}
 }
 
+transforms::Pass* TranslationTableInstructionSelectionPass::clone() const
+{
+	return new TranslationTableInstructionSelectionPass;
+}
+
 static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 	ir::Instruction* instruction,
 	const machine::TranslationTable& translationTable);

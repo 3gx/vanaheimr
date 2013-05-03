@@ -23,6 +23,9 @@ public:
 public:
 	virtual void runOnFunction(Function& f);
 
+public:
+	virtual Pass* clone() const;
+
 };
 
 }

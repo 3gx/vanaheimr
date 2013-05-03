@@ -40,6 +40,9 @@ public:
 public:
 	virtual void runOnFunction(Function& f);
 
+public:
+	virtual Pass* clone() const;
+
 private:
 	typedef ir::VirtualRegister VirtualRegister;
 	typedef ir::BasicBlock      BasicBlock;

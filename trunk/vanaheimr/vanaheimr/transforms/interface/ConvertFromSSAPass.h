@@ -26,6 +26,9 @@ public:
 public:
 	virtual void runOnFunction(Function& f);
 
+public:
+	virtual Pass* clone() const;
+
 private:
 	void _removePhis(Function& f);
 	void _removePsis(Function& f);

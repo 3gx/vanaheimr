@@ -72,6 +72,11 @@ void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 	
 }
 
+transforms::Pass* ChaitinBriggsRegisterAllocatorPass::clone() const
+{
+	return new ChaitinBriggsRegisterAllocatorPass;
+}
+
 RegisterAllocator::VirtualRegisterSet
 	ChaitinBriggsRegisterAllocatorPass::getSpilledRegisters()
 {

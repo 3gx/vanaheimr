@@ -34,6 +34,11 @@ void GenericSpillCodePass::runOnFunction(Function& f)
 	assertM(spilled.empty(), "Spilling not implemented");	
 }
 
+transforms::Pass* GenericSpillCodePass::clone() const
+{
+	return new GenericSpillCodePass;
+}
+
 }
 
 }

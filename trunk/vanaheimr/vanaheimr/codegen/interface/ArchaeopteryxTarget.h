@@ -23,9 +23,12 @@ public:
 
 public:
 	/*! \brief Lower the assigned module to the target ISA */
-	void lower();
+	virtual void lower();
 	/*! \brief Get lowered module in the target ISA */
-	ir::ModuleBase* getLoweredModule();
+	virtual ir::ModuleBase* getLoweredModule();
+
+public:
+	virtual Target* clone() const;
 
 public:
 	std::string instructionSelectorName;

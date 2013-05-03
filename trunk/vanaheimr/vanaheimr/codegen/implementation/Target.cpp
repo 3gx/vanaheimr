@@ -30,16 +30,6 @@ Target::~Target()
 
 }
 
-Target* Target::createTarget(const std::string& name)
-{
-	if(name == "ArchaeopteryxSimulatorTarget")
-	{
-		return new ArchaeopteryxTarget;
-	}
-	
-	return nullptr;
-}
-
 class TargetDatabase
 {
 public:
@@ -62,11 +52,29 @@ TargetDatabase::~TargetDatabase()
 
 static TargetDatabase targetDatabase;
 
-void Target::registerTarget(Target* newTarget)
+Target* Target::createTarget(const std::string& name)
+{
+	if(name == "ArchaeopteryxSimulatorTarget")
+	{
+		return new ArchaeopteryxTarget;
+	}
+	
+	auto databaseEntry = targetDatabase.targets.find(name);
+	
+	if(databaseEntry != targetDatabase.targets.end())
+	{
+		return databaseEntry->second->clone();
+	}
+	
+	return nullptr;
+}
+
+void Target::registerTarget(const Target* newTarget)
 {
 	assert(targetDatabase.targets.count(newTarget->name()) == 0);
 
-	targetDatabase.targets.insert(std::make_pair(newTarget->name(), newTarget));
+	targetDatabase.targets.insert(std::make_pair(newTarget->name(),
+		newTarget->clone()));
 }
 
 void Target::assignModule(ir::Module* module)

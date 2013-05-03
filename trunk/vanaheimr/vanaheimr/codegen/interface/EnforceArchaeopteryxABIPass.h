@@ -25,7 +25,10 @@ public:
 	
 public:
 	/*! \brief Run the pass on a specific module */
-	void runOnModule(Module& m);
+	virtual void runOnModule(Module& m);
+
+public:
+	virtual Pass* clone() const;
 
 };
 

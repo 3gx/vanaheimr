@@ -82,6 +82,11 @@ void EnforceArchaeopteryxABIPass::runOnModule(Module& m)
 	}
 }
 
+transforms::Pass* EnforceArchaeopteryxABIPass::clone() const
+{
+	return new EnforceArchaeopteryxABIPass;
+}
+
 static unsigned int align(unsigned int address, unsigned int alignment)
 {
 	unsigned int remainder = address % alignment;
