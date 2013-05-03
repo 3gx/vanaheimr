@@ -17,6 +17,9 @@
 #include <vanaheimr/codegen/interface/GenericSpillCodePass.h>
 #include <vanaheimr/codegen/interface/TranslationTableInstructionSelectionPass.h>
 
+// Standard Library Includes
+#include <cassert>
+
 namespace vanaheimr
 {
 
@@ -70,6 +73,35 @@ Pass* PassFactory::createPass(const std::string& name,
 	}
 	
 	return pass;
+}
+
+class PassDatabase
+{
+public:
+	typedef std::map<std::string, Pass*> PassMap;
+
+public:
+	PassMap passes;
+
+public:
+	~PassDatabase();
+};
+
+PassDatabase::~PassDatabase()
+{
+	for(auto pass : passes)
+	{
+		delete pass.second;
+	}
+}
+
+static PassDatabase passDatabase;
+
+void PassFactory::registerPass(Pass* newPass)
+{
+	assert(passDatabase.passes.count(newPass->name) == 0);
+
+	passDatabase.passes.insert(std::make_pair(newPass->name, newPass));
 }
 
 }

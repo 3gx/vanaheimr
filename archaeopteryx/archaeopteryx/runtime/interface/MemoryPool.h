@@ -26,13 +26,18 @@ public:
 	static const Address InvalidAddress = (Address)(-1);
 
 public:
-	__device__ bool allocate(uint64_t size, Address address);
-	__device__ Address allocate(Address address);
-	__device__ void deallocate(Address address);
+	/*! Attempt to create an allocation at the specified virtual address */
+	__device__ bool    allocate(uint64_t size, Address address);
+	/*! Allocate memory at the first virtual address that fits */
+	__device__ Address allocate(size_t size);
+	/*! Deallocate memory at a specific virtual address */
+	__device__ void    deallocate(Address address);
 
+	/*! Translate a virtual address to a physical address that can be dereferenced */
 	__device__ Address translate(Address address);
 
 private:
+	/*! A Page describes a memory allocation and contains the physical storage */
 	class Page
 	{
 	public:

@@ -26,6 +26,15 @@ public:
 	/*! \brief Create a pass object from the specified name */
 	static Pass* createPass(const std::string& name,
 		const StringVector& options = StringVector());
+		
+public:
+	/*! \brief Register a pass with the factory.  It will now be able
+		to create instances of the pass.
+	
+		The instance of the pass now owned by the factory.
+		
+	 */	
+	static void registerPass(Pass*);
 };
 
 }
