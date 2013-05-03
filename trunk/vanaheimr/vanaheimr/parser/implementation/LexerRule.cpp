@@ -35,7 +35,7 @@ bool LexerRule::canMatchWithEnd(const std::string& text) const
 	return false;
 }
 
-bool LexerRule::canMatch(const std::string&) const
+bool LexerRule::canMatch(const std::string& text) const
 {
 	for(auto beginPosition = text.begin();
 		beginPosition != text.end(); ++beginPosition)
@@ -53,24 +53,68 @@ const std::string& LexerRule::toString() const
 	return _regex;
 }
 
-LexerRule::iterator LexerRule::begin();
-LexerRule::const_iterator LexerRule::begin() const;
+LexerRule::iterator LexerRule::begin()
+{
+	return _regex.begin();
+}
 
-LexerRule::iterator LexerRule::end();
-LexerRule::const_iterator LexerRule::end() const;
+LexerRule::const_iterator LexerRule::begin() const
+{
+	return _regex.begin();
+}
+
+LexerRule::iterator LexerRule::end()
+{
+	return _regex.end();
+}
+
+LexerRule::const_iterator LexerRule::end() const
+{
+	return _regex.end();
+}
+
+LexerRule::reverse_iterator LexerRule::rbegin()
+{
+	return _regex.rbegin();
+}
+
+LexerRule::const_reverse_iterator LexerRule::rbegin() const
+{
+	return _regex.rbegin();
+}
+
+LexerRule::reverse_iterator LexerRule::rend()
+{
+	return _regex.rend();
+}
+
+LexerRule::const_reverse_iterator LexerRule::rend() const
+{
+	return _regex.rend();
+}
+
+bool LexerRule::empty() const
+{
+	return _regex.empty();
+}
+
+size_t LexerRule::size() const
+{
+	return _regex.size();
+}
 
 bool LexerRule::isExactMatch(const std::string& text) const
 {
 	auto textMatchEnd = text.begin();
-	auto ruleMatchEnd = rule.begin();
+	auto ruleMatchEnd = begin();
 	
 	if(!_match(textMatchEnd, ruleMatchEnd, text.begin(), text.end(),
-		rule.begin(), rule.end()))
+		begin(), end()))
 	{
 		return false;
 	}
 	
-	return textMatchEnd == text.end() && ruleMatchEnd == rule.end();
+	return textMatchEnd == text.end() && ruleMatchEnd == end();
 }
 
 bool LexerRule::_match(const_iterator& matchEnd,
@@ -120,13 +164,13 @@ bool LexerRule::_match(const_iterator& matchEnd,
 }
 
 bool LexerRule::_match(const_iterator& matchEnd,
-	const_iterator begin, const_iterator end) const
+	const_iterator textBegin, const_iterator textEnd) const
 {
 	auto ruleEnd = begin();
 	
 	for(auto ruleCharacter = begin(); ruleCharacter != end(); ++ruleCharacter)
 	{
-		if(match(matchEnd, ruleEnd, begin, end, ruleCharacter, rule.end()))
+		if(_match(matchEnd, ruleEnd, textBegin, textEnd, ruleCharacter, end()))
 		{
 			return true;
 		}
@@ -137,76 +181,83 @@ bool LexerRule::_match(const_iterator& matchEnd,
 
 bool LexerRule::_matchWithEnd(const_iterator begin, const_iterator end) const
 {
-	std::string::const_reverse_iterator rbegin(end);
-	std::string::const_reverse_iterator rend(begin);
+	std::string::const_reverse_iterator textRbegin(end);
+	std::string::const_reverse_iterator textRend(begin);
 	
 	for(auto ruleCharacter = rbegin(); ruleCharacter != rend(); )
 	{
 		auto ruleNextCharacter = ruleCharacter; ++ruleNextCharacter;
 
-		if(isWildcard(ruleCharacter))
+		if(_isWildcard(ruleCharacter.base()))
 		{
-			if(ruleNextCharacter != rule.rend())
+			if(ruleNextCharacter != rend())
 			{
-				if(*ruleNextCharacter == *rbegin)
+				if(*ruleNextCharacter == *textRbegin)
 				{
 					++ruleCharacter;
 				}
 			}
 			
-			++rbegin;
-			if(rbegin == rend) break;
+			++textRbegin;
+			if(textRbegin == textRend) break;
 			continue;
 		}
 		
-		if(*ruleCharacter != *rbegin)
+		if(*ruleCharacter != *textRbegin)
 		{
 			return false;
 		}
 		
 		++ruleCharacter;
-		++rbegin;
+		++textRbegin;
 		
-		if(rbegin == rend) break;
+		if(textRbegin == textRend) break;
 	}
 	
 	return true;
 }
 
-bool LexerRule::_matchWithBegin(const_iterator begin, const_iterator end) const
+bool LexerRule::_matchWithBegin(const_iterator textBegin,
+	const_iterator textEnd) const
 {
 	for(auto ruleCharacter = begin(); ruleCharacter != end(); )
 	{
 		auto ruleNextCharacter = ruleCharacter; ++ruleNextCharacter;
 
-		if(isWildcard(ruleCharacter))
+		if(_isWildcard(ruleCharacter))
 		{
-			if(ruleNextCharacter != rule.end())
+			if(ruleNextCharacter != end())
 			{
-				if(*ruleNextCharacter == *begin)
+				if(*ruleNextCharacter == *textBegin)
 				{
 					++ruleCharacter;
 				}
 			}
 			
-			++begin;
-			if(begin == end) break;
+			++textBegin;
+			if(textBegin == textEnd) break;
 			continue;
 		}
 		
-		if(*ruleCharacter != *begin)
+		if(*ruleCharacter != *textBegin)
 		{
 			return false;
 		}
 		
 		++ruleCharacter;
-		++begin;
+		++textBegin;
 		
-		if(begin == end) break;
+		if(textBegin == textEnd) break;
 	}
 	
 	return true;
 }
+
+bool LexerRule::_isWildcard(const_iterator character) const
+{
+	return *character == '*';
+}
+	
 
 }
 
