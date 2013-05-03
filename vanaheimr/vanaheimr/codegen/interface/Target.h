@@ -30,8 +30,8 @@ public:
 	/*! \brief Allocate and return a new target with the specified name */
 	static Target* createTarget(const std::string& name);
 
-	/*! \brief Register a new target */
-	static void registerTarget(Target*);
+	/*! \brief Register a new target, it will be copied */
+	static void registerTarget(const Target*);
 
 public:
 	/*! \brief Assign a module to the target, it is allowed to be
@@ -43,6 +43,10 @@ public:
 	virtual void lower() = 0;
 	/*! \brief Get lowered module in the target ISA */
 	virtual ir::ModuleBase* getLoweredModule() = 0;
+	
+public:
+	/*! \brief Create a copy of the target */
+	virtual Target* clone() const = 0;
 	
 public:
 	/*! \brief Get the target name */

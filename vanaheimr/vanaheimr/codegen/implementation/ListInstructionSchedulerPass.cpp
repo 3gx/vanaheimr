@@ -144,6 +144,11 @@ void ListInstructionSchedulerPass::runOnFunction(Function& f)
 	}
 }
 
+transforms::Pass* ListInstructionSchedulerPass::clone() const
+{
+	return new ListInstructionSchedulerPass;
+}
+
 }
 
 }

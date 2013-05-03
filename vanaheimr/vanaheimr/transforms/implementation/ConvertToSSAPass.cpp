@@ -52,6 +52,11 @@ void ConvertToSSAPass::runOnFunction(Function& function)
 	invalidateAnalysis("DataflowAnalysis");
 }
 
+Pass* ConvertToSSAPass::clone() const
+{
+	return new ConvertToSSAPass;
+}
+
 void ConvertToSSAPass::_insertPhis(Function& function)
 {
 	report(" Inserting PHIs");

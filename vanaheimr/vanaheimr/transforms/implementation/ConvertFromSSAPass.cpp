@@ -36,6 +36,11 @@ void ConvertFromSSAPass::runOnFunction(Function& f)
 	_removePsis(f);
 }
 
+Pass* ConvertFromSSAPass::clone() const
+{
+	return new ConvertFromSSAPass;
+}
+
 void ConvertFromSSAPass::_removePhis(Function& f)
 {
 	// TODO split critical edges

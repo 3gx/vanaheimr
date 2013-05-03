@@ -22,7 +22,10 @@ public:
 	ListInstructionSchedulerPass();
 
 public:
-	void runOnFunction(Function& f);
+	virtual void runOnFunction(Function& f);
+
+public:
+	virtual Pass* clone() const;
 
 
 };

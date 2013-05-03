@@ -97,6 +97,10 @@ public:
 	virtual void configure(const StringVector& options);
 
 public:
+	/*! \brief Clone the pass */
+	virtual Pass* clone() const = 0;
+
+public:
 	/*! \brief Report the name of the pass */
 	std::string toString() const;
 

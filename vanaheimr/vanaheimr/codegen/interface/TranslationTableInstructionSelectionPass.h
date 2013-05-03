@@ -23,7 +23,10 @@ public:
 	TranslationTableInstructionSelectionPass();
 
 public:
-	void runOnFunction(Function& f);
+	virtual void runOnFunction(Function& f);
+
+public:
+	virtual Pass* clone() const;
 
 private:
 	void _lowerBlock(BasicBlock& b);

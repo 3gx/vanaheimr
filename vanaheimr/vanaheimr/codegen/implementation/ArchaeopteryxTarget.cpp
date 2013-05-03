@@ -103,6 +103,11 @@ ir::ModuleBase* ArchaeopteryxTarget::getLoweredModule()
 	return _module;
 }
 
+Target* ArchaeopteryxTarget::clone() const
+{
+	return new ArchaeopteryxTarget;
+}
+
 }
 
 }
