@@ -57,8 +57,7 @@ void TranslationTableInstructionSelectionPass::_lowerBlock(BasicBlock& block)
 	BasicBlock::InstructionList loweredInstructions;
 
 	auto translationTable = machineModel->translationTable();
-	assert(translationTable != nullptr);
-
+	
 	// Parallel for all and final gather
 	for(auto instruction : block)
 	{
@@ -75,11 +74,36 @@ static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 	ir::Instruction* instruction,
 	const machine::TranslationTable* translationTable)
 {
+	// if the translation table is missing
+	if(translationTable == nullptr )
+	{
+		// if the instruction was already a machine instruction,
+		//  assume no translation is needed
+		if(instruction->isMachineInstruction())
+		{
+			instructions.push_back(instruction->clone());
+			return;
+		}
+		
+		// otherwise, it really is an error
+		throw std::runtime_error("No translation table, cannot translate " +
+			instruction->toString());
+	}
+
 	auto machineInstructions =
 		translationTable->translateInstruction(instruction);
 
 	if(machineInstructions.empty())
 	{
+		// if the translation fails, but the instruction was
+		//  already a machine instruction, assume no translation is needed
+		if(instruction->isMachineInstruction())
+		{
+			instructions.push_back(instruction->clone());
+			return;
+		}
+		
+		// otherwise, it really is an error
 		throw std::runtime_error("No translation table entry matches " +
 			instruction->toString());
 	}
