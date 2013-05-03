@@ -46,11 +46,15 @@ public:
 	      iterator end();
 	const_iterator end() const;
 	
-	reverse_iterator       rbegin();
+	      reverse_iterator rbegin();
 	const_reverse_iterator rbegin() const;
 
-	reverse_iterator       rend();
+	      reverse_iterator rend();
 	const_reverse_iterator rend() const;
+	
+public:
+	bool   empty() const;
+	size_t  size() const;
 
 private:
 	bool _match(const_iterator& matchEnd, const_iterator& matchRuleEnd,
@@ -64,6 +68,8 @@ private:
 	bool _canMatchWithBegin(const std::string& text) const;
 	bool _canMatchWithEnd(const std::string& text) const;
 	bool _canMatch(const std::string&) const;
+	
+	bool _isWildcard(const_iterator) const;
 	
 private:
 	std::string _regex;

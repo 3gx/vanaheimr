@@ -623,23 +623,6 @@ bool LexerEngine::_couldBeTokenBegin(const LexerContext& token)
 	return false;
 }
 
-bool LexerEngine::_canMatch(const std::string& rule,
-	const std::string& text)
-{
-	assert(!rule.empty());
-	assert(!text.empty());
-
-	for(auto beginPosition = text.begin();
-		beginPosition != text.end(); ++beginPosition)
-	{
-		std::string::const_iterator position = beginPosition;
-	
-		if(match(position, beginPosition, text.end(), rule)) return true;
-	}
-
-	return false;
-}
-
 
 LexerEngine::TokenDescriptor::TokenDescriptor(LexerEngine* e)
 : beginPosition(e->stream->tellg()),
@@ -717,6 +700,13 @@ bool LexerEngine::TokenDescriptor::isMatched() const
 size_t LexerEngine::TokenDescriptor::size() const
 {
 	return endPosition - beginPosition;
+}
+
+LexerRule* LexerEngine::TokenDescriptor::getMatchedRule()
+{
+	if(possibleMatches.size() == 1) return *possibleMatches.begin();
+
+	return nullptr;
 }
 
 std::string LexerEngine::TokenDescriptor::getString() const
