@@ -19,6 +19,11 @@ ArchaeopteryxSimulatorMachineModel::ArchaeopteryxSimulatorMachineModel()
 	addRegisterFile("rf", 64);
 }
 
+MachineModel* ArchaeopteryxSimulatorMachineModel::clone() const
+{
+	return new ArchaeopteryxSimulatorMachineModel;
+}
+
 }
 
 }

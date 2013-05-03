@@ -82,7 +82,10 @@ public:
 
 public:
 	const machine::MachineModel* getMachineModel() const;
-	machine::MachineModel* getMachineModel();
+	      machine::MachineModel* getMachineModel();
+
+public:
+	void switchToNewMachineModel(const std::string& name);
 
 public:
 	static Compiler* getSingleton();

@@ -37,6 +37,8 @@ public:
 public:
 	/*! \brief Construct a machine model */
 	MachineModel(const std::string& name = "Vanaheimr");
+	/*! \brief Virtual Destructor */
+	virtual ~MachineModel();
 
 public:
 	MachineModel(const MachineModel&) = delete;
@@ -56,12 +58,16 @@ public:
 	const TranslationTable* translationTable() const;
 
 public:
-	/*! \brief Configure the machine model with a set of options */
-	void configure(const StringVector& options);
-
-public:
 	/*! \brief Add a physical operation */
 	void addOperation(const Operation&);
+
+public:
+	/*! \brief Configure the machine model with a set of options */
+	virtual void configure(const StringVector& options);
+
+public:
+	/*! \brief Clone the machine model */
+	virtual MachineModel* clone() const = 0;
 
 public:
 	const std::string name;

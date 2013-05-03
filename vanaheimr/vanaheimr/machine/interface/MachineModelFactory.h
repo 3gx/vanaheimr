@@ -35,6 +35,13 @@ public:
 	/*! \brief Create the default machine model */
 	static MachineModel* createDefaultMachine();
 
+public:
+	/*! \brief Register a machine model with the factory.
+	
+		The object is copied by the machine model
+	*/
+	static void registerMachineModel(const MachineModel*);
+
 };
 
 }

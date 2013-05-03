@@ -23,6 +23,11 @@ MachineModel::MachineModel(const std::string& n)
 
 }
 
+MachineModel::~MachineModel()
+{
+
+}
+
 const PhysicalRegister* MachineModel::getPhysicalRegister(RegisterId id) const
 {
 	auto reg = _idToRegisters.find(id);
@@ -49,11 +54,6 @@ unsigned int MachineModel::totalRegisterCount() const
 const TranslationTable* MachineModel::translationTable() const
 {
 	return _translationTable;
-}
-
-void MachineModel::configure(const StringVector& )
-{
-	// TODO
 }
 
 void MachineModel::addOperation(const Operation& op)
@@ -89,6 +89,11 @@ void MachineModel::addRegisterFile(const std::string& name,
 	{
 		_idToRegisters.insert(std::make_pair(reg->uniqueId(), &*reg));
 	}
+}
+
+void MachineModel::configure(const StringVector& )
+{
+	// blank for the base class
 }
 
 }
