@@ -6,20 +6,65 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
 namespace vanaheimr
 {
 
 namespace parser
 {
 
+/* \brief A class for representing a regular expression used to match a
+		Lexer token
+*/
 class LexerRule
 {
 public:
 	explicit LexerRule(const std::string& regex);
+		
+public:
+	bool canMatchWithBegin(const std::string&) const;
+	bool canMatchWithEnd(const std::string&) const;
+	bool canMatch(const std::string&) const;
+	bool isExactMatch(const std::string&) const;
 
 public:
 	const std::string& toString() const;
 
+public:
+	typedef std::string::iterator       iterator;
+	typedef std::string::const_iterator const_iterator;
+	
+	typedef std::string::reverse_iterator       reverse_iterator;
+	typedef std::string::const_reverse_iterator const_reverse_iterator;
+
+public:
+	      iterator begin();
+	const_iterator begin() const;
+
+	      iterator end();
+	const_iterator end() const;
+	
+	reverse_iterator       rbegin();
+	const_reverse_iterator rbegin() const;
+
+	reverse_iterator       rend();
+	const_reverse_iterator rend() const;
+
+private:
+	bool _match(const_iterator& matchEnd, const_iterator& matchRuleEnd,
+		const_iterator begin, const_iterator end,
+		const_iterator ruleBegin, const_iterator ruleEnd) const;
+	bool _match(const_iterator& matchEnd, const_iterator begin,
+		const_iterator end) const;
+	bool _isExactMatch(const std::string& text) const;
+	bool _matchWithEnd(const_iterator begin, const_iterator end) const;
+	bool _matchWithBegin(const_iterator begin, const_iterator end) const;
+	bool _canMatchWithBegin(const std::string& text) const;
+	bool _canMatchWithEnd(const std::string& text) const;
+	bool _canMatch(const std::string&) const;
+	
 private:
 	std::string _regex;
 
