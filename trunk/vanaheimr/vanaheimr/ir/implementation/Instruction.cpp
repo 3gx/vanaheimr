@@ -228,6 +228,11 @@ bool Instruction::isPsi() const
 	return opcode == Psi;
 }
 
+bool Instruction::isMachineInstruction() const
+{
+	return opcode == Machine;
+}
+
 bool Instruction::accessesMemory() const
 {
 	return isLoad() || isStore();
