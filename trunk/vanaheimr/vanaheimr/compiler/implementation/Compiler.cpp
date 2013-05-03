@@ -215,6 +215,13 @@ machine::MachineModel* Compiler::getMachineModel()
 	return _machineModel;
 }
 
+void Compiler::switchToNewMachineModel(const std::string& name)
+{
+	delete _machineModel;
+	
+	_machineModel = machine::MachineModelFactory::createMachineModel(name);
+}
+
 Compiler* Compiler::getSingleton()
 {
 	return &singleton;

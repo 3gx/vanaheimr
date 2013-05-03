@@ -22,6 +22,9 @@ public:
 	/*! \brief Construct a machine model */
 	ArchaeopteryxSimulatorMachineModel();
 
+public:
+	virtual MachineModel* clone() const;
+
 };
 
 }
