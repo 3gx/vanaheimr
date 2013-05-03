@@ -47,7 +47,7 @@ transforms::Pass* TranslationTableInstructionSelectionPass::clone() const
 
 static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 	ir::Instruction* instruction,
-	const machine::TranslationTable& translationTable);
+	const machine::TranslationTable* translationTable);
 
 void TranslationTableInstructionSelectionPass::_lowerBlock(BasicBlock& block)
 {
@@ -55,11 +55,13 @@ void TranslationTableInstructionSelectionPass::_lowerBlock(BasicBlock& block)
 	
 	BasicBlock::InstructionList loweredInstructions;
 
+	auto translationTable = machineModel->translationTable();
+	assert(translationTable != nullptr);
+
 	// Parallel for all and final gather
 	for(auto instruction : block)
 	{
-		lowerInstruction(loweredInstructions, instruction,
-			*machineModel->translationTable());
+		lowerInstruction(loweredInstructions, instruction, translationTable);
 	}
 
 	// Swap out the block contents, deallocate it
@@ -70,10 +72,10 @@ void TranslationTableInstructionSelectionPass::_lowerBlock(BasicBlock& block)
 
 static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 	ir::Instruction* instruction,
-	const machine::TranslationTable& translationTable)
+	const machine::TranslationTable* translationTable)
 {
 	auto machineInstructions =
-		translationTable.translateInstruction(instruction);
+		translationTable->translateInstruction(instruction);
 
 	if(machineInstructions.empty())
 	{
