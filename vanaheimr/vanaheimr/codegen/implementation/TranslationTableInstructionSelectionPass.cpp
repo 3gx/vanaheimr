@@ -18,6 +18,7 @@
 
 // Standard Library Includes
 #include <stdexcept>
+#include <cassert>
 
 namespace vanaheimr
 {
