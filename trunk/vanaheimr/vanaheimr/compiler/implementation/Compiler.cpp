@@ -220,6 +220,8 @@ void Compiler::switchToNewMachineModel(const std::string& name)
 	delete _machineModel;
 	
 	_machineModel = machine::MachineModelFactory::createMachineModel(name);
+	
+	assert(_machineModel != nullptr);
 }
 
 Compiler* Compiler::getSingleton()
