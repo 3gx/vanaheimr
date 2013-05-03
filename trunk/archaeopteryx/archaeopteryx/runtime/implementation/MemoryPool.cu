@@ -62,7 +62,7 @@ __device__ MemoryPool::Address MemoryPool::allocate(uint64_t size)
 	// Get the next available address
 	Address address = 0;
 
-	// TODO use a more efficient algorithm here
+	// TODO use a more efficient divide-and-conquer algorithm here
 	for(PageMap::iterator page = _pages.begin(); page != _pages.end(); ++page)
 	{
 		if(address + size <= page->second.address())
@@ -89,6 +89,7 @@ __device__ void MemoryPool::deallocate(Address address)
 
 __device__ MemoryPool::Address MemoryPool::translate(Address address)
 {
+	// Split the allocations into less-than/greater-than the address
 	PageMap::iterator page = _pages.lower_bound(address);
 
 	if(page != _pages.end())
