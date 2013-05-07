@@ -37,14 +37,14 @@ public:
 	TranslationTable& operator=(const TranslationTable&) = delete;
 
 public:
-	/*! \brief Translate an IR instruction into equivalent machine instructions*/
+	/*! \brief Translate IR instruction into equivalent machine instructions */
 	MachineInstructionVector translateInstruction(const ir::Instruction*) const;
 
 public:
 	const TranslationTableEntry* getTranslation(const std::string& name) const;
 
 public:
-	void addTranslation(const TranslationTableEntry& entry);
+	void addTranslation(const TranslationTableEntry* entry);
 
 private:
 	TranslationTableMap* _translations;

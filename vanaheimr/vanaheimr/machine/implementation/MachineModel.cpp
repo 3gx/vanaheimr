@@ -25,7 +25,7 @@ MachineModel::MachineModel(const std::string& n)
 
 MachineModel::~MachineModel()
 {
-
+	delete _translationTable;
 }
 
 const PhysicalRegister* MachineModel::getPhysicalRegister(RegisterId id) const
