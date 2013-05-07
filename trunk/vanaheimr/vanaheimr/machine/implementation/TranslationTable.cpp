@@ -58,7 +58,11 @@ TranslationTable::MachineInstructionVector
 {
 	auto translation = getTranslation(instruction->opcodeString());
 	
-	assert(translation != nullptr);
+	if(translation == nullptr)
+	{
+		// Fail the translation by returning nothing
+		return MachineInstructionVector();
+	}
 
 	return translation->translateInstruction(instruction);
 }
