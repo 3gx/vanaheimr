@@ -83,7 +83,13 @@ void MachineToVIRInstructionTranslationPass::runOnBlock(BasicBlock& block)
 	// parallel-for-all
 	for(auto instruction : block)
 	{
-		assert(instruction->isMachineInstruction());
+		// don't translate instructions that are already in VIR
+		if(!instruction->isMachineInstruction())
+		{
+			newInstructions.push_back(instruction->clone());
+			
+			continue;
+		}
 	
 		auto rule = _translationRules.find(instruction->opcodeString());
 		
