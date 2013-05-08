@@ -50,6 +50,8 @@ OpcodeOnlyTranslationTableEntry::MachineInstructionVector
 	auto machineInstruction = new Instruction(
 		getOrAddOperation(machineInstructionOpcode), instruction->block);
 	
+	machineInstruction->clear();
+	
 	for(auto read : instruction->reads)
 	{
 		machineInstruction->appendRead(read->clone());
