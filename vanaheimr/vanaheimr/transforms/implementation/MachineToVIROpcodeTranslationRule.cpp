@@ -34,6 +34,8 @@ MachineToVIROpcodeTranslationRule::InstructionVector
 	auto virInstruction = ir::Instruction::create(destinationOpcode,
 		instruction->block);
 	
+	virInstruction->clear();
+	
 	assertM(virInstruction != nullptr, "Invalid destination opcode '" +
 		destinationOpcode + "'");
 	
@@ -50,7 +52,6 @@ MachineToVIROpcodeTranslationRule::InstructionVector
 	hydrazine::log("MachineToVIROpcodeTranslationRule")
 				<< "  translated to '" << virInstruction->toString() << "'.\n";
 			
-
 	InstructionVector instructions;
 	
 	instructions.push_back(virInstruction);
