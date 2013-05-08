@@ -22,8 +22,9 @@ namespace vanaheimr
 namespace transforms
 {
 
-MachineToVIRInstructionTranslationPass::MachineToVIRInstructionTranslationPass()
-: BasicBlockPass({}, "MachineToVIRInstructionTranslationPass")
+MachineToVIRInstructionTranslationPass::MachineToVIRInstructionTranslationPass(
+	const std::string& name)
+: BasicBlockPass({}, name)
 {
 
 }
@@ -35,7 +36,7 @@ MachineToVIRInstructionTranslationPass::~MachineToVIRInstructionTranslationPass(
 
 MachineToVIRInstructionTranslationPass::MachineToVIRInstructionTranslationPass(
 	const self& pass)
-: BasicBlockPass({}, "MachineToVIRInstructionTranslationPass")
+: BasicBlockPass({}, pass.name)
 {
 	for(auto rule : pass._translationRules)
 	{
@@ -108,6 +109,19 @@ Pass* MachineToVIRInstructionTranslationPass::clone() const
 {
 	return new MachineToVIRInstructionTranslationPass(*this);
 }
+
+MachineToVIRInstructionTranslationPass::TranslationRule::TranslationRule(
+	const std::string& opcodeName)
+: opcode(opcodeName)
+{
+
+}
+
+MachineToVIRInstructionTranslationPass::TranslationRule::~TranslationRule()
+{
+
+}
+
 
 }
 

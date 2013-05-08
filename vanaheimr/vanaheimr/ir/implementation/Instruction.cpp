@@ -346,6 +346,52 @@ void Instruction::clear()
 	
 	 reads.clear();
 	writes.clear();
+}	
+
+Instruction::Opcode Instruction::parseOpcode(const std::string& opcode)
+{
+	if("add")           return Add;
+	if("and")           return And;
+	if("ashr")          return Ashr;
+	if("atom")          return Atom;
+	if("bar")           return Bar;
+	if("bitcast")       return Bitcast;
+	if("bra")           return Bra;
+	if("call")          return Call;
+	if("fdiv")          return Fdiv;
+	if("fmul")          return Fmul;
+	if("fpext")         return Fpext;
+	if("fptosi")        return Fptosi;
+	if("fptoui")        return Fptoui;
+	if("fptrunc")       return Fptrunc;
+	if("frem")          return Frem;
+	if("getelementptr") return Getelementptr;
+	if("launch")        return Launch;
+	if("ld")            return Ld;
+	if("lshr")          return Lshr;
+	if("membar")        return Membar;
+	if("mul")           return Mul;
+	if("or")            return Or;
+	if("ret")           return Ret;
+	if("setp")          return Setp;
+	if("sext")          return Sext;
+	if("sdiv")          return Sdiv;
+	if("shl")           return Shl;
+	if("sitofp")        return Sitofp;
+	if("srem")          return Srem;
+	if("st")            return St;
+	if("sub")           return Sub;
+	if("trunc")         return Trunc;
+	if("udiv")          return Udiv;
+	if("uitofp")        return Uitofp;
+	if("urem")          return Urem;
+	if("xor")           return Xor;
+	if("zext")          return Zext;
+	if("phi")           return Phi;
+	if("psi")           return Psi;
+	if("machine")       return Machine;
+	
+	return InvalidOpcode;
 }
 
 std::string Instruction::toString(Opcode o)
@@ -452,6 +498,11 @@ Instruction* Instruction::create(Opcode o, BasicBlock* b)
 	instruction->block = b;
 
 	return instruction;
+}
+
+Instruction* Instruction::create(const std::string& opcode, BasicBlock* b)
+{
+	return create(parseOpcode(opcode), b);
 }
 
 UnaryInstruction::UnaryInstruction(Opcode o, BasicBlock* b)

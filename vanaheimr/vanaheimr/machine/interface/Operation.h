@@ -32,7 +32,7 @@ public:
 public:
 	std::string  name;    // fully qualified name including modifiers
 	unsigned int latency; // latency in cycles
-	std::string  special; // special property if any
+	std::string  special; // special property (if any)
 	
 	/*! \brief all possible bindings to HW */
 	FunctionalUnitOperationVector functionalUnitOperations;

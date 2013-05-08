@@ -161,7 +161,9 @@ public:
 
 public:
 	static std::string toString(Opcode o);
+	static Opcode parseOpcode(const std::string& opcode);
 	static Instruction* create(Opcode o, BasicBlock* b);
+	static Instruction* create(const std::string& opcode, BasicBlock* b);
 	
 public:
 	/*! \brief The instruction opcode */
