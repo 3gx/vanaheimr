@@ -11,6 +11,9 @@
 
 #include <vanaheimr/compiler/interface/Compiler.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 namespace vanaheimr
 {
 
@@ -58,6 +61,9 @@ OpcodeOnlyTranslationTableEntry::MachineInstructionVector
 	}
 	
 	MachineInstructionVector instructions;
+	
+	hydrazine::log("OpcodeOnlyTranslationTableEntry")
+		<< "  to " << machineInstruction->toString() << "\n";
 	
 	instructions.push_back(machineInstruction);
 	
