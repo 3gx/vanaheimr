@@ -91,7 +91,7 @@ void MachineToVIRInstructionTranslationPass::runOnBlock(BasicBlock& block)
 	{
 		hydrazine::log("MachineToVIRInstructionTranslationPass")
 			<< " For instruction: " << instruction->toString() << "\n";
-	
+		
 		// don't translate instructions that are already in VIR
 		if(!instruction->isMachineInstruction())
 		{

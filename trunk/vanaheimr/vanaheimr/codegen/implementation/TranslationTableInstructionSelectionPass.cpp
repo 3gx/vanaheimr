@@ -16,6 +16,9 @@
 
 #include <vanaheimr/ir/interface/Function.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <stdexcept>
 #include <cassert>
@@ -52,6 +55,9 @@ static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 
 void TranslationTableInstructionSelectionPass::_lowerBlock(BasicBlock& block)
 {
+	hydrazine::log("TranslationTableInstructionSelectionPass")
+		<< "Running on basic block " << block.name() << "\n";
+	
 	auto machineModel = compiler::Compiler::getSingleton()->getMachineModel();
 	
 	BasicBlock::InstructionList loweredInstructions;
@@ -74,6 +80,9 @@ static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 	ir::Instruction* instruction,
 	const machine::TranslationTable* translationTable)
 {
+	hydrazine::log("TranslationTableInstructionSelectionPass")
+		<< " For instruction: " << instruction->toString() << "\n";
+	
 	// if the translation table is missing
 	if(translationTable == nullptr )
 	{
@@ -81,6 +90,9 @@ static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 		//  assume no translation is needed
 		if(instruction->isMachineInstruction())
 		{
+			hydrazine::log("TranslationTableInstructionSelectionPass")
+				<< "  skipped, already a machine instruction.\n";
+			
 			instructions.push_back(instruction->clone());
 			return;
 		}
@@ -99,6 +111,9 @@ static void lowerInstruction(ir::BasicBlock::InstructionList& instructions,
 		//  already a machine instruction, assume no translation is needed
 		if(instruction->isMachineInstruction())
 		{
+			hydrazine::log("TranslationTableInstructionSelectionPass")
+				<< "  skipped, already a machine instruction.\n";
+			
 			instructions.push_back(instruction->clone());
 			return;
 		}
