@@ -110,6 +110,14 @@ public:
 	unsigned int index() const;
 
 public:
+	/*! \brief Append an operand to the set of writes, it is now owned
+		by the instruction */
+	void appendWrite(Operand* newOperand);
+
+	/*! \brief Append an operand to the set of reads, it is now owned
+		by the instruction */
+	void appendRead(Operand* newOperand);
+
 	/*! \brief Replace a matching operand with another,
 	     the original operand is deleted,
 	     the new operand is now owned by the instruction */

@@ -113,7 +113,6 @@ public:
 	bool   empty() const;
 
 public:
-	std::string       name;         // name of the VIR operation to translate
 	TranslationVector translations; // translation into logical ops
 };
 

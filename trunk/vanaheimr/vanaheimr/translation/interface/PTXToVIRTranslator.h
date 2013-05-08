@@ -39,7 +39,7 @@ namespace translation
 class PTXToVIRTranslator
 {
 public:
-	typedef ::ir::Module     PTXModule;
+	typedef ::ir::Module PTXModule;
 
 public:
 	PTXToVIRTranslator(compiler::Compiler* compiler);

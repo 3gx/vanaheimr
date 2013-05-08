@@ -154,6 +154,20 @@ unsigned int Instruction::index() const
 	return index;
 }
 
+void Instruction::appendWrite(Operand* newOperand)
+{
+	newOperand->instruction = this;
+
+	writes.push_back(newOperand);
+}
+
+void Instruction::appendRead(Operand* newOperand)
+{
+	newOperand->instruction = this;
+
+	reads.push_back(newOperand);
+}
+
 void Instruction::replaceOperand(Operand* original, Operand* newOperand)
 {
 	assert(original->instruction == this);
