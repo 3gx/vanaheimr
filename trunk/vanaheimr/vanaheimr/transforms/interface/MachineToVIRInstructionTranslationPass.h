@@ -29,29 +29,12 @@ namespace transforms
 class MachineToVIRInstructionTranslationPass : public BasicBlockPass
 {
 public:
-	class TranslationRule
-	{
-	public:
-		typedef std::vector<ir::Instruction*> InstructionVector;
+	class TranslationRule;
 	
-	public:
-		TranslationRule(const std::string& opcodeName);
-		virtual ~TranslationRule();
-		
-	public:
-		virtual InstructionVector translateMachineInstruction(
-			const machine::Instruction* instruction) = 0;
-	
-		virtual TranslationRule* clone() const = 0;
-	
-	public:
-		std::string opcode; // The opcode that the rule applies to
-	};
-
 	typedef MachineToVIRInstructionTranslationPass self;
 
 public:
-	MachineToVIRInstructionTranslationPass();
+	MachineToVIRInstructionTranslationPass(const std::string& name);
 	~MachineToVIRInstructionTranslationPass();
 
 public:
@@ -70,6 +53,26 @@ public:
 
 public:
 	virtual Pass* clone() const;
+
+public:
+	class TranslationRule
+	{
+	public:
+		typedef std::vector<ir::Instruction*> InstructionVector;
+	
+	public:
+		TranslationRule(const std::string& opcodeName);
+		virtual ~TranslationRule();
+		
+	public:
+		virtual InstructionVector translateMachineInstruction(
+			const machine::Instruction* instruction) = 0;
+	
+		virtual TranslationRule* clone() const = 0;
+	
+	public:
+		std::string opcode; // The opcode that the rule applies to
+	};
 
 private:
 	typedef std::map<std::string, TranslationRule*> OpcodeToRuleMap;

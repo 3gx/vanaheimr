@@ -104,14 +104,14 @@ public:
 public:
 	iterator       begin();
 	const_iterator begin() const;
-
+	
 	iterator       end();
 	const_iterator end() const;
-
+	
 public:
 	size_t size()  const;
 	bool   empty() const;
-
+	
 public:
 	TranslationVector translations; // translation into logical ops
 };
