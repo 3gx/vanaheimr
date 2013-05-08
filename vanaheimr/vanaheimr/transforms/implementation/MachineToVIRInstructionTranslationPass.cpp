@@ -14,6 +14,9 @@
 #include <vanaheimr/ir/interface/BasicBlock.h>
 #include <vanaheimr/ir/interface/Instruction.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -80,12 +83,21 @@ void MachineToVIRInstructionTranslationPass::runOnBlock(BasicBlock& block)
 {
 	TranslationRule::InstructionVector newInstructions;
 
+	hydrazine::log("MachineToVIRInstructionTranslationPass")
+		<< "Running on basic block " << block.name() << "\n";
+	
 	// parallel-for-all
 	for(auto instruction : block)
 	{
+		hydrazine::log("MachineToVIRInstructionTranslationPass")
+			<< " For instruction: " << instruction->toString() << "\n";
+	
 		// don't translate instructions that are already in VIR
 		if(!instruction->isMachineInstruction())
 		{
+			hydrazine::log("MachineToVIRInstructionTranslationPass")
+				<< "  skipped, already VIR.\n";
+			
 			newInstructions.push_back(instruction->clone());
 			
 			continue;
@@ -96,6 +108,9 @@ void MachineToVIRInstructionTranslationPass::runOnBlock(BasicBlock& block)
 		// don't translate instructions with missing rules
 		if(rule == _translationRules.end())
 		{
+			hydrazine::log("MachineToVIRInstructionTranslationPass")
+				<< "  skipped, no rule.\n";
+			
 			newInstructions.push_back(instruction->clone());
 			
 			continue;

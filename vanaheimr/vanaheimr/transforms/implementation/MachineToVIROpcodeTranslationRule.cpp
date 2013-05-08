@@ -47,6 +47,10 @@ MachineToVIROpcodeTranslationRule::InstructionVector
 		virInstruction->appendWrite(write);
 	}
 
+	hydrazine::log("MachineToVIROpcodeTranslationRule")
+				<< "  translated to '" << virInstruction->toString() << "'.\n";
+			
+
 	InstructionVector instructions;
 	
 	instructions.push_back(virInstruction);
