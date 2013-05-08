@@ -7,7 +7,7 @@
 #pragma once
 
 // Vanaheimr Includes
-#include <vanaheimr/transforms/interface/MachineToVIRInstructionTranslationPass.h>
+#include <vanaheimr/transforms/interface/MachineToVIRInstructionTranslationRule.h>
 
 namespace vanaheimr
 {

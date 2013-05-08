@@ -7,6 +7,7 @@
 
 // Vanaheimr Includes
 #include <vanaheimr/transforms/interface/MachineToVIRInstructionTranslationPass.h>
+#include <vanaheimr/transforms/interface/MachineToVIRInstructionTranslationRule.h>
 
 #include <vanaheimr/machine/interface/Instruction.h>
 
@@ -109,19 +110,6 @@ Pass* MachineToVIRInstructionTranslationPass::clone() const
 {
 	return new MachineToVIRInstructionTranslationPass(*this);
 }
-
-MachineToVIRInstructionTranslationPass::TranslationRule::TranslationRule(
-	const std::string& opcodeName)
-: opcode(opcodeName)
-{
-
-}
-
-MachineToVIRInstructionTranslationPass::TranslationRule::~TranslationRule()
-{
-
-}
-
 
 }
 
