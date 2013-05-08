@@ -19,6 +19,8 @@ namespace vanaheimr { namespace ir { class Instruction; } }
 
 namespace vanaheimr { namespace machine { class Instruction; } }
 
+namespace vanaheimr { namespace transforms { class MachineToVIRInstructionTranslationRule; } }
+
 namespace vanaheimr
 {
 
@@ -29,8 +31,7 @@ namespace transforms
 class MachineToVIRInstructionTranslationPass : public BasicBlockPass
 {
 public:
-	class TranslationRule;
-	
+	typedef MachineToVIRInstructionTranslationRule TranslationRule;
 	typedef MachineToVIRInstructionTranslationPass self;
 
 public:
@@ -54,26 +55,6 @@ public:
 public:
 	virtual Pass* clone() const;
 
-public:
-	class TranslationRule
-	{
-	public:
-		typedef std::vector<ir::Instruction*> InstructionVector;
-	
-	public:
-		TranslationRule(const std::string& opcodeName);
-		virtual ~TranslationRule();
-		
-	public:
-		virtual InstructionVector translateMachineInstruction(
-			const machine::Instruction* instruction) = 0;
-	
-		virtual TranslationRule* clone() const = 0;
-	
-	public:
-		std::string opcode; // The opcode that the rule applies to
-	};
-
 private:
 	typedef std::map<std::string, TranslationRule*> OpcodeToRuleMap;
 	
@@ -81,9 +62,6 @@ private:
 	OpcodeToRuleMap _translationRules;
 
 };
-
-typedef MachineToVIRInstructionTranslationPass::TranslationRule
-	MachineToVIRInstructionTranslationRule;
 
 }
 
