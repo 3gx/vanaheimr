@@ -118,9 +118,12 @@ typedef util::SmallSet<unsigned int> ColorSet;
 
 static unsigned int computeColor(const RegisterInfo& reg,
 	const RegisterInfoVector& registerInfo,
-	const InterferenceAnalysis& interferences, unsigned int partitionSize)
+	const InterferenceAnalysis& interferences, unsigned int iteration)
 {
 	ColorSet usedColors;
+
+	// Fix the color after the scheduling order window has passed
+	if(info.schedulingOrder <= iteration) return info.color;
 	
 	auto regInterferences =
 		interferences.getInterferences(*reg.virtualRegister);
@@ -132,7 +135,6 @@ static unsigned int computeColor(const RegisterInfo& reg,
 		const RegisterInfo& info = registerInfo[interference->id];
 
 		if(info.schedulingOrder > reg.schedulingOrder) continue;
-		if(info.schedulingOrder > partitionSize)       continue;
 	
 		usedColors.insert(info.color);
 	}
@@ -156,13 +158,6 @@ static bool propagateColorsInParallel(RegisterInfoVector& registers,
 	report("  -------------------- Iteration "
 		<< iteration << " ------------------");
 
-	unsigned int partitionSize = 1 << iteration;
-
-	if(iteration > 32)
-	{
-		partitionSize = 1 << 31;
-	}
-
 	RegisterInfoVector newRegisters;
 	
 	newRegisters.reserve(registers.size());
@@ -171,7 +166,7 @@ static bool propagateColorsInParallel(RegisterInfoVector& registers,
 	for(auto reg = registers.begin(); reg != registers.end(); ++reg)
 	{
 		unsigned int newColor = computeColor(*reg, registers,
-			interferences, partitionSize);
+			interferences, iteration);
 
 		newRegisters.push_back(RegisterInfo(reg->virtualRegister,
 			reg->nodeDegree, newColor, reg->schedulingOrder));
