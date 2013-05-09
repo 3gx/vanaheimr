@@ -131,12 +131,13 @@ static unsigned int computeColor(const RegisterInfo& reg,
 	
 		const RegisterInfo& info = registerInfo[interference->id];
 
-		if(info.schedulingOrder >= reg.schedulingOrder) continue;
-		if(info.schedulingOrder >  partitionSize) continue;
+		if(info.schedulingOrder > reg.schedulingOrder) continue;
+		if(info.schedulingOrder > partitionSize)       continue;
 	
 		usedColors.insert(info.color);
 	}
 
+	// The new color is the first open slot
 	unsigned int newColor = 0;
 	
 	for(auto used : usedColors)
