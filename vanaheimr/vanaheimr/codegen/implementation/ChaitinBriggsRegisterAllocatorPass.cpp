@@ -157,6 +157,11 @@ static bool propagateColorsInParallel(RegisterInfoVector& registers,
 
 	unsigned int partitionSize = 1 << iteration;
 
+	if(iteration > 32)
+	{
+		partitionSize = 1 << 31;
+	}
+
 	RegisterInfoVector newRegisters;
 	
 	newRegisters.reserve(registers.size());
