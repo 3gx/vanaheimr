@@ -117,6 +117,24 @@ public:
 typedef std::vector<RegisterInfo> RegisterInfoVector;
 	
 typedef util::SmallSet<unsigned int> ColorSet;
+typedef std::vector<unsigned int> ColorVector;
+
+static unsigned int randomColorThatDoesntCollide(ColorSet& usedColors,
+	unsigned int maxColor)
+{
+	ColorSet unusedColors;
+	
+	for(unsigned int i = 0; i < maxColor; ++i)
+	{
+		if(usedColors.count(i) != 0) continue;
+		
+		unusedColors.insert(i);
+	}
+	
+	ColorVector availableColors(unusedColors.begin(), unusedColors.end());
+	
+	return availableColors[std::rand() % availableColors.size()];
+}
 
 static unsigned int computeColor(bool& finished, const RegisterInfo& reg,
 	const RegisterInfoVector& registerInfo,
@@ -129,7 +147,7 @@ static unsigned int computeColor(bool& finished, const RegisterInfo& reg,
 	
 	auto regInterferences =
 		interferences.getInterferences(*reg.virtualRegister);
-
+	
 	finished = true;
 	
 	unsigned int predecessorCount = 0;
@@ -148,50 +166,25 @@ static unsigned int computeColor(bool& finished, const RegisterInfo& reg,
 	
 		usedColors.insert(info.color);
 	}
-
-	// finished registers allocate randomly within the allocated range
-	if(finished)
+	
+	unsigned int spread = usedColors.size() + 1;
+	
+	// Define the range of possible colors [0 to usedRegisterCount]
+	if(finished && (usedColors.count(reg.color) != 0 || reg.color >= spread))
 	{
-		unsigned int newColor = std::rand() % (usedColors.size() + 1);
-		
-		while(usedColors.count(newColor) != 0)
-		{
-			++newColor;
-			
-			if(newColor == usedColors.size() + 1)
-			{
-				newColor = 0;
-			}
-		}
-		
-		return newColor;
+		return randomColorThatDoesntCollide(usedColors, spread);
 	}
-
-	// other nodes that are not yet finished guess at a color
-
-	// keep the original color if the spread is still valid
+	
+	// keep the original color if it doesn't collide
 	if(usedColors.count(reg.color) == 0)
 	{
 		return reg.color;
 	}
 	
-	// Define the range of possible colors [0 to the node predecessor degree]
+	// Otherwise, assign a new register randomly in the possible window
 	unsigned int maxColor = predecessorCount + 1;
 	
-	// The new color is the first open slot
-	unsigned int newColor = std::rand() % maxColor;
-
-	while(usedColors.count(newColor) != 0)
-	{
-		++newColor;
-		
-		if(newColor == maxColor)
-		{
-			newColor = 0;
-		}
-	}	
-	
-	return newColor;
+	return randomColorThatDoesntCollide(usedColors, maxColor);
 }
 
 static bool propagateColorsInParallel(RegisterInfoVector& registers,
@@ -217,17 +210,44 @@ static bool propagateColorsInParallel(RegisterInfoVector& registers,
 
 		changed |= reg->color != newColor;
 
-		reportE(reg->color != newColor ||
-			(!reg->finished && predecessorsFinished),
+		reportE(reg->color != newColor,
 			"   vr" << reg->virtualRegister->id
 			<< " (degree " << reg->nodeDegree
 			<< ") | (color " << reg->color << ") -> (color " << newColor
-			<< ") " << (predecessorsFinished ? "(finished)" : ""));
+			<< ")");
 	}
 	
 	registers = std::move(newRegisters);
 	
 	return changed;
+}
+
+static void initializeColors(RegisterInfoVector& registers,
+	const InterferenceAnalysis& interferences)
+{
+	// initialize the register randomly in the possible range
+	for(auto& reg : registers)
+	{
+		auto regInterferences =
+			interferences.getInterferences(*reg.virtualRegister);
+	
+		unsigned int predecessorCount = 0;
+	
+		for(auto interference : regInterferences)
+		{
+			assert(interference->id < registers.size());
+	
+			const RegisterInfo& info = registers[interference->id];
+
+			if(info.schedulingOrder > reg.schedulingOrder) continue;
+			
+			++predecessorCount;
+		}
+		
+		unsigned int maxColor = predecessorCount + 1;
+	
+		reg.color = std::rand() % maxColor;
+	}
 }
 
 static void initializeSchedulingOrder(RegisterInfoVector& registerInfo)
@@ -263,6 +283,8 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	RegisterMap& allocated, const ir::Function& function,
 	const InterferenceAnalysis& interferences, unsigned int colors)
 {
+	std::srand(std::time(0));
+	
 	// Create a map from node degree to virtual register
 	RegisterInfoVector registers;
 	
@@ -278,6 +300,9 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	// Initialize scheduling order for each node
 	initializeSchedulingOrder(registers);
 	
+	// Initialize the colors
+	initializeColors(registers, interferences);
+	
 	// Propagate colors until converged
 	report(" Propating colors until converged.");
 	
@@ -292,6 +317,24 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 		// Check iteration count
 		assertM(iteration <= colors, "Too many iterations: " << iteration);
 	}
+	
+	report("  -------------------- Iteration Count "
+		<< iteration << " ------------------");
+	
+	// finish
+	report("  Final report");
+	unsigned int score = 0;
+	
+	for(auto& reg : registers)
+	{
+		score += reg.color;
+		
+		report("   vr" << reg.virtualRegister->id
+			<< " (degree " << reg.nodeDegree
+			<< ") | (color " << reg.color << ")");
+	}
+
+	report("  allocation score " << score);
 	
 }
 
