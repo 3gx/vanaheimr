@@ -21,13 +21,15 @@ namespace machine
 {
 
 OpcodeOnlyTranslationTableEntry::OpcodeOnlyTranslationTableEntry(
-	const std::string& s, const std::string& d)
-: TranslationTableEntry(s), machineInstructionOpcode(d)
+	const std::string& s, const std::string& d, const std::string& sp)
+: TranslationTableEntry(s), machineInstructionOpcode(d),
+	machineInstructionSpecialProperty(sp)
 {
 
 }
 
-static const Operation* getOrAddOperation(const std::string& opcode)
+static const Operation* getOrAddOperation(const std::string& opcode,
+	const std::string& special)
 {
 	auto compiler = vanaheimr::compiler::Compiler::getSingleton();
 
@@ -35,7 +37,7 @@ static const Operation* getOrAddOperation(const std::string& opcode)
 
 	if(operation == nullptr)
 	{
-		compiler->getMachineModel()->addOperation(Operation(opcode));
+		compiler->getMachineModel()->addOperation(Operation(opcode, special));
 		
 		operation = compiler->getMachineModel()->getOperation(opcode);
 	}
@@ -48,7 +50,9 @@ OpcodeOnlyTranslationTableEntry::MachineInstructionVector
 	const ir::Instruction* instruction) const
 {
 	auto machineInstruction = new Instruction(
-		getOrAddOperation(machineInstructionOpcode), instruction->block);
+		getOrAddOperation(machineInstructionOpcode,
+			machineInstructionSpecialProperty),
+		instruction->block);
 	
 	machineInstruction->clear();
 	

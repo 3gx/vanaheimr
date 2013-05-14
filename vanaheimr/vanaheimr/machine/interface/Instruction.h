@@ -30,7 +30,16 @@ public:
 
 public:
 	Instruction(const Operation* op, BasicBlock* block = 0, Id id = 0);
+
+public:
+	virtual bool isLoad()      const;
+	virtual bool isStore()     const;
+	virtual bool isBranch()    const;
+	virtual bool isCall()      const;
+	virtual bool isReturn()    const;
 	
+	virtual bool isMemoryBarrier() const;
+
 public:
 	virtual std::string opcodeString() const;
 
@@ -40,6 +49,9 @@ public:
 public:
 	 /*! \brief The machine operation performed by the instruction. */
 	const Operation* operation;
+
+private:
+	bool hasSpecialProperty(const std::string& property) const;
 
 };
 

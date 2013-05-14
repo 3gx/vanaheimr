@@ -283,7 +283,8 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	RegisterMap& allocated, const ir::Function& function,
 	const InterferenceAnalysis& interferences, unsigned int colors)
 {
-	std::srand(std::time(0));
+	//std::srand(std::time(0));
+	std::srand(0);
 	
 	// Create a map from node degree to virtual register
 	RegisterInfoVector registers;
