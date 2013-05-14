@@ -27,7 +27,7 @@ class OpcodeOnlyTranslationTableEntry : public TranslationTableEntry
 public:
 	/*! \brief Create the rule and specify the opcode mapping */
 	OpcodeOnlyTranslationTableEntry(const std::string& sourceOpcode,
-		const std::string& destinationOpcode);
+		const std::string& destinationOpcode, const std::string& special);
 
 public:
 	/*! \brief Translate IR instruction into equivalent machine instructions */
@@ -39,6 +39,7 @@ public:
 
 public:
 	std::string machineInstructionOpcode;
+	std::string machineInstructionSpecialProperty;
 };
 
 }

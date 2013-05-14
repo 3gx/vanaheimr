@@ -117,7 +117,8 @@ void ControlFlowGraph::_initializePredecessorsAndSuccessors(BasicBlock* block,
 	
 	if(terminator != nullptr)
 	{
-		if(terminator->isBranch() && !terminator->isCall())
+		if(terminator->isBranch() && !terminator->isCall() &&
+			!terminator->isMachineInstruction())
 		{
 			branch = static_cast<ir::Bra*>(terminator);
 		}

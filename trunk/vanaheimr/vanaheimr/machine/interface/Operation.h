@@ -26,13 +26,13 @@ public:
 	typedef std::vector<FunctionalUnitOperation*> FunctionalUnitOperationVector;
 
 public:
-	Operation(const std::string& _name,  unsigned int _latency = 0,
-		const std::string& _special = "");
+	Operation(const std::string& _name,  const std::string& _special = "",
+		unsigned int _latency = 0);
 
 public:
 	std::string  name;    // fully qualified name including modifiers
-	unsigned int latency; // latency in cycles
 	std::string  special; // special property (if any)
+	unsigned int latency; // latency in cycles
 	
 	/*! \brief all possible bindings to HW */
 	FunctionalUnitOperationVector functionalUnitOperations;
