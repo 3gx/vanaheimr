@@ -140,7 +140,11 @@ public:
 public:
 	register_iterator findVirtualRegister(const std::string& name);
 	         iterator findBasicBlock(const std::string& name);
-	
+
+public:
+	/*! \brief Move a basic block to a new position */
+	void moveBasicBlock(iterator position, iterator block);
+
 public:
 	local_iterator       local_begin();
 	const_local_iterator local_begin() const;
