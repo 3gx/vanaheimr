@@ -7,6 +7,9 @@
 // Vanaheimr Includes
 #include <vanaheimr/parser/interface/LexerRule.h>
 
+// Standard Library Includes
+#include <vector>
+
 namespace vanaheimr
 {
 
@@ -14,9 +17,44 @@ namespace parser
 {
 
 LexerRule::LexerRule(const std::string& regex)
-: _regex(regex)
 {
+	typedef std::vector<size_t> PositionVector; 
+
+	bool escape = false;
+
+	PositionVector wildcardPositions;
+
 	// record wildcards
+	for(auto character : regex)
+	{
+		if(character == '\\')
+		{
+			escape = true;
+		
+			continue;
+		}
+		
+		if(escape)
+		{
+			_regex.push_back(character);
+			
+			escape = false;
+			
+			continue;
+		}
+		
+		if(character == '*')
+		{
+			wildcardPositions.push_back(_regex.size());
+		}
+		
+		_regex.push_back(character);
+	}
+	
+	for(auto position : wildcardPositions)
+	{
+		_wildcards.insert(_regex.begin() + position);
+	}
 }
 
 bool LexerRule::canMatchWithBegin(const std::string& text) const
@@ -35,6 +73,20 @@ bool LexerRule::canMatchWithEnd(const std::string& text) const
 	return false;
 }
 
+bool LexerRule::canOnlyMatchWithBegin(const std::string& text) const
+{
+	if(!canMatchWithBegin(text)) return false;
+	
+	return isExactMatch(text) || !canMatchWithEnd(text);
+}
+
+bool LexerRule::canOnlyMatchWithEnd(const std::string& text) const
+{
+	if(!canMatchWithEnd(text)) return false;
+	
+	return isExactMatch(text) || !canMatchWithBegin(text);
+}
+	
 bool LexerRule::canMatch(const std::string& text) const
 {
 	for(auto beginPosition = text.begin();
@@ -255,7 +307,7 @@ bool LexerRule::_matchWithBegin(const_iterator textBegin,
 
 bool LexerRule::_isWildcard(const_iterator character) const
 {
-	return *character == '*';
+	return _wildcards.count(character) != 0;
 }
 	
 

@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <set>
 
 namespace vanaheimr
 {
@@ -26,6 +27,8 @@ public:
 public:
 	bool canMatchWithBegin(const std::string&) const;
 	bool canMatchWithEnd(const std::string&) const;
+	bool canOnlyMatchWithBegin(const std::string&) const;
+	bool canOnlyMatchWithEnd(const std::string&) const;
 	bool canMatch(const std::string&) const;
 	bool isExactMatch(const std::string&) const;
 
@@ -72,7 +75,12 @@ private:
 	bool _isWildcard(const_iterator) const;
 	
 private:
+	typedef std::set<const_iterator> IteratorSet;
+	
+private:
 	std::string _regex;
+	IteratorSet _wildcards;
+	
 
 };
 

@@ -395,7 +395,14 @@ void LexerEngine::_mergeTokens()
 				if(_canMerge(token, next))
 				{
 					hydrazine::log("Lexer") << "    success\n";
-					newTokens.push_back(_mergeWithNext(token, next));
+					
+					auto merged = _mergeWithNext(token, next);
+					
+					assertM(!merged.possibleMatches.empty(), 
+						"No possible matches for merged token '"
+						<< merged.getString() << "'");
+					
+					newTokens.push_back(merged);
 				}
 				else
 				{
@@ -460,9 +467,29 @@ void LexerEngine::_filterWithNeighbors(const LexerContext& token)
 
 	for(auto rule : token->possibleMatches)
 	{
-		if(isNewToken && !rule->canMatchWithBegin(tokenString)) continue;
-		if(isTokenEnd &&   !rule->canMatchWithEnd(tokenString)) continue;
-		if(!rule->canMatch(tokenString)) continue;
+		if(isNewToken && !rule->canMatchWithBegin(tokenString))
+		{
+			hydrazine::log("Lexer") << "    filtered out rule '" <<
+				rule->toString() << "', can't match with begin.\n";;
+
+			continue;
+		}
+		
+		if(isTokenEnd &&   !rule->canMatchWithEnd(tokenString))
+		{
+			hydrazine::log("Lexer") << "    filtered out rule '" <<
+				rule->toString() << "', can't match with end.\n";;
+
+			continue;
+		}
+		
+		if(!rule->canMatch(tokenString))
+		{
+			hydrazine::log("Lexer") << "    filtered out rule '" <<
+				rule->toString() << "', can't at all.\n";;
+
+			continue;
+		}
 		
 		hydrazine::log("Lexer") << "    '" << rule->toString() << "'\n";
 	
@@ -540,26 +567,32 @@ bool LexerEngine::_isAMergePossible(
 	const LexerContext& token,
 	const LexerContext& next)
 {
-	auto mergedToken = _mergeWithNext(token, next);
-
-	return !mergedToken.possibleMatches.empty();
+	hydrazine::log("Lexer") << "   checking if '" << token->getString()
+		<< "' can merge with '" << next->getString() << "':\n";
+	
+	auto possibleMatches = intersection(token->possibleMatches,
+		next->possibleMatches);
+		
+	if(possibleMatches.empty())
+	{
+		hydrazine::log("Lexer") << "    can't merge, no shared rules.\n";
+		return false;
+	}
+	
+	return true;
 }
 	
 bool LexerEngine::_canMerge(
 	const LexerContext& token,
 	const LexerContext& next)
 {
-	// Can merge if there is no ambiguity about the rule matched
-	//  and both tokens match the same rule
-	if(next->possibleMatches.size() == 1)
+	// Can merge if the right token cannot start a new token
+	if(!_couldBeTokenBegin(next))
 	{
-		if(_couldBeTokenBegin(next))
-		{
-			return true;
-		}
+		return true;
 	}
 	
-	// Can't match if there is ambiguity about the left being a token end
+	// Can't merge if there is ambiguity about the left being a token end
 	if(_couldBeTokenEnd(token))
 	{
 		if(!_isNewToken(token))
@@ -672,8 +705,7 @@ bool LexerEngine::TokenDescriptor::isBeginMatched() const
 
 	auto firstRule = (*possibleMatches.begin());
 
-	return firstRule->canMatchWithBegin(getString()) &&
-		!firstRule->canMatchWithEnd(getString());
+	return firstRule->canOnlyMatchWithBegin(getString());
 }
 
 bool LexerEngine::TokenDescriptor::isEndMatched() const
@@ -684,8 +716,7 @@ bool LexerEngine::TokenDescriptor::isEndMatched() const
 
 	auto firstRule = (*possibleMatches.begin());
 
-	return firstRule->canMatchWithEnd(getString()) &&
-		!firstRule->canMatchWithBegin(getString());
+	return firstRule->canOnlyMatchWithEnd(getString());
 }
 
 bool LexerEngine::TokenDescriptor::isMatched() const

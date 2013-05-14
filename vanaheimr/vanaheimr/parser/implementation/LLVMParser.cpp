@@ -138,8 +138,13 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 : moduleName(filename), _compiler(compiler)
 {
 	// Load up the lexer with token rules
+	
+	// Simple Rules
 	_lexer.addTokens({"@", "define", "declare", "!", "target", "%",
-		"|", "(", ")", ";", ",", "=", "%", "@", "[", "]", "*"});
+		"|", "(", ")", ";", ",", "=", "%", "@", "[", "]", "\\*", "{", "}"});
+
+	// Regex Rules
+	_lexer.addTokens({"\"*\""});
 
 	_lexer.addWhitespaceRules(" \t\n\r");
 }
