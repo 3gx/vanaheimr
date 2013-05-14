@@ -451,6 +451,11 @@ Function::iterator  Function::findBasicBlock(const std::string& name)
 	return end();
 }
 
+void Function::moveBasicBlock(iterator position, iterator block)
+{
+	_blocks.splice(position, _blocks, block);
+}
+
 Function::local_iterator Function::local_begin()
 {
 	return _locals.begin();
