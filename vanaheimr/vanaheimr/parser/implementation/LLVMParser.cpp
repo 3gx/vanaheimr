@@ -140,11 +140,12 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	// Load up the lexer with token rules
 	
 	// Simple Rules
-	_lexer.addTokens({"@", "define", "declare", "!", "target", "%",
-		"|", "(", ")", ";", ",", "=", "%", "@", "[", "]", "\\*", "{", "}"});
-
+	_lexer.addTokens({"@", "define", "declare", "!", "target", "datalayout",
+		"%", "|", "(", ")", ";", ",", "=", "@", "[", "]",
+		"{", "}", "triple", "type", "i8", "i32", "..."});
+	
 	// Regex Rules
-	_lexer.addTokens({"\"*\""});
+	_lexer.addTokens({"\"*\"", "\\\\*"});
 
 	_lexer.addWhitespaceRules(" \t\n\r");
 }

@@ -137,7 +137,6 @@ static void optimize(const std::string& inputFileName,
 		std::cerr << "VIR Optimizer Failed: optimization failed.\n"; 
 		std::cerr << "  Message: " << e.what() << "\n"; 
 
-		delete module;
 		return;
 	}
 	
@@ -150,7 +149,6 @@ static void optimize(const std::string& inputFileName,
 		std::cerr << "ObjDump Failed: could not open VIR file '"
 			<< outputFileName << "' for writing.\n"; 
 		
-		delete module;
 		return;
 	}
 	
@@ -162,11 +160,9 @@ static void optimize(const std::string& inputFileName,
 	{
 		std::cerr << "ObjDump Failed: binary writing failed.\n"; 
 		std::cerr << "  Message: " << e.what() << "\n"; 
-		delete module;
 		return;
 	}
 	
-	delete module;
 }
 
 }

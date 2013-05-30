@@ -103,6 +103,7 @@ private:
 private:
 	void _createTokens();
 	void _mergeTokens();
+	void _removeWhitespace();
 	
 	char _snext();
 
@@ -251,7 +252,8 @@ void LexerEngine::reset(std::istream* s)
 	
 	// Create the entire set of tokens
 	_createTokens();
-	_mergeTokens();	
+	_mergeTokens();
+	_removeWhitespace();
 }
 
 void LexerEngine::checkpoint()
@@ -342,7 +344,8 @@ void LexerEngine::_mergeTokens()
 			if(token->isMatched())
 			{
 				hydrazine::log("Lexer") << "  Token '" << token->getString()
-					<< "' matched rule '" << (*token->possibleMatches.begin())
+					<< "' matched rule '"
+					<< (*token->possibleMatches.begin())->toString()
 					<< "'\n";
 		
 				continue;
@@ -420,6 +423,40 @@ void LexerEngine::_mergeTokens()
 		_tokens = std::move(newTokens);
 	}
 	
+	_nextToken = _tokens.begin();
+}
+
+void LexerEngine::_removeWhitespace()
+{
+	hydrazine::log("Lexer") << "Removing whitespace matches\n";
+				
+	RuleSet whitespaceRuleSet;
+	
+	for(auto& rule : whitespaceRules)
+	{
+		whitespaceRuleSet.insert(&rule);
+	}
+	
+	// Parallel remove + stream compact
+	TokenVector newTokens;
+
+	for(auto& token : _tokens)
+	{
+		if(whitespaceRuleSet.count(token.getMatchedRule()) == 0)
+		{
+			hydrazine::log("Lexer") << " lexed '"
+				<< token.getString() << "'\n";
+			newTokens.push_back(token);
+		}
+		else
+		{
+			hydrazine::log("Lexer") << "  removed '"
+				<< token.getString() << "'\n";
+		}
+	}
+	
+	_tokens = std::move(newTokens);
+
 	_nextToken = _tokens.begin();
 }
 
@@ -579,6 +616,7 @@ bool LexerEngine::_isAMergePossible(
 		return false;
 	}
 	
+	hydrazine::log("Lexer") << "    merge is possible.\n";
 	return true;
 }
 	
