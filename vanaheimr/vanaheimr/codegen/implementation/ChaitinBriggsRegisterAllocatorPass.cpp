@@ -65,11 +65,11 @@ void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 		getAnalysis("InterferenceAnalysis"));
 	assert(interferenceAnalysis != nullptr);
 	
-	auto machineModel = compiler::Compiler::getSingleton()->getMachineModel();
+	_machine = compiler::Compiler::getSingleton()->getMachineModel();
 	
 	// attempt to color the interferences
 	color(_spilled, _allocated, f, *interferenceAnalysis,
-		machineModel->totalRegisterCount());
+		_machine->totalRegisterCount());
 	
 	// TODO: spill if allocation fails
 	assertM(_spilled.empty(), "No support for spills yet.");
