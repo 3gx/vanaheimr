@@ -10,6 +10,10 @@
 #include <vanaheimr/analysis/interface/InterferenceAnalysis.h>
 
 #include <vanaheimr/machine/interface/MachineModel.h>
+
+#include <vanaheimr/machine/interface/PhysicalRegisterOperand.h>
+#include <vanaheimr/machine/interface/PhysicalIndirectOperand.h>
+
 #include <vanaheimr/compiler/interface/Compiler.h>
 
 #include <vanaheimr/ir/interface/Function.h>
@@ -49,6 +53,8 @@ typedef util::LargeMap<unsigned int, unsigned int> RegisterMap;
 static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	RegisterMap& allocated, const ir::Function& function,
 	const InterferenceAnalysis& interferences, unsigned int colors);
+static void assignRegisters(ir::Function& f,
+	const ChaitinBriggsRegisterAllocatorPass& allocator);
 
 void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 {
@@ -69,7 +75,7 @@ void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 	assertM(_spilled.empty(), "No support for spills yet.");
 	
 	// TODO: Map colors to registers
-	
+	assignRegisters(f, *this);
 }
 
 transforms::Pass* ChaitinBriggsRegisterAllocatorPass::clone() const
@@ -338,6 +344,57 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	report("  allocation score " << score);
 	
 }
+
+static void replaceVirtualRegisterWithPhysical(ir::Operand*& operand,
+	const ChaitinBriggsRegisterAllocatorPass& allocator)
+{
+	if(!operand->isRegister()) return;
+
+	auto newOperand = operand;
+	
+	if(operand->isIndirect())
+	{
+		auto indirectOperand = static_cast<ir::IndirectOperand*>(operand);
+		
+		newOperand = new machine::PhysicalIndirectOperand(
+			allocator.getPhysicalRegister(*indirectOperand->virtualRegister),
+			indirectOperand->virtualRegister, indirectOperand->offset,
+			indirectOperand->instruction);
+	}
+	else
+	{
+		auto registerOperand = static_cast<ir::RegisterOperand*>(operand);
+	
+		newOperand = new machine::PhysicalRegisterOperand(
+			allocator.getPhysicalRegister(*registerOperand->virtualRegister),
+			registerOperand->virtualRegister, registerOperand->instruction);
+	}
+
+	delete operand;
+	
+	operand = newOperand;
+}
+
+static void assignRegisters(ir::Function& f,
+	const ChaitinBriggsRegisterAllocatorPass& allocator)
+{
+	for(auto& block : f)
+	{
+		for(auto& instruction : block)
+		{
+			for(auto& read : instruction->reads)
+			{
+				replaceVirtualRegisterWithPhysical(read, allocator);
+			}
+
+			for(auto& write : instruction->writes)
+			{
+				replaceVirtualRegisterWithPhysical(write, allocator);
+			}
+		}
+	}
+}
+
 
 }
 

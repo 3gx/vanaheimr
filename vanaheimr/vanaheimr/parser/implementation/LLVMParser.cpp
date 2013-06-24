@@ -142,10 +142,10 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	// Simple Rules
 	_lexer.addTokens({"@", "define", "declare", "!", "target", "datalayout",
 		"%", "|", "(", ")", ";", ",", "=", "@", "[", "]",
-		"{", "}", "triple", "type", "i8", "i32", "..."});
+		"{", "}", "triple", "type", "i8", "i32", "i16", "i64", "..."});
 	
 	// Regex Rules
-	_lexer.addTokens({"\"*\"", "\\\\*"});
+	_lexer.addTokens({"\".*\"", "\\\\.*", "[:digit:]*", "[:alnum:]*"});
 
 	_lexer.addWhitespaceRules(" \t\n\r");
 }
