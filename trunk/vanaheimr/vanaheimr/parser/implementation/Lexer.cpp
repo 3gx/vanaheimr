@@ -642,7 +642,7 @@ bool LexerEngine::_canMerge(
 	}
 	
 	// Or the right being a token begin
-	if(!token->isBeginMatched())
+	if(!_isNewToken(token) && !token->isBeginMatched())
 	{
 		if(_couldBeTokenBegin(next))
 		{
