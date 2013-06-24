@@ -30,10 +30,10 @@ public:
 
 public:
 	/*! \brief Write the module to a binary */
-	virtual void writeBinary(std::ostream&) = 0;
+	virtual void writeBinary(std::ostream&) const = 0;
 
 	/*! \brief Write the module as IR to an assembly file */
-	virtual void writeAssembly(std::ostream&) = 0;
+	virtual void writeAssembly(std::ostream&) const = 0;
 };
 
 /*! \brief Represents a single compilation unit. */
@@ -99,10 +99,10 @@ public:
 
 public:
 	/*! \brief Write the module to a binary */
-	void writeBinary(std::ostream&);
+	void writeBinary(std::ostream&) const;
 
 	/*! \brief Write the module as IR to an assembly file */
-	void writeAssembly(std::ostream&);
+	void writeAssembly(std::ostream&) const;
 
 public:
 	//! Function Iteration
