@@ -154,14 +154,14 @@ Module::global_iterator Module::removeGlobal(global_iterator g)
 	return _globals.erase(g);
 }
 
-void Module::writeBinary(std::ostream& stream)
+void Module::writeBinary(std::ostream& stream) const
 {
 	as::BinaryWriter writer;
 	
 	writer.write(stream, *this);
 }
 
-void Module::writeAssembly(std::ostream& stream)
+void Module::writeAssembly(std::ostream& stream) const
 {
 	as::AssemblyWriter writer;
 	
