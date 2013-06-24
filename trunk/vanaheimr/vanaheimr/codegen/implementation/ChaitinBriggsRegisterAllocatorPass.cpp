@@ -75,6 +75,8 @@ void ChaitinBriggsRegisterAllocatorPass::runOnFunction(Function& f)
 	assertM(_spilled.empty(), "No support for spills yet.");
 	
 	// TODO: Map colors to registers
+	
+	// Assign registers
 	assignRegisters(f, *this);
 }
 
@@ -334,6 +336,8 @@ static void color(RegisterAllocator::VirtualRegisterSet& spilled,
 	
 	for(auto& reg : registers)
 	{
+		allocated.insert(std::make_pair(reg.virtualRegister->id, reg.color));
+		
 		score += reg.color;
 		
 		report("   vr" << reg.virtualRegister->id
