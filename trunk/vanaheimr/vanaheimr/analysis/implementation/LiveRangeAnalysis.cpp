@@ -80,9 +80,11 @@ bool LiveRangeAnalysis::LiveRange::interferesWith(const LiveRange& range) const
 		
 		while(user != block->rend())
 		{
+			if(range.definingInstructions.count(*user) != 0) break;
+		
 			if(usingInstructions.count(*user) != 0)    return true;
 			if(definingInstructions.count(*user) != 0) return true;
-		
+
 			++user;
 		}
 	}
@@ -97,6 +99,8 @@ bool LiveRangeAnalysis::LiveRange::interferesWith(const LiveRange& range) const
 		
 		while(definer != block->end())
 		{
+			if(range.usingInstructions.count(*definer) != 0) break;
+		
 			if(usingInstructions.count(*definer) != 0)    return true;
 			if(definingInstructions.count(*definer) != 0) return true;
 		
