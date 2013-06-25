@@ -982,7 +982,7 @@ Instruction* Frem::clone() const
 
 /*! \brief Get a pointer to a subtype of an aggregate */
 
-Getelementptr::Getelementptr(const IndexVector& i, BasicBlock* b)
+Getelementptr::Getelementptr(BasicBlock* b)
 : UnaryInstruction(Instruction::Getelementptr, b)
 {
 
@@ -997,30 +997,27 @@ const Type* Getelementptr::getSelectedType() const
 {
 	const Type* selected = a()->type();
 
-	for(auto index : indices)
+	for(auto read = reads.begin() + 2; read != reads.end(); ++read)
 	{
 		assert(selected->isAggregate());
 		
 		auto aggregate = static_cast<const AggregateType*>(selected);
-	
-		selected = aggregate->getTypeAtIndex(index);
+		
+		if((*read)->isImmediate())
+		{
+			auto immediate = static_cast<const ImmediateOperand*>(*read);
+		
+			selected = aggregate->getTypeAtIndex(immediate->uint);
+			
+			continue;
+		}
+		
+		assert((*read)->isRegister());
+		
+		selected = aggregate->getTypeAtIndex(0);
 	}
 
 	return selected;
-}
-
-std::string Getelementptr::toString() const
-{
-	std::stringstream stream;
-	
-	stream << UnaryInstruction::toString();
-	
-	for(auto index : indices)
-	{
-		stream << ", " << index;
-	}
-	
-	return stream.str();
 }
 
 /*! \brief Launch a new HTA at the specified entry point */

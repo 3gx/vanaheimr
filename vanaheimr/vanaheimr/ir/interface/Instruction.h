@@ -530,8 +530,7 @@ public:
 	typedef std::vector<size_t> IndexVector;
 	
 public:
-	Getelementptr(const IndexVector& i = IndexVector(),
-		BasicBlock* b = nullptr);
+	Getelementptr(BasicBlock* b = nullptr);
 
 public:
 	const Type* getSelectedType() const;
@@ -540,10 +539,7 @@ public:
 	virtual Instruction* clone() const;
 
 public:
-	virtual std::string toString() const;
-
-public:
-	IndexVector indices;
+	void addIndex(Operand* o);
 
 };
 
