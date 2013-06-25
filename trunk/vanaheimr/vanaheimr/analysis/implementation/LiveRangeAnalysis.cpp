@@ -13,6 +13,9 @@
 #include <vanaheimr/ir/interface/Function.h>
 #include <vanaheimr/ir/interface/VirtualRegister.h>
 
+// Hydrazine Includes
+#include <hydrazine/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -25,7 +28,8 @@ namespace analysis
 LiveRange::LiveRange(LiveRangeAnalysis* liveRangeAnalysis, VirtualRegister* vr)
 : _analysis(liveRangeAnalysis), _virtualRegister(vr)
 {
-
+	hydrazine::log("LiveRangeAnalysis") << "  Live range for VR - '"
+		<< vr->toString() << "'\n";
 }
 
 LiveRangeAnalysis* LiveRangeAnalysis::LiveRange::liveRangeAnalysis() const
@@ -131,6 +135,9 @@ static void findLiveRange(LiveRangeAnalysis::LiveRange& liveRange,
 
 void LiveRangeAnalysis::analyze(Function& function)
 {
+	hydrazine::log("LiveRangeAnalysis") << "Running analysis on function '"
+		<< function.name() << "'\n";
+	
 	auto dfg = static_cast<DataflowAnalysis*>(getAnalysis("DataflowAnalysis"));
 	assert(dfg != nullptr);
 
@@ -139,6 +146,8 @@ void LiveRangeAnalysis::analyze(Function& function)
 
 	_initializeLiveRanges(function);
 
+	hydrazine::log("LiveRangeAnalysis") << " Discovering live ranges\n";
+	
 	// compute the live range for each variable in parallel (for all)
 	// TODO: use an algorithm that merges partial results
 	for(auto virtualRegister = function.register_begin();
@@ -183,6 +192,8 @@ void LiveRangeAnalysis::_initializeLiveRanges(Function& function)
 	_liveRanges.clear();
 	_liveRanges.reserve(function.register_size());
 
+	hydrazine::log("LiveRangeAnalysis") << " Creating live ranges\n";
+	
 	for(auto virtualRegister = function.register_begin();
 		virtualRegister != function.register_end(); ++virtualRegister)
 	{
@@ -226,6 +237,9 @@ static void walkUpPredecessor(BasicBlockSet& visited, LiveRange& liveRange,
 
 	// add the block to the live range
 	liveRange.fullyCoveredBlocks.insert(block);
+
+	hydrazine::log("LiveRangeAnalysis") << "   fully covered block '"
+		<< block->name() << "'\n";
 
 	// recurse on predecessors with the value as a live out
 	auto predecessors = cfg->getPredecessors(*block);
@@ -278,6 +292,9 @@ static void findLiveRange(LiveRangeAnalysis::LiveRange& liveRange,
 
 	liveRange.definingInstructions = dfg->getReachingDefinitions(*vr);
 	liveRange.usingInstructions    = dfg->getReachedUses(*vr);
+
+	hydrazine::log("LiveRangeAnalysis") << "  Discovering live range for '"
+		<< liveRange.virtualRegister()->toString() << "'\n";
 
 	// in parallel
 	for(auto use : liveRange.usingInstructions)
