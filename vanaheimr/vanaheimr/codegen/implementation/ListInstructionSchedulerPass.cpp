@@ -119,6 +119,8 @@ static void schedule(ir::BasicBlock& block, analysis::DependenceAnalysis& dep)
 			if(!anyDependencies(successor, dep, remainingInstructions))
 			{
 				remainingInstructions.erase(remaining);
+				
+				report("    released '" << successor->toString() << "'");
 
 				readyInstructions.insert(successor);
 			}

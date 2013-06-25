@@ -527,9 +527,6 @@ public:
 class Getelementptr : public UnaryInstruction
 {
 public:
-	typedef std::vector<size_t> IndexVector;
-	
-public:
 	Getelementptr(BasicBlock* b = nullptr);
 
 public:
@@ -537,9 +534,6 @@ public:
 
 public:
 	virtual Instruction* clone() const;
-
-public:
-	void addIndex(Operand* o);
 
 };
 
