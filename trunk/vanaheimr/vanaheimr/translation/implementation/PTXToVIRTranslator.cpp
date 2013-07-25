@@ -109,9 +109,10 @@ static ::ir::ControlFlowGraph::BlockPointerVector
 	IRKernel& ptx = const_cast<IRKernel&>(constPTX);
 	
 	transforms::PassManager manager(const_cast<PTXModule*>(ptx.module));
-	manager.addPass(pass);
+	manager.addPass(&pass);
 	
 	manager.runOnKernel(ptx);
+	manager.releasePasses();
 	
 	return pass.blocks;
 }
