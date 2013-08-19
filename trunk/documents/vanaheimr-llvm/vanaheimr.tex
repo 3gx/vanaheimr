@@ -101,14 +101,13 @@ for many application domains (e.g. database queries, lossless compression,
 lexing/parsing, discrete event simulation, and discrete optimization) despite a
 300x (and exponentially growing) difference in peak throughput.  Two of the most
 important problems in computing today involve designing architectures with more
-gradual performance cliffs~\cite{ref:echelon} (without sacrificing 
-efficiency), and designing bulk-synchronous algorithms for irregular
-applications.  
+gradual performance cliffs~\cite{ref:echelon}, and designing bulk-synchronous algorithms for irregular
+applications~\cite{ref:irregular-applications}.  
 
 Vanaheimr is a project that takes an aggressive engineering approach to these
 problems. It explores the detailed design of a from-scratch reimplementation of
-the Low-Level Virtual Machine (LLVM) compiler library (excluding CLANG) that
-runs entirely on a GPU with no CPU interaction.  
+the Low-Level Virtual Machine (LLVM) compiler library~\cite{ref:llvm}
+(excluding CLANG) that runs entirely on a GPU with no CPU interaction.  
 
 Vanaheimr's explicit goals are: 
 
