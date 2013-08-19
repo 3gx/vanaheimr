@@ -125,21 +125,21 @@ In Vanaheimr, we frame the compilation process from LLVM IR to a
 target-specific binary as a series of bulk transformations on an IR data
 structure that leverage supporting analysis structures that are created and
 updated dynamically.  The core IR data structure retains many essential aspects
-of  the original LLVM design (e.g. native SSA form, Modules, Functions, Values,
+of the original LLVM design (e.g. native SSA form, Modules, Functions, Values,
 BasicBlocks, etc), which we use as a model.  The hierarchical organization of
 the IR is exploited throughout the compilation process to avoid global
-synchronization.  Transformations, which mimic the LLVM PassManager framework,
-perform the majority
+synchronization.  IR transformations, which mimic the LLVM PassManager
+framework, perform the majority
 of their work at the lowest levels of the hierarchy (i.e. per-instruction or
 per-value), in an attempt to expose a large amount of parallelism for even
 moderately-sized programs.  We note that in general, local optimizations
-(e.g. peephole updates) are the easiest to map to parallel algorithms, while
+(e.g. peephole) are the easiest to map to parallel algorithms, while
 global optimizations (e.g. register allocation, partial redundancy elimination)
 are the hardest.  Therefore, most of our work targets global optimization.
 
 Although work on Vanaheimr is still at an early stage, we are ready to share
 the high level design of the compiler and report on several interesting case
-studies involving the design of individual components.  We are interested in
+studies involving the design of individual components.  We are seeking
 feedback from the LLVM community.
 
 % Contributions
