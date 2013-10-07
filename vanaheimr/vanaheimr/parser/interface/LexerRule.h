@@ -8,7 +8,7 @@
 
 // Standard Library Includes
 #include <string>
-#include <set>
+#include <vector>
 
 namespace vanaheimr
 {
@@ -74,14 +74,27 @@ private:
 	
 	bool _isWildcard(const_iterator) const;
 	
-private:
-	typedef std::set<const_iterator> IteratorSet;
+private:	
+	enum CharacterClass
+	{
+		DotClass,
+		StarClass,
+		RawClass
+	};
 	
-private:
-	std::string _regex;
-	IteratorSet _wildcards;
+	class Character
+	{
+	public:
+		CharacterClass type;
+		char           character;
 	
-
+	};
+	
+	typedef std::vector<Character> CharacterVector;
+		
+private:
+	CharacterVector _regex;
+	
 };
 
 }
