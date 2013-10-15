@@ -142,11 +142,13 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	// Simple Rules
 	_lexer.addTokens({"@", "define", "declare", "!", "target", "datalayout",
 		"%", "|", "(", ")", ";", ",", "=", "@", "[", "]",
-		"{", "}", "triple", "type", "i8", "i32", "i16", "i64", "..."});
+		"{", "}", "triple", "type", "i8", "i32", "i16", "i64", "\\.\\.\\."});
 	
 	// Regex Rules
-	_lexer.addTokens({"\".*\"", "\\\\.*", "[:digit:]*", "[:alnum:]*"});
-
+	_lexer.addTokens({"\"[^\n\"]*\""}); // strings 
+	_lexer.addTokens({"[:digit:]*"}); // decimal constants
+	_lexer.addTokens({"//.*"}); // comments
+	
 	_lexer.addWhitespaceRules(" \t\n\r");
 }
 

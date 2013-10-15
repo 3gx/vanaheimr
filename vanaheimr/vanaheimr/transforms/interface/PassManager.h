@@ -73,8 +73,12 @@ public:
 	void addDependence(const std::string& dependentPassName,
 		const std::string& passName);
 	
-	/*! \brief Clears all added passes */
+	/*! \brief Clears all added passes (deletes them) */
 	void clear();
+
+	/*! \brief Releases all added passes, they are no longer
+		owned by the manager */
+	void releasePasses();
 	
 public:
 	/*! \brief Runs passes on a specific Function contained in the module.

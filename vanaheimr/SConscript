@@ -108,7 +108,7 @@ for program in programs:
 
 # Install rules
 if env['install']:
-	print 'Installing vanaheimr...'
+	print 'Installing vanaheimr... at ' + env['install_path']
 
 	installed = []
 	installed.append(libvanaheimr)
