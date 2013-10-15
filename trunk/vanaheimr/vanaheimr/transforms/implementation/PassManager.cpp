@@ -460,6 +460,19 @@ void PassManager::clear()
 	_extraDependences.clear();
 }
 
+void PassManager::releasePasses()
+{
+	for(auto pass = _ownedTemporaryPasses.begin();
+		pass != _ownedTemporaryPasses.end(); ++pass)
+	{
+		delete *pass;
+	}
+	
+	_ownedTemporaryPasses.clear();
+	_passes.clear();
+	_extraDependences.clear();
+}
+
 void PassManager::runOnFunction(const std::string& name)
 {
 	auto function = _module->getFunction(name);

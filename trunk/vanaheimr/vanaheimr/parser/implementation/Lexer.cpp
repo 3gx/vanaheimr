@@ -123,6 +123,9 @@ private:
 	bool _couldBeTokenEnd(const LexerContext& token);
 	bool _couldBeTokenBegin(const LexerContext& token);
 	
+	const LexerRule* _getRuleThatMatchesWithEnd(const LexerContext&) const;
+	const LexerRule* _getRuleThatMatchesWithBegin(const LexerContext&) const;
+
 	bool _canMatch(const std::string& rule,
 		const std::string& text);
 	
@@ -360,7 +363,8 @@ void LexerEngine::_mergeTokens()
 		if(unmatchedCount == 0) break;
 		
 		assertM(counter < 2 || unmatchedCount < unmatchedTokenCount,
-			"Lexing did not make forward progress during this iteration.");
+			"Lexing did not make enough progress during this iteration ("
+			<< unmatchedCount << " vs " << unmatchedTokenCount << ").");
 
 		unmatchedTokenCount = unmatchedCount;
 		
@@ -388,6 +392,7 @@ void LexerEngine::_mergeTokens()
 				hydrazine::log("Lexer") << "   attempting to merge with "
 					"end of stream.\n";
 				newTokens.push_back(_mergeWithEnd(token));
+				
 				continue;
 			}
 			else
@@ -557,6 +562,14 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithEnd(
 		}
 	}
 	
+	if(newToken.isMatched())
+	{
+		hydrazine::log("Lexer") << "   Token '" << newToken.getString()
+			<< "' matched rule '"
+			<< (*newToken.possibleMatches.begin())->toString()
+			<< "'\n";
+	}
+	
 	return newToken;
 }
 
@@ -597,6 +610,14 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(
 		}
 	}
 	
+	if(newToken.isMatched())
+	{
+		hydrazine::log("Lexer") << "   Token '" << newToken.getString()
+			<< "' matched rule '"
+			<< (*newToken.possibleMatches.begin())->toString()
+			<< "'\n";
+	}
+	
 	return newToken;
 }
 
@@ -619,7 +640,7 @@ bool LexerEngine::_isAMergePossible(
 	hydrazine::log("Lexer") << "    merge is possible.\n";
 	return true;
 }
-	
+
 bool LexerEngine::_canMerge(
 	const LexerContext& token,
 	const LexerContext& next)
@@ -636,7 +657,8 @@ bool LexerEngine::_canMerge(
 		if(!_isNewToken(token))
 		{
 			hydrazine::log("Lexer") << "     can't merge, "
-				"left could be a token end.\n";
+				"left could be a token end ("
+				<< _getRuleThatMatchesWithEnd(token)->toString() << ").\n";
 			return false;
 		}
 	}
@@ -647,7 +669,8 @@ bool LexerEngine::_canMerge(
 		if(_couldBeTokenBegin(next))
 		{
 			hydrazine::log("Lexer") << "     can't merge, "
-				"right could be a token begin.\n";
+				"right could be a token begin ("
+				<< _getRuleThatMatchesWithBegin(next)->toString() << ").\n";
 	
 			return false;
 		}
@@ -658,7 +681,7 @@ bool LexerEngine::_canMerge(
 
 bool LexerEngine::_isNewToken(const LexerContext& token)
 {
-	bool isNewToken = token == _tokens.begin();
+	bool isNewToken = (token == _tokens.begin());
 
 	if(!isNewToken)
 	{
@@ -672,28 +695,39 @@ bool LexerEngine::_isNewToken(const LexerContext& token)
 
 bool LexerEngine::_couldBeTokenEnd(const LexerContext& token)
 {
-	auto string = token->getString();
-	
-	for(auto rule : token->possibleMatches)
-	{
-		if(rule->canMatchWithEnd(string)) return true;
-	}
-	
-	return false;
+	return _getRuleThatMatchesWithEnd(token) != nullptr;
 }
 
 bool LexerEngine::_couldBeTokenBegin(const LexerContext& token)
+{
+	return _getRuleThatMatchesWithBegin(token) != nullptr;
+}
+
+const LexerRule* LexerEngine::_getRuleThatMatchesWithBegin(
+	const LexerContext& token) const
 {
 	auto string = token->getString();
 	
 	for(auto rule : token->possibleMatches)
 	{
-		if(rule->canMatchWithBegin(string)) return true;
+		if(rule->canMatchWithBegin(string)) return rule;
 	}
 	
-	return false;
+	return nullptr;
 }
 
+const LexerRule* LexerEngine::_getRuleThatMatchesWithEnd(
+	const LexerContext& token) const
+{
+	auto string = token->getString();
+	
+	for(auto rule : token->possibleMatches)
+	{
+		if(rule->canMatchWithEnd(string)) return rule;
+	}
+	
+	return nullptr;
+}
 
 LexerEngine::TokenDescriptor::TokenDescriptor(LexerEngine* e)
 : beginPosition(e->stream->tellg()),
@@ -748,8 +782,9 @@ bool LexerEngine::TokenDescriptor::isBeginMatched() const
 
 bool LexerEngine::TokenDescriptor::isEndMatched() const
 {
-	assert(!possibleMatches.empty());
-	
+	assertM(!possibleMatches.empty(), "No possible matched for token '"
+		<< getString() << "'");
+		
 	if(possibleMatches.size() > 1) return false;
 
 	auto firstRule = (*possibleMatches.begin());
@@ -759,6 +794,9 @@ bool LexerEngine::TokenDescriptor::isEndMatched() const
 
 bool LexerEngine::TokenDescriptor::isMatched() const
 {
+	assertM(!possibleMatches.empty(), "No possible matched for token '"
+		<< getString() << "'");
+		
 	if(possibleMatches.size() > 1) return false;
 
 	auto firstRule = (*possibleMatches.begin());
@@ -773,6 +811,9 @@ size_t LexerEngine::TokenDescriptor::size() const
 
 LexerRule* LexerEngine::TokenDescriptor::getMatchedRule()
 {
+	assertM(!possibleMatches.empty(), "No possible matched for token '"
+		<< getString() << "'");
+		
 	if(possibleMatches.size() == 1) return *possibleMatches.begin();
 
 	return nullptr;
