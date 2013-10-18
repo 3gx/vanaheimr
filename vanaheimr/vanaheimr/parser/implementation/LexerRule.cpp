@@ -10,6 +10,7 @@
 // Standard Library Includes
 #include <vector>
 #include <cassert>
+#include <algorithm>
 
 namespace vanaheimr
 {
@@ -428,10 +429,97 @@ LexerRule::Character* AlphaNumericCharacter::clone() const
 	return new AlphaNumericCharacter;
 }
 
+class NewCharacterClass : public LexerRule::Character
+{
+public:
+	NewCharacterClass(const std::string& characters, bool invert);
+	
+public:
+	virtual bool matches(const_iterator& position,
+		const_iterator end) const;
+	
+public:
+	virtual Character* clone() const;
+	
+private:
+	std::string _classMembers;
+	bool        _invert;
+	
+};
+
+NewCharacterClass::NewCharacterClass(const std::string& m, bool i)
+: _classMembers(m), _invert(i)
+{
+
+}
+
+bool NewCharacterClass::matches(const_iterator& position,
+	const_iterator end) const
+{
+	bool result = _classMembers.find(*position) != std::string::npos;
+	bool finalResult = result ^ _invert;
+
+	if(finalResult)
+	{
+		++position;
+
+		return true;
+	}
+	
+	return false;
+}
+
+LexerRule::Character* NewCharacterClass::clone() const
+{
+	return new NewCharacterClass(*this);
+}
+
 static bool containsString(std::string::const_iterator begin, 
 	std::string::const_iterator end, const std::string& string)
 {
 	return std::string(begin, end).find(string) == 0;
+}
+
+static bool isCharacterClass(std::string::const_iterator begin,
+	std::string::const_iterator end)
+{
+	if(begin == end)
+	{
+		return false;
+	}
+
+	if(*begin != '[')
+	{
+		return false;
+	}
+
+	auto position = std::find(begin, end, ']');
+
+	return position != end;
+}
+
+static void parseCharacterClass(std::string& members, bool& invert,
+	std::string::const_iterator& begin, std::string::const_iterator end)
+{
+	// skip the [
+	++begin;
+
+	// find the ]
+	auto endOfClass = std::find(begin, end, ']');
+
+	assert(endOfClass != end);	
+
+	invert = false;
+
+	if(*begin == '^')
+	{
+		++begin;
+		invert = true;
+	}
+
+	members = std::string(begin, endOfClass);
+
+	begin = endOfClass + 1;
 }
 
 void LexerRule::_formRegex(const_iterator& begin, const_iterator end)
@@ -467,6 +555,15 @@ void LexerRule::_formRegex(const_iterator& begin, const_iterator end)
 		begin += sizeof("[:digit:]");
 		
 		_regex.push_back(new NumericCharacter());
+	}
+	else if(isCharacterClass(begin, end))
+	{
+		std::string classMembers;
+		bool invert = false;
+
+		parseCharacterClass(classMembers, invert, begin, end);
+		
+		_regex.push_back(new NewCharacterClass(classMembers, invert));
 	}
 	else
 	{
