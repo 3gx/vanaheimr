@@ -52,12 +52,19 @@ public:
 	
 	public:
 		LexerEngine* engine;
-		
+	
+	public:
+		bool tokenIsMatched;
+	
 	public:
 		bool   isEndMatched()   const;
 		bool   isBeginMatched() const;
-		bool   isMatched()      const;
 		size_t size()           const;
+	
+	public:	
+		bool   isMatched() const;
+		bool   isMatched();
+		bool   isMatched(const TokenDescriptor& next);
 	
 	public:
 		LexerRule* getMatchedRule();
@@ -349,7 +356,7 @@ void LexerEngine::_mergeTokens()
 			if(token->isMatched())
 			{
 				hydrazine::log("Lexer") << "  Token '" << token->getString()
-					<< "' matched rule '"
+					<< "' after filtering matched rule '"
 					<< (*token->possibleMatches.begin())->toString()
 					<< "'\n";
 		
@@ -378,13 +385,24 @@ void LexerEngine::_mergeTokens()
 		// Parallel for-all
 		for(auto token = _tokens.begin(); token != _tokens.end(); ++token)
 		{
-			if(token->isMatched())
-			{
-				newTokens.push_back(*token);
-				continue;
-			}
-		
 			auto next = token; ++next;
+			
+			if(next == _tokens.end())
+			{
+				if(token->isMatched())
+				{
+					newTokens.push_back(*token);
+					continue;
+				}
+			}
+			else
+			{
+				if(token->isMatched(*next))
+				{
+					newTokens.push_back(*token);
+					continue;
+				}
+			}
 
 			hydrazine::log("Lexer") << "  For unmatched token '"
 				<< token->getString() << "'\n";
@@ -567,7 +585,7 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithEnd(
 	if(newToken.isMatched())
 	{
 		hydrazine::log("Lexer") << "   Token '" << newToken.getString()
-			<< "' matched rule '"
+			<< "' after merging with end matched rule '"
 			<< (*newToken.possibleMatches.begin())->toString()
 			<< "'\n";
 	}
@@ -615,7 +633,7 @@ LexerEngine::TokenDescriptor LexerEngine::_mergeWithNext(
 	if(newToken.isMatched())
 	{
 		hydrazine::log("Lexer") << "   Token '" << newToken.getString()
-			<< "' matched rule '"
+			<< "' after merging matched rule '"
 			<< (*newToken.possibleMatches.begin())->toString()
 			<< "'\n";
 	}
@@ -691,7 +709,10 @@ bool LexerEngine::_isNewToken(const LexerContext& token)
 	{
 		auto previous = token; --previous;
 		
-		isNewToken = previous->isEndMatched();
+		if(previous->isEndMatched())
+		{
+			return true;
+		}
 	}
 	
 	return isNewToken;
@@ -766,7 +787,7 @@ const LexerRule* LexerEngine::_getRuleThatMatchesWithEnd(
 LexerEngine::TokenDescriptor::TokenDescriptor(LexerEngine* e)
 : beginPosition(e->stream->tellg()),
   endPosition((size_t)e->stream->tellg() + 1),
-  line(e->line), column(e->column), engine(e)
+  line(e->line), column(e->column), engine(e), tokenIsMatched(false)
 {
 	hydrazine::log("Lexer") << " created new token '"
 		<< getString() << "'\n";
@@ -788,7 +809,7 @@ LexerEngine::TokenDescriptor::TokenDescriptor(LexerEngine* e)
 	if(isMatched())
 	{
 		hydrazine::log("Lexer") << "  Token '" << getString()
-			<< "' matched rule '" << getMatchedRule()->toString()
+			<< "' during creation matched rule '" << getMatchedRule()->toString()
 			<< "'\n";
 	}
 }
@@ -797,7 +818,8 @@ LexerEngine::TokenDescriptor::TokenDescriptor(const TokenDescriptor& left,
 	const TokenDescriptor& right)
 : beginPosition(left.beginPosition),
   endPosition(right.endPosition),
-  line(left.line), column(right.column), engine(left.engine)
+  line(left.line), column(right.column), engine(left.engine),
+  tokenIsMatched(false)
 {
 	assert(left.endPosition == right.beginPosition);
 }
@@ -819,28 +841,85 @@ bool LexerEngine::TokenDescriptor::isEndMatched() const
 	assertM(!possibleMatches.empty(), "No possible matched for token '"
 		<< getString() << "'");
 		
+	if(isMatched())
+	{
+		return true;
+	}
+
 	if(possibleMatches.size() > 1) return false;
 
 	auto firstRule = (*possibleMatches.begin());
 
+	if(firstRule->isEndRepeated()) return false;
+
 	return firstRule->canOnlyMatchWithEnd(getString());
+}
+
+size_t LexerEngine::TokenDescriptor::size() const
+{
+	return endPosition - beginPosition;
 }
 
 bool LexerEngine::TokenDescriptor::isMatched() const
 {
 	assertM(!possibleMatches.empty(), "No possible matched for token '"
 		<< getString() << "'");
+	
+	if(tokenIsMatched) return true;
 		
 	if(possibleMatches.size() > 1) return false;
 
 	auto firstRule = (*possibleMatches.begin());
 
-	return firstRule->isExactMatch(getString());	
+	if(firstRule->isEndRepeated()) return false;
+
+	bool match = firstRule->isExactMatch(getString());
+
+	return match;
 }
 
-size_t LexerEngine::TokenDescriptor::size() const
+bool LexerEngine::TokenDescriptor::isMatched()
 {
-	return endPosition - beginPosition;
+	if(const_cast<const TokenDescriptor*>(this)->isMatched())
+	{
+		if(!tokenIsMatched)
+		{
+			tokenIsMatched = true;
+			hydrazine::log("Lexer") << "  Token '" << getString()
+				<< "' is matched exactly\n";
+		}
+	}
+
+	return tokenIsMatched;
+}
+
+bool LexerEngine::TokenDescriptor::isMatched(const TokenDescriptor& next)
+{
+	if(tokenIsMatched) return true;
+	
+	if(possibleMatches.size() > 1) return false;
+	
+	auto firstRule = (*possibleMatches.begin());
+	
+	auto string = getString();
+
+	if(firstRule->isExactMatch(string))
+	{
+		if(firstRule->isEndRepeated())
+		{
+			auto combined = string + next.getString();
+
+			if(firstRule->isExactMatch(combined))
+			{
+				return false;
+			}
+		}
+		tokenIsMatched = true;
+		return true;
+	}
+
+	return false;
+
 }
 
 LexerRule* LexerEngine::TokenDescriptor::getMatchedRule()

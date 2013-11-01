@@ -39,6 +39,9 @@ public:
 	bool isExactMatch(const std::string&) const;
 
 public:
+	bool isEndRepeated() const;
+
+public:
 	const std::string& toString() const;
 	
 public:
@@ -76,6 +79,9 @@ public:
 			const_iterator end) const = 0;
 		virtual bool matches(const_reverse_iterator& position,
 			const_reverse_iterator end) const;
+
+	public:
+		virtual bool isRepeated() const;
 	
 	public:
 		virtual Character* clone() const = 0;
