@@ -141,7 +141,7 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	
 	// Simple Rules
 	_lexer.addTokens({"@", "define", "declare", "!", "target", "datalayout",
-		"%", "|", "(", ")", ";", ",", "=", "@", "[", "]", "\\*",
+		"%", "|", "(", ")", ";", ",", "=", "@", "[", "]", "\\*", "opaque", "void",
 		"{", "}", "triple", "type", "i8", "i32", "i16", "i64", "\\.\\.\\.", "x"});
 	
 	// Regex Rules

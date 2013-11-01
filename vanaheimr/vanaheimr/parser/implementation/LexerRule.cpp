@@ -61,12 +61,13 @@ bool LexerRule::canMatchWithBegin(const std::string& text) const
 
 bool LexerRule::canMatchWithEnd(const std::string& text) const
 {
+	// poor man's backtracking, incorrect in some cases (TODO: real backtracking)
 	for(auto beginPosition = text.begin();
 		beginPosition != text.end(); ++beginPosition)
 	{
 		if(_matchWithEnd(beginPosition, text.end())) return true;
 	}
-	
+
 	return false;
 }
 
@@ -97,11 +98,6 @@ bool LexerRule::canMatch(const std::string& text) const
 	return false;
 }
 
-const std::string& LexerRule::toString() const
-{
-	return _rawString;
-}
-
 bool LexerRule::isExactMatch(const std::string& text) const
 {
 	auto textMatchEnd = text.begin();
@@ -114,6 +110,18 @@ bool LexerRule::isExactMatch(const std::string& text) const
 	}
 	
 	return textMatchEnd == text.end() && ruleMatchEnd == regex_end();
+}
+
+bool LexerRule::isEndRepeated() const
+{
+	if(empty()) return false;
+
+	return (*regex_rbegin())->isRepeated();
+}
+
+const std::string& LexerRule::toString() const
+{
+	return _rawString;
 }
 
 LexerRule::iterator LexerRule::begin()
@@ -183,6 +191,11 @@ bool LexerRule::Character::matches(const_reverse_iterator& position,
 		return true;
 	}
 	
+	return false;
+}
+
+bool LexerRule::Character::isRepeated() const
+{
 	return false;
 }
 
@@ -281,6 +294,8 @@ public:
 		const_iterator end) const;
 	virtual bool matches(const_reverse_iterator& position,
 			const_reverse_iterator end) const;
+public:
+	virtual bool isRepeated() const;
 
 public:
 	virtual Character* clone() const;
@@ -345,6 +360,11 @@ bool RepeatedCharacter::matches(const_reverse_iterator& position,
 		}
 	}
 	
+	return true;
+}
+
+bool RepeatedCharacter::isRepeated() const
+{
 	return true;
 }
 
