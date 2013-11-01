@@ -157,6 +157,12 @@ public:
 	void clear();
 
 public:
+	/*! \brief Add metadata, instruction takes ownership */
+	void addMetadata(MetaData* md);
+	/*! \brief Get access to the instruction metadata  */
+	const MetaData* metadata() const;	
+
+public:
 	virtual Instruction* clone() const = 0;
 
 public:
@@ -164,7 +170,7 @@ public:
 	static Opcode parseOpcode(const std::string& opcode);
 	static Instruction* create(Opcode o, BasicBlock* b);
 	static Instruction* create(const std::string& opcode, BasicBlock* b);
-	
+
 public:
 	/*! \brief The instruction opcode */
 	Opcode opcode;

@@ -554,16 +554,21 @@ bool NewCharacterClass::matches(const_iterator& position,
 		}
 	}
 	
-	if(result == true)
-	{
-		return true;
-	}
-	
 	bool finalResult = result ^ _invert;
 
 	if(finalResult)
 	{
-		++position;
+		if(_invert)
+		{
+			++position;
+		}
+	}
+	else
+	{
+		if(_invert)
+		{
+			--position;
+		}
 	}
 
 	return finalResult;

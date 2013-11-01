@@ -8,6 +8,7 @@
 #include <vanaheimr/ir/interface/Instruction.h>
 #include <vanaheimr/ir/interface/BasicBlock.h>
 
+#include <vanaheimr/ir/interface/MetaData.h>
 #include <vanaheimr/ir/interface/Type.h>
 
 // Hydrazine Includes
@@ -347,6 +348,17 @@ void Instruction::clear()
 	 reads.clear();
 	writes.clear();
 }	
+
+void Instruction::addMetadata(MetaData* md)
+{
+	delete _metadata;
+	_metadata = md;
+}
+
+const MetaData* Instruction::metadata() const
+{
+	return _metadata;
+}
 
 Instruction::Opcode Instruction::parseOpcode(const std::string& opcode)
 {

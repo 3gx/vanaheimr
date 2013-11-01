@@ -131,7 +131,6 @@ private:
 	Function*       _function;
 	InstructionList _instructions;
 	Id              _id;
-	Instruction::Id _nextInstructionId;
 };
 
 template <typename Iterator>
@@ -139,7 +138,6 @@ void BasicBlock::assign(Iterator begin, Iterator end)
 {
 	_instructions.assign(begin, end);
 }
-
 
 }
 
