@@ -271,6 +271,9 @@ def Environment():
 	
 	# add a variable to treat warnings as errors
 	vars.Add(BoolVariable('Werror', 'Treat warnings as errors', 1))
+	
+	# add a variable to build against ocelot 
+	vars.Add(BoolVariable('with_ocelot', 'Compile with ocelot', 0))
 
 	# add a variable to determine the install path
 	default_install_path = '/usr/local'
@@ -322,7 +325,7 @@ def Environment():
 	env.Replace(EXTRA_LIBS=getExtraLibs())
 
 	# get ocelot paths
-	if haveOcelot():
+	if haveOcelot() and env['with_ocelot']:
 		(ocelot_exe_path,ocelot_lib_path,ocelot_inc_path,ocelot_cflags,\
 			ocelot_lflags,ocelot_libs) = getOcelotPaths()
 		env.AppendUnique(LIBPATH = ocelot_lib_path)

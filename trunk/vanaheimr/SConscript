@@ -61,7 +61,7 @@ for dir in directories:
 		regexp = os.path.join(dir, ext)
 		sources.extend(env.Glob(regexp))
 
-if not haveOcelot():
+if not env['HAVE_OCELOT']:
 	sources.extend(env.Glob('hydrazine/implementation/Timer.cpp'))
 	sources.extend(env.Glob('hydrazine/implementation/LowLevelTimer.cpp'))
 	sources.extend(env.Glob('hydrazine/implementation/debug.cpp'))
@@ -84,7 +84,7 @@ vanaheimr_dep_libs.insert(0, '-lvanaheimr')
 # Create programs
 programs = []
 
-if haveOcelot():
+if env['HAVE_OCELOT']:
 	PTXToVIRTranslator = env.Program('ptx-to-vir-translator',
 		['vanaheimr/tools/ptx-to-vir-translator.cpp'], LIBS=vanaheimr_dep_libs)
 

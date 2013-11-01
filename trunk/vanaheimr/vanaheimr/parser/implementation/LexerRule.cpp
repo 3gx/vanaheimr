@@ -429,11 +429,11 @@ LexerRule::Character* AlphaNumericCharacter::clone() const
 	return new AlphaNumericCharacter;
 }
 
-class NewCharacterClass : public LexerRule::Character
+class CharacterRange : public LexerRule::Character
 {
 public:
-	NewCharacterClass(const std::string& characters, bool invert);
-	
+	CharacterRange(char begin, char end);
+
 public:
 	virtual bool matches(const_iterator& position,
 		const_iterator end) const;
@@ -442,31 +442,131 @@ public:
 	virtual Character* clone() const;
 	
 private:
-	std::string _classMembers;
-	bool        _invert;
+	char _begin;
+	char _end;
+};
+
+CharacterRange::CharacterRange(char begin, char end)
+: _begin(begin), _end(end)
+{
+
+}
+
+bool CharacterRange::matches(const_iterator& position,
+	const_iterator end) const
+{
+	char character = *position;
+	
+	if(_begin <= character && character <= _end)
+	{
+		++position;
+		return true;
+	}
+	
+	return false;
+}
+
+LexerRule::Character* CharacterRange::clone() const
+{
+	return new CharacterRange(_begin, _end);
+}
+
+typedef LexerRule::CharacterVector CharacterVector;
+
+class NewCharacterClass : public LexerRule::Character
+{
+public:
+	NewCharacterClass(const CharacterVector& characters, bool invert);
+
+public:
+	~NewCharacterClass();
+	NewCharacterClass(const NewCharacterClass&);
+	NewCharacterClass& operator=(const NewCharacterClass&);
+
+public:
+	virtual bool matches(const_iterator& position,
+		const_iterator end) const;
+	
+public:
+	virtual Character* clone() const;
+	
+private:
+	CharacterVector _classMembers;
+	bool            _invert;
 	
 };
 
-NewCharacterClass::NewCharacterClass(const std::string& m, bool i)
+NewCharacterClass::NewCharacterClass(const CharacterVector& m, bool i)
 : _classMembers(m), _invert(i)
 {
 
 }
 
+NewCharacterClass::~NewCharacterClass()
+{
+	for(auto c : _classMembers)
+	{
+		delete c;
+	}
+}
+
+NewCharacterClass::NewCharacterClass(const NewCharacterClass& c)
+: _invert(c._invert)
+{
+	for(auto classMembers : c._classMembers)
+	{
+		_classMembers.push_back(classMembers->clone());
+	}
+}
+
+NewCharacterClass& NewCharacterClass::operator=(const NewCharacterClass& c)
+{
+	if(&c == this) return *this;
+	
+	for(auto c : _classMembers)
+	{
+		delete c;
+	}
+
+	_classMembers.clear();
+	
+	for(auto classMembers : c._classMembers)
+	{
+		_classMembers.push_back(classMembers->clone());
+	}
+	
+	_invert = c._invert;
+	
+	return *this;
+}
+
 bool NewCharacterClass::matches(const_iterator& position,
 	const_iterator end) const
 {
-	bool result = _classMembers.find(*position) != std::string::npos;
+	bool result = false;
+	
+	for(auto characterClass : _classMembers)
+	{
+		if(characterClass->matches(position, end))
+		{
+			result = true;
+			break;
+		}
+	}
+	
+	if(result == true)
+	{
+		return true;
+	}
+	
 	bool finalResult = result ^ _invert;
 
 	if(finalResult)
 	{
 		++position;
-
-		return true;
 	}
-	
-	return false;
+
+	return finalResult;
 }
 
 LexerRule::Character* NewCharacterClass::clone() const
@@ -498,8 +598,25 @@ static bool isCharacterClass(std::string::const_iterator begin,
 	return position != end;
 }
 
-static void parseCharacterClass(std::string& members, bool& invert,
-	std::string::const_iterator& begin, std::string::const_iterator end)
+static bool isRange(std::string::const_iterator begin, 
+	std::string::const_iterator end)
+{
+	if(std::distance(begin, end) < 3)
+	{
+		return false;
+	}
+	
+	if(begin[1] != '-')
+	{
+		return false;
+	}
+	
+	return true;
+}
+
+static LexerRule::Character* parseCharacterClass(
+	std::string::const_iterator& begin, 
+	std::string::const_iterator end)
 {
 	// skip the [
 	++begin;
@@ -509,17 +626,38 @@ static void parseCharacterClass(std::string& members, bool& invert,
 
 	assert(endOfClass != end);	
 
-	invert = false;
+	bool invert = false;
 
 	if(*begin == '^')
 	{
 		++begin;
 		invert = true;
 	}
-
-	members = std::string(begin, endOfClass);
-
+	
+	CharacterVector members;
+	
+	while(begin != endOfClass)
+	{
+		if(isRange(begin, endOfClass))
+		{
+			char rangeBegin = *begin;
+			char rangeEnd   = begin[2];
+			
+			members.push_back(new CharacterRange(rangeBegin, rangeEnd));
+			
+			begin += 3;
+		}
+		else
+		{
+			char character = *begin; ++begin;
+			
+			members.push_back(new NormalCharacter(character));
+		}
+	}
+	
 	begin = endOfClass + 1;
+	
+	return new NewCharacterClass(members, invert);
 }
 
 void LexerRule::_formRegex(const_iterator& begin, const_iterator end)
@@ -559,11 +697,10 @@ void LexerRule::_formRegex(const_iterator& begin, const_iterator end)
 	else if(isCharacterClass(begin, end))
 	{
 		std::string classMembers;
-		bool invert = false;
 
-		parseCharacterClass(classMembers, invert, begin, end);
+		Character* newCharacter = parseCharacterClass(begin, end);
 		
-		_regex.push_back(new NewCharacterClass(classMembers, invert));
+		_regex.push_back(newCharacter);
 	}
 	else
 	{

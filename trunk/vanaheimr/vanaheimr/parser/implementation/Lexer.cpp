@@ -656,10 +656,13 @@ bool LexerEngine::_canMerge(
 	{
 		if(!_isNewToken(token))
 		{
-			hydrazine::log("Lexer") << "     can't merge, "
-				"left could be a token end ("
-				<< _getRuleThatMatchesWithEnd(token)->toString() << ").\n";
-			return false;
+			if(!_formsLargerMatchOfTheSameRule(token, next))
+			{
+				hydrazine::log("Lexer") << "     can't merge, "
+					"left could be a token end ("
+					<< _getRuleThatMatchesWithEnd(token)->toString() << ").\n";
+				return false;
+			}
 		}
 	}
 	

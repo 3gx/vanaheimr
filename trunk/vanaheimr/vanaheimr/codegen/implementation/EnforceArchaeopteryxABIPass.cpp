@@ -198,8 +198,6 @@ static void getVariable(const abi::BoundVariable& variable,
 static bool tryLoweringSpecialRegisterAccess(ir::Instruction* i,
 	const abi::ApplicationBinaryInterface& abi)
 {
-	typedef std::map<std::string, std::string> StringMap;
-
 	auto call = static_cast<ir::Call*>(i);
 
 	assert(call->target()->isAddress());
