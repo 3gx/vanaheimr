@@ -122,6 +122,8 @@ private:
 	bool _isNewToken(const LexerContext& token);
 	bool _couldBeTokenEnd(const LexerContext& token);
 	bool _couldBeTokenBegin(const LexerContext& token);
+	bool _formsLargerMatchOfTheSameRule(const LexerContext& left,
+		const LexerContext& right);
 	
 	const LexerRule* _getRuleThatMatchesWithEnd(const LexerContext&) const;
 	const LexerRule* _getRuleThatMatchesWithBegin(const LexerContext&) const;
@@ -654,7 +656,7 @@ bool LexerEngine::_canMerge(
 	// Can't merge if there is ambiguity about the left being a token end
 	if(_couldBeTokenEnd(token))
 	{
-		if(!_isNewToken(token))
+		//if(!_isNewToken(token))
 		{
 			if(!_formsLargerMatchOfTheSameRule(token, next))
 			{
@@ -674,7 +676,6 @@ bool LexerEngine::_canMerge(
 			hydrazine::log("Lexer") << "     can't merge, "
 				"right could be a token begin ("
 				<< _getRuleThatMatchesWithBegin(next)->toString() << ").\n";
-	
 			return false;
 		}
 	}
@@ -704,6 +705,36 @@ bool LexerEngine::_couldBeTokenEnd(const LexerContext& token)
 bool LexerEngine::_couldBeTokenBegin(const LexerContext& token)
 {
 	return _getRuleThatMatchesWithBegin(token) != nullptr;
+}
+
+bool LexerEngine::_formsLargerMatchOfTheSameRule(
+	const LexerContext& left,
+	const LexerContext& right)
+{
+	auto string = left->getString();
+
+	RuleSet endMatchingRules;
+
+	for(auto rule : left->possibleMatches)
+	{
+		if(rule->canMatchWithEnd(string))
+		{
+			endMatchingRules.insert(rule);
+		}
+	}
+
+	// Do all of the rules still match the merged token?
+	string += right->getString();
+
+	for(auto rule : endMatchingRules)
+	{
+		if(!rule->canMatchWithEnd(string))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 const LexerRule* LexerEngine::_getRuleThatMatchesWithBegin(

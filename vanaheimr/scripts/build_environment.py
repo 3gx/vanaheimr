@@ -61,11 +61,20 @@ gCompilerOptions = {
 			'warn_errors' : '-Werror',
 			'optimization' : '-O2', 'debug' : '-g', 
 			'exception_handling' : '', 'standard': ''},
+		'clang' : {'warn_all' : '-Wall',
+			'warn_errors' : '-Werror',
+			'optimization' : '-O2', 'debug' : '-g', 
+			'exception_handling' : '', 'standard': ''},
 		'g++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
 			'optimization' : '-O2', 'debug' : '-g', 
 			'exception_handling' : '', 'standard': '-std=c++0x'},
 		'c++' : {'warn_all' : '-Wall',
+			'warn_errors' : '-Werror',
+			'optimization' : '-O2', 'debug' : '-g',
+			'exception_handling' : '',
+			'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
+		'clang++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
 			'optimization' : '-O2', 'debug' : '-g',
 			'exception_handling' : '',
@@ -83,10 +92,12 @@ gCompilerOptions = {
 # this dictionary maps the name of a linker program to a dictionary mapping the name of
 # a linker switch of interest to the specific switch implementing the feature
 gLinkerOptions = {
-		'gcc'  : {'debug' : ''},
-		'g++'  : {'debug' : ''},
-		'c++'  : {'debug' : ''},
-		'link' : {'debug' : '/debug'}
+		'gcc'  : {'debug' : '', 'libraries' : ''},
+		'clang'  : {'debug' : '', 'libraries' : ''},
+		'g++'  : {'debug' : '', 'libraries' : ''},
+		'c++'  : {'debug' : '', 'libraries' : '-lc++'},
+		'clang++'  : {'debug' : '', 'libraries' : '-lc++'},
+		'link' : {'debug' : '/debug', 'libraries' : ''}
 	}
 
 def getCFLAGS(mode, warn, warnings_as_errors, CC):
@@ -225,7 +236,6 @@ def defineConfigFlags(env):
 			('-DVERSION=', env['VERSION']),
 			('-DVANAHEIMR_PREFIX_PATH=', fixPath(env['INSTALL_PATH'])),
 			('-DVANAHEIMR_LDFLAGS=', fixPath(env['VANAHEIMR_LDFLAGS'])),
-			('-L', fixPath(library_path)),
 			('-DVANAHEIMR_INCLUDE_PATH=', fixPath(include_path)),
 			('-DVANAHEIMR_LIB_PATH=', fixPath(library_path)),
 			('-DVANAHEIMR_BIN_PATH=', fixPath(bin_path))	)])
@@ -252,6 +262,12 @@ def importEnvironment():
 		env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
 
 	return env
+
+def updateEnvironment(env):
+	originalEnvironment = importEnvironment()
+
+	for key, value in originalEnvironment.iteritems():
+		env[key] = value
 
 def Environment():
 	vars = Variables()
@@ -282,7 +298,7 @@ def Environment():
 		default_install_path = os.environ['VANAHEIMR_INSTALL_PATH']
 		
 	vars.Add(PathVariable('install_path', 'The vanaheimr install path',
-		default_install_path))
+		default_install_path, PathVariable.PathIsDirCreate))
 
 	vars.Add(BoolVariable('install', 'Include vanaheimr install path in default '
 		'targets that will be built and configure to install in the '
@@ -292,6 +308,8 @@ def Environment():
 	# create an Environment
 	env = OldEnvironment(ENV = importEnvironment(), \
 		tools = getTools(), variables = vars)
+	
+	updateEnvironment(env)
 
 	# set the version
 	env.Replace(VERSION = getVersion("0.1"))
@@ -355,9 +373,13 @@ def Environment():
 	env.AppendUnique(LIBPATH = os.path.abspath('.'))
 	
 	# we need librt on linux
-	if os.name == 'posix':
+	if sys.platform == 'linux2':
 		env.AppendUnique(EXTRA_LIBS = ['-lrt']) 
 
+	# we need libdl on max and linux
+	if os.name != 'nt':
+		env.AppendUnique(EXTRA_LIBS = ['-ldl']) 
+	
 	# generate help text
 	Help(vars.GenerateHelpText(env))
 
