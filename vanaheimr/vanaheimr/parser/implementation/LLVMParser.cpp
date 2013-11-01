@@ -145,6 +145,7 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 		"{", "}", "triple", "type", "i8", "i32", "i16", "i64", "\\.\\.\\."});
 	
 	// Regex Rules
+	_lexer.addTokens({"[%@][a-zA-Z$._][a-zA-Z$._0-9]*"}); // identifiers
 	_lexer.addTokens({"\"[^\n\"]*\""}); // strings 
 	_lexer.addTokens({"[:digit:]*"}); // decimal constants
 	_lexer.addTokens({"//.*"}); // comments
