@@ -131,6 +131,8 @@ private:
 	bool _couldBeTokenBegin(const LexerContext& token);
 	bool _formsLargerMatchOfTheSameRule(const LexerContext& left,
 		const LexerContext& right);
+	bool _nextCantMatchOtherwise(const LexerContext& left,
+		const LexerContext& right);
 	
 	const LexerRule* _getRuleThatMatchesWithEnd(const LexerContext&) const;
 	const LexerRule* _getRuleThatMatchesWithBegin(const LexerContext&) const;
@@ -405,7 +407,8 @@ void LexerEngine::_mergeTokens()
 			}
 
 			hydrazine::log("Lexer") << "  For unmatched token '"
-				<< token->getString() << "'\n";
+				<< token->getString() << "' "
+				<< (_isNewToken(token) ? " (starts new token)":"") << "\n";
 			
 			if(next == _tokens.end())
 			{
@@ -422,7 +425,9 @@ void LexerEngine::_mergeTokens()
 				
 				if(_canMerge(token, next))
 				{
-					hydrazine::log("Lexer") << "    success\n";
+					hydrazine::log("Lexer") << "    success: merging '"
+						<< token->getString() << "' with '"
+						<< next->getString() << "'\n";
 					
 					auto merged = _mergeWithNext(token, next);
 					
@@ -674,16 +679,24 @@ bool LexerEngine::_canMerge(
 	// Can't merge if there is ambiguity about the left being a token end
 	if(_couldBeTokenEnd(token))
 	{
-		//if(!_isNewToken(token))
+		bool canStillMerge = false;
+
+		// allow 't' to join with 'arget', even though 't' matches the end
+		canStillMerge |= _formsLargerMatchOfTheSameRule(token, next);
+		
+		// allow '%' to join with '_identifier', if '%' is a rule
+		// TODO: add general purpose way of handling short rules that are subsets
+		//       of longer rules
+		canStillMerge |= _nextCantMatchOtherwise(token, next);
+	
+		if(!canStillMerge)
 		{
-			if(!_formsLargerMatchOfTheSameRule(token, next))
-			{
-				hydrazine::log("Lexer") << "     can't merge, "
-					"left could be a token end ("
-					<< _getRuleThatMatchesWithEnd(token)->toString() << ").\n";
-				return false;
-			}
+			hydrazine::log("Lexer") << "     can't merge, "
+				"left could be a token end ("
+				<< _getRuleThatMatchesWithEnd(token)->toString() << ").\n";
+			return false;
 		}
+		
 	}
 	
 	// Or the right being a token begin
@@ -734,6 +747,7 @@ bool LexerEngine::_formsLargerMatchOfTheSameRule(
 {
 	auto string = left->getString();
 
+	// find end matching rules
 	RuleSet endMatchingRules;
 
 	for(auto rule : left->possibleMatches)
@@ -744,18 +758,82 @@ bool LexerEngine::_formsLargerMatchOfTheSameRule(
 		}
 	}
 
-	// Do all of the rules still match the merged token?
-	string += right->getString();
+	auto combined = string + right->getString();
 
-	for(auto rule : endMatchingRules)
+	if(_isNewToken(left))
 	{
-		if(!rule->canMatchWithEnd(string))
+		// Does at least one of the rules still match the merged token
+		bool atLeastOneMatch = false;
+
+		for(auto rule : endMatchingRules)
 		{
-			return false;
+			hydrazine::log("Lexer") << "      checking rule " << rule->toString() << " against " << combined << "\n";
+			
+			if(rule->isExactMatch(string))
+			{
+				if(rule->isExactMatch(combined))
+				{
+					hydrazine::log("Lexer") << "      exact match\n";
+					atLeastOneMatch = true;
+					break;
+				}
+			}
+		}
+
+		if(atLeastOneMatch) return true;
+
+		// find begin matching rules
+		RuleSet beginMatchingRules;
+
+		for(auto rule : left->possibleMatches)
+		{
+			if(rule->canMatchWithBegin(string) && !rule->isExactMatch(string))
+			{
+				beginMatchingRules.insert(rule);
+			}
+		}
+		
+		for(auto rule : beginMatchingRules)
+		{
+			if(rule->canMatchWithBegin(combined))
+			{
+				hydrazine::log("Lexer") << "      match with begin\n";
+				atLeastOneMatch = true;
+				break;
+			}
+		}
+
+		return atLeastOneMatch;
+	}
+	else
+	{
+		// Do all of the rules still match the merged token?
+		for(auto rule : endMatchingRules)
+		{
+			hydrazine::log("Lexer") << "      checking rule " << rule->toString() << " against " << combined << "\n";
+			
+			if(!rule->canMatch(combined))
+			{
+				hydrazine::log("Lexer") << "      failed\n";
+				return false;
+			}
+
+			if(rule->isExactMatch(string) && !rule->isExactMatch(combined))
+			{
+				hydrazine::log("Lexer") << "      failed, not exact match with (" << rule->toString() << ")\n";
+				return false;
+			}
 		}
 	}
 
 	return true;
+}
+
+bool LexerEngine::_nextCantMatchOtherwise(
+	const LexerContext& left,
+	const LexerContext& right)
+{
+	return false;
 }
 
 const LexerRule* LexerEngine::_getRuleThatMatchesWithBegin(
