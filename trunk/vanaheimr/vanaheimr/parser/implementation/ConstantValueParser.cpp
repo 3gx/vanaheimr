@@ -136,6 +136,11 @@ static bool isString(const std::string& string)
 {
 	if(string.size() < 2) return false;
 	
+	if(string[0] == 'c' && string[1] == '\"' && string.back() == '\"')
+	{
+		return true;
+	}
+	
 	return string.front() == '\"' && string.back() == '\"';
 }
 
@@ -218,13 +223,20 @@ ir::Constant* ConstantValueParser::_parseConstant(const ir::Type* type)
 		_lexer->nextToken();
 		constant = createZeroInitializer(type);
 	}
+	else if(isString(nextToken))
+	{
+		constant = _parseStringConstant();
+		assertM(type == constant->type(), "Declared type " << type->name
+			<< " does not match parsed type " << constant->type()->name);
+	}
 	
 	if(constant == nullptr)
 	{
 		throw std::runtime_error("Failed to parse constant.");
 	}
 	
-	hydrazine::log("ConstantValueParser::Parser") << "Parsed constant with type '"
+	hydrazine::log("ConstantValueParser::Parser")
+		<< "Parsed constant with type '"
 		<< constant->type()->name << "'\n";
 	
 	return constant;
@@ -272,6 +284,15 @@ ir::Constant* ConstantValueParser::_parseStringConstant()
 {
 	std::string token = _lexer->nextToken();
 
+	if(token.front() == 'c')
+	{
+		token = token.substr(2, token.size() - 3);
+	}
+	else
+	{
+		token = token.substr(1, token.size() - 1);
+	}
+	
 	hydrazine::log("ConstantValueParser::Parser") << " parsed string constant '"
 		<< token << "'\n";
 

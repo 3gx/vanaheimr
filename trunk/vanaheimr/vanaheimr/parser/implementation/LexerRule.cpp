@@ -709,13 +709,13 @@ void LexerRule::_formRegex(const_iterator& begin, const_iterator end)
 	}
 	else if(containsString(begin, end, "[:alnum:]"))
 	{
-		begin += sizeof("[:alnum:]");
+		begin += sizeof("[:alnum:]") - 1;
 		
 		_regex.push_back(new AlphaNumericCharacter());
 	}
 	else if(containsString(begin, end, "[:digit:]"))
 	{
-		begin += sizeof("[:digit:]");
+		begin += sizeof("[:digit:]") - 1;
 		
 		_regex.push_back(new NumericCharacter());
 	}
@@ -727,25 +727,21 @@ void LexerRule::_formRegex(const_iterator& begin, const_iterator end)
 		
 		_regex.push_back(newCharacter);
 	}
+	else if(*begin == '*')
+	{
+		assert(!_regex.empty());
+
+		// Repeat the last character
+		++begin;
+		
+		_regex.back() = new RepeatedCharacter(_regex.back());
+	}
 	else
 	{
 		// Handle a normal character
 		char character = *begin; ++begin;
 	
 		_regex.push_back(new NormalCharacter(character));
-	}
-	
-	if(begin == end)
-	{
-		return;
-	}
-	
-	if(*begin == '*')
-	{
-		// Repeat the last character
-		++begin;
-		
-		_regex.back() = new RepeatedCharacter(_regex.back());
 	}
 }
 
