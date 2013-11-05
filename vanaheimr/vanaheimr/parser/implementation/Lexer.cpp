@@ -351,11 +351,31 @@ void LexerEngine::_mergeTokens()
 		unsigned int unmatchedCount = 0;
 		for(auto token = _tokens.begin(); token != _tokens.end(); ++token)
 		{
-			if(token->isMatched()) continue;
+			auto next = token; ++next;
+			
+			if(next != _tokens.end())
+			{
+				if(token->isMatched(*next)) continue;
+			}
+			else
+			{
+				if(token->isMatched()) continue;
+			}
 			
 			_filterWithNeighbors(token);
 			
-			if(token->isMatched())
+			bool isMatched = false;
+			
+			if(next != _tokens.end())
+			{
+				isMatched = token->isMatched(*next);
+			}
+			else
+			{
+				isMatched = token->isMatched();
+			}
+			
+			if(isMatched)
 			{
 				hydrazine::log("Lexer") << "  Token '" << token->getString()
 					<< "' after filtering matched rule '"
@@ -767,7 +787,8 @@ bool LexerEngine::_formsLargerMatchOfTheSameRule(
 
 		for(auto rule : endMatchingRules)
 		{
-			hydrazine::log("Lexer") << "      checking rule " << rule->toString() << " against " << combined << "\n";
+			hydrazine::log("Lexer") << "      checking rule '"
+				<< rule->toString() << "' against '" << combined << "'\n";
 			
 			if(rule->isExactMatch(string))
 			{
@@ -810,7 +831,8 @@ bool LexerEngine::_formsLargerMatchOfTheSameRule(
 		// Do all of the rules still match the merged token?
 		for(auto rule : endMatchingRules)
 		{
-			hydrazine::log("Lexer") << "      checking rule " << rule->toString() << " against " << combined << "\n";
+			hydrazine::log("Lexer") << "      checking rule "
+				<< rule->toString() << " against " << combined << "\n";
 			
 			if(!rule->canMatch(combined))
 			{
@@ -820,7 +842,9 @@ bool LexerEngine::_formsLargerMatchOfTheSameRule(
 
 			if(rule->isExactMatch(string) && !rule->isExactMatch(combined))
 			{
-				hydrazine::log("Lexer") << "      failed, not exact match with (" << rule->toString() << ")\n";
+				hydrazine::log("Lexer")
+					<< "      failed, not exact match with ("
+					<< rule->toString() << ")\n";
 				return false;
 			}
 		}
@@ -992,6 +1016,11 @@ bool LexerEngine::TokenDescriptor::isMatched(const TokenDescriptor& next)
 				return false;
 			}
 		}
+		
+		hydrazine::log("Lexer") << "  Token '" << getString()
+			<< "' is matched exactly when considering next token '"
+			<< next.getString() << "'\n";
+		
 		tokenIsMatched = true;
 		return true;
 	}

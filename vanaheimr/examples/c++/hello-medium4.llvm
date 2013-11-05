@@ -1,0 +1,19 @@
+declare void @_ZNSt8ios_base4InitC1Ev(%"class.std::ios_base::Init"*) #0
+
+declare void @_ZNSt8ios_base4InitD1Ev(%"class.std::ios_base::Init"*) #0
+
+declare i32 @__cxa_atexit(void (i8*)*, i8*, i8*) #1
+
+define i32 @main() #2 {
+entry:
+  %call = call %"class.std::basic_ostream"* @_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc(%"class.std::basic_ostream"* @_ZSt4cout, i8* getelementptr inbounds ([13 x i8]* @.str, i32 0, i32 0))
+  ret i32 0
+}
+
+declare %"class.std::basic_ostream"* @_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc(%"class.std::basic_ostream"*, i8*) #0
+
+define internal void @_GLOBAL__I_a() section ".text.startup" {
+entry:
+  call void @__cxx_global_var_init()
+  ret void
+}

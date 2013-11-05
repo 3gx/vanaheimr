@@ -64,8 +64,8 @@ private:
 
 	void _parseTopLevelDeclaration(const std::string& declaration);
 	
-	void _parseGlobalVariable();
-	void _parseTypedef();
+	void _parseGlobalVariable(const std::string& token);
+	void _parseTypedef(const std::string& token);
 	void _parseFunction();
 	void _parsePrototype();
 	void _parseTarget();
@@ -140,25 +140,56 @@ LLVMParserEngine::LLVMParserEngine(Compiler* compiler,
 	// Load up the lexer with token rules
 	
 	// Simple Rules
-	_lexer.addTokens({"@", "define", "declare", "!", "target", "datalayout",
-		"external", "global", "internal", "zeroinitializer", "align", "private",
-		"unnamed_addr", "appending", "%", "constant",
-		"|", "(", ")", ";", ",", "=", "[", "]", "\\*", "opaque", "void",
-		"{", "}", "triple", "type", "i8", "i32", "i16", "i64", "\\.\\.\\.", "x"});
 	
+	/// symbols
+	_lexer.addTokens({"!", "|", "(", ")", ";", ",", "=", "[", "]",
+		"\\*", "{", "}", "\\.\\.\\.", "x", "#"}); 
+	
+	/// keywords
+	_lexer.addTokens({"define", "declare", "target", "datalayout",
+		"external", "global", "internal", "zeroinitializer", "align",
+		"private", "unnamed_addr", "appending", "constant", "section",
+		"triple", "type", "inbounds", "to", "attributes", "nounwind",
+		"uwtable"});
+	
+	/// types
+	_lexer.addTokens({"opaque", "void", "i8", "i32", "i16", "i64"}); 
+	
+	/// LLVM ISA
+	_lexer.addTokens({"bitcast", "getelementptr", "call", "ret"});
+		
 	// Regex Rules
-	_lexer.addTokens({"[%@][a-zA-Z$._][a-zA-Z$._0-9]*"}); // identifiers
+	_lexer.addTokens({"[%@][a-zA-Z$._0-9][a-zA-Z$._0-9]*"}); // bare identifiers
+	_lexer.addTokens({"[%@]\"[^\n\"]*\""}); // string identifiers
+	_lexer.addTokens({"[a-zA-Z$._][a-zA-Z$._0-9]*:"}); // labels
 	_lexer.addTokens({"\"[^\n\"]*\""}); // strings 
+	_lexer.addTokens({"c\"[^\n\"]*\""}); // string constants 
 	_lexer.addTokens({"[:digit:]*"}); // decimal constants
-	_lexer.addTokens({"//[^\n]*"}); // comments
-	
+	_lexer.addTokens({";[^\n]*"}); // comments
+
+	// Whitespace	
 	_lexer.addWhitespaceRules(" \t\n\r");
 }
 
 static bool isTopLevelDeclaration(const std::string& token)
 {
-	return token == "@" || token == "define" || token == "declare" ||
-		token == "!" || token == "target" || token == "%";
+	if(token == "define" || token == "declare" ||
+		token == "!" || token == "target")
+	{
+		return true;
+	}
+	
+	if(token.empty())
+	{
+		return false;
+	}
+	
+	if(token[0] == '%' || token[0] == '@')
+	{
+		return true;
+	}
+	
+	return false;
 }
 
 void LLVMParserEngine::parse(std::istream& stream)
@@ -213,13 +244,13 @@ void LLVMParserEngine::_parseTypedefs()
 
 void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token)
 {
-	if(token == "@")
+	if(token.find("@") == 0)
 	{
-		_parseGlobalVariable();
+		_parseGlobalVariable(token);
 	}
-	else if(token == "%")
+	else if(token.find("%") == 0)
 	{
-		_parseTypedef();
+		_parseTypedef(token);
 	}
 	else if(token == "define")
 	{
@@ -351,9 +382,9 @@ void LLVMParserEngine::_resolveTypeAliasesInSubtypes(
 	}
 }
 
-void LLVMParserEngine::_parseGlobalVariable()
+void LLVMParserEngine::_parseGlobalVariable(const std::string& token)
 {
-	auto name = _lexer.nextToken();
+	auto name = token.substr(1);
 
 	if(!_lexer.scan("="))
 	{
@@ -388,13 +419,13 @@ void LLVMParserEngine::_parseGlobalVariable()
 	{
 		global->setInitializer(initializer);
 	}
-
+	
 	_parseAlignment(&*global);
 }
 
-void LLVMParserEngine::_parseTypedef()
+void LLVMParserEngine::_parseTypedef(const std::string& token)
 {
-	auto name = _lexer.nextToken();
+	auto name = token.substr(1);
 	
 	if(!_lexer.scan("="))
 	{
