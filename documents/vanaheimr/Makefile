@@ -1,13 +1,13 @@
 
 IMAGES = 
 
-all: archaeopteryx.pdf
+all: vanaheimr.pdf
 
-archaeopteryx.pdf: archaeopteryx.tex archaeopteryx.bib $(IMAGES)
-	pdflatex -halt-on-error archaeopteryx.tex
-	bibtex archaeopteryx
-	pdflatex -halt-on-error archaeopteryx.tex
-	pdflatex -halt-on-error archaeopteryx.tex
+vanaheimr.pdf: vanaheimr.tex vanaheimr.bib $(IMAGES)
+	pdflatex -halt-on-error vanaheimr.tex
+	bibtex vanaheimr
+	pdflatex -halt-on-error vanaheimr.tex
+	pdflatex -halt-on-error vanaheimr.tex
 	
 clean:
 	rm -f *.pdf
