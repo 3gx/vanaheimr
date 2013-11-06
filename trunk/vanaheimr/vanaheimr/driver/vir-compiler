@@ -1,0 +1,76 @@
+#!/usr/bin/env python 
+
+################################################################################
+#
+# \file   vir-compiler
+# \author Gregory Diamos <solusstultus@gmail.com>
+# \date   February 27, 2013
+# \brief  A python script implementing the Vanaheimr compiler driver.
+#
+# The common mistake that people make with drivers is to make them too
+#  complicated.  They try to include all of the functionality needed to handle
+#  any possible use-case.  A compiler driver is NOT intended to replace a build
+#  system.
+#
+#  It is intended to perform the following operation:
+#     (sources + options) -> binaries
+#
+#   in the most straightfoward way possible.
+#
+#  Try to think about how you would solve your problem
+#  if you could not modify this file (as most users will not be able to modify
+#  the GCC/CLANG driver) before adding any functionality here.
+#
+################################################################################
+
+# Import Modules
+from argparse import ArgumentParser
+
+from CompilerDriver.CompilerDriver import CompilerDriver
+
+import sys
+
+# MAIN
+def main():
+	parser = ArgumentParser(description="The Vanaheimr Compiler Driver")
+	
+	parser.add_argument("-i", "--input-file", default = "",
+		help = "The input file path (.c/.cpp).")
+	parser.add_argument("-o", "--output-file",
+		default = "", help = "The output file path (.sass/.stb/.ptx).")
+	parser.add_argument("-O", "--optimization-level", default = "1",
+		help = "The optimization level.")
+	parser.add_argument("-m", "--machine-model",
+		default = "mdf",
+		help = "The input machine model file (.cfg).")
+	parser.add_argument("-K", "--knob",
+		default = [], action="append", help = "Add a command line knob that "
+		"override values defined in config files.  Mulple knobs may be "
+		"specified, e.g. --knob ExampleKnob=1 --knob DifferentKnob=2")
+	
+	parser.add_argument("-c", "--clean", default = False,
+		action = "store_true", help = "Delete all intermediate files.")
+	parser.add_argument("-k", "--keep", default = False, action = "store_true",
+		help = "Keep intermediate files.")
+	parser.add_argument("-v", "--verbose", default = False,
+		action = "store_true")
+		
+	arguments = parser.parse_args()
+	
+	try:
+		cc = CompilerDriver(vars(arguments))
+		
+		cc.run()
+	
+	except ValueError as e:
+		print "Bad Inputs: " + str(e) + "\n\n"
+		print parser.print_help()
+	except SystemError as e:
+		print >> sys.stderr, "Compilation Failed: \n\n" + str(e)
+
+
+# Main Guard
+if __name__ == "__main__":
+    main()
+
+

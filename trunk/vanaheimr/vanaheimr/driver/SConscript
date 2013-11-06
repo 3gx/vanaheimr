@@ -1,0 +1,80 @@
+#! /bin/python
+
+################################################################################
+#	\file   SConstruct
+#	\author Gregory Diamos <solusstuluts@gmail.com>
+#   \date   Tuesday March 5, 2013
+#	\brief  The SCons master build script for Compiler Driver tools
+################################################################################
+
+import os
+
+# set environment variables
+Import('env')
+
+# Helper functions
+def getSubdirectories(path):
+	directories = set([path])
+	
+	for root, dirs, files in os.walk(path):
+		for dir in dirs:
+			if dir != None:
+				directories.add(os.path.join(root, dir))
+
+	return directories
+
+def findCompilerPath():
+	return os.path.realpath(os.path.join(env['VANAHEIMR_BUILD_ROOT'],
+		'vanaheimr/driver'))
+
+def findSuffix(basePath, completePath):
+	head, tail = os.path.split(os.path.realpath(completePath))
+
+	suffix = ''
+
+	while len(tail) > 0:
+		if os.path.samefile(head, basePath):
+			return suffix
+		
+		head, tail = os.path.split(head)
+		suffix = os.path.join(tail, suffix)
+	
+	return None
+
+# find the path
+compilerPath = findCompilerPath()
+
+print 'Installing the Compiler Driver from ' + compilerPath
+
+# install it all 
+if env['install']:
+	installed   = []
+	executables = []
+	
+	executables.append(env.Install(os.path.join(env['install_path'], "bin"),
+		os.path.join(compilerPath, 'vir-compiler')))
+			
+	# install modules
+	module_directories = [i for i in getSubdirectories(
+		os.path.join(compilerPath, 'CompilerDriver'))]
+	module_extensions = ['*.py']
+
+	modules = []
+	for dir in module_directories:
+		for ext in module_extensions:
+			regexp = os.path.join(dir, ext)
+			modules.extend(env.Glob(regexp))
+
+	for module in modules:
+		moduleName = findSuffix(compilerPath, str(module))
+		
+		installPath = os.path.join(env['install_path'], "bin", moduleName)
+		
+		installed.append(env.Install(installPath, module))
+		
+	# set permissions
+	for i in executables:
+		env.AddPostAction(i, Chmod(i, 0755))
+	for i in installed:
+		env.AddPostAction(i, Chmod(i, 0644))
+

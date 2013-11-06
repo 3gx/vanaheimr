@@ -1,0 +1,30 @@
+
+
+
+namespace std
+{
+
+class parallel_context
+{
+public:
+	unsigned total_threads() const;
+	unsigned unique_thread_id() const;
+
+public:
+	void barrier();
+
+};
+
+template <typename... T> using Dimension = tuple<T...>;
+template <typename... T> using make_dimension = make_tuple<T...>;
+
+template<typename D, typename F>
+void parallel_launch(const D& dimensions, const F& function, ...);
+
+}
+
+
+
+
+
+

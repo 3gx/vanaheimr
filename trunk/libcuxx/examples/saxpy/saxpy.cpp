@@ -1,17 +1,24 @@
-
-
+#include <parallel>
+#include <iostream>
 
 void saxpy(int* R, int* A, int* X, int b, int size)
 {
 	for(int i = 0; i < size; ++i)
 	{
-		A[i] = A[i] * X[i] + b;
+		R[i] = A[i] * X[i] + b;
 	}
 }
 
-void saxpy_kernel()
+void saxpy_kernel(const std::parallel_context& context, int* D, int* A, int b, int size)
+{
+	int threads = context.total_threads();
+	int id      = context.unique_thread_id();
 
-extern void launch_kernel();
+	for(int i = id; i < size; i+= threads)
+	{
+		D[i] = A[i] * X[i] + b;
+	}
+}
 
 int main(int argc, char** argv)
 {
@@ -26,16 +33,15 @@ int main(int argc, char** argv)
 	
 	saxpy(R, A, X, b, size);
 	
-	launch_cuda_kernel();
+	std::parallel_launch(std::make_dimensions(size),
+		saxpy_kernel, D, A, X, B, size);
 	
-/*	for(int i = 0; i < size; ++i)
+	for(int i = 0; i < size; ++i)
 	{
 		std::cout << "R[" << i <<"] = " << R[i] << "\n";
-		std::cout << "D[" << i <<"] = " << R[i] << "\n";
+		std::cout << "D[" << i <<"] = " << D[i] << "\n";
 	}
-*/	
+	
 	return 0;
 }
-
-
 

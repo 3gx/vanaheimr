@@ -26,17 +26,17 @@ def config_h_build(target, source, env):
 try:
 	Import('env')
 except:
+	rootDirectory = '../'
 	exec open("../scripts/which.py")
-	prefix = '../'
-	exec open(prefix + "scripts/build_environment.py")
+	exec open(rootDirectory + "scripts/build_environment.py")
 	env = Environment()
 
 # set the vanaheimr build root if a higher level script didn't already do it
 if not 'VANAHEIMR_BUILD_ROOT' in env:
-	env.Replace(VANAHEIMR_BUILD_ROOT = env['BUILD_ROOT'])
+	env.Replace(VANAHEIMR_BUILD_ROOT = os.path.abspath(rootDirectory))
 
-# include the build directory in case of generated files
-env.AppendUnique(CPPPATH = env['VANAHEIMR_BUILD_ROOT'])
+# Add the build directory for generated files (configure.h)
+env.AppendUnique(CPPFLAGS = '-I' + os.path.abspath(env['BUILD_ROOT']))
 
 # Create configure.h
 env.AlwaysBuild(env.Command('configure.h', 'configure.h.in', config_h_build))
@@ -143,7 +143,7 @@ if env['install']:
 		
 	for header in headers:
 		(directoryPath, headerName) = os.path.split( \
-			os.path.relpath(str(header), prefix))
+			os.path.relpath(str(header), env['VANAHEIMR_BUILD_ROOT']))
 
 		installed.append(env.Install(os.path.join( \
 			env['install_path'], "include", directoryPath), header))
@@ -154,3 +154,5 @@ if env['install']:
 	install_alias = env.Alias('install', env['install_path'])
 	Default(install_alias)
 
+# Add subdirectories
+SConscript(env['VANAHEIMR_BUILD_ROOT'] + '/vanaheimr/driver/SConscript', exports='env')
