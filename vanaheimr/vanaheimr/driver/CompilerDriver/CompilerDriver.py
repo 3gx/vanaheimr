@@ -7,15 +7,16 @@
 #
 ################################################################################
 
-from CLANG import CLANG
+from CLANG        import CLANG
+from VIROptimizer import VIROptimizer
 
 from FileTypes import *
 
 import os
 import logging
 
-# The Volta Compiler class
-class VoltaCompiler:
+# The Compiler Driver class
+class CompilerDriver:
 	def __init__(self, arguments):
 		self.inputFile         = arguments['input_file']
 		self.outputFile        = arguments['output_file']
@@ -25,6 +26,7 @@ class VoltaCompiler:
 		self.clean             = arguments['clean']
 		self.machineModel      = arguments['machine_model']
 		self.knobs             = interpretKnobs(arguments['knob'])
+		self.onlyAssemble      = arguments['assembly']
 
 		self.components        = []
 		self.intermediateFiles = set([])
@@ -38,6 +40,7 @@ class VoltaCompiler:
 	def registerComponents(self):
 				
 		self.registerComponent(CLANG(self))
+		self.registerComponent(VIROptimizer(self))
 				
 	def run(self):
 		if self.clean:
@@ -125,12 +128,10 @@ class VoltaCompiler:
 			raise ValueError('No input file specified.')
 
 		if len(self.outputFile) == 0:
-			if isYML(self.inputFile):
-				self.outputFile = getBase(self.inputFile) + '.yml2'
-			if isVirtualTrace(self.inputFile):
-				self.outputFile = getBase(self.inputFile) + '.stb'
+			if self.onlyAssemble:
+				self.outputFile = getBase(self.inputFile) + '.llvm'
 			else:
-				self.outputFile = getBase(self.inputFile) + '.sass'
+				self.outputFile = getBase(self.inputFile) + '.bc'
 
 	def loadLogger(self):
 		self.logger = logging.getLogger('VanaheimrCompiler')

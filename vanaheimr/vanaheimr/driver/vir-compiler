@@ -37,9 +37,11 @@ def main():
 	parser.add_argument("-i", "--input-file", default = "",
 		help = "The input file path (.c/.cpp).")
 	parser.add_argument("-o", "--output-file",
-		default = "", help = "The output file path (.sass/.stb/.ptx).")
+		default = "", help = "The output file path (.bc/.llvm).")
 	parser.add_argument("-O", "--optimization-level", default = "1",
 		help = "The optimization level.")
+	parser.add_argument("-S", "--assembly", default=False, action = "store_true",
+		help = "Only run preprocessing and compilation steps.")
 	parser.add_argument("-m", "--machine-model",
 		default = "mdf",
 		help = "The input machine model file (.cfg).")

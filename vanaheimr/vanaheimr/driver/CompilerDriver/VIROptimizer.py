@@ -1,9 +1,9 @@
 ################################################################################
 #
-# \file   CLANG.py
+# \file   VIROptimizer.py
 # \author Gregory Diamos <solusstultus@gmail.com>
 # \date   Tuesday June 25, 2013
-# \brief  The CLANG, controls the C++ compiler driver.
+# \brief  The VIROptimizer, controls the VIR Optimizer tool.
 #
 ################################################################################
 
@@ -14,8 +14,8 @@ from   time     import time
 import os
 import subprocess
 
-# The CLANG Compiler class
-class CLANG:
+# The VIROptimizer class
+class VIROptimizer:
 	def __init__(self, driver):
 		self.driver = driver
 
@@ -32,7 +32,7 @@ class CLANG:
 		return outputs, self.isFinished()
 
 	def isFinished(self):
-		return isLLVM(self.driver.outputFile)
+		return isByteCode(self.driver.outputFile)
 
 	def getIntermediateFiles(self, filename):
 		if self.canCompile(filename):
@@ -48,27 +48,27 @@ class CLANG:
 		return False
 	
 	def canCompile(self, filename):
-		if isCPP(filename):
+		if isLLVM(filename):
 			return True
-				
+			
 		return False
 
 	def getOutputFilename(self, filename):
-		if isLLVM(self.driver.outputFile):
+		if isByteCode(self.driver.outputFile):
 			return self.driver.outputFile
 		else:
-			return getBase(filename) + '.llvm'
+			return getBase(filename) + '.bc'
 
 	def lower(self, filename):
 		assert self.canCompile(filename)
 
-		backend_path = which('clang++')
+		backend_path = which('vir-optimizer')
 
 		outputFilename = self.getOutputFilename(filename)
 
 		safeRemove(outputFilename)
 
-		command = backend_path + " -S -emit-llvm " + filename + " -o " + \
+		command = backend_path + " -i " + filename + " -o " + \
 			outputFilename + " " + \
 			self.interpretOptimizations(self.driver.optimizationLevel)
 
@@ -76,7 +76,7 @@ class CLANG:
 			command += " -v"
 		
 		if self.driver.verbose:
-			print 'Running clang++ with: "' + command + '"'
+			print 'Running vir-optimizer with: "' + command + '"'
 
 		start = time()
 
@@ -89,13 +89,15 @@ class CLANG:
 			print ' time: ' + str(time() - start) + ' seconds' 
 
 		if not os.path.isfile(outputFilename):
-			raise SystemError('clang++ failed to generate an output file: \n' \
+			raise SystemError('vir-optimizer failed to generate an ' + \
+				'output file: \n' \
 				+ stdOutData + stdErrData)
 
 		return outputFilename
 
 	def interpretOptimizations(self, level):
 		return ""
+
 
 
 
