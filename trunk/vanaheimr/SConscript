@@ -36,7 +36,8 @@ if not 'VANAHEIMR_BUILD_ROOT' in env:
 	env.Replace(VANAHEIMR_BUILD_ROOT = os.path.abspath(rootDirectory))
 
 # Add the build directory for generated files (configure.h)
-env.AppendUnique(CPPFLAGS = '-I' + os.path.abspath(env['BUILD_ROOT']))
+env.AppendUnique(CPPFLAGS = ['-I' + os.path.abspath(env['BUILD_ROOT'])])
+env.AppendUnique(CPPFLAGS = ['-I' + os.path.abspath(env['VANAHEIMR_BUILD_ROOT'])])
 
 # Create configure.h
 env.AlwaysBuild(env.Command('configure.h', 'configure.h.in', config_h_build))
@@ -156,3 +157,5 @@ if env['install']:
 
 # Add subdirectories
 SConscript(env['VANAHEIMR_BUILD_ROOT'] + '/vanaheimr/driver/SConscript', exports='env')
+
+

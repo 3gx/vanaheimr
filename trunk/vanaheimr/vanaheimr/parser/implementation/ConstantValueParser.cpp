@@ -163,10 +163,6 @@ ir::Constant* ConstantValueParser::_parseConstant()
 	{
 		constant = _parseFloatingPointConstant();
 	}
-	else if(isString(nextToken))
-	{
-		constant = _parseStringConstant();
-	}
 	
 	if(constant == nullptr)
 	{
@@ -225,9 +221,7 @@ ir::Constant* ConstantValueParser::_parseConstant(const ir::Type* type)
 	}
 	else if(isString(nextToken))
 	{
-		constant = _parseStringConstant();
-		assertM(type == constant->type(), "Declared type " << type->name
-			<< " does not match parsed type " << constant->type()->name);
+		constant = _parseStringConstant(type);
 	}
 	
 	if(constant == nullptr)
@@ -280,7 +274,7 @@ ir::Constant* ConstantValueParser::_parseFloatingPointConstant()
 	return new ir::FloatingPointConstant(parseFloat(_lexer->nextToken()));
 }
 
-ir::Constant* ConstantValueParser::_parseStringConstant()
+ir::Constant* ConstantValueParser::_parseStringConstant(const ir::Type* type)
 {
 	std::string token = _lexer->nextToken();
 
@@ -296,8 +290,7 @@ ir::Constant* ConstantValueParser::_parseStringConstant()
 	hydrazine::log("ConstantValueParser::Parser") << " parsed string constant '"
 		<< token << "'\n";
 
-	return new ir::ArrayConstant(token.c_str(), token.size(),
-		compiler::Compiler::getSingleton()->getType("i8"));
+	return new ir::ArrayConstant(token.c_str(), token.size(), type);
 }
 
 }

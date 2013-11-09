@@ -47,7 +47,7 @@ private:
 
 	ir::Constant* _parseIntegerConstant();
 	ir::Constant* _parseFloatingPointConstant();
-	ir::Constant* _parseStringConstant();
+	ir::Constant* _parseStringConstant(const ir::Type* type);
 
 private:
 	ir::Constant* _parsedConstant;
