@@ -67,7 +67,7 @@ private:
 	void _parseGlobalVariable(const std::string& token);
 	void _parseTypedef(const std::string& token);
 	void _parseFunction();
-	void _parsePrototype();
+	void _parsePrototype(const std::string& linkage);
 	void _parseTarget();
 	void _parseMetadata();
 
@@ -88,8 +88,12 @@ private:
 	void _addTypeAlias(const std::string& alias, const Type*);
 	
 	void _parseFunctionAttributes();
+	void _parseFunctionAttribute();
 	void _parseFunctionBody();
-	
+	void _parseFunctionBodyDeclaration();
+	void _parseLabel();
+	void _parseInstruction();
+
 private:
 	void _resetParser();
 
@@ -101,7 +105,7 @@ private:
 	Compiler*   _compiler;
 	Module*     _module;
 	Function*   _function;
-	//BasicBlock* _block;
+	BasicBlock* _block;
 
 	TypeAliasSet _typedefs;
 	StringMap    _typedefStrings;
@@ -258,7 +262,7 @@ void LLVMParserEngine::_parseTopLevelDeclaration(const std::string& token)
 	}
 	else if(token == "declare")
 	{
-		_parsePrototype();
+		_parsePrototype("external");
 	}
 	else if(token == "target")
 	{
@@ -446,7 +450,18 @@ void LLVMParserEngine::_parseTypedef(const std::string& token)
 
 void LLVMParserEngine::_parseFunction()
 {
-	_parsePrototype();
+	auto linkage = _lexer.peek();
+
+	if(isLinkage(linkage))
+	{
+		_lexer.nextToken();
+	}
+	else
+	{
+		linkage = "";
+	}
+	
+	_parsePrototype(linkage);
 	_parseFunctionAttributes();
 
 	_lexer.scanThrow("{");
@@ -456,13 +471,19 @@ void LLVMParserEngine::_parseFunction()
 	_lexer.scanThrow("}");
 }
 
-void LLVMParserEngine::_parsePrototype()
+void LLVMParserEngine::_parsePrototype(const std::string& linkage)
 {
 	auto returnType = _parseType();
-
-	_lexer.scanThrow("@");
 	
 	auto name = _lexer.nextToken();
+
+	if(name.find('@') != 0)
+	{
+		throw std::runtime_error("At " + _lexer.location() +
+			": expecting '@'.");
+	}
+	
+	name = name.substr(1);
 
 	_lexer.scanThrow("(");
 
@@ -482,7 +503,6 @@ void LLVMParserEngine::_parsePrototype()
 			
 			_lexer.scan(",");
 		}
-		
 	}
 
 	_lexer.scanThrow(")");
@@ -490,7 +510,7 @@ void LLVMParserEngine::_parsePrototype()
 	auto type = _compiler->getOrInsertType(FunctionType(_compiler,
 		returnType, argumentTypes));
 
-	_function = &*_module->newFunction(name, Variable::ExternalLinkage,
+	_function = &*_module->newFunction(name, translateLinkage(linkage),
 		Variable::HiddenVisibility, *type);
 }
 
@@ -611,17 +631,135 @@ void LLVMParserEngine::_addTypeAlias(const std::string& alias, const Type* type)
 
 void LLVMParserEngine::_parseFunctionAttributes()
 {
-	assertM(false, "Not Implemented.");
+	while(_lexer.peek() != "{")
+	{
+		_parseFunctionAttribute();
+	}
+}
+
+static bool isFunctionAttribute(const std::string& token)
+{
+	return (token == "section"
+		|| token == "#");
+}
+
+void LLVMParserEngine::_parseFunctionAttribute()
+{
+	auto attribute = _lexer.nextToken();
+	
+	if(!isFunctionAttribute(attribute))
+	{
+		throw std::runtime_error("At " + _lexer.location() +
+			": expecting a function attribute.");
+	}
+	
+	if(attribute == "section")
+	{
+		// TODO: save the section
+		_lexer.nextToken();
+	}
+	else if(attribute == "#")
+	{
+		// TODO: save the metadata node
+		_lexer.nextToken();
+	}
+	else
+	{
+		assert(false);
+	}
 }
 
 void LLVMParserEngine::_parseFunctionBody()
 {
-	assertM(false, "Not Implemented.");
+	while(_lexer.peek() != "}")
+	{
+		_parseFunctionBodyDeclaration();
+	}
+}
+
+static bool isLabel(const std::string& token)
+{
+	if(token.empty()) return false;
+	
+	return token.back() == ':';
+}
+
+static std::set<std::string> opcodes = {"call", "ret"};
+
+static bool isOpcode(const std::string& token)
+{
+	return opcodes.count(token) != 0;
+}
+
+static bool isInstruction(const std::string& token)
+{
+	if(isOpcode(token)) return true;
+	
+	if(token.find("%") == 0)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+void LLVMParserEngine::_parseFunctionBodyDeclaration()
+{
+	if(isLabel(_lexer.peek()))
+	{
+		_parseLabel();
+	}
+	else if(isInstruction(_lexer.peek()))
+	{
+		_parseInstruction();
+	}
+	else
+	{
+		throw std::runtime_error("At " + _lexer.location() +
+			": expecting a function body declaration.");
+	}
+}
+
+void LLVMParserEngine::_parseLabel()
+{
+	auto label = _lexer.nextToken();
+
+	_block = &*_function->newBasicBlock(_function->end(),
+		label.substr(0, label.size() - 1));
+}
+
+void LLVMParserEngine::_parseInstruction()
+{
+	assert(_block != nullptr);
+	
+	ir::Operand* result = nullptr;
+	
+	std::string opcode;
+	
+	if(isOperand(_lexer.peek()))
+	{
+		result = _parseOperand();
+	}
+
+	opcode = _lexer.nextToken();
+	
+	ir::Instruction::OperandVector operands;
+	
+	while(isOperand(_lexer.peek()))
+	{
+		operands.push_back(_parseOperand());
+	}
+	
+	_block->push_back();
 }
 
 void LLVMParserEngine::_resetParser()
 {
 	_lexer.reset();
+	
+	_module   = nullptr;
+	_function = nullptr;
+	_block    = nullptr;
 	
 	_typedefs.clear();
 	_typedefStrings.clear();

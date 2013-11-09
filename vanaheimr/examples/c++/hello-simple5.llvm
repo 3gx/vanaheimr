@@ -1,2 +1,5 @@
 define internal void @__cxx_global_var_init() section ".text.startup" {
 entry:
+}
+
+
