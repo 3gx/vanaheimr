@@ -1,0 +1,60 @@
+// Standard Library Includes
+#include <detail/cuda>
+#include <cstring>
+#include <cassert>
+#include <vector>
+
+// Interface
+
+namespace std
+{
+
+namespace detail
+{
+
+void synchronize()
+{
+	std::detail::cudaDeviceSynchronize();
+}
+
+static void checkError(uint32_t code)
+{
+	// TODO
+	assert(code == 0);
+}
+
+static void convertDimensions(std::detail::Dim3& gridDimensions,
+	std::detail::Dim3& ctaDimensions,
+	const std::initializer_list<size_t>& dimensions)
+{
+	// TODO
+}
+
+typedef std::vector<uint8_t> ByteVector;
+
+void launch(void* function, const std::initializer_list<size_t>& dimensions,
+	const ByteVector& parameters)
+{
+	auto parameterBuffer = std::detail::cudaGetParameterBuffer(
+		sizeof(size_t), parameters.size());
+	
+	std::copy(parameters.begin(), parameters.end(),
+		reinterpret_cast<uint8_t*>(parameterBuffer));
+	
+	std::detail::Dim3 gridDimensions;
+	std::detail::Dim3  ctaDimensions;
+	
+	convertDimensions(gridDimensions, ctaDimensions, dimensions);	
+	
+	uint32_t status = std::detail::cudaLaunchDevice(
+		reinterpret_cast<uint64_t>(function), parameterBuffer,
+		gridDimensions, ctaDimensions, 0, 0);
+	
+	checkError(status);
+}
+
+}
+
+}
+
+

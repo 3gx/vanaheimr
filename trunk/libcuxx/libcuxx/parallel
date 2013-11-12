@@ -1,30 +1,158 @@
 
+#pragma once
 
+// Standard Library Includes
+#include <__parallel_config>
+#include <initializer_list>
+#include <cstdint>
+
+// Interface
 
 namespace std
 {
 
-class parallel_context
+class barrier
 {
 public:
-	unsigned total_threads() const;
-	unsigned unique_thread_id() const;
+	explicit barrier(size_t num_threads);
+	~barrier();
 
-public:
-	void barrier();
+	void count_down_and_wait();
+
+private:
+	size_t _count;
 
 };
 
-template <typename... T> using Dimension = tuple<T...>;
-template <typename... T> using make_dimension = make_tuple<T...>;
+class parallel_context
+{
+public:
+	parallel_context(unsigned baseThreadId, unsigned threadsPerContext,
+		parallel_context* parent = nullptr);
 
-template<typename D, typename F>
-void parallel_launch(const D& dimensions, const F& function, ...);
+public:
+	unsigned total_threads() const;
+	unsigned thread_id_in_context() const;
+
+public:
+	bool is_root() const;
+
+public:
+	void barrier_wait();
+
+private:
+	unsigned _baseThreadId;
+	unsigned _threadsInContext;
+
+	barrier _barrier;
+
+	parallel_context* _parentContext;
+
+};
+
+template<typename F>
+void parallel_launch(const std::initializer_list<size_t>& dimensions,
+	const F& function, ...);
+
+void synchronize();
 
 }
 
+// Implementation
+#include <detail/parallel>
+#include <cassert>
 
+namespace std
+{
 
+barrier::barrier(size_t num_threads)
+: _count(num_threads)
+{
 
+}
+
+barrier::~barrier()
+{
+
+}
+
+void barrier::count_down_and_wait()
+{
+	assert(false && "Not implemented.");
+}
+
+parallel_context::parallel_context(unsigned b, unsigned t, parallel_context* p)
+: _baseThreadId(b), _threadsInContext(t), _barrier(t), _parentContext(p)
+{
+
+}
+
+unsigned parallel_context::total_threads() const
+{
+	return _threadsInContext;
+}
+
+unsigned parallel_context::thread_id_in_context() const
+{
+	return std::detail::get_unique_thread_id() % total_threads();
+}
+
+bool parallel_context::is_root() const
+{
+	return _parentContext == nullptr;
+}
+
+void parallel_context::barrier_wait()
+{
+	_barrier.count_down_and_wait();
+}
+
+template<typename T>
+void fillByteVectorWithArguments(std::detail::ByteVector& bytes,
+	const T& argument)
+{
+	const uint8_t* begin = reinterpret_cast<const uint8_t*>(&argument);
+	const uint8_t* end   = begin + sizeof(T);
+	
+	bytes.insert(bytes.end(), begin, end);
+}
+
+template<typename T, typename... Arguments>
+void fillByteVectorWithArguments(std::detail::ByteVector& bytes,
+	const T& argument, Arguments... arguments)
+{
+	fillByteVectorWithArguments(bytes, argument);
+	fillByteVectorWithArguments(bytes, arguments...);
+}
+
+template<typename... Arguments>
+std::detail::ByteVector flattenArguments(Arguments... arguments)
+{
+	std::detail::ByteVector bytes;
+	
+	fillByteVectorWithArguments(bytes, arguments...);
+	
+	return bytes;
+}
+
+template<typename F, typename... Arguments>
+void parallel_launch(const std::initializer_list<size_t>& dimensions,
+	const F& function, Arguments... arguments)
+{
+	auto argumentBuffer = flattenArguments(arguments...);
+	
+	std::detail::launch(reinterpret_cast<void*>(&function), dimensions,
+		argumentBuffer);
+		
+	// This version synchronizes by default
+	std::synchronize();
+}
+
+void synchronize()
+{
+	std::detail::synchronize();
+}
+
+}
 
 

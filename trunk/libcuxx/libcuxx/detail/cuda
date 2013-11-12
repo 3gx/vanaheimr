@@ -1,0 +1,26 @@
+namespace std
+{
+
+namespace detail
+{
+
+class Dim3
+{
+public:
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+};
+
+extern "C" void cudaDeviceSynchronize();
+extern "C" uint64_t cudaGetParameterBuffer(uint64_t alignment, uint64_t size);
+extern "C" uint32_t cudaLaunchDevice(uint64_t functionAddress,
+	uint64_t parameterBuffer, Dim3 kernelDimensions, Dim3 ctaDimensions,
+	uint32_t sharedMemorySize, uint64_t stream);
+
+
+extern "C" unsigned get_unique_thread_id();
+
+}
+
+}

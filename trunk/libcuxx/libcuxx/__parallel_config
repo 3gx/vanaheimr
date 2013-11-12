@@ -1,0 +1,7 @@
+
+#pragma once
+
+#define _LIBCPP_LITTLE_ENDIAN 1
+#define _LIBCPP_BIG_ENDIAN 0
+
+
