@@ -9,10 +9,11 @@ void saxpy(int* R, int* A, int* X, int b, int size)
 	}
 }
 
-void saxpy_kernel(const std::parallel_context& context, int* D, int* A, int b, int size)
+void saxpy_kernel(const std::parallel_context& context,
+	int* D, int* A, int* X, int b, int size)
 {
 	int threads = context.total_threads();
-	int id      = context.unique_thread_id();
+	int id      = context.thread_id_in_context();
 
 	for(int i = id; i < size; i+= threads)
 	{
@@ -26,15 +27,14 @@ int main(int argc, char** argv)
 	int X[] = {1, 2, 3, 5, 6, 7, 9, 4, 8};
 	int b = 2;
 	
-	int size = sizeof(A);
+	size_t size = sizeof(A);
 	
 	int R[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int D[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	
 	saxpy(R, A, X, b, size);
 	
-	std::parallel_launch(std::make_dimensions(size),
-		saxpy_kernel, D, A, X, B, size);
+	std::parallel_launch({size}, saxpy_kernel, D, A, X, b, size);
 	
 	for(int i = 0; i < size; ++i)
 	{
