@@ -18,9 +18,9 @@ extern "C" uint32_t cudaLaunchDevice(uint64_t functionAddress,
 	uint64_t parameterBuffer, Dim3 kernelDimensions, Dim3 ctaDimensions,
 	uint32_t sharedMemorySize, uint64_t stream);
 
-
 extern "C" unsigned get_unique_thread_id();
 
 }
 
 }
+
