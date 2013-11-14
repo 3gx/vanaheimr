@@ -1,4 +1,4 @@
-/*! \file   run-on-gpu.cpp
+/*! \file   gpu-native-loader.cpp
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\date   Wednesday November 13, 2013
 	\brief  A command line utility for running standalone GPU applications.
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 {
 	util::ArgumentParser parser(argc, argv);
 	
-	parser.description("A direct loader for GPU binaries, accepts PTX and "
+	parser.description("A native loader for GPU binaries, accepts PTX and "
 		"CUBIN formats.");
 	
 	std::string inputBinary;
