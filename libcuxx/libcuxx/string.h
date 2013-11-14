@@ -41,3 +41,8 @@ extern int memcmp(const void *,const void *,size_t);
 extern void * memchr(const void *,int,size_t);
 void *memchr_inv(const void *s, int c, size_t n);
 
+extern int strcoll ( const char * str1, const char * str2 );
+extern size_t strxfrm ( char * destination, const char * source, size_t num );
+extern char * strtok ( char * str, const char * delimiters );
+extern char * strerror ( int errnum );
+

@@ -27,7 +27,31 @@ static void convertDimensions(std::detail::Dim3& gridDimensions,
 	std::detail::Dim3& ctaDimensions,
 	const std::initializer_list<size_t>& dimensions)
 {
-	// TODO
+	gridDimensions.x = 1;
+	gridDimensions.y = 1;
+	gridDimensions.z = 1;
+
+	ctaDimensions.x = 1;
+	ctaDimensions.y = 1;
+	ctaDimensions.z = 1;
+	
+	if(dimensions.size() == 2)
+	{
+		auto iterator = dimensions.begin();
+	
+		gridDimensions.x = *iterator; ++iterator;
+		ctaDimensions.x  = *iterator;
+	}
+	else if(dimensions.size() == 1)
+	{
+		auto iterator = dimensions.begin();
+		
+		ctaDimensions.x = *iterator;
+	}
+	else
+	{
+		assert(false);
+	}
 }
 
 typedef std::vector<uint8_t> ByteVector;
