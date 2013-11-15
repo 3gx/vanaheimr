@@ -9,7 +9,7 @@
 // Standard Library Includes
 #include <string>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

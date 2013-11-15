@@ -10,7 +10,7 @@
 #include <string>
 #include<sstream>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

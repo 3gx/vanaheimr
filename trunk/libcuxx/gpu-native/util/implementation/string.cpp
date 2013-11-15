@@ -7,10 +7,10 @@
 #ifndef STRING_CPP_INCLUDED
 #define STRING_CPP_INCLUDED
 
-#include <minerva/util/interface/string.h>
-#include <minerva/util/interface/debug.h>
+#include <gpu-native/util/interface/string.h>
+#include <gpu-native/util/interface/debug.h>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

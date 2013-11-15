@@ -16,9 +16,9 @@
 	#include <mach/mach_time.h>
 #endif
 
-#include <minerva/util/interface/LowLevelTimer.h>
+#include <gpu-native/util/interface/LowLevelTimer.h>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

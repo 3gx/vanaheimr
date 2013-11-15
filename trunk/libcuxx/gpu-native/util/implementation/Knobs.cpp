@@ -5,13 +5,13 @@
 */
 
 // Minerva Includes
-#include <minerva/util/interface/Knobs.h>
+#include <gpu-native/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <map>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

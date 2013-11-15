@@ -6,8 +6,8 @@
 */
 
 // Minerva Includes
-#include <minerva/util/interface/TarLibrary.h>
-#include <minerva/util/interface/Casts.h>
+#include <gpu-native/util/interface/TarLibrary.h>
+#include <gpu-native/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -15,7 +15,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

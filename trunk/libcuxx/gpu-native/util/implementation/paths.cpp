@@ -5,10 +5,10 @@
 */
 
 // Minerva Includes
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/string.h>
+#include <gpu-native/util/interface/paths.h>
+#include <gpu-native/util/interface/string.h>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

@@ -10,10 +10,10 @@
 #ifndef TIMER_CPP_INCLUDED
 #define TIMER_CPP_INCLUDED
 
-#include <minerva/util/interface/Timer.h>
+#include <gpu-native/util/interface/Timer.h>
 #include <sstream>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

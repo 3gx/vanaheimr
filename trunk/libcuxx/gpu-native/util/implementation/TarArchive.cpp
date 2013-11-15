@@ -6,15 +6,15 @@
 */
 
 // Minerva Includes
-#include <minerva/util/interface/TarArchive.h>
-#include <minerva/util/interface/TarLibrary.h>
+#include <gpu-native/util/interface/TarArchive.h>
+#include <gpu-native/util/interface/TarLibrary.h>
 
-#include <minerva/util/interface/debug.h>
+#include <gpu-native/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

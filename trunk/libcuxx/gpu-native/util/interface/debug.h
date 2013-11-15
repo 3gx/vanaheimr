@@ -16,11 +16,11 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
-#include <minerva/util/interface/Timer.h>
+#include <gpu-native/util/interface/Timer.h>
 
 #include <iosfwd>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util
@@ -146,13 +146,13 @@ namespace util
 
 // Swallow all types
 template <typename T>
-minerva::util::NullStream & operator<<(minerva::util::NullStream & s, T const &)
+gpunative::util::NullStream & operator<<(gpunative::util::NullStream & s, T const &)
 {
 	return s;
 }
 
 // Swallow manipulator templates
-inline minerva::util::NullStream & operator<<(minerva::util::NullStream & s,
+inline gpunative::util::NullStream & operator<<(gpunative::util::NullStream & s,
 	std::ostream &(std::ostream&))
 {
 	return s;
@@ -191,8 +191,8 @@ inline minerva::util::NullStream & operator<<(minerva::util::NullStream & s,
 		if(REPORT_BASE >= REPORT_ERROR_LEVEL && (x) >= REPORT_ERROR_LEVEL)\
 		{ \
 			{\
-			std::cout << "(" << minerva::util::_debugTime() << ") " \
-				<< minerva::util::_debugFile( __FILE__, __LINE__ ) \
+			std::cout << "(" << gpunative::util::_debugTime() << ") " \
+				<< gpunative::util::_debugFile( __FILE__, __LINE__ ) \
 				<< " " << y << "\n";\
 			}\
 		 \
@@ -212,8 +212,8 @@ inline minerva::util::NullStream & operator<<(minerva::util::NullStream & s,
 		if(REPORT_BASE >= REPORT_ERROR_LEVEL)\
 		{ \
 			{\
-			std::cout << "(" << minerva::util::_debugTime() << ") " \
-				<< minerva::util::_debugFile( __FILE__, __LINE__ ) \
+			std::cout << "(" << gpunative::util::_debugTime() << ") " \
+				<< gpunative::util::_debugFile( __FILE__, __LINE__ ) \
 					<< " " << y << "\n";\
 			}\
 		 \
@@ -229,8 +229,8 @@ inline minerva::util::NullStream & operator<<(minerva::util::NullStream & s,
 		if(!(x))\
 		{ \
 			{\
-			std::cout << "(" << minerva::util::_debugTime() << ") " \
-				<< minerva::util::_debugFile( __FILE__, __LINE__ ) \
+			std::cout << "(" << gpunative::util::_debugTime() << ") " \
+				<< gpunative::util::_debugFile( __FILE__, __LINE__ ) \
 					<< " Assertion message: " << y << "\n";\
 			}\
 			assert(x);\

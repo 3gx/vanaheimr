@@ -5,12 +5,12 @@
 #ifndef ARGUMENT_PARSER_CPP_INCLUDED
 #define ARGUMENT_PARSER_CPP_INCLUDED
 
-#include <minerva/util/interface/ArgumentParser.h>
+#include <gpu-native/util/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <cstdlib>
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util

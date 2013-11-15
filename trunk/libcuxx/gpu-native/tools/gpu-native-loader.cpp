@@ -5,8 +5,8 @@
 */
 
 // GPU Native Includes
-#include <gpunative/runtime/interface/Loader.h>
-#include <gpunative/util/interface/ArgumentParser.h>
+#include <gpu-native/runtime/interface/Loader.h>
+#include <gpu-native/util/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <string>
@@ -41,7 +41,7 @@ static void runBinary(const std::string& inputBinaryPath)
 
 int main(int argc, char** argv)
 {
-	util::ArgumentParser parser(argc, argv);
+	gpunative::util::ArgumentParser parser(argc, argv);
 	
 	parser.description("A native loader for GPU binaries, accepts PTX and "
 		"CUBIN formats.");
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 	
 	if(verbose)
 	{
-		util::enableAllLogs();
+		gpunative::util::enableAllLogs();
 	}
 	
 	runBinary(inputBinary);
