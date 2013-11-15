@@ -16,7 +16,7 @@
 #include <string>
 #include <fstream>
 
-namespace minerva {
+namespace gpunative {
 namespace util {
 namespace json {
 

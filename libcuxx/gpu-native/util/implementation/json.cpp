@@ -8,8 +8,8 @@
 	\date 27 Oct 2009
 */
 
-#include <minerva/util/interface/json.h>
-#include <minerva/util/interface/debug.h>
+#include <gpu-native/util/interface/json.h>
+#include <gpu-native/util/interface/debug.h>
 
 #include <math.h>
 #include <sstream>
@@ -24,7 +24,7 @@
 	ss << "line " << line << ": " << msg << "\n before: " << buffer; throw std::runtime_error(ss.str()); }
 
 ////////////////////////////////////////////////////////////////////////////////
-namespace minerva {
+namespace gpunative {
 namespace util {
 
 json::Value::Value(): type(Null) {

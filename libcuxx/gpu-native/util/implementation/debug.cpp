@@ -13,7 +13,7 @@
 #ifndef DEBUG_CPP_INCLUDED
 #define DEBUG_CPP_INCLUDED
 
-#include <minerva/util/interface/debug.h>
+#include <gpu-native/util/interface/debug.h>
 
 // Standard Library Includes
 #include <memory>
@@ -27,7 +27,7 @@
 	#endif
 #endif
 
-namespace minerva
+namespace gpunative
 {
 
 namespace util
