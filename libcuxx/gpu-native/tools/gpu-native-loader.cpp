@@ -12,9 +12,12 @@
 #include <string>
 #include <stdexcept>
 
-static void runBinary(const std::string& inputBinaryPath)
+typedef gpunative::runtime::Loader::StringVector StringVector;
+
+static void runBinary(const std::string& inputBinaryPath,
+	const StringVector& arguments)
 {
-	gpunative::runtime::Loader loader(inputBinaryPath);
+	gpunative::runtime::Loader loader(inputBinaryPath, arguments);
 	
 	try
 	{
@@ -39,12 +42,38 @@ static void runBinary(const std::string& inputBinaryPath)
 	}
 }
 
+static StringVector getArguments(const std::string& path, int argc, char** argv)
+{
+	StringVector arguments;
+	
+	arguments.push_back(path);
+	
+	int position = 0;
+	
+	for( ; position < argc; ++position)
+	{
+		if(std::string(argv[position]) == "--")
+		{
+			++position;
+			break;
+		}
+	}
+	
+	for( ; position < argc; ++position)
+	{
+		arguments.push_back(argv[position]);
+	}
+	
+	return arguments;
+}
+
 int main(int argc, char** argv)
 {
 	gpunative::util::ArgumentParser parser(argc, argv);
 	
 	parser.description("A native loader for GPU binaries, accepts PTX and "
-		"CUBIN formats.");
+		"CUBIN formats.\n"
+		"\tRun with: gpu-native-loader [options] -- [gpu-program-options]");
 	
 	std::string inputBinary;
 	bool verbose = false;
@@ -53,13 +82,14 @@ int main(int argc, char** argv)
 		"being executed (.ptx/.cubin).");
 	parser.parse("-v", "--verbose", verbose, false,
 		"Print out status information while running.");
+	parser.parse();
 	
 	if(verbose)
 	{
 		gpunative::util::enableAllLogs();
 	}
 	
-	runBinary(inputBinary);
+	runBinary(inputBinary, getArguments(inputBinary, argc, argv));
 	
 	return 0;
 }
