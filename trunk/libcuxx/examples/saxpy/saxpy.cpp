@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 	int X[] = {1, 2, 3, 5, 6, 7, 9, 4, 8};
 	int b   = 2;
 	
-	size_t size = sizeof(A);
+	size_t size = sizeof(X);
 	
 	int R[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int D[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

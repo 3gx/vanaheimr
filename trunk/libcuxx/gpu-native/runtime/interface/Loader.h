@@ -8,6 +8,8 @@
 
 // Standard Library Includes
 #include <string>
+#include <memory>
+#include <vector>
 
 namespace gpunative
 {
@@ -15,11 +17,21 @@ namespace gpunative
 namespace runtime
 {
 
+class LoaderState;
+
 class Loader
 {
 public:
+	typedef std::vector<std::string> StringVector;
+
+public:
 	/*! \brief Construct a new loader and associate it with a binary */
-	Loader(const std::string& path);
+	Loader(const std::string& path, const StringVector& arguments);
+	~Loader();
+
+public:
+	Loader(const Loader&) = delete;
+	Loader& operator=(const Loader&) = delete;
 
 public:
 	/*! \brief Load the associated binary. */
@@ -29,8 +41,10 @@ public:
 	void runBinary();
 
 private:
-	std::string _path;
-	
+	std::string  _path;
+	StringVector _arguments;
+
+	std::unique_ptr<LoaderState> _state;
 
 };
 
