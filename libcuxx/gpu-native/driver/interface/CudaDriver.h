@@ -9,6 +9,10 @@
 // GPU Native Includes
 #include <gpu-native/driver/interface/CudaDriverTypes.h>
 
+// Standard Library Includes
+#include <cstring>
+#include <string>
+
 namespace gpunative
 {
 
@@ -166,18 +170,6 @@ public:
 	static void cuEventDestroy(CUevent hEvent);
 	static void cuEventElapsedTime(float* pMilliseconds, 
 		CUevent hStart, CUevent hEnd);
-
-	/************************************
-	**
-	**    Streams
-	**
-	***********************************/
-	static void cuStreamCreate(CUstream* phStream, 
-		unsigned int Flags);
-	static void cuStreamQuery(CUstream hStream);
-	static void cuStreamSynchronize(CUstream hStream);
-	static void cuStreamDestroy(CUstream hStream);
-
 	
 	/************************************
 	**
@@ -216,6 +208,8 @@ private:
 			CUdevice_attribute attrib, CUdevice dev);
 		CUresult (*cuCtxCreate)(CUcontext* pctx, 
 			unsigned int flags, CUdevice dev);
+		CUresult (*cuCtxGetApiVersion)(CUcontext ctx, unsigned int* version);
+		CUresult (*cuCtxSynchronize)(void);
 		CUresult (*cuCtxDestroy)(CUcontext ctx);
 
 		CUresult (*cuModuleLoadDataEx)(CUmodule* module, 
@@ -231,27 +225,36 @@ private:
 		CUresult (*cuFuncSetSharedSize)(CUfunction hfunc, 
 			unsigned int bytes);
 
+		CUresult (*cuMemGetInfo)(size_t* free, 
+			size_t* total);
 		CUresult (*cuMemAlloc)(CUdeviceptr* dptr, 
 			unsigned int bytesize);
 		CUresult (*cuMemFree)(CUdeviceptr dptr);
+		CUresult (*cuMemGetAddressRange)(CUdeviceptr* pbase, 
+			size_t* psize, CUdeviceptr dptr);
 		CUresult (*cuMemAllocHost)(void** pp, 
 			unsigned int bytesize);
 		CUresult (*cuMemFreeHost)(void* p);
+		
 		CUresult (*cuMemHostAlloc)(void** pp, 
 			unsigned long long bytesize, unsigned int Flags);
 		CUresult (*cuMemHostRegister)(void* pp, 
 			unsigned long long bytesize, unsigned int Flags);
 		CUresult (*cuMemHostUnregister)(void* pp);
-
 		CUresult (*cuMemHostGetDevicePointer)(CUdeviceptr* pdptr, 
 			void* p, unsigned int Flags);
+		CUresult (*cuMemHostGetFlags)(unsigned int* pFlags, void* p);
+		
 		CUresult (*cuMemcpyHtoD)(CUdeviceptr dstDevice, 
 			const void* srcHost, unsigned int ByteCount);
 		CUresult (*cuMemcpyDtoH)(void* dstHost, 
 			CUdeviceptr srcDevice, unsigned int ByteCount);
 		
+		CUresult (*cuParamSetSize)(CUfunction hfunc, 
+			unsigned int numbytes);
 		CUresult (*cuParamSetv)(CUfunction hfunc, int offset, 
 			void*  ptr, unsigned int numbytes);
+		
 		CUresult (*cuLaunchGrid)(CUfunction f, int grid_width, 
 			int grid_height);
 		CUresult (*cuEventCreate)(CUevent* phEvent, 
@@ -279,7 +282,6 @@ private:
 		
 	private:
 		void* _library;
-		bool  _failed;
 
 	};
 	

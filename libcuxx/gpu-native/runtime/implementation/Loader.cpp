@@ -6,7 +6,11 @@
 
 // GPU Native Includes
 #include <gpu-native/runtime/interface/Loader.h>
+
 #include <gpu-native/driver/interface/CudaDriver.h>
+
+#include <gpu-native/util/interface/Casts.h>
+#include <gpu-native/util/interface/debug.h>
 
 // Standard Library Includes
 #include <fstream>
@@ -54,6 +58,7 @@ private:
 
 private:
 	void _setupMainArguments();
+	void _freeMainArguments();
 
 private:
 	std::string  _path;
@@ -110,6 +115,7 @@ static size_t getFileLength(std::istream& stream)
 
 static std::string loadBinary(const std::string& path)
 {
+	util::log("Loader") << "Loading GPU binary from path: '" << path << "'\n";
 	std::ifstream binaryFile(path);
 	
 	if(not binaryFile.is_open())
@@ -118,28 +124,75 @@ static std::string loadBinary(const std::string& path)
 			path + "' for reading.");
 	}
 	
-	std::string result;
+	size_t size = getFileLength(binaryFile);
+
+	std::string result(size, ' ');
 	
-	binaryFile.read(const_cast<char*>(result.data()),
-		getFileLength(binaryFile));
+	binaryFile.read(const_cast<char*>(result.data()), size);
+	
+	util::log("Loader") << " loaded " << size << " bytes.\n";
 	
 	return result;
 }
 
+static void loadModule(driver::CUmodule& module, const std::string& binary)
+{
+	util::log("Loader") << "Loading module from binary data.\n";
+	
+	driver::CUjit_option options[] = {
+	//	CU_JIT_TARGET,
+		driver::CU_JIT_ERROR_LOG_BUFFER, 
+		driver::CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, 
+	};
+
+	const uint32_t errorLogSize       = 2048;
+	uint32_t       errorLogActualSize = errorLogSize - 1;
+
+	uint8_t errorLogBuffer[errorLogSize];
+
+	std::memset(errorLogBuffer, 0, errorLogSize);
+
+	void* optionValues[] = {
+	//	(void*)CU_TARGET_COMPUTE_20,
+		(void*)errorLogBuffer, 
+		util::bit_cast<void*>(errorLogActualSize), 
+	};
+
+	try
+	{
+		driver::CudaDriver::cuModuleLoadDataEx(&module, binary.data(), 2,
+			options, optionValues);
+	}
+	catch(const std::exception& e)
+	{
+		throw std::runtime_error("Failed to load binary data:\n\tMessage: " + std::string((char*)errorLogBuffer));
+	}
+	
+}
+
 void LoaderState::_loadState()
 {
+	util::log("Loader") << "Initializing CUDA driver.\n";
+	
 	driver::CudaDriver::cuInit(0);
+	
+	util::log("Loader") << "Creating context on devive " << _getDevice() << ".\n";
 	
 	driver::CudaDriver::cuCtxCreate(&_context, 0, _getDevice());
 	
 	auto binary = loadBinary(_path);
 	
-	driver::CudaDriver::cuModuleLoadDataEx(&_module, binary.data(), 0,
-		nullptr, nullptr);
+	
+	loadModule(_module, binary);
+
+	
+	util::log("Loader") << "Loading 'main' function from module.\n";
 	driver::CudaDriver::cuModuleGetFunction(&_main, _module, "main");
 	
+	util::log("Loader") << "Checking for global initialization function.\n";
 	if(driver::CudaDriver::doesFunctionExist(_module, "__cxx_global_var_init"))
 	{
+		util::log("Loader") << "Loading '__cxx_global_var_init' function from module.\n";
 		driver::CudaDriver::cuModuleGetFunction(&_init, _module,
 			"__cxx_global_var_init");
 	}
@@ -196,13 +249,16 @@ void LoaderState::_runMain()
 	driver::CudaDriver::cuEventSynchronize(finish);
 	
 	// Log the time
-	float microseconds = 0.0f;
+	float milliseconds = 0.0f;
 	
-	driver::CudaDriver::cuEventElapsedTime(&microseconds, start, finish);
+	driver::CudaDriver::cuEventElapsedTime(&milliseconds, start, finish);
 	
 	// Destroy timers
 	driver::CudaDriver::cuEventDestroy(start);
 	driver::CudaDriver::cuEventDestroy(finish);
+
+	// Free argc and argv
+	_freeMainArguments();
 	
 }
 
@@ -245,6 +301,15 @@ void LoaderState::_setupMainArguments()
 			sizeof(driver::CUdeviceptr));
 	
 		offset += sizeof(driver::CUdeviceptr);
+	}
+}
+
+void LoaderState::_freeMainArguments()
+{
+	for(auto& argument : _arguments)
+	{
+		driver::CudaDriver::cuMemHostUnregister(
+			const_cast<char*>(argument.c_str()));
 	}
 }
 

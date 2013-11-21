@@ -56,6 +56,7 @@ static void convertDimensions(std::detail::Dim3& gridDimensions,
 
 typedef std::vector<uint8_t> ByteVector;
 
+// This needs to be extremely fast for local launches
 void launch(void* function, const std::initializer_list<size_t>& dimensions,
 	const ByteVector& parameters)
 {
