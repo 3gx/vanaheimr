@@ -264,12 +264,15 @@ void LoaderState::_runMain()
 
 void LoaderState::_setupMainArguments()
 {
+	util::log("Loader") << "Setting up arguments to main.\n";
+	
 	typedef std::vector<driver::CUdeviceptr> PointerVector;
 
 	PointerVector argv;
 
 	for(auto& argument : _arguments)
 	{
+		util::log("Loader") << " Registering memory for '" << argument << "'.\n";
 		driver::CudaDriver::cuMemHostRegister(
 			const_cast<char*>(argument.c_str()), 
 			argument.size() + 1, driver::CU_MEMHOSTREGISTER_DEVICEMAP);
@@ -278,11 +281,13 @@ void LoaderState::_setupMainArguments()
 	
 		driver::CudaDriver::cuMemHostGetDevicePointer(&pointer,
 			const_cast<char*>(argument.c_str()), 0);
+		util::log("Loader") << "  device pointer is '" << pointer << "'.\n";
 			
 		argv.push_back(pointer);
 	}
 	
 	size_t bytes = sizeof(int) + sizeof(driver::CUdeviceptr) * argv.size();
+	util::log("Loader") << " setting parameter size to " << bytes << ".\n";
 	
 	driver::CudaDriver::cuParamSetSize(_main, bytes);
 	
@@ -290,13 +295,15 @@ void LoaderState::_setupMainArguments()
 	
 	int argc = argv.size();
 	
-	driver::CudaDriver::cuParamSetv(_main, offset, &argc, sizeof(int));
+	util::log("Loader") << " setting up argc = " << argc << ".\n";
+	driver::CudaDriver::cuParamSetv(_main, offset, &argc, 4);
 	
 	offset += sizeof(int);
 	
 	// TODO: Do we need alignment here?
 	for(auto pointer : argv)
 	{
+		util::log("Loader") << " setting up argv[" << (&pointer - &argv[0]) << "] = " << pointer << ".\n";
 		driver::CudaDriver::cuParamSetv(_main, offset, &pointer,
 			sizeof(driver::CUdeviceptr));
 	
