@@ -98,6 +98,8 @@ void LoaderState::runBinary()
 {
 	_runGlobalConstructors();
 	_runMain();
+
+	util::log("Loader") << "Successfully ran binary." << "\n";
 }
 
 static size_t getFileLength(std::istream& stream)
@@ -187,7 +189,7 @@ void LoaderState::_loadState()
 
 	
 	util::log("Loader") << "Loading 'main' function from module.\n";
-	driver::CudaDriver::cuModuleGetFunction(&_main, _module, "main");
+	driver::CudaDriver::cuModuleGetFunction(&_main, _module, "_pre_main");
 	
 	util::log("Loader") << "Checking for global initialization function.\n";
 	if(driver::CudaDriver::doesFunctionExist(_module, "__cxx_global_var_init"))
@@ -222,7 +224,10 @@ void LoaderState::_runGlobalConstructors()
 
 void LoaderState::_runMain()
 {
+	util::log("Loader") << "Running 'main'.\n";
+
 	// Setup dimensions
+	util::log("Loader") << " setting up CTA dimensions (1, 1, 1).\n";
 	driver::CudaDriver::cuFuncSetBlockShape(_main, 1, 1, 1);
 	driver::CudaDriver::cuFuncSetSharedSize(_main, 0);
 	
@@ -240,17 +245,20 @@ void LoaderState::_runMain()
 	driver::CudaDriver::cuEventRecord(start, 0);
 	
 	// Launch main
+	util::log("Loader") << " launching kernel over grid (1, 1).\n";
 	driver::CudaDriver::cuLaunchGrid(_main, 1, 1);
 
 	// End the timer
 	driver::CudaDriver::cuEventRecord(finish, 0);
 
 	// Wait for the kernel
+	util::log("Loader") << " waiting for kernel to finish....\n";
 	driver::CudaDriver::cuEventSynchronize(finish);
 	
 	// Log the time
 	float milliseconds = 0.0f;
 	
+	util::log("Loader") << " kernel finished in " << milliseconds << " ms\n";
 	driver::CudaDriver::cuEventElapsedTime(&milliseconds, start, finish);
 	
 	// Destroy timers
@@ -281,7 +289,8 @@ void LoaderState::_setupMainArguments()
 	
 		driver::CudaDriver::cuMemHostGetDevicePointer(&pointer,
 			const_cast<char*>(argument.c_str()), 0);
-		util::log("Loader") << "  device pointer is '" << pointer << "'.\n";
+		util::log("Loader") << "  device pointer is '0x" << std::hex
+			<< pointer << std::dec << "'.\n";
 			
 		argv.push_back(pointer);
 	}
@@ -303,7 +312,8 @@ void LoaderState::_setupMainArguments()
 	// TODO: Do we need alignment here?
 	for(auto pointer : argv)
 	{
-		util::log("Loader") << " setting up argv[" << (&pointer - &argv[0]) << "] = " << pointer << ".\n";
+		util::log("Loader") << " setting up argv[0x" << std::hex << (&pointer - &argv[0])
+			<< std::dec << "] = 0x" << std::hex << pointer << std::dec << ".\n";
 		driver::CudaDriver::cuParamSetv(_main, offset, &pointer,
 			sizeof(driver::CUdeviceptr));
 	
