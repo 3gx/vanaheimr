@@ -67,6 +67,16 @@ private:
 	CUmodule     _module;
 	CUfunction   _main;
 	CUfunction   _init;
+
+private:
+	typedef std::vector<driver::CUdeviceptr> PointerVector;
+
+private:
+	PointerVector       _argv;
+	driver::CUdeviceptr _argvPointer;
+
+	int                 _returnValue;
+	driver::CUdeviceptr _returnValuePointer;
 };
 
 void Loader::loadBinary()
@@ -267,6 +277,8 @@ void LoaderState::_runMain()
 
 	// Free argc and argv
 	_freeMainArguments();
+
+	util::log("Loader") << " kernel returned value " << _returnValue << "\n";
 	
 }
 
@@ -274,9 +286,8 @@ void LoaderState::_setupMainArguments()
 {
 	util::log("Loader") << "Setting up arguments to main.\n";
 	
-	typedef std::vector<driver::CUdeviceptr> PointerVector;
-
-	PointerVector argv;
+	// Register each of the argv entries
+	_argv.clear();
 
 	for(auto& argument : _arguments)
 	{
@@ -290,35 +301,55 @@ void LoaderState::_setupMainArguments()
 		driver::CudaDriver::cuMemHostGetDevicePointer(&pointer,
 			const_cast<char*>(argument.c_str()), 0);
 		util::log("Loader") << "  device pointer is '0x" << std::hex
-			<< pointer << std::dec << "'.\n";
+			<< pointer << std::dec << "', host pointer is '"
+			<< (void*)argument.data() << "'.\n";
 			
-		argv.push_back(pointer);
+		_argv.push_back(pointer);
 	}
 	
-	size_t bytes = sizeof(int) + sizeof(driver::CUdeviceptr) * argv.size();
+	// Register the argv array
+	driver::CudaDriver::cuMemHostRegister(
+		_argv.data(), 
+		_argv.size() * sizeof(driver::CUdeviceptr),
+		driver::CU_MEMHOSTREGISTER_DEVICEMAP);
+
+	_argvPointer = 0;
+	driver::CudaDriver::cuMemHostGetDevicePointer(&_argvPointer,
+		_argv.data(), 0);
+	
+	// Register the return value
+	driver::CudaDriver::cuMemHostRegister(
+		&_returnValue, sizeof(int),
+		driver::CU_MEMHOSTREGISTER_DEVICEMAP);
+
+	_returnValuePointer = 0;
+	driver::CudaDriver::cuMemHostGetDevicePointer(&_returnValuePointer,
+		&_returnValue, 0);
+
+	// Set the parameters	
+	// return value pointer (8 bytes)
+	// argv pointer         (8 bytes)
+	// argc value           (4 bytes)
+
+	size_t bytes = sizeof(int) + sizeof(driver::CUdeviceptr) * 2;
+	
 	util::log("Loader") << " setting parameter size to " << bytes << ".\n";
 	
 	driver::CudaDriver::cuParamSetSize(_main, bytes);
 	
-	size_t offset = 0;
-	
-	int argc = argv.size();
+	util::log("Loader") << " setting up return value pointer "
+		<< " = 0x" << std::hex << _returnValuePointer << std::dec << " (offset "
+		<< 0 << ", size " << sizeof(driver::CUdeviceptr) << ").\n";
+	driver::CudaDriver::cuParamSetv(_main, 0, &_returnValuePointer, sizeof(driver::CUdeviceptr));
+	util::log("Loader") << " setting up argv pointer "
+		<< " = 0x" << std::hex << _argvPointer << std::dec << " (offset "
+		<< 0 << ", size " << sizeof(driver::CUdeviceptr) << ").\n";
+	driver::CudaDriver::cuParamSetv(_main, 8, &_argvPointer, sizeof(driver::CUdeviceptr));
+
+	int argc = _argv.size();
 	
 	util::log("Loader") << " setting up argc = " << argc << ".\n";
-	driver::CudaDriver::cuParamSetv(_main, offset, &argc, 4);
-	
-	offset += sizeof(int);
-	
-	// TODO: Do we need alignment here?
-	for(auto pointer : argv)
-	{
-		util::log("Loader") << " setting up argv[0x" << std::hex << (&pointer - &argv[0])
-			<< std::dec << "] = 0x" << std::hex << pointer << std::dec << ".\n";
-		driver::CudaDriver::cuParamSetv(_main, offset, &pointer,
-			sizeof(driver::CUdeviceptr));
-	
-		offset += sizeof(driver::CUdeviceptr);
-	}
+	driver::CudaDriver::cuParamSetv(_main, 16, &argc, sizeof(int));
 }
 
 void LoaderState::_freeMainArguments()
@@ -328,6 +359,9 @@ void LoaderState::_freeMainArguments()
 		driver::CudaDriver::cuMemHostUnregister(
 			const_cast<char*>(argument.c_str()));
 	}
+	
+	driver::CudaDriver::cuMemHostUnregister(_argv.data());
+	driver::CudaDriver::cuMemHostUnregister(&_returnValue);
 }
 
 }
