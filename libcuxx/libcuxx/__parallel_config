@@ -4,4 +4,6 @@
 #define _LIBCPP_LITTLE_ENDIAN 1
 #define _LIBCPP_BIG_ENDIAN 0
 
+typedef long long unsigned size_t;
+
 
