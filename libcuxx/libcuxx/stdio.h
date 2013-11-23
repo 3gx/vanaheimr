@@ -89,10 +89,21 @@ inline int getSize(Arg arg)
 	return sizeof(arg);
 }
 
+inline int align(int address, int alignment)
+{
+	int remainder = address % alignment;
+
+	return remainder == 0 ? address : address + alignment - remainder;
+}
+
 template<typename Arg, typename... Args>
 inline int getSize(Arg arg, Args... args)
 {
-	return sizeof(arg) + getSize(args...);
+	int size = getSize(args...);
+
+	size = align(size, sizeof(arg));
+
+	return size + sizeof(arg);
 }
 
 inline void fillBuffer(char* buffer, int offset)
@@ -102,12 +113,16 @@ inline void fillBuffer(char* buffer, int offset)
 template<typename Arg>
 inline void fillBuffer(char* buffer, int offset, Arg arg)
 {
+	offset = align(offset, sizeof(arg));
+
 	*reinterpret_cast<Arg*>(buffer + offset) = arg;
 }
 
 template<typename Arg, typename... Args>
 inline void fillBuffer(char* buffer, int offset, Arg arg, Args... args)
 {
+	offset = align(offset, sizeof(arg));
+
 	*reinterpret_cast<Arg*>(buffer + offset) = arg;
 
 	fillBuffer(buffer, offset + sizeof(arg), args...);
@@ -119,10 +134,10 @@ template<typename... Args>
 int printf(const char* format, Args... args)
 {
 	const int size = getSize(args...);
-	const int bufferSize = size > 32 ? size : 32;
 
-	char buffer[bufferSize];
-	fillBuffer(buffer, 0, args...);
+	// This is really ugly to support natural aligned stack operations
+	long long unsigned buffer[(size + sizeof(long long unsigned) - 1)/sizeof(long long unsigned)];
+	fillBuffer((char*)buffer, 0, args...);
 
 	int done;
 

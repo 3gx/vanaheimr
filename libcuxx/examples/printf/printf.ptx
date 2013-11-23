@@ -7,11 +7,6 @@
 .address_size 64
 
 	// .globl	main
-.func  (.param .b32 func_retval0) _Z6printfIJEEiPKcDpT_
-(
-	.param .b64 _Z6printfIJEEiPKcDpT__param_0
-)
-;
 .extern .func  (.param .b32 func_retval0) vprintf
 (
 	.param .b64 vprintf_param_0,
@@ -19,60 +14,34 @@
 )
 ;
 .global .align 1 .b8 _str[11] = {72, 101, 108, 108, 111, 32, 71, 80, 85, 10, 0};
+.global .align 1 .b8 _str1[21] = {65, 114, 103, 117, 109, 101, 110, 116, 91, 37, 100, 93, 32, 61, 32, 39, 37, 115, 39, 10, 0};
 
 .visible .func  (.param .b32 func_retval0) main(
 	.param .b32 main_param_0,
 	.param .b64 main_param_1
 )
 {
-	.reg .s32 	%r<3>;
-	.reg .s64 	%rl<3>;
+	.local .align 8 .b8 	__local_depot0[16];
+	.reg .b64 	%SP;
+	.reg .b64 	%SPL;
+	.reg .pred 	%p<3>;
+	.reg .s32 	%r<9>;
+	.reg .s64 	%rl<13>;
 
-	mov.u64 	%rl1, _str;
-	cvta.global.u64 	%rl2, %rl1;
+	mov.u64 	%rl12, __local_depot0;
+	cvta.local.u64 	%SP, %rl12;
+	mov.u64 	%rl5, _str;
+	cvta.global.u64 	%rl6, %rl5;
+	ld.param.u32 	%r3, [main_param_0];
+	add.u64 	%rl8, %SP, 0;
 	// Callseq Start 0
 	{
 	.reg .b32 temp_param_reg;
 	// <end>}
 	.param .b64 param0;
-	st.param.b64	[param0+0], %rl2;
-	.param .b32 retval0;
-	call.uni (retval0), 
-	_Z6printfIJEEiPKcDpT_, 
-	(
-	param0
-	);
-	ld.param.b32	%r1, [retval0+0];
-	
-	//{
-	}// Callseq End 0
-	mov.u32 	%r2, 0;
-	st.param.b32	[func_retval0+0], %r2;
-	ret;
-}
-
-.func  (.param .b32 func_retval0) _Z6printfIJEEiPKcDpT_(
-	.param .b64 _Z6printfIJEEiPKcDpT__param_0
-)
-{
-	.local .align 1 .b8 	__local_depot1[32];
-	.reg .b64 	%SP;
-	.reg .b64 	%SPL;
-	.reg .s32 	%r<2>;
-	.reg .s64 	%rl<4>;
-
-	mov.u64 	%rl3, __local_depot1;
-	cvta.local.u64 	%SP, %rl3;
-	ld.param.u64 	%rl1, [_Z6printfIJEEiPKcDpT__param_0];
-	add.u64 	%rl2, %SP, 0;
-	// Callseq Start 1
-	{
-	.reg .b32 temp_param_reg;
-	// <end>}
-	.param .b64 param0;
-	st.param.b64	[param0+0], %rl1;
+	st.param.b64	[param0+0], %rl6;
 	.param .b64 param1;
-	st.param.b64	[param1+0], %rl2;
+	st.param.b64	[param1+0], %rl8;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -80,35 +49,48 @@
 	param0, 
 	param1
 	);
-	ld.param.b32	%r1, [retval0+0];
+	ld.param.b32	%r4, [retval0+0];
+	
+	//{
+	}// Callseq End 0
+	setp.lt.s32	%p1, %r3, 1;
+	@%p1 bra 	BB0_3;
+	ld.param.u64 	%rl11, [main_param_1];
+	mov.u64 	%rl7, _str1;
+	cvta.global.u64 	%rl1, %rl7;
+	mov.u32 	%r8, 0;
+BB0_2:
+	ld.u64 	%rl9, [%rl11];
+	st.u32 	[%SP+0], %r8;
+	st.u64 	[%SP+8], %rl9;
+	// Callseq Start 1
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rl1;
+	.param .b64 param1;
+	st.param.b64	[param1+0], %rl8;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32	%r6, [retval0+0];
 	
 	//{
 	}// Callseq End 1
-	st.param.b32	[func_retval0+0], %r1;
+	add.s64 	%rl11, %rl11, 8;
+	add.s32 	%r8, %r8, 1;
+	setp.ne.s32	%p2, %r3, %r8;
+	@%p2 bra 	BB0_2;
+BB0_3:
+	mov.u32 	%r7, 0;
+	st.param.b32	[func_retval0+0], %r7;
 	ret;
 }
-
-.func  (.param .b32 func_retval0) _Z7getSizev(
-
-)
-{
-	.reg .s32 	%r<2>;
-
-	mov.u32 	%r1, 0;
-	st.param.b32	[func_retval0+0], %r1;
-	ret;
-}
-
-.func _Z10fillBufferPci(
-	.param .b64 _Z10fillBufferPci_param_0,
-	.param .b32 _Z10fillBufferPci_param_1
-)
-{
-
-
-	ret;
-}
-
 
 .visible .entry _pre_main(.param .b64 _retval, .param .b64 _argv, .param .b32 _argc)
 {
@@ -130,5 +112,3 @@
 
 	ret;
 }
-
-

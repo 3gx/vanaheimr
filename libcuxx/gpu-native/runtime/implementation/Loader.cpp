@@ -52,13 +52,16 @@ private:
 
 private:
 	void _loadState();
-	int  _getDevice();
 	void _runGlobalConstructors();
 	void _runMain();
 
 private:
 	void _setupMainArguments();
 	void _freeMainArguments();
+
+private:
+	int  _getDevice();
+	std::string _getDeviceName();
 
 private:
 	std::string  _path;
@@ -109,7 +112,7 @@ void LoaderState::runBinary()
 	_runGlobalConstructors();
 	_runMain();
 
-	util::log("Loader") << "Successfully ran binary." << "\n";
+	util::log("Loader") << "Successfully ran binary, exiting...." << "\n";
 }
 
 static size_t getFileLength(std::istream& stream)
@@ -188,7 +191,8 @@ void LoaderState::_loadState()
 	
 	driver::CudaDriver::cuInit(0);
 	
-	util::log("Loader") << "Creating context on devive " << _getDevice() << ".\n";
+	util::log("Loader") << "Creating context on device " << _getDevice()
+		<< ": name '" << _getDeviceName() << "'.\n";
 	
 	driver::CudaDriver::cuCtxCreate(&_context, 0, _getDevice());
 	
@@ -210,14 +214,9 @@ void LoaderState::_loadState()
 	}
 	else
 	{
+		util::log("Loader") << " No global initialization function found.\n";
 		_init = 0;
 	}
-}
-
-int LoaderState::_getDevice()
-{
-	// TODO
-	return 0;
 }
 
 void LoaderState::_runGlobalConstructors()
@@ -268,8 +267,8 @@ void LoaderState::_runMain()
 	// Log the time
 	float milliseconds = 0.0f;
 	
-	util::log("Loader") << " kernel finished in " << milliseconds << " ms\n";
 	driver::CudaDriver::cuEventElapsedTime(&milliseconds, start, finish);
+	util::log("Loader") << " kernel finished in " << milliseconds << " ms\n";
 	
 	// Destroy timers
 	driver::CudaDriver::cuEventDestroy(start);
@@ -284,14 +283,14 @@ void LoaderState::_runMain()
 
 void LoaderState::_setupMainArguments()
 {
-	util::log("Loader") << "Setting up arguments to main.\n";
+	util::log("Loader") << " Setting up arguments to main.\n";
 	
 	// Register each of the argv entries
 	_argv.clear();
 
 	for(auto& argument : _arguments)
 	{
-		util::log("Loader") << " Registering memory for '" << argument << "'.\n";
+		util::log("Loader") << "  Registering memory for '" << argument << "'.\n";
 		driver::CudaDriver::cuMemHostRegister(
 			const_cast<char*>(argument.c_str()), 
 			argument.size() + 1, driver::CU_MEMHOSTREGISTER_DEVICEMAP);
@@ -300,7 +299,7 @@ void LoaderState::_setupMainArguments()
 	
 		driver::CudaDriver::cuMemHostGetDevicePointer(&pointer,
 			const_cast<char*>(argument.c_str()), 0);
-		util::log("Loader") << "  device pointer is '0x" << std::hex
+		util::log("Loader") << "   device pointer is '0x" << std::hex
 			<< pointer << std::dec << "', host pointer is '"
 			<< (void*)argument.data() << "'.\n";
 			
@@ -333,22 +332,22 @@ void LoaderState::_setupMainArguments()
 
 	size_t bytes = sizeof(int) + sizeof(driver::CUdeviceptr) * 2;
 	
-	util::log("Loader") << " setting parameter size to " << bytes << ".\n";
+	util::log("Loader") << "  setting parameter size to " << bytes << ".\n";
 	
 	driver::CudaDriver::cuParamSetSize(_main, bytes);
 	
-	util::log("Loader") << " setting up return value pointer "
+	util::log("Loader") << "  setting up return value pointer "
 		<< " = 0x" << std::hex << _returnValuePointer << std::dec << " (offset "
 		<< 0 << ", size " << sizeof(driver::CUdeviceptr) << ").\n";
 	driver::CudaDriver::cuParamSetv(_main, 0, &_returnValuePointer, sizeof(driver::CUdeviceptr));
-	util::log("Loader") << " setting up argv pointer "
+	util::log("Loader") << "  setting up argv pointer "
 		<< " = 0x" << std::hex << _argvPointer << std::dec << " (offset "
 		<< 0 << ", size " << sizeof(driver::CUdeviceptr) << ").\n";
 	driver::CudaDriver::cuParamSetv(_main, 8, &_argvPointer, sizeof(driver::CUdeviceptr));
 
 	int argc = _argv.size();
 	
-	util::log("Loader") << " setting up argc = " << argc << ".\n";
+	util::log("Loader") << "  setting up argc = " << argc << ".\n";
 	driver::CudaDriver::cuParamSetv(_main, 16, &argc, sizeof(int));
 }
 
@@ -362,6 +361,21 @@ void LoaderState::_freeMainArguments()
 	
 	driver::CudaDriver::cuMemHostUnregister(_argv.data());
 	driver::CudaDriver::cuMemHostUnregister(&_returnValue);
+}
+
+int LoaderState::_getDevice()
+{
+	// TODO
+	return 0;
+}
+
+std::string LoaderState::_getDeviceName()
+{
+	char name[2048];
+
+	driver::CudaDriver::cuDeviceGetName(name, sizeof(name), _getDevice());
+	
+	return name;	
 }
 
 }
