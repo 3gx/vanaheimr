@@ -150,7 +150,16 @@ int printf(const char* format, Args... args)
 #else
 
 extern "C" int      vprintf(const char *, va_list);
-extern "C" int      printf(const char *, ...);
+extern "C" int      printf(const char * format, ...)
+{
+	va_list arg;
+
+	va_start(arg, format);
+	int done = vprintf(format, arg);
+	va_end(arg);
+
+	return done;
+}
 #endif
 
 
