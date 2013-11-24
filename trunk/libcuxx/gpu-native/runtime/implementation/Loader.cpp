@@ -128,6 +128,19 @@ static size_t getFileLength(std::istream& stream)
 	return length;
 }
 
+static void patchBinary(std::string& binary)
+{
+	if(!isPTX(binary)) return;
+
+	if(hasMain(binary))
+	{
+		if(!hasPreMain(binary))
+		{
+			addPreMain(binary);
+		}
+	}
+}
+
 static std::string loadBinary(const std::string& path)
 {
 	util::log("Loader") << "Loading GPU binary from path: '" << path << "'\n";
@@ -146,6 +159,8 @@ static std::string loadBinary(const std::string& path)
 	binaryFile.read(const_cast<char*>(result.data()), size);
 	
 	util::log("Loader") << " loaded " << size << " bytes.\n";
+
+	patchBinary(result);
 	
 	return result;
 }
