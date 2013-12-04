@@ -6,4 +6,27 @@
 
 typedef long long unsigned size_t;
 
+#include <cstdlib>
+
+// C++ intrinsics
+extern "C" inline size_t _Znwy(size_t pointer)
+{
+	return (size_t)std::malloc(pointer);
+}
+
+extern "C" inline void _ZdlPv(size_t pointer)
+{
+	std::free(reinterpret_cast<void*>(pointer));
+}
+
+extern "C" inline size_t __cxa_begin_catch(size_t pointer)
+{
+	return pointer;
+}
+
+extern "C" void _ZSt9terminatev()
+{
+	// TODO
+}
+
 

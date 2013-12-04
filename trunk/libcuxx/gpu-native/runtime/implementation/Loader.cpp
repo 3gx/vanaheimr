@@ -11,6 +11,7 @@
 
 #include <gpu-native/util/interface/Casts.h>
 #include <gpu-native/util/interface/debug.h>
+#include <gpu-native/util/interface/string.h>
 
 // Standard Library Includes
 #include <fstream>
@@ -128,9 +129,176 @@ static size_t getFileLength(std::istream& stream)
 	return length;
 }
 
+static bool isPTX(const std::string& binary)
+{
+	return binary.find(".version") != std::string::npos;
+}
+
+static std::string getName(const std::string& binary,
+	size_t functionStart, size_t openBrace)
+{
+	if(functionStart == std::string::npos) return "";
+	if(openBrace     == std::string::npos) return "";
+
+
+	auto substring = binary.substr(functionStart, openBrace - functionStart);
+
+	return util::removeWhitespace(substring);
+}
+
+static bool hasMain(const std::string& binary)
+{
+	util::log("Loader") << " searching for main:\n";
+	size_t nextFunction = 0;
+
+	while(nextFunction != std::string::npos)
+	{
+		nextFunction = binary.find(".func", nextFunction);
+
+		if(nextFunction != std::string::npos)
+		{
+			nextFunction += 5;
+		}
+
+		// get the function name
+		size_t openBrace = binary.find("(", nextFunction);
+		
+		auto name = getName(binary, nextFunction, openBrace);
+		
+		// handle the return argument list
+		if(name.empty())
+		{
+			size_t argumentStart = binary.find(")", openBrace + 1);
+
+			if(argumentStart != std::string::npos)
+			{
+				argumentStart += 1;
+			}
+
+			openBrace = binary.find("(", argumentStart);
+
+			name = getName(binary, argumentStart, openBrace);
+		}
+
+		util::log("Loader") << "  checking function named '" << name << "'\n";
+		if(name == "main")
+		{
+			return true;
+		}
+
+		if(nextFunction != std::string::npos)
+		{
+			nextFunction += 1;
+		}
+	}
+	
+	return false;
+}
+
+static bool hasPreMain(const std::string& binary)
+{
+	return binary.find(".entry _pre_main") != std::string::npos;
+}
+
+static void addPreMain(std::string& binary)
+{
+	char preMain[] = 
+		"\n\n.visible .entry _pre_main(.param .b64 _retval, "
+			".param .b64 _argv, .param .b32 _argc)\n"
+		"{\n"
+		"	.param .align 4 .b32 argc;\n"
+		"	.param .align 4 .b64 argv;\n"
+		"	.param .align 4 .b32 retval;\n"
+		"	\n"
+		"	.reg .s32 %r<3>;\n"
+		"	.reg .s64 %l<3>;\n"
+		"	\n"
+		"	ld.param.u32 %r1,[_argc];\n"
+		"	st.param.u32 [argc], %r1;\n"
+		"	ld.param.u64 %l2,[_argv];\n"
+		"	st.param.u64 [argv], %l2;\n"
+		"	call (retval), main, (argc, argv);\n"
+		"	ld.param.u32 %r2, [retval];\n"
+		"	ld.param.u64 %l1, [_retval];\n" 	
+		"	st.global.u32 [%l1], %r2;\n"
+		"	\n"
+		"	ret;\n"
+		"}\n";
+
+	binary.insert(binary.end(), preMain, preMain + sizeof(preMain) - 1);
+}
+
+static void patchStringConstants(std::string& binary)
+{
+	// TODO: Remove this when NVPTX BUG is fixed
+	size_t position = 0;
+
+	while(position != std::string::npos)
+	{
+		position = binary.find(".str", position);
+
+		if(position != std::string::npos)
+		{
+			binary[position] = '_';
+
+			position += 1;
+		}
+	}
+}
+
+static void patchWeak(std::string& binary)
+{
+	// TODO: Remove this when NVPTX bug is fixed
+	size_t position = 0;
+
+	while(position != std::string::npos)
+	{
+		position = binary.find(".weak", position);
+
+		if(position != std::string::npos)
+		{
+			size_t endPosition = binary.find(".func", position);
+
+			for(size_t i = position; i < endPosition; ++i)
+			{
+				binary[i] = ' ';
+			}
+			position += 5;
+
+		}
+	}
+}
+
+static void patchHidden(std::string& binary)
+{
+	// TODO: Remove this when NVPTX bug is fixed
+	size_t position = 0;
+
+	while(position != std::string::npos)
+	{
+		position = binary.find(".hidden", position);
+
+		if(position != std::string::npos)
+		{
+			size_t endPosition = binary.find(".func", position);
+
+			for(size_t i = position; i < endPosition; ++i)
+			{
+				binary[i] = ' ';
+			}
+			position += 7;
+
+		}
+	}
+}
+
 static void patchBinary(std::string& binary)
 {
 	if(!isPTX(binary)) return;
+
+	patchStringConstants(binary);
+	patchWeak(binary);
+	patchHidden(binary);
 
 	if(hasMain(binary))
 	{
@@ -195,6 +363,9 @@ static void loadModule(driver::CUmodule& module, const std::string& binary)
 	}
 	catch(const std::exception& e)
 	{
+		
+		util::log("Loader") << "Binary is:" << binary << "\n";
+
 		throw std::runtime_error("Failed to load binary data:\n\tMessage: " + std::string((char*)errorLogBuffer));
 	}
 	

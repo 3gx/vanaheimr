@@ -70,6 +70,35 @@ namespace util
 		return result;
 	}
 	
+	static bool isWhitespace(char c)
+	{
+		return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+	}
+
+	std::string removeWhitespace(const std::string& string)
+	{
+		size_t start = 0;
+		size_t end   = string.size();
+
+		for(; start < end; ++start)
+		{
+			if(!isWhitespace(string[start]))
+			{
+				break;
+			}
+		}
+
+		for(; end > start + 1; --end)
+		{
+			if(!isWhitespace(string[end-1]))
+			{
+				break;
+			}
+		}
+
+		return string.substr(start, end - start);
+	}
+
 	std::string format( const std::string& input, 
 		const std::string& firstPrefix, const std::string& prefix, 
 		unsigned int width )
