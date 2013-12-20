@@ -1,5 +1,4 @@
 
-#include <__parallel_config>
 #include <cstdlib>
 #include <cassert>
 
