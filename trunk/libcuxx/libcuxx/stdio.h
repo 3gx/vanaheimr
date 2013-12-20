@@ -7,6 +7,9 @@
 
 // Macros
 #define EOF -1
+#define stdin  __stdin
+#define stdout __stdout
+#define stderr __stderr
 
 // Types
 struct FILE;
@@ -74,6 +77,11 @@ extern "C" int      vfprintf(FILE *, const char *, va_list);
 extern "C" int      vsnprintf(char *, size_t, const char *, va_list);
 extern "C" int      vsprintf(char *, const char *, va_list);
 extern "C" int vsscanf ( const char * s, const char * format, va_list arg );
+
+// Variables
+extern FILE* __stdin;
+extern FILE* __stdout;
+extern FILE* __stderr;
 
 // HACK use variadic templates to implement variadic functions
 #if 1

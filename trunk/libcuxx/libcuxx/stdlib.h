@@ -1,5 +1,7 @@
 #pragma once
 
+#include <__parallel_config>
+
 typedef struct {
   int quot;
   int rem;
@@ -16,7 +18,6 @@ struct lldiv_t {
   long long int quot;
   long long int rem;
 } ;
-
 
 extern "C" long      a64l(const char *);
 extern "C" void      abort(void);

@@ -1,5 +1,4 @@
 
-#include <__parallel_config>
 #include <cstdio>
 
 class Node
@@ -19,7 +18,7 @@ public:
 
 int main(int argc, char** argv)
 {
-	const int nodes = 10;
+	const int nodes = 50;
 	
 	Node* root = new Node(0);
 	Node* current = root;

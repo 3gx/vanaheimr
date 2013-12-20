@@ -3,9 +3,13 @@
 
 #define _LIBCPP_LITTLE_ENDIAN 1
 #define _LIBCPP_BIG_ENDIAN 0
+#define _LIBCPP_LOCALE__L_EXTENSIONS 1
 
 typedef long long unsigned size_t;
 
+#define ENABLE_MUTEX 0
+
+#if 0
 #include <cstdlib>
 
 // C++ intrinsics
@@ -24,9 +28,25 @@ extern "C" inline size_t __cxa_begin_catch(size_t pointer)
 	return pointer;
 }
 
+extern "C" inline size_t __cxa_allocate_exception(size_t pointer)
+{
+	return pointer;
+}
+
+extern "C" inline void __cxa_free_exception(size_t pointer)
+{
+	return;
+}
+
+extern "C" inline void __cxa_throw(size_t , size_t, size_t)
+{
+	return;
+}
+
+
 extern "C" void _ZSt9terminatev()
 {
 	// TODO
 }
-
+#endif
 

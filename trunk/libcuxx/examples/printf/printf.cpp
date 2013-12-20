@@ -1,5 +1,4 @@
 
-#include <__parallel_config>
 #include <cstdio>
 
 int main(int argc, char** argv)

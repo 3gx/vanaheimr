@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+#include <wchar.h>
 
 struct lconv
 {
@@ -29,16 +31,21 @@ struct lconv
 	char    *thousands_sep;
 };
 
-typedef int locale_t;
+typedef int* locale_t;
+
+extern locale_t newlocale(int category_mask, const char *locale,
+       locale_t base);
+extern void freelocale(locale_t locobj);
 
 /* Set and/or return the current locale.  */
 extern char *uselocale (int __category, const char *__locale);
 extern char *setlocale (int __category, const char *__locale);
-extern char *freelocale (int __category, const char *__locale);
+//extern char *freelocale (int __category, const char *__locale);
 
 /* Return the numeric/monetary information for the current locale.  */
 extern struct lconv *localeconv (void);
 extern struct lconv *__cloc();
+extern struct lconv *localeconv_l(locale_t loc);
 
 extern long strtol_l(const char * nptr, char ** endptr, int base, locale_t loc);
 extern long long strtoll_l(const char * nptr, char ** endptr, int base,	locale_t loc);
@@ -47,13 +54,61 @@ extern unsigned long long strtoull_l(const char * nptr, char ** endptr, int base
 extern double strtod_l(const char * nptr, char ** endptr, locale_t loc);
 extern float strtof_l(const char * nptr, char ** endptr, locale_t loc);
 extern long double strtold_l(const char * nptr, char ** endptr, locale_t loc);
+extern int strcoll_l ( const char * str1, const char * str2, locale_t loc );
+extern size_t strxfrm_l(char *, const char *, size_t, locale_t);
+
+extern int isupper_l(int character, locale_t);
+extern int islower_l(int character, locale_t);
+extern int iswupper_l(int character, locale_t);
+extern int iswlower_l(int character, locale_t);
+
+extern int iswspace_l(wint_t, locale_t);
+extern int isspace_l(int, locale_t);
+
+extern int iswprint_l(wint_t, locale_t);
+
+extern int tolower_l(int character, locale_t);
+extern int toupper_l(int character, locale_t);
+extern int towlower_l(int character, locale_t);
+extern int towupper_l(int character, locale_t);
 
 extern int isxdigit_l(int character, locale_t loc);
 extern int isdigit_l(int character, locale_t loc);
 
-extern int __sscanf_l(const char *, locale_t, const char *, ...);
-extern int __snprintf_l(char *, size_t, locale_t, const char *, ...);
-extern int __asprintf_l(char **strp, locale_t, const char *fmt, ...);
+extern int iswalnum_l(wint_t, locale_t);
+extern int iswalpha_l(wint_t, locale_t);
+extern int iswcntrl_l(wint_t, locale_t);
+extern int iswctype_l(wint_t, wctype_t, locale_t);
+extern int iswdigit_l(wint_t, locale_t);
+extern int iswgraph_l(wint_t, locale_t);
+extern int iswpunct_l(wint_t, locale_t);
+extern int iswxdigit_l(wint_t, locale_t);
+extern int iswblank_l(wint_t, locale_t);
+
+extern int wcscoll_l(const wchar_t *, const wchar_t *, locale_t);
+extern size_t wcsxfrm_l(wchar_t *, const wchar_t *, size_t, locale_t);
+extern size_t wcrtomb_l(char * s, wchar_t wc, mbstate_t * ps, locale_t loc);
+
+extern wint_t btowc_l(int, locale_t);
+extern int    wctob_l(wint_t, locale_t);
+
+extern int sscanf_l(const char *, locale_t, const char *, ...);
+extern int snprintf_l(char *, size_t, locale_t, const char *, ...);
+extern int asprintf_l(char **strp, locale_t, const char *fmt, ...);
+
+extern size_t strftime_l(char * s, size_t maxsize, const char * format, const struct tm * timeptr, locale_t locale);
+
+extern size_t mbsrtowcs_l(wchar_t * dst, const char ** src, size_t len, mbstate_t * ps, locale_t loc);
+extern size_t wcsnrtombs_l(char * dst, const wchar_t ** src, size_t nwc, size_t len, mbstate_t * ps, locale_t loc);
+extern size_t mbsnrtowcs_l(wchar_t * dst, const char ** src, size_t nms, size_t len, mbstate_t * ps, locale_t loc);
+extern size_t mbrtowc_l(wchar_t * pwc, const char * s, size_t n, mbstate_t * ps, locale_t loc);
+extern int mbtowc_l(wchar_t * pwc, const char * s, size_t n, locale_t loc);
+extern size_t mbrlen_l(const char * s, size_t n, mbstate_t * ps, locale_t loc);
+
+extern size_t __mb_cur_max_l(locale_t l);
+
+#define MB_CUR_MAX_L(x) (__mb_cur_max_l(x))
+
 
 #define LC_CTYPE          1
 #define LC_NUMERIC        2
@@ -93,5 +148,5 @@ extern int __asprintf_l(char **strp, locale_t, const char *fmt, ...);
 				 | LC_ADDRESS_MASK \
 				 | LC_TELEPHONE_MASK \
 				 | LC_MEASUREMENT_MASK \
-				 | LC_IDENTIFICATION_MASK \
+				 | LC_IDENTIFICATION_MASK)
 
