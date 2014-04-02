@@ -29532,7 +29532,7 @@ BB91_25:                                // %return
 }
 
 	// .globl	_ZNSt3__112__rs_defaultC2Ev
-	.align	2
+	
 .visible .func _ZNSt3__112__rs_defaultC2Ev(
 	.param .b64 _ZNSt3__112__rs_defaultC2Ev_param_0
 )                                       // @_ZNSt3__112__rs_defaultC2Ev
@@ -29574,7 +29574,6 @@ BB91_25:                                // %return
 }
 
 	// .globl	_ZNSt3__112__rs_defaultC2ERKS0_
-	.align	2
 .visible .func _ZNSt3__112__rs_defaultC2ERKS0_(
 	.param .b64 _ZNSt3__112__rs_defaultC2ERKS0__param_0,
 	.param .b64 _ZNSt3__112__rs_defaultC2ERKS0__param_1
@@ -29602,7 +29601,6 @@ BB91_25:                                // %return
 }
 
 	// .globl	_ZNSt3__112__rs_defaultD2Ev
-	.align	2
 .visible .func _ZNSt3__112__rs_defaultD2Ev(
 	.param .b64 _ZNSt3__112__rs_defaultD2Ev_param_0
 )                                       // @_ZNSt3__112__rs_defaultD2Ev
@@ -29689,7 +29687,6 @@ BB94_2:                                 // %if.end
 }
 
 	// .globl	_ZNSt3__112__rs_defaultclEv
-	.align	2
 .visible .func  (.param .b32 func_retval0) _ZNSt3__112__rs_defaultclEv(
 	.param .b64 _ZNSt3__112__rs_defaultclEv_param_0
 )                                       // @_ZNSt3__112__rs_defaultclEv
@@ -29792,7 +29789,6 @@ BB96_4:                                 // %init.end
 }
 
 	.weak	_ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EEclEv
-	.align	2
 .func  (.param .b32 func_retval0) _ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EEclEv(
 	.param .b64 _ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EEclEv_param_0
 )                                       // @_ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EEclEv
@@ -29918,7 +29914,6 @@ BB96_4:                                 // %init.end
 }
 
 	.weak	_ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EE4seedEj
-	.align	2
 .func _ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EE4seedEj(
 	.param .b64 _ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EE4seedEj_param_0,
 	.param .b32 _ZNSt3__123mersenne_twister_engineIjLy32ELy624ELy397ELy31ELj2567483615ELy11ELj4294967295ELy7ELj2636928640ELy15ELj4022730752ELy18ELj1812433253EE4seedEj_param_1

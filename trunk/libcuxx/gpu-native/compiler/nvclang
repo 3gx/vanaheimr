@@ -1,0 +1,51 @@
+#! /usr/bin/env python
+
+################################################################################
+#
+# \file   nvclang
+# \author Gregory Diamos <gregory.diamos@gmail.com>
+# \date   Tuesday April 1, 2014
+# \brief  A python script implementing a clang+nvptx compiler driver.
+#
+# The common mistake that people make with drivers is to make them too
+#  complicated.  They try to include all of the functionality needed to handle
+#  any possible use-case.  A compiler driver is NOT intended to replace a build
+#  system.
+#
+#  It is intended to perform the following operation:
+#     (sources + options) -> binaries
+#
+#   in the most straightfoward way possible.
+#
+#  Try to think about how you would solve your problem
+#  if you could not modify this file (as most users will not be able to modify
+#  the GCC/CLANG driver) before adding any functionality here.
+#
+################################################################################
+
+# Compiler Modules
+from CompilerDriver.CompilerDriver import CompilerDriver
+
+# Standard Library Modules
+import sys
+
+def main():
+	
+	try:
+		cc = CompilerDriver()
+		
+		cc.run()
+	
+	except ValueError as e:
+		print "Bad Inputs: " + str(e) + "\n\n"
+		print parser.print_help()
+	except SystemError as e:
+		print >> sys.stderr, "Compilation Failed: \n\n" + str(e)
+
+# Main Guard
+if __name__ == "__main__":
+    main()
+
+
+
+
