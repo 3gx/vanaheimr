@@ -16,10 +16,9 @@ libcuxx_path_to_root_dir = ".."
 exec open(libcuxx_path_to_root_dir + "/scripts/which.py")
 exec open(libcuxx_path_to_root_dir + "/scripts/buildEnvironment.py")
 env = Environment()
-env['LIBCUXX_PATH'] = Dir('.').abspath
 
 env['path_to_root_dir'] = os.path.abspath(libcuxx_path_to_root_dir)
-
+ 
 # find all source files in the source tree
 directories = ['gpu-native/util', 'gpu-native/runtime', 'gpu-native/driver']
 
@@ -89,5 +88,9 @@ if env['install']:
 	install_alias = env.Alias('install', env['install_path'])
 	Default(install_alias)
 
+# Dispatch to subprojects
+SConscript(os.path.join(env['path_to_root_dir'], 'libc', 'SConscript'), exports='env')
+SConscript(os.path.join(env['path_to_root_dir'], 'libc++', 'SConscript'), exports='env')
+SConscript(os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', 'SConscript'), exports='env')
 
 
