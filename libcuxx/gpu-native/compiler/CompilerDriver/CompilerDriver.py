@@ -31,10 +31,6 @@ class CompilerDriver:
 		self.verbose           = False
 		self.clean             = False
 		
-		self.validateInputs()
-		self.loadLogger()
-				
-		self.registerComponents()
 
 	def getCompilerArguments(self):
 		return self.compilerArguments
@@ -45,6 +41,10 @@ class CompilerDriver:
 		self.registerComponent(PTXEMBED(self))
 
 	def run(self):
+		self.registerComponents()
+		
+		self.validateInputs()
+		
 		if self.clean:
 			self.cleanIntermediateFiles()
 			return
@@ -135,6 +135,11 @@ class CompilerDriver:
 		self.verbose           = processor.getVerbose()
 		self.clean             = processor.getClean()
 
+		self.loadLogger()
+
+		if len(self.inputFiles) == 0:
+			raise ValueError("No input file specified.")
+
 	def loadLogger(self):
 		self.logger = logging.getLogger('ClangPTXCompiler')
 		logging.basicConfig()
@@ -146,6 +151,18 @@ class CompilerDriver:
 
 		self.logger.info("Loaded knobs: " + str(self.knobs))
 
+	def printHelp(self):
+		clang = self.getComponent("clang")
+
+		clang.printHelp()
+
 	def getLogger(self):
 		return self.logger
+
+	def getComponent(self, name):
+		for component in self.components:
+			if component.getName() == name:
+				return component
+
+		return None
 

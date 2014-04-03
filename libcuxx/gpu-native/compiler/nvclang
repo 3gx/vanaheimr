@@ -31,14 +31,14 @@ import sys
 
 def main():
 	
-	try:
-		cc = CompilerDriver()
+	cc = CompilerDriver()
 		
+	try:
 		cc.run()
 	
 	except ValueError as e:
 		print "Bad Inputs: " + str(e) + "\n\n"
-		print parser.print_help()
+		cc.printHelp()
 	except SystemError as e:
 		print >> sys.stderr, "Compilation Failed: \n\n" + str(e)
 

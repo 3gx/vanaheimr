@@ -64,7 +64,7 @@ class CLANG:
 	def lower(self, filenames):
 		assert self.canCompile(filenames)
 		
-		backend_path = which(getCLANGName())
+		backend_path = which(self.getCLANGName())
 
 		outputFilename = self.getOutputFilename()
 
@@ -72,28 +72,45 @@ class CLANG:
 
 		command = backend_path + " -S -target nvptx64 " + ' '.join(filenames) + " -o " + \
 			outputFilename + " " + self.driver.getCompilerArguments()
- 
-		if self.driver.verbose:
-			print 'Running ' + getCLANGName() + ' with: "' + command + '"'
 
+		self.driver.getLogger().info('Running ' + self.getCLANGName() + ' with: "' + command + '"')
+		
 		start = time()
 
 		process = subprocess.Popen(command, shell=True,
 			stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 		(stdOutData, stdErrData) = process.communicate()
-
-		if self.driver.verbose:
-			print ' time: ' + str(time() - start) + ' seconds' 
+		
+		self.driver.getLogger().info(' time: ' + str(time() - start) + ' seconds')
 
 		if not os.path.isfile(outputFilename):
-			raise SystemError(getCLANGName() + ' failed to generate an output file: \n' \
+			raise SystemError(self.getCLANGName() + ' failed to generate an output file: \n' \
 				+ stdOutData + stdErrData)
 
 		return outputFilename
 
+	def printHelp(self):
+		
+		backend_path = which(self.getCLANGName())
+		
+		command = backend_path + " --help"
+
+		process = subprocess.Popen(command, shell=True,
+			stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+		(stdOutData, stdErrData) = process.communicate()
+	
+		if stdOutData != None:	
+			print stdOutData
+
+		if stdErrData != None:
+			print stdErrData
+ 
 	def getCLANGName(self):
 		return 'clang++'
 
+	def getName(self):
+		return "clang"
 
 
