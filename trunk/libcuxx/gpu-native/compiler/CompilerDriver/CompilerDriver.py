@@ -14,12 +14,13 @@ from ArgumentProcessor import ArgumentProcessor
 
 import os
 import logging
+import sys
 
 # The Compiler Driver class
 class CompilerDriver:
 	def __init__(self):
 		self.knobs = []
-		self.arguments = sys.argv
+		self.arguments = sys.argv[1:]
 
 		self.components        = []
 		self.intermediateFiles = set([])
@@ -27,10 +28,11 @@ class CompilerDriver:
 		self.compilerArguments = "" 
 		self.outputFile        = ""
 		self.inputFiles        = []
+		self.verbose           = False
+		self.clean             = False
 		
-		self.loadLogger()
-
 		self.validateInputs()
+		self.loadLogger()
 				
 		self.registerComponents()
 
@@ -38,9 +40,9 @@ class CompilerDriver:
 		return self.compilerArguments
 	
 	def registerComponents(self):
-		self.registerComponent(CLANG(driver))
-		self.registerComponent(PTXLINK(driver))
-		self.registerComponent(PTXEMBED(driver))
+		self.registerComponent(CLANG(self))
+		self.registerComponent(PTXLINK(self))
+		self.registerComponent(PTXEMBED(self))
 
 	def run(self):
 		if self.clean:
@@ -50,21 +52,21 @@ class CompilerDriver:
 		self.compile()
 
 	def cleanIntermediateFiles(self):
-		if self.verbose:
-			print "Removing intermediate files"
+		self.logger.info("Removing intermediate files")
 		
 		for filename in self.intermediateFiles:
-			if self.verbose:
-				print " " + filename
+			self.logger.info(" " + filename)
 			safeRemove(filename)
 	
 	def compile(self):
 		self.compileFile(self.outputFile, self.inputFiles)
 		
-		if self.verbose:
-			print "Compilation Succeeded"			
+		self.logger.info("Compilation Succeeded")	
 		
 	def compileFile(self, outputFile, inputFiles):
+	
+		
+		self.logger.info("Compiling " + str(inputFiles) + " to " + outputFile)
 	
 		oldOutputFile    = self.outputFile
 		oldIntermediates = self.intermediateFiles
@@ -95,9 +97,9 @@ class CompilerDriver:
 	def registerComponent(self, component):
 		self.components.append(component)
 	
-	def computeIntermediateFiles(self, inputFile):
+	def computeIntermediateFiles(self, inputFiles):
 
-		self.intermediateFiles = set([inputFile])
+		self.intermediateFiles = set(inputFiles)
 
 		changed = True
 		length  = 0
@@ -114,7 +116,8 @@ class CompilerDriver:
 			changed = (length != len(self.intermediateFiles))
 			length = len(self.intermediateFiles)
 		
-		self.intermediateFiles.remove(inputFile)
+		for file in inputFiles:
+			self.intermediateFiles.remove(file)
 		
 	def getCompilerThatCanHandle(self, files):
 		for component in self.components:
@@ -129,6 +132,8 @@ class CompilerDriver:
 		self.compilerArguments = processor.getCompilerArguments()
 		self.outputFile        = processor.getOutputFile()
 		self.inputFiles        = processor.getInputFiles()
+		self.verbose           = processor.getVerbose()
+		self.clean             = processor.getClean()
 
 	def loadLogger(self):
 		self.logger = logging.getLogger('ClangPTXCompiler')
