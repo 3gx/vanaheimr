@@ -103,6 +103,9 @@ class PTXEMBED:
 		outputFile.write("\treturn ptx;\n")
 		outputFile.write("}\n")
 		outputFile.write("\n\n\n\n\n")
+
+	def getName(self):
+		return "ptxembed"
 		
 
 

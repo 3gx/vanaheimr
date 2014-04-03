@@ -87,4 +87,6 @@ class PTXLINK:
 		for line in inputFile:
 			outputFile.write(line)
 
+	def getName(self):
+		return "ptxlink"
 
