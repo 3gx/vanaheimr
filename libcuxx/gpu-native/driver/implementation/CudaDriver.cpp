@@ -13,6 +13,9 @@
 // System Specific Includes
 #include <dlfcn.h>
 
+// Standard Library Includes
+#include <stdexcept>
+
 namespace gpunative
 {
 

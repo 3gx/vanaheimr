@@ -366,7 +366,8 @@ static void loadModule(driver::CUmodule& module, const std::string& binary)
 		
 		util::log("Loader") << "Binary is:" << binary << "\n";
 
-		throw std::runtime_error("Failed to load binary data:\n\tMessage: " + std::string((char*)errorLogBuffer));
+		throw std::runtime_error("Failed to load binary data:\n\tMessage: " +
+			std::string((char*)errorLogBuffer));
 	}
 	
 }
