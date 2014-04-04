@@ -1,0 +1,85 @@
+#! /usr/bin/python
+
+################################################################################
+#	\file   SConscript
+#	\author Gregory Diamos <solusstultus@gmail.com>
+#   \date   Saturday August 10, 2013
+#	\brief  The SCons master build script for libcuxx
+################################################################################
+
+import os
+
+# set environment variables
+Import('env')
+
+# helper functions
+def findLibraryPath():
+	return os.path.realpath(os.path.join(env['path_to_root_dir'],
+		'libcxx'))
+
+# find all source files in the source tree
+libraryDirectory = findLibraryPath()
+
+directories = ['src']
+
+source_directories = [os.path.join(libraryDirectory, i) for i in directories]
+extensions = ['*.cpp']
+
+sources = []
+for dir in source_directories:
+	for ext in extensions:
+		regexp = os.path.join(dir, ext)
+		sources.extend(env.Glob(regexp))
+
+# create the library
+libcxx = env.NVSharedLibrary('libcxx', sources)
+libcxx_libs = ['gpunative'] + env['EXTRA_LIBS']
+
+if env['install']:
+	libcxx = env.Install(os.path.join(env['install_path'], "lib"),
+		libcxx)
+
+# create the tests
+tests = []
+
+#tests.append(env.Program('gpu-native-loader', \
+#	['gpu-native/tools/gpu-native-loader.cpp'], LIBS=gpunative_libs))
+
+for test in tests:
+	env.Depends(test, libcxx)
+
+# install it all 
+if env['install']:
+	installed   = []
+	executables = []
+
+	print 'Installing libc++'
+
+	for test in tests:
+		executables.append(env.Install(
+			os.path.join(env['install_path'], "test"), test))
+	
+	# install headers
+	header_directories = [os.path.join(libraryDirectory, 'include')]
+	header_extensions = ['*']
+	
+	headers = []
+	for dir in header_directories:
+		for ext in header_extensions:
+			regexp = os.path.join(dir, ext)
+			headers.extend(env.Glob(regexp))
+	
+	for header in headers:
+		(directoryPath, headerName) = os.path.split( \
+			os.path.relpath(str(header), env['path_to_root_dir']))
+		installed.append(env.Install(os.path.join( \
+			env['install_path'], "include", 'libcxx', directoryPath), header))
+	
+	# set permissions
+	for i in executables:
+		env.AddPostAction(i, Chmod(i, 0755))
+	for i in installed:
+		env.AddPostAction(i, Chmod(i, 0644))
+
+
+
