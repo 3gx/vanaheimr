@@ -4,7 +4,7 @@
 #	\file   SConscript
 #	\author Gregory Diamos <solusstuluts@gmail.com>
 #   \date   Tuesday March 5, 2013
-#	\brief  The SCons master build script for Compiler Driver tools
+#	\brief  The SCons master build script for the NV libcuxx implementation.
 ################################################################################
 
 import os
@@ -23,9 +23,9 @@ def getSubdirectories(path):
 
 	return directories
 
-def findCompilerPath():
+def findLibraryPath():
 	return os.path.realpath(os.path.join(env['path_to_root_dir'],
-		'gpu-native', 'compiler'))
+		'libcuxx'))
 
 def findSuffix(basePath, completePath):
 	head, tail = os.path.split(os.path.realpath(completePath))
@@ -33,6 +33,7 @@ def findSuffix(basePath, completePath):
 	suffix = ''
 
 	while len(tail) > 0:
+
 		if os.path.samefile(head, basePath):
 			return suffix
 		
@@ -42,39 +43,43 @@ def findSuffix(basePath, completePath):
 	return None
 
 # find the path
-compilerPath = findCompilerPath()
+libraryPath = findLibraryPath()
 
-print 'Installing the Compiler Driver from ' + compilerPath
+print 'Installing the libcuxx headers from ' + libraryPath 
 
 # install it all 
 if env['install']:
 	installed   = []
 	executables = []
 	
-	executables.append(env.Install(os.path.join(env['install_path'], "bin"),
-		os.path.join(compilerPath, 'nvclang')))
-			
-	# install modules
-	module_directories = [i for i in getSubdirectories(
-		os.path.join(compilerPath, 'CompilerDriver'))]
-	module_extensions = ['*.py']
+	# install headers 
+	header_directories = [i for i in getSubdirectories(libraryPath)]
+	header_extensions = ['*']
 
-	modules = []
-	for dir in module_directories:
-		for ext in module_extensions:
+	headers = []
+	for dir in header_directories:
+		for ext in header_extensions:
 			regexp = os.path.join(dir, ext)
-			modules.extend(env.Glob(regexp))
+			headers.extend(env.Glob(regexp))
 
-	for module in modules:
-		moduleName = findSuffix(compilerPath, str(module))
+	for header in headers:
+		if str(header) == 'SConscript':
+			continue
+	
+		if os.path.isdir(str(header)):
+			continue
+
+		headerName = findSuffix(libraryPath, str(header))
+	
+		installPath = os.path.join(env['install_path'], "include", "libcuxx", headerName)
 		
-		installPath = os.path.join(env['install_path'], "bin", moduleName)
-		
-		installed.append(env.Install(installPath, module))
+		installed.append(env.Install(installPath, header))
 		
 	# set permissions
 	for i in executables:
 		env.AddPostAction(i, Chmod(i, 0755))
 	for i in installed:
 		env.AddPostAction(i, Chmod(i, 0644))
+
+
 

@@ -23,23 +23,14 @@ class CLANG:
 
 	def compile(self, files):
 		
-		outputs = []
-		
-		for filename in files:
-			if self.canCompile(filename):
-				outputs.append(self.lower(filename))
-			else:
-				outputs.append(filename)
-		
-		return outputs, self.isFinished()
+		return [self.lower(files)], self.isFinished()
 
 	def isFinished(self):
 		return isPTX(self.driver.outputFile)
 
-	def getIntermediateFiles(self, filename):
-		if self.canCompile(filename):
-			if not self.isFinished():
-				return [self.getOutputFilename(filename)]
+	def getIntermediateFiles(self, filenames):
+		if self.canCompile(filenames):
+			return [self.getOutputFilename()]
 		return []
 	
 	def canCompileFile(self, filename):
@@ -50,7 +41,7 @@ class CLANG:
 
 	def canCompile(self, filenames):
 		for filename in filenames:
-			if not canCompileFile(filename):
+			if not self.canCompileFile(filename):
 				return False
 
 		return True
@@ -70,8 +61,8 @@ class CLANG:
 
 		safeRemove(outputFilename)
 
-		command = backend_path + " -S -target nvptx64 " + ' '.join(filenames) + " -o " + \
-			outputFilename + " " + self.driver.getCompilerArguments()
+		command = backend_path + " -D __NV_CLANG__ -S -target nvptx64 " + ' '.join(filenames) + " -o " + \
+			outputFilename + " " + ' '.join(self.driver.getCompilerArguments())
 
 		self.driver.getLogger().info('Running ' + self.getCLANGName() + ' with: "' + command + '"')
 		
@@ -108,7 +99,12 @@ class CLANG:
 			print stdErrData
  
 	def getCLANGName(self):
-		return 'clang++'
+		llvmPath = os.environ.get('LLVM_INSTALL_PATH')
+		
+		if llvmPath == None:
+			return 'clang++'
+
+		return os.path.join(llvmPath, 'bin', 'clang++')
 
 	def getName(self):
 		return "clang"

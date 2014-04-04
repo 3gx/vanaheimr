@@ -26,7 +26,7 @@ public:
 
 public:
 	/*! \brief Construct a new loader and associate it with a binary */
-	Loader(const std::string& path, const StringVector& arguments);
+	Loader(const std::string& path, const StringVector& arguments, bool isEmbedded = false);
 	~Loader();
 
 public:
@@ -40,9 +40,13 @@ public:
 	/*! \brief Run the associated binary. This assumes it has been loaded. */
 	void runBinary();
 
+	/*! \brief Get the return value */
+	int getReturnValue() const;
+
 private:
 	std::string  _path;
 	StringVector _arguments;
+	bool         _isEmbedded;
 
 	std::unique_ptr<LoaderState> _state;
 

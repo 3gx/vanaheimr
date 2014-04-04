@@ -86,6 +86,17 @@ extern FILE* __stderr;
 // HACK use variadic templates to implement variadic functions
 #if 1
 
+template<typename Arg>
+Arg UpConvert(Arg a)
+{
+	return a;
+}
+
+double UpConvert(float a)
+{
+	return a;
+}
+
 inline int getSize()
 {
 	return 0;
@@ -94,7 +105,7 @@ inline int getSize()
 template<typename Arg>
 inline int getSize(Arg arg)
 {
-	return sizeof(arg);
+	return sizeof(UpConvert(arg));
 }
 
 inline int align(int address, int alignment)
@@ -109,9 +120,9 @@ inline int getSize(Arg arg, Args... args)
 {
 	int size = getSize(args...);
 
-	size = align(size, sizeof(arg));
+	size = align(size, sizeof(UpConvert(arg)));
 
-	return size + sizeof(arg);
+	return size + sizeof(UpConvert(arg));
 }
 
 inline void fillBuffer(char* buffer, int offset)
@@ -121,19 +132,19 @@ inline void fillBuffer(char* buffer, int offset)
 template<typename Arg>
 inline void fillBuffer(char* buffer, int offset, Arg arg)
 {
-	offset = align(offset, sizeof(arg));
+	offset = align(offset, sizeof(UpConvert(arg)));
 
-	*reinterpret_cast<Arg*>(buffer + offset) = arg;
+	*reinterpret_cast<Arg*>(buffer + offset) = UpConvert(arg);
 }
 
 template<typename Arg, typename... Args>
 inline void fillBuffer(char* buffer, int offset, Arg arg, Args... args)
 {
-	offset = align(offset, sizeof(arg));
+	offset = align(offset, sizeof(UpConvert(arg)));
 
-	*reinterpret_cast<Arg*>(buffer + offset) = arg;
+	*reinterpret_cast<Arg*>(buffer + offset) = UpConvert(arg);
 
-	fillBuffer(buffer, offset + sizeof(arg), args...);
+	fillBuffer(buffer, offset + sizeof(UpConvert(arg)), args...);
 }
 
 extern "C" int vprintf(const char *, void*);

@@ -20,7 +20,8 @@ env = Environment()
 env['path_to_root_dir'] = os.path.abspath(libcuxx_path_to_root_dir)
  
 # find all source files in the source tree
-directories = ['gpu-native/util', 'gpu-native/runtime', 'gpu-native/driver']
+directories = ['gpu-native/util', 'gpu-native/runtime', 'gpu-native/driver',
+	'gpu-native/entry']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 extensions = ['*.cpp']
@@ -91,6 +92,7 @@ if env['install']:
 # Dispatch to subprojects
 SConscript(os.path.join(env['path_to_root_dir'], 'libc', 'SConscript'), exports='env')
 SConscript(os.path.join(env['path_to_root_dir'], 'libc++', 'SConscript'), exports='env')
+SConscript(os.path.join(env['path_to_root_dir'], 'libcuxx', 'SConscript'), exports='env')
 SConscript(os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', 'SConscript'), exports='env')
 
 

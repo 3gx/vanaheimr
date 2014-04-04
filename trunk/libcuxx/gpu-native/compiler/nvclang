@@ -28,10 +28,13 @@ from CompilerDriver.CompilerDriver import CompilerDriver
 
 # Standard Library Modules
 import sys
+import os
 
 def main():
 	
-	cc = CompilerDriver()
+	scriptPath = os.path.dirname(os.path.realpath(__file__))
+
+	cc = CompilerDriver(scriptPath)
 		
 	try:
 		cc.run()

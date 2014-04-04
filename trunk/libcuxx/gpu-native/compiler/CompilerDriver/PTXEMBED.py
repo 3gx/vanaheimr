@@ -31,7 +31,7 @@ class PTXEMBED:
 		return True 
 
 	def getIntermediateFiles(self, filename):
-		return [getBase(filename) + '-embedded.cpp']
+		return []
 	
 	def canCompileFile(self, filename):
 		if isPTX(filename):
@@ -40,20 +40,20 @@ class PTXEMBED:
 		return False
 
 	def canCompile(self, filenames):
-		if(len(filenames) < 2):
+		if len(filenames) > 1:
 			return False
 
 		for filename in filenames:
-			if not canCompileFile(filename):
+			if not self.canCompileFile(filename):
 				return False
 
 		return True
 
 	def getOutputFilename(self):
-		if self.isFinished():
-			return self.driver.outputFile
-		else:
-			return getBase(self.driver.outputFile) + '.ptx'
+		return self.driver.outputFile
+
+	def getTemporaryFilename(self):
+		return getBase(self.getOutputFilename()) + '.cpp'
 
 	def embed(self, filenames):
 		assert self.canCompile(filenames)
@@ -66,12 +66,18 @@ class PTXEMBED:
 
 		start = time()
 		
-		self.embedPTX(outputFileName, filenames[0])
+		tempFilename = self.getTemporaryFilename()
+
+		self.embedPTX(tempFilename, filenames[0])
+		
+		(stdOutData, stdErrData) = self.compileAndLink(outputFilename, tempFilename)
+		safeRemove(tempFilename)
 		
 		self.driver.getLogger().info(' time: ' + str(time() - start) + ' seconds')
 
 		if not os.path.isfile(outputFilename):
-			raise SystemError('ptx embed failed to generate an output file!')
+			raise SystemError('ptx embed failed to generate an output file!' +
+				stdOutData + stdErrData)
 
 		return outputFilename
 
@@ -87,8 +93,8 @@ class PTXEMBED:
 		with open(input, 'rb') as inputFile:
 			byte = inputFile.read(1)
 			
-			if byte:
-				outputFile.write(hex(byte) + ", ")
+			while byte:
+				outputFile.write(hex(ord(byte)) + ", ")
 				
 				counter += 1
 				
@@ -96,13 +102,53 @@ class PTXEMBED:
 					counter = 0
 					outputFile.write("\n")
 		
-		outputFile.write("0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};\n\n")
+				byte = inputFile.read(1)
 
-		outputFile.write("extern const char* getEmbeddedPTX()\n")
+		outputFile.write("0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};\n")
+
+		outputFile.write("\n\n")
+		outputFile.write("extern void setEmbeddedPTX(const char*);\n")
+		
+		outputFile.write("\n\n")
+		outputFile.write("extern int gpuNativeMain(int argc, const char** argv);\n")
+
+		outputFile.write("\n\n")
+		outputFile.write("extern int main(int argc, const char** argv)\n")
 		outputFile.write("{\n")
-		outputFile.write("\treturn ptx;\n")
+		outputFile.write("\tsetEmbeddedPTX(ptx);\n")
+		outputFile.write("\treturn gpuNativeMain(argc, argv);\n")
 		outputFile.write("}\n")
+		
 		outputFile.write("\n\n\n\n\n")
+
+	def compileAndLink(self, output, input):
+		
+		embedderPath = which(self.getCxxCompiler())
+		
+		command = embedderPath + " -o " + output + ' ' + input
+		command += ' ' + self.getRuntimeLibraryArguments()
+		command += ' ' + ' '.join(self.driver.getCompilerArguments())
+
+		self.driver.getLogger().info(' command is ' + command)
+	
+		process = subprocess.Popen(command, shell=True,
+			stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+		(stdOutData, stdErrData) = process.communicate()
+
+		return stdOutData, stdErrData
+
+	def getRuntimeLibraryArguments(self):
+		return '-L' + os.path.join(self.driver.getScriptPath(), '..', 'lib') + ' -lgpunative'
+
+	def getCxxCompiler(self):
+		cxx = os.environ.get('CXX')
+		
+		if cxx == None:
+			# TODO: search for more possibilities
+			cxx = 'clang++'
+
+		return cxx
 
 	def getName(self):
 		return "ptxembed"
