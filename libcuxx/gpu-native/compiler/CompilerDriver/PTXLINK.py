@@ -47,7 +47,7 @@ class PTXLINK:
 			return False
 
 		for filename in filenames:
-			if not canCompileFile(filename):
+			if not self.canCompileFile(filename):
 				return False
 
 		return True

@@ -12,13 +12,17 @@ from PTXLINK           import PTXLINK
 from PTXEMBED          import PTXEMBED
 from ArgumentProcessor import ArgumentProcessor
 
+from FileTypes import safeRemove
+
 import os
 import logging
 import sys
 
 # The Compiler Driver class
 class CompilerDriver:
-	def __init__(self):
+	def __init__(self, scriptPath):
+		self.scriptPath = scriptPath
+		
 		self.knobs = []
 		self.arguments = sys.argv[1:]
 
@@ -30,6 +34,7 @@ class CompilerDriver:
 		self.inputFiles        = []
 		self.verbose           = False
 		self.clean             = False
+		self.keep              = False
 		
 
 	def getCompilerArguments(self):
@@ -65,8 +70,7 @@ class CompilerDriver:
 		
 	def compileFile(self, outputFile, inputFiles):
 	
-		
-		self.logger.info("Compiling " + str(inputFiles) + " to " + outputFile)
+		self.getLogger().info("Compiling " + str(inputFiles) + " to " + outputFile)
 	
 		oldOutputFile    = self.outputFile
 		oldIntermediates = self.intermediateFiles
@@ -103,15 +107,18 @@ class CompilerDriver:
 
 		changed = True
 		length  = 0
-		
+	
+		self.getLogger().info("Computing intermediate files")
+	
 		while changed:
 			for compiler in self.components:
 				intermediates = []
 				
-				for intermediate in self.intermediateFiles:
-					intermediates += compiler.getIntermediateFiles(intermediate)
+				intermediates += compiler.getIntermediateFiles(self.intermediateFiles)
 				
 				self.intermediateFiles.update(intermediates)
+			
+			self.getLogger().info(" " + str(self.intermediateFiles))
 	
 			changed = (length != len(self.intermediateFiles))
 			length = len(self.intermediateFiles)
@@ -159,6 +166,9 @@ class CompilerDriver:
 	def getLogger(self):
 		return self.logger
 
+	def getScriptPath(self):
+		return self.scriptPath
+	
 	def getComponent(self, name):
 		for component in self.components:
 			if component.getName() == name:

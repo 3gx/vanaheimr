@@ -1,0 +1,77 @@
+#! /bin/python
+
+################################################################################
+#	\file   SConscript
+#	\author Gregory Diamos <solusstuluts@gmail.com>
+#   \date   Tuesday March 5, 2013
+#	\brief  The SCons master build script for the NV libc implementation.
+################################################################################
+
+import os
+
+# set environment variables
+Import('env')
+
+# Helper functions
+def getSubdirectories(path):
+	directories = set([path])
+	
+	for root, dirs, files in os.walk(path):
+		for dir in dirs:
+			if dir != None:
+				directories.add(os.path.join(root, dir))
+
+	return directories
+
+def findLibraryPath():
+	return os.path.realpath(os.path.join(env['path_to_root_dir'],
+		'libc'))
+
+def findSuffix(basePath, completePath):
+	head, tail = os.path.split(os.path.realpath(completePath))
+
+	suffix = ''
+
+	while len(tail) > 0:
+		if os.path.samefile(head, basePath):
+			return suffix
+		
+		head, tail = os.path.split(head)
+		suffix = os.path.join(tail, suffix)
+	
+	return None
+
+# find the path
+libraryPath = findLibraryPath()
+
+print 'Installing the libc headers from ' + libraryPath 
+
+# install it all 
+if env['install']:
+	installed   = []
+	executables = []
+	
+	# install headers 
+	header_directories = [i for i in getSubdirectories(libraryPath)]
+	header_extensions = ['*.h']
+
+	headers = []
+	for dir in header_directories:
+		for ext in header_extensions:
+			regexp = os.path.join(dir, ext)
+			headers.extend(env.Glob(regexp))
+
+	for header in headers:
+		headerName = findSuffix(libraryPath, str(header))
+		
+		installPath = os.path.join(env['install_path'], "include", "libc", headerName)
+		
+		installed.append(env.Install(installPath, header))
+		
+	# set permissions
+	for i in executables:
+		env.AddPostAction(i, Chmod(i, 0755))
+	for i in installed:
+		env.AddPostAction(i, Chmod(i, 0644))
+
+

@@ -1,6 +1,4 @@
 
-#include <__parallel_config>
-
 #include <vector>
 #include <cstdio>
 

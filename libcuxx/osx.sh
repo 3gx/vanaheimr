@@ -11,10 +11,13 @@ fi
 export PATH=$LIBCUXX_INSTALL_PATH/bin:$VANAHEIMR_INSTALL_PATH/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/cuda/bin
 export LD_LIBRARY_PATH=/usr/local/cuda/lib:$LIBCUXX_INSTALL_PATH/lib
 
-#if [ -n "$LLVM_INSTALL_PATH" ]
-#then
-#	export PATH=$LLVM_INSTALL_PATH/bin:$PATH
-#fi
+if [ -z "$LLVM_INSTALL_PATH" ]
+then
+	export LLVM_INSTALL_PATH=/Users/gregorydiamos/checkout/llvm/build/Debug+Asserts
+fi
+#
+#export PATH=$LLVM_INSTALL_PATH/bin:$PATH
+#export LD_LIBRARY_PATH=$LLVM_INSTALL_PATH/lib:$LD_LIBRARY_PATH
 
 export CXX=clang++
 export CC=clang

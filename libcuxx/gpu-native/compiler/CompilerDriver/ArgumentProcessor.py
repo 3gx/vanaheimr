@@ -60,7 +60,6 @@ class ArgumentProcessor:
 		
 		self.fillInOutputFile()
 		self.fillInArguments()
-		
 
 	def fillInOutputFile(self):
 		if self.outputFile == None:
@@ -112,8 +111,19 @@ class ArgumentProcessor:
 			if argument in self.valueArguments:
 				isArgument = True
 			
-			arguments.append(argument)
-				
+				arguments.append(argument)
+				continue
+		
+			if argument[0] == '-':
+				arguments.append(argument)
+				continue
+
+			self.inputFiles.append(argument)
 			
+
+		print 'parsed arguments: ' + str(arguments)
+		print 'parsed input files: ' + str(self.inputFiles)
+	
 		self.compilerArguments = arguments
+
 

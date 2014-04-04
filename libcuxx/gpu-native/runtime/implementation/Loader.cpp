@@ -9,6 +9,8 @@
 
 #include <gpu-native/driver/interface/CudaDriver.h>
 
+#include <gpu-native/entry/interface/GpuNativeMain.h>
+
 #include <gpu-native/util/interface/Casts.h>
 #include <gpu-native/util/interface/debug.h>
 #include <gpu-native/util/interface/string.h>
@@ -26,8 +28,8 @@ namespace runtime
 
 typedef Loader::StringVector StringVector;
 
-Loader::Loader(const std::string& path, const StringVector& arguments)
-: _path(path), _arguments(arguments)
+Loader::Loader(const std::string& path, const StringVector& arguments, bool isEmbedded)
+: _path(path), _arguments(arguments), _isEmbedded(isEmbedded)
 {
 
 }
@@ -40,11 +42,14 @@ Loader::~Loader()
 class LoaderState
 {
 public:
-	LoaderState(const std::string& path, const StringVector& arguments);
+	LoaderState(const std::string& path, const StringVector& arguments, bool isEmbedded);
 	~LoaderState();
 	
 public:
 	void runBinary();
+
+public:
+	int getReturnValue() const;
 
 private:
 	typedef driver::CUcontext  CUcontext;
@@ -67,6 +72,8 @@ private:
 private:
 	std::string  _path;
 	StringVector _arguments;
+	bool         _isEmbedded;
+
 	CUcontext    _context;
 	CUmodule     _module;
 	CUfunction   _main;
@@ -87,7 +94,7 @@ void Loader::loadBinary()
 {
 	// _state = std::make_unique<LoaderState>(_path, _arguments);
 
-	_state = std::unique_ptr<LoaderState>(new LoaderState(_path, _arguments));
+	_state = std::unique_ptr<LoaderState>(new LoaderState(_path, _arguments, _isEmbedded));
 }
 
 void Loader::runBinary()
@@ -97,8 +104,15 @@ void Loader::runBinary()
 	_state->runBinary();
 }
 
-LoaderState::LoaderState(const std::string& p, const StringVector& a)
-: _path(p), _arguments(a), _context(0)
+int Loader::getReturnValue() const
+{
+	assert(_state);
+	
+	return _state->getReturnValue();
+}
+
+LoaderState::LoaderState(const std::string& p, const StringVector& a, bool isEmbedded)
+: _path(p), _arguments(a), _isEmbedded(isEmbedded), _context(0), _returnValue(-1)
 {
 	_loadState();
 }
@@ -114,6 +128,11 @@ void LoaderState::runBinary()
 	_runMain();
 
 	util::log("Loader") << "Successfully ran binary, exiting...." << "\n";
+}
+
+int LoaderState::getReturnValue() const
+{
+	return _returnValue;
 }
 
 static size_t getFileLength(std::istream& stream)
@@ -372,6 +391,17 @@ static void loadModule(driver::CUmodule& module, const std::string& binary)
 	
 }
 
+static std::string getEmbeddedBinary()
+{
+	std::string result = getEmbeddedPTX();
+	
+	util::log("Loader") << " loaded " << result.size() << " bytes.\n";
+	
+	patchBinary(result);
+
+	return result;
+}
+
 void LoaderState::_loadState()
 {
 	util::log("Loader") << "Initializing CUDA driver.\n";
@@ -383,11 +413,18 @@ void LoaderState::_loadState()
 	
 	driver::CudaDriver::cuCtxCreate(&_context, 0, _getDevice());
 	
-	auto binary = loadBinary(_path);
-	
-	
-	loadModule(_module, binary);
+	std::string binary;
 
+	if(_isEmbedded)
+	{
+		binary = getEmbeddedBinary();
+	}
+	else
+	{
+		binary = loadBinary(_path);
+	}
+
+	loadModule(_module, binary);
 	
 	util::log("Loader") << "Loading 'main' function from module.\n";
 	driver::CudaDriver::cuModuleGetFunction(&_main, _module, "_pre_main");
