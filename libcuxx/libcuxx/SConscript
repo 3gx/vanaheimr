@@ -10,7 +10,9 @@
 import os
 
 # set environment variables
-Import('env')
+Import('nvenv')
+
+env = nvenv
 
 # Helper functions
 def getSubdirectories(path):

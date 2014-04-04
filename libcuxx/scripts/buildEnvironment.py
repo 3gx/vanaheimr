@@ -1,5 +1,3 @@
-EnsureSConsVersion(1,2)
-
 import os
 import sys
 
@@ -7,7 +5,12 @@ import inspect
 import platform
 import re
 import subprocess
-from SCons import SConf
+
+from SCons.Variables   import * 
+from SCons.Script      import Help 
+from SCons.Environment import * 
+
+from which import which
 	
 def getTools():
 	result = []
@@ -20,8 +23,6 @@ def getTools():
 
 	return result;
 
-
-OldEnvironment = Environment;
 
 # this dictionary maps the name of a compiler program to a dictionary mapping the name of
 # a compiler switch of interest to the specific switch implementing the feature
@@ -229,6 +230,9 @@ def importEnvironment():
 	
 	if 'LD_LIBRARY_PATH' in os.environ:
 		env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
+	
+	if 'LLVM_INSTALL_PATH' in os.environ:
+		env['LLVM_INSTALL_PATH'] = os.environ['LLVM_INSTALL_PATH']
 
 	return env
 
@@ -239,9 +243,8 @@ def updateEnvironment(env):
 		env[key] = value
 
 
-def Environment():
-	vars = Variables()
-
+def CreateEnvironment(vars):
+	
 	# add a variable to handle RELEASE/DEBUG mode
 	vars.Add(EnumVariable('mode', 'Release versus debug mode', 'debug',
 		allowed_values = ('release', 'debug')))
@@ -273,7 +276,7 @@ def Environment():
 		'"install")', 0))
 	
 	# create an Environment
-	env = OldEnvironment(ENV = importEnvironment(), \
+	env = Environment(ENV = importEnvironment(), \
 		tools = getTools(), variables = vars)
    
 	updateEnvironment(env)
