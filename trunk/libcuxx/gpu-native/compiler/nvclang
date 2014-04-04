@@ -42,8 +42,12 @@ def main():
 	except ValueError as e:
 		print "Bad Inputs: " + str(e) + "\n\n"
 		cc.printHelp()
+		return 1
 	except SystemError as e:
 		print >> sys.stderr, "Compilation Failed: \n\n" + str(e)
+		return 2
+
+	return 0
 
 # Main Guard
 if __name__ == "__main__":

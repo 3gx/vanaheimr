@@ -7,17 +7,24 @@
 #	\brief  The SCons master build script for libcuxx
 ################################################################################
 
+EnsureSConsVersion(1,2)
+
+# Import Modules
+from scripts.buildEnvironment   import CreateEnvironment
+from scripts.buildNVEnvironment import CreateNVEnvironment
+
+import os
+
 # set environment variables
 libcuxx_args = ARGUMENTS
 libcuxx_cmd_line_targets = COMMAND_LINE_TARGETS
 libcuxx_path_to_root_dir = ".."
 
 # try to import an environment
-exec open(libcuxx_path_to_root_dir + "/scripts/which.py")
-exec open(libcuxx_path_to_root_dir + "/scripts/buildEnvironment.py")
-env = Environment()
-
+env = CreateEnvironment(Variables())
 env['path_to_root_dir'] = os.path.abspath(libcuxx_path_to_root_dir)
+
+nvenv = CreateNVEnvironment(env)
  
 # find all source files in the source tree
 directories = ['gpu-native/util', 'gpu-native/runtime', 'gpu-native/driver',
@@ -89,10 +96,19 @@ if env['install']:
 	install_alias = env.Alias('install', env['install_path'])
 	Default(install_alias)
 
+if env['mode'] == 'debug':
+	variant = '.debug_build'
+else:
+	variant = '.release_build'
+
 # Dispatch to subprojects
-SConscript(os.path.join(env['path_to_root_dir'], 'libc', 'SConscript'), exports='env')
-SConscript(os.path.join(env['path_to_root_dir'], 'libc++', 'SConscript'), exports='env')
-SConscript(os.path.join(env['path_to_root_dir'], 'libcuxx', 'SConscript'), exports='env')
-SConscript(os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', 'SConscript'), exports='env')
+SConscript(os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', 'SConscript'), exports='env',
+	variant_dir=os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', variant), duplicate=0)
+SConscript(os.path.join(env['path_to_root_dir'], 'libc', 'SConscript'), exports='nvenv',
+	variant_dir=os.path.join(env['path_to_root_dir'], 'libc', variant), duplicate=0)
+SConscript(os.path.join(env['path_to_root_dir'], 'libcxx', 'SConscript'), exports='nvenv',
+	variant_dir=os.path.join(env['path_to_root_dir'], 'libcxx', variant), duplicate=0)
+SConscript(os.path.join(env['path_to_root_dir'], 'libcuxx', 'SConscript'), exports='nvenv',
+	variant_dir=os.path.join(env['path_to_root_dir'], 'libcuxx', variant), duplicate=0)
 
 

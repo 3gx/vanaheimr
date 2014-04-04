@@ -121,8 +121,8 @@ class ArgumentProcessor:
 			self.inputFiles.append(argument)
 			
 
-		print 'parsed arguments: ' + str(arguments)
-		print 'parsed input files: ' + str(self.inputFiles)
+		#print 'parsed arguments: ' + str(arguments)
+		#print 'parsed input files: ' + str(self.inputFiles)
 	
 		self.compilerArguments = arguments
 
