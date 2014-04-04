@@ -25,7 +25,7 @@ def getSubdirectories(path):
 
 def findLibraryPath():
 	return os.path.realpath(os.path.join(env['path_to_root_dir'],
-		'libc'))
+		'libc', 'include'))
 
 def findSuffix(basePath, completePath):
 	head, tail = os.path.split(os.path.realpath(completePath))
