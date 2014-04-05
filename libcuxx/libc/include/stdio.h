@@ -2,7 +2,6 @@
 #pragma once
 
 // Includes
-#include <__parallel_config>
 #include <stdarg.h>
 
 // Macros

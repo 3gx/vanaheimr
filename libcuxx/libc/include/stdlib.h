@@ -1,7 +1,5 @@
 #pragma once
 
-#include <__parallel_config>
-
 typedef struct {
   int quot;
   int rem;
