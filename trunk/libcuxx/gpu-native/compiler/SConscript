@@ -53,6 +53,8 @@ if env['install']:
 	
 	executables.append(env.Install(os.path.join(env['install_path'], "bin"),
 		os.path.join(compilerPath, 'nvclang')))
+	executables.append(env.Install(os.path.join(env['install_path'], "bin"),
+		os.path.join(compilerPath, 'nvclang++')))
 			
 	# install modules
 	module_directories = [i for i in getSubdirectories(

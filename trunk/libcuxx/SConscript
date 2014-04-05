@@ -103,12 +103,12 @@ else:
 
 # Dispatch to subprojects
 SConscript(os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', 'SConscript'), exports='env',
-	variant_dir=os.path.join(env['path_to_root_dir'], 'gpu-native', 'compiler', variant), duplicate=0)
+	variant_dir=os.path.join(env['path_to_root_dir'], variant, 'gpu-native', 'compiler'), duplicate=0)
 SConscript(os.path.join(env['path_to_root_dir'], 'libc', 'SConscript'), exports='nvenv',
-	variant_dir=os.path.join(env['path_to_root_dir'], 'libc', variant), duplicate=0)
+	variant_dir=os.path.join(env['path_to_root_dir'], variant, 'libc'), duplicate=0)
 SConscript(os.path.join(env['path_to_root_dir'], 'libcxx', 'SConscript'), exports='nvenv',
-	variant_dir=os.path.join(env['path_to_root_dir'], 'libcxx', variant), duplicate=0)
+	variant_dir=os.path.join(env['path_to_root_dir'], variant, 'libcxx'), duplicate=0)
 SConscript(os.path.join(env['path_to_root_dir'], 'libcuxx', 'SConscript'), exports='nvenv',
-	variant_dir=os.path.join(env['path_to_root_dir'], 'libcuxx', variant), duplicate=0)
+	variant_dir=os.path.join(env['path_to_root_dir'], variant, 'libcuxx'), duplicate=0)
 
 

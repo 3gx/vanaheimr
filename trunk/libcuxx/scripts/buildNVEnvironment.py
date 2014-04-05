@@ -16,7 +16,7 @@ gCompilerOptions = {
 		'nvclang' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
 			'optimization' : '-O2', 'debug' : '', 
-			'exception_handling' : '', 'standard': '-std=c++11'},
+			'exception_handling' : '', 'standard': ''},
 		'nvclang++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
 			'optimization' : '-O2', 'debug' : '',
@@ -120,7 +120,7 @@ def CreateNVEnvironment(oldEnvironment):
 	env = oldEnvironment.Clone()
    
 	# set the tools
-	env['CXX'] = 'nvclang'
+	env['CXX'] = 'nvclang++'
 	env['CC']  = 'nvclang'
 
 	# always link with the c++ compiler
