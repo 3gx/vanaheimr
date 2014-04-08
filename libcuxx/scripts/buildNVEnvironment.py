@@ -15,11 +15,11 @@ from which import which
 gCompilerOptions = {
 		'nvclang' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : '-O2', 'debug' : '', 
+			'optimization' : '-O2', 'debug' : '-O2', 
 			'exception_handling' : '', 'standard': ''},
 		'nvclang++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : '-O2', 'debug' : '',
+			'optimization' : '-O2', 'debug' : '-O2',
 			'exception_handling' : '',
 			'standard': ['-stdlib=libc++', '-std=c++11', '-pthread']}
 	}

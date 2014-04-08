@@ -80,7 +80,7 @@ typedef	int	nl_item;
 
 #define	D_MD_ORDER	57	/* month/day order (local extension) */
 
-char	*nl_langinfo(nl_item);
+char *nl_langinfo(nl_item);
 
 
  

@@ -18,7 +18,7 @@ struct lldiv_t {
 } ;
 
 extern "C" long      a64l(const char *);
-extern "C" void      abort(void);
+extern "C" void      abort(void) __attribute__ ((__noreturn__));
 extern "C" int       abs(int);
 extern "C" int       atexit(void (*)(void));
 extern "C" double    atof(const char *);

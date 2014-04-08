@@ -74,6 +74,21 @@ def isCPP(string):
 def isC(string):
 	return getExt(string) == '.c'
 
+def isObject(string):
+	return isPureObject(string) or isObjectForShared(string) 
+
+def isPureObject(string):
+	return getExt(string) == '.o'
+
+def isObjectForShared(string):
+	return getExt(string) == '.os'
+
+def isDylib(string):
+	return getExt(string) == '.dylib'
+
+def isLibrary(string):
+	return isDylib(string)
+
 def isTarFile(string):
 	return getSpecificExt(string) == '.tar.gz'
 
