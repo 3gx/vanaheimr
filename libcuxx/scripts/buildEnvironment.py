@@ -305,16 +305,16 @@ def CreateEnvironment(vars):
 	else:
 		env.Replace(INSTALL_PATH = os.path.abspath('.'))
 
+	# set the build path
+	env.Replace(BUILD_ROOT = str(env.Dir('.')))
+	env.Replace(CPPPATH = [env['BUILD_ROOT']])
+
 	# get libc++
 	if env['CXX'] == 'c++':
-		env.AppendUnique(CPPPATH = getLibCXXPaths()[0])
+		env.AppendUnique(CPPPATH = [getLibCXXPaths()[0]])
 	
 	# set extra libs 
 	env.Replace(EXTRA_LIBS=getExtraLibs())
-
-	# set the build path
-	env.Replace(BUILD_ROOT = str(env.Dir('.')))
-	env.AppendUnique(CPPPATH = env['BUILD_ROOT'])
 
 	# set libcuxx include path
 	env.AppendUnique(LIBPATH = os.path.abspath('.'))
