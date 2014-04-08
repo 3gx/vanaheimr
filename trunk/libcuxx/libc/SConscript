@@ -46,6 +46,8 @@ def findSuffix(basePath, completePath):
 # find the path
 libraryPath = findLibraryPath()
 
+# set up the include path
+env.AppendUnique(CPPPATH = ['interface'])
 
 if env['install']:
 	directories = ['libc']
