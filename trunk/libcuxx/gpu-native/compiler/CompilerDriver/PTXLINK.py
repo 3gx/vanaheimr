@@ -28,23 +28,27 @@ class PTXLINK:
 		return outputs, self.isFinished()
 
 	def isFinished(self):
-		return isPTX(self.driver.outputFile)
+		return isPTX(self.driver.outputFile) or isLibrary(self.driver.outputFile)
 
 	def getIntermediateFiles(self, filename):
 		if self.canCompile(filename):
 			if not self.isFinished():
-				return [self.getOutputFilename(filename)]
+				return [self.getOutputFilename()]
 		return []
 
 	def canCompileFile(self, filename):
 		if isPTX(filename):
 			return True
-				
+		
+		if isObject(filename):
+			return True
+		
 		return False
 
 	def canCompile(self, filenames):
-		if(len(filenames) < 2):
-			return False
+		if(len(filenames) == 1):
+			if isPTX(list(filenames)[0]):
+				return False
 
 		for filename in filenames:
 			if not self.canCompileFile(filename):
@@ -70,7 +74,7 @@ class PTXLINK:
 		start = time()
 
 		for filename in filenames:
-			self.append(outputFileName, filename)
+			self.append(outputFilename, filename)
 
 		self.driver.getLogger().info(' time: ' + str(time() - start) + ' seconds')
 
@@ -78,7 +82,7 @@ class PTXLINK:
 			raise SystemError(getCLANGName() + ' failed to generate an output file: \n' \
 				+ stdOutData + stdErrData)
 
-		return outputFilename
+		return [outputFilename]
 
 	def append(self, output, input):
 		outputFile = open(output, 'a')

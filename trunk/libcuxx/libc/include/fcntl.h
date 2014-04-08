@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sys/types.h>
+#include <__parallel_config>
 
 /*
  * File status flags: these are used by open(2), fcntl(2).
@@ -92,6 +93,8 @@
 #define	F_FLOCK		0x020	 	/* Use flock(2) semantics for lock */
 #define	F_POSIX		0x040	 	/* Use POSIX semantics for lock */
 #endif
+
+typedef size_t off_t;
 
 /*
  * Advisory file segment locking data type -

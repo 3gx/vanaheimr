@@ -46,12 +46,43 @@ def findSuffix(basePath, completePath):
 # find the path
 libraryPath = findLibraryPath()
 
-print 'Installing the libc headers from ' + libraryPath 
+
+if env['install']:
+	directories = ['libc']
+
+	source_directories = directories
+	extensions = ['*.cpp', '*.c']
+
+	sources = []
+	for dir in source_directories:
+		for ext in extensions:
+			regexp = os.path.join(dir, ext)
+			sources.extend(env.Glob(regexp))
+	
+	# create the library
+	libc = env.SharedLibrary('libc', sources)
+	libc_libs = ['libc'] + env['EXTRA_LIBS']
+	
+	libc = env.Install(os.path.join(env['install_path'], "lib"),
+		libc)
+
+	env.Depends(libc, os.path.join(env['install_path'], "include"))
+
+	# create the tests
+	tests = []
+
+	#tests.append(env.Program('gpu-native-loader', \
+	#	['gpu-native/tools/gpu-native-loader.cpp'], LIBS=gpunative_libs))
+
+	for test in tests:
+		env.Depends(test, libc)
 
 # install it all 
 if env['install']:
 	installed   = []
 	executables = []
+
+	print 'Installing libc from ' + libraryPath 
 	
 	# install headers 
 	header_directories = [i for i in getSubdirectories(libraryPath)]

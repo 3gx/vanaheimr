@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <__parallel_config>
+
 void* memcpy (void* destination, const void* source, size_t num);
 
 extern char * strcpy(char *,const char *);

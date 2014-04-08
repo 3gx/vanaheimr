@@ -114,127 +114,6 @@ extern int __fpclassifyf(float);
 extern int __fpclassifyd(double);
 extern int __fpclassifyl(long double);
 
-#if (defined(__GNUC__) && 0 == __FINITE_MATH_ONLY__) || \
-    (defined __IPHONE_OS_VERSION_MIN_REQUIRED && __IPHONE_OS_VERSION_MIN_REQUIRED < 60000 && defined __arm__)
-/*  These inline functions may fail to return expected results if unsafe
-    math optimizations like those enabled by -ffast-math are turned on.
-    Thus, (somewhat surprisingly) you only get the fast inline
-    implementations if such compiler options are NOT enabled.  This is
-    because the inline functions require the compiler to be adhering to
-    the standard in order to work properly; -ffast-math, among other
-    things, implies that NaNs don't happen, which allows the compiler to
-    optimize away checks like x != x, which might lead to things like
-    isnan(NaN) returning false.                                               
- 
-    Thus, if you compile with -ffast-math, actual function calls are
-    generated for these utilities.                                            */
-    
-#define isnormal(x)                                                      \
-    ( sizeof(x) == sizeof(float)  ? __inline_isnormalf((float)(x))       \
-    : sizeof(x) == sizeof(double) ? __inline_isnormald((double)(x))      \
-                                  : __inline_isnormall((long double)(x)))
-
-#define isfinite(x)                                                      \
-    ( sizeof(x) == sizeof(float)  ? __inline_isfinitef((float)(x))       \
-    : sizeof(x) == sizeof(double) ? __inline_isfinited((double)(x))      \
-                                  : __inline_isfinitel((long double)(x)))
-
-#define isinf(x)                                                         \
-    ( sizeof(x) == sizeof(float)  ? __inline_isinff((float)(x))          \
-    : sizeof(x) == sizeof(double) ? __inline_isinfd((double)(x))         \
-                                  : __inline_isinfl((long double)(x)))
-
-#define isnan(x)                                                         \
-    ( sizeof(x) == sizeof(float)  ? __inline_isnanf((float)(x))          \
-    : sizeof(x) == sizeof(double) ? __inline_isnand((double)(x))         \
-                                  : __inline_isnanl((long double)(x)))
-
-#define signbit(x)                                                       \
-    ( sizeof(x) == sizeof(float)  ? __inline_signbitf((float)(x))        \
-    : sizeof(x) == sizeof(double) ? __inline_signbitd((double)(x))       \
-                                  : __inline_signbitl((long double)(x)))
-
-inline int __inline_isfinitef(float);
-inline int __inline_isfinited(double);
-inline int __inline_isfinitel(long double);
-inline int __inline_isinff(float);
-inline int __inline_isinfd(double);
-inline int __inline_isinfl(long double);
-inline int __inline_isnanf(float);
-inline int __inline_isnand(double);
-inline int __inline_isnanl(long double);
-inline int __inline_isnormalf(float);
-inline int __inline_isnormald(double);
-inline int __inline_isnormall(long double);
-inline int __inline_signbitf(float);
-inline int __inline_signbitd(double);
-inline int __inline_signbitl(long double);
-    
-inline int __inline_isfinitef(float __x) {
-    return __x == __x && __builtin_fabsf(__x) != __builtin_inff();
-}
-inline int __inline_isfinited(double __x) {
-    return __x == __x && __builtin_fabs(__x) != __builtin_inf();
-}
-inline int __inline_isfinitel(long double __x) {
-    return __x == __x && __builtin_fabsl(__x) != __builtin_infl();
-}
-inline int __inline_isinff(float __x) {
-    return __builtin_fabsf(__x) == __builtin_inff();
-}
-inline int __inline_isinfd(double __x) {
-    return __builtin_fabs(__x) == __builtin_inf();
-}
-inline int __inline_isinfl(long double __x) {
-    return __builtin_fabsl(__x) == __builtin_infl();
-}
-inline int __inline_isnanf(float __x) {
-    return __x != __x;
-}
-inline int __inline_isnand(double __x) {
-    return __x != __x;
-}
-inline int __inline_isnanl(long double __x) {
-    return __x != __x;
-}
-inline int __inline_signbitf(float __x) {
-    union { float __f; unsigned int __u; } __u;
-    __u.__f = __x;
-    return (int)(__u.__u >> 31);
-}
-inline int __inline_signbitd(double __x) {
-    union { double __f; unsigned long long __u; } __u;
-    __u.__f = __x;
-    return (int)(__u.__u >> 63);
-}
-#if defined __i386__ || defined __x86_64__
-inline int __inline_signbitl(long double __x) {
-    union {
-        long double __ld;
-        struct{ unsigned long long __m; unsigned short __sexp; } __p;
-    } __u;
-    __u.__ld = __x;
-    return (int)(__u.__p.__sexp >> 15);
-}
-#else
-inline int __inline_signbitl(long double __x) {
-    union { long double __f; unsigned long long __u;} __u;
-    __u.__f = __x;
-    return (int)(__u.__u >> 63);
-}
-#endif
-inline int __inline_isnormalf(float __x) {
-    return __inline_isfinitef(__x) && __builtin_fabsf(__x) >= __FLT_MIN__;
-}
-inline int __inline_isnormald(double __x) {
-    return __inline_isfinited(__x) && __builtin_fabs(__x) >= __DBL_MIN__;
-}
-inline int __inline_isnormall(long double __x) {
-    return __inline_isfinitel(__x) && __builtin_fabsl(__x) >= __LDBL_MIN__;
-}
-    
-#else /* defined(__GNUC__) && 0 == __FINITE_MATH_ONLY__ */
-
 /*  Implementations making function calls to fall back on when -ffast-math
     or similar is specified.  These are not available in iOS versions prior
     to 6.0.  If you need them, you must target that version or later.         */
@@ -279,8 +158,6 @@ extern int __isnanl(long double);
 extern int __signbitf(float);
 extern int __signbitd(double);
 extern int __signbitl(long double);
-
-#endif /* defined(__GNUC__) && 0 == __FINITE_MATH_ONLY__ */
 
 /******************************************************************************
  *                                                                            *

@@ -37,7 +37,10 @@ class CLANG:
 	def canCompileFile(self, filename):
 		if isCPP(filename):
 			return True
-				
+			
+		if isC(filename):
+			return True
+			
 		return False
 
 	def canCompile(self, filenames):

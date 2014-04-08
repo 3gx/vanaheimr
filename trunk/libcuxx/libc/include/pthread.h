@@ -146,15 +146,16 @@ typedef struct {
 } pthread_mutexattr_t;
 
 typedef struct {
-    int __detachstate;
-    int __schedpolicy;
-    struct sched_param __schedparam;
-    int __inheritsched;
-    int __scope;
-    size_t __guardsize;
-    int __stackaddr_set;
-    void *__stackaddr;
-    unsigned long int __stacksize;
+    int                detachState;
+    int                schedulingPolicy;
+    struct sched_param schedulingParameters;
+    int                inheritsSchedulingPolicy;
+    size_t             stackGuardSize;
+    int                isStackAddressSet;
+	int                competitionScope;
+
+    void*              stackAddress;
+    size_t             stackSize;
 } pthread_attr_t;
 
 typedef struct {
